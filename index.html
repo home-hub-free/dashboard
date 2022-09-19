@@ -2,13 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/home.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HomeHubFree - Dashboard</title>
   </head>
   <body>
     <div id="app">
-      ${this.test}
+      <button :onclick="this.array.unshift('zero')"> push </button>
+      <!-- ${this.test} -->
+      <div :foreach="value in this.array">
+        ${value}
+      </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

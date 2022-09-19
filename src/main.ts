@@ -4,6 +4,11 @@ import { Bind } from 'bindrjs';
 new Bind({
   id: 'app',
   bind: {
-    test: 'Hello world'
+    test: 'Hello world',
+    array: [
+      'one',
+      'two',
+      'tree'
+    ]
   }
 });

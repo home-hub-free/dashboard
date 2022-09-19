@@ -13,6 +13,6 @@
     "vite": "^3.1.0"
   },
   "dependencies": {
-    "bindrjs": "^1.2.22"
+    "bindrjs": "^1.2.25"
   }
 }
