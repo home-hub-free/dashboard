@@ -1,8 +1,19 @@
-<div :foreach="item in this.items">
-  <span>
+<div
+  class="menu-item"
+  :foreach="item in this.items"
+  :index
+  :onclick="item.expanded = !item.expanded"
+>
+  <span class="menu-item-icon">
     <i :class="'iconoir-' + item.icon"></i>
   </span>
-  <span>
-    ${item.name}
+  <span class="menu-item-text"> ${item.name} </span>
+
+  <span
+    :if="item.subitems"
+    class="toggle-subitems"
+    :class:expanded="item.expanded"
+  >
+    <i class="iconoir-nav-arrow-right"></i>
   </span>
 </div>
