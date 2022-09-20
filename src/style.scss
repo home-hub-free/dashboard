@@ -1,0 +1,30 @@
+// Iconoir
+@import "iconoir/css/iconoir.css";
+
+@import "./platform-styles/desktop-styles.scss";
+@import "./platform-styles/mobile-styles.scss";
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
+#nav-bar {
+  position: fixed;
+  background-color: lightgray;
+  
+  transition-property: height, width;
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(.66,.2,.63,1.11);
+}
+
+// Desktop mode
+@media (min-width: 600px) {
+  @include dekstop();
+}
+
+// Mobile mode
+@media (max-width: 600px) {
+  @include mobile();
+}

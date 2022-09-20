@@ -1,0 +1,13 @@
+@mixin dekstop {
+  body {
+    // Test
+    background-color: rgba(40, 40, 40);
+  }
+
+  #nav-bar {
+    height: 100%;
+    width: 100px;
+    left: 0;
+    bottom: 0;
+  }
+}
