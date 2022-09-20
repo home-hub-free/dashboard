@@ -13,10 +13,21 @@ body {
 #nav-bar {
   position: fixed;
   background-color: lightgray;
-  
+  display: flex;
+  cursor: pointer;
   transition-property: height, width;
   transition-duration: 220ms;
   transition-timing-function: cubic-bezier(.66,.2,.63,1.11);
+
+  .menu-item {
+    transition: background-color 156ms ease-in-out;
+  }
+  .item-container {
+    display: flex;
+  }
+  .menu-item-icon {
+    font-size: 2em;
+  }
 }
 
 // Desktop mode

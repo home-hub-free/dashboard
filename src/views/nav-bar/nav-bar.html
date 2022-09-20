@@ -2,7 +2,7 @@
   class="menu-item"
   :foreach="item in this.items"
   :index
-  :onclick="item.expanded = !item.expanded"
+  :onclick="this.setActiveMenuItem(item)"
 >
   <div class="item-container">
     <span class="menu-item-icon">

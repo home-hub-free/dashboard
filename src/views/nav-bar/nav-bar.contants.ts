@@ -1,4 +1,4 @@
-interface IMenuItem {
+export interface IMenuItem {
   icon: string;
   name: string;
   subitems?: ISubItem[];
