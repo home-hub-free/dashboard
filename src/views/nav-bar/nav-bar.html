@@ -4,16 +4,19 @@
   :index
   :onclick="item.expanded = !item.expanded"
 >
-  <span class="menu-item-icon">
-    <i :class="'iconoir-' + item.icon"></i>
-  </span>
-  <span class="menu-item-text"> ${item.name} </span>
+  <div class="item-container">
+    <span class="menu-item-icon">
+      <i :class="'iconoir-' + item.icon"></i>
+    </span>
 
-  <span
-    :if="item.subitems"
-    class="toggle-subitems"
-    :class:expanded="item.expanded"
-  >
-    <i class="iconoir-nav-arrow-right"></i>
-  </span>
+    <span class="menu-item-text"> ${item.name} </span>
+
+    <span
+      :if="item.subitems"
+      class="toggle-subitems"
+      :class:expanded="item.expanded"
+    >
+      <i class="iconoir-nav-arrow-right"></i>
+    </span>
+  </div>
 </div>
