@@ -7,6 +7,7 @@ export interface IMenuItem {
 }
 
 export interface ISubItem {
+  id: string,
   name: string;
   icon?: string;
 }
@@ -19,10 +20,12 @@ export const MenuItems: IMenuItem[] = [
     expanded: true,
     subitems: [
       {
+        id: 'favorites',
         name: "Favorites",
         icon: "star-outline",
       },
       {
+        id: 'recents',
         name: "Recents",
         icon: "clock"
       }

@@ -27,6 +27,11 @@ function setActiveMenuItem(menuItem: IMenuItem) {
   menuItem.expanded = !menuItem.expanded;
   NavBar.bind.activeMenuItemId = menuItem.id;
 
+  updateContentSection(menuItem);
+}
+
+function updateContentSection(menuItem: IMenuItem) {
   ContentSection.bind.header = menuItem.name;
-  ContentSection.bind.tabs = menuItem.subitems;
+  ContentSection.bind.tabs = JSON.parse(JSON.stringify(menuItem.subitems));
+  ContentSection.bind.activeMenuItemId = menuItem.id;
 }

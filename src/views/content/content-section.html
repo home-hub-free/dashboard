@@ -20,7 +20,21 @@
     >
       ${tab.name}
     </span>
-
     <div class="active-indicator" :style="this.activeIndicatorPosition"></div>
+  </div>
+
+  <div class="tab-content">
+    <div :if="this.devices && this.activeMenuItemId === 'devices'">
+      <div
+        class="device-button"
+        :foreach="device in this.devices"
+        :ontouchstart="this.toggleDevice(device)"
+        :class:active="device.value"
+
+      >
+        ${device.name}
+      </div>
+      <!-- Favorites Content -->
+    </div>
   </div>
 </div>

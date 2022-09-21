@@ -14,8 +14,8 @@ body {
   cursor: pointer;
   background: rgba(247, 244, 225, 0.75);
   transition-property: height, width;
-  transition-duration: 250ms;
-  transition-timing-function: cubic-bezier(0.72, 0.32, 0.57, 1.21);
+  transition-duration: 300ms;
+  transition-timing-function: cubic-bezier(.72,-0.03,.45,1.25);
   
   .menu-item {
     &.active {
