@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --config vite.config.js",
+    "dev": "vite --config vite.config.js --host",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
@@ -14,7 +14,7 @@
     "vite": "^3.1.0"
   },
   "dependencies": {
-    "bindrjs": "^1.2.25",
+    "bindrjs": "^1.2.26",
     "iconoir": "^5.3.0"
   }
 }

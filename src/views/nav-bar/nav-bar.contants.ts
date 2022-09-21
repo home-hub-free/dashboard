@@ -1,37 +1,52 @@
 export interface IMenuItem {
+  id: string;
   icon: string;
   name: string;
   subitems?: ISubItem[];
-  expanded?: boolean;
+  expanded: boolean;
 }
 
-interface ISubItem {
+export interface ISubItem {
   name: string;
   icon?: string;
 }
 
 export const MenuItems: IMenuItem[] = [
   {
+    id: "home",
     icon: "home-simple-door",
     name: "Home",
     expanded: true,
     subitems: [
       {
-        name: "subitem",
-        icon: "",
+        name: "Favorites",
+        icon: "star-outline",
       },
+      {
+        name: "Recents",
+        icon: "clock"
+      }
     ],
   },
   {
+    id: "devices",
     icon: "xray-view",
     name: "Devices",
     expanded: true,
     subitems: [],
   },
   {
-    icon: "",
-    name: "Test",
+    id: "rooms",
+    icon: "bed",
+    name: "Rooms",
     expanded: true,
     subitems: [],
+  },
+  {
+    id: "automations",
+    icon: "alarm",
+    name: "Automations",
+    expanded: true,
+    subitems: []
   }
 ];

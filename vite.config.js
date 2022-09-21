@@ -9,8 +9,8 @@ export default defineConfig({
     {
       test: ({ path }) => path.endsWith(".html"),
       transform({ code }) {
-        return code;
-      },
+        return `export default ${JSON.stringify(code)}`
+      }
     },
   ],
 });

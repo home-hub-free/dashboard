@@ -2,28 +2,30 @@
 @import "./platform-styles/desktop-styles.scss";
 @import "./platform-styles/mobile-styles.scss";
 @import url("https://fonts.googleapis.com/css2?family=Roboto&display=swap");
+@import './animations.scss';
 
 body {
   font-family: "Roboto", sans-serif;
-  background: linear-gradient(
-    200.2deg,
-    rgba(255, 222, 171, 0.7) 13.23%,
-    rgba(228, 223, 172, 0.7) 93.79%
-  );
 }
 
 #nav-bar {
   position: fixed;
-  background-color: lightgray;
   display: flex;
   cursor: pointer;
-  transition-property: height, width;
-  transition-duration: 220ms;
-  transition-timing-function: cubic-bezier(0.72, 0.32, 0.57, 1.21);
   background: rgba(247, 244, 225, 0.75);
-
+  transition-property: height, width;
+  transition-duration: 250ms;
+  transition-timing-function: cubic-bezier(0.72, 0.32, 0.57, 1.21);
+  
   .menu-item {
-    transition: background-color 156ms ease-in-out;
+    &.active {
+      color: #F2884B;
+      i {
+        animation-duration: 270ms;
+        animation-fill-mode: forwards;
+        animation-name: active-menu-item;
+      }
+    }
   }
   .item-container {
     display: flex;

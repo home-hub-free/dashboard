@@ -1,0 +1,26 @@
+<div class="header">
+  <span class="hamburguer-menu">
+    <i class="iconoir-menu"></i>
+  </span>
+  <span class="header-title"> ${this.header} </span>
+  <span class="contextual-settings">
+    <i class="iconoir-more-vert"></i>
+    <div class="settings-container"></div>
+  </span>
+</div>
+
+<div class="main-content">
+  <div class="menu-tabs" :if="this.tabs && this.tabs.length">
+    <span
+      style="display: inline-block"
+      class="tab"
+      :foreach="tab in this.tabs"
+      :ontouchstart="this.selectTab(tab , event)"
+      :class:active="tab.name === this.activeTab"
+    >
+      ${tab.name}
+    </span>
+
+    <div class="active-indicator" :style="this.activeIndicatorPosition"></div>
+  </div>
+</div>

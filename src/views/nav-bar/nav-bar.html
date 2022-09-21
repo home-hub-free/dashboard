@@ -1,9 +1,12 @@
 <div
   class="menu-item"
   :foreach="item in this.items"
-  :index
-  :onclick="this.setActiveMenuItem(item)"
+  :ontouchstart="this.setActiveMenuItem(item)"
+  :class:active="this.activeMenuItemId === item.id"
 >
+  <!-- Used only so desktop has an anchor point for click events -->
+  <div class="menu-item-desktop" :onclick="this.setActiveMenuItem(item)"></div>
+
   <div class="item-container">
     <span class="menu-item-icon">
       <i :class="'iconoir-' + item.icon"></i>
@@ -12,8 +15,8 @@
     <span class="menu-item-text"> ${item.name} </span>
 
     <span
-      :if="item.subitems"
       class="toggle-subitems"
+      :if="item.subitems"
       :class:expanded="item.expanded"
     >
       <i class="iconoir-nav-arrow-right"></i>
