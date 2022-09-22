@@ -4,6 +4,7 @@ export interface IMenuItem {
   name: string;
   subitems?: ISubItem[];
   expanded: boolean;
+  activeTabIndex: number,
 }
 
 export interface ISubItem {
@@ -18,6 +19,7 @@ export const MenuItems: IMenuItem[] = [
     icon: "home-simple-door",
     name: "Home",
     expanded: true,
+    activeTabIndex: -1,
     subitems: [
       {
         id: 'favorites',
@@ -36,6 +38,7 @@ export const MenuItems: IMenuItem[] = [
     icon: "xray-view",
     name: "Devices",
     expanded: true,
+    activeTabIndex: -1,
     subitems: [],
   },
   {
@@ -43,6 +46,7 @@ export const MenuItems: IMenuItem[] = [
     icon: "bed",
     name: "Rooms",
     expanded: true,
+    activeTabIndex: -1,
     subitems: [],
   },
   {
@@ -50,6 +54,7 @@ export const MenuItems: IMenuItem[] = [
     icon: "alarm",
     name: "Automations",
     expanded: true,
+    activeTabIndex: -1,
     subitems: []
   }
 ];

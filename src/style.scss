@@ -1,11 +1,23 @@
 @import "iconoir/css/iconoir.css";
 @import "./platform-styles/desktop-styles.scss";
 @import "./platform-styles/mobile-styles.scss";
-@import url("https://fonts.googleapis.com/css2?family=Roboto&display=swap");
-@import './animations.scss';
+// @import url("https://fonts.googleapis.com/css2?family=Roboto&display=swap");
+@import "/Fonts/Satoshi/css/satoshi.css";
+@import "./animations.scss";
 
 body {
-  font-family: "Roboto", sans-serif;
+  font-family: "Satoshi-Variable";
+  // font-family: "Satoshi-VariableItalic";
+  // font-family: "Satoshi-Light";
+  // font-family: "Satoshi-LightItalic";
+  // font-family: "Satoshi-Regular";
+  // font-family: "Satoshi-Italic";
+  // font-family: "Satoshi-Medium";
+  // font-family: "Satoshi-MediumItalic";
+  // font-family: "Satoshi-Bold";
+  // font-family: "Satoshi-BoldItalic";
+  // font-family: "Satoshi-Black";
+  // font-family: "Satoshi-BlackItalic";
 }
 
 #nav-bar {
@@ -15,11 +27,11 @@ body {
   background: rgba(247, 244, 225, 0.75);
   transition-property: height, width;
   transition-duration: 300ms;
-  transition-timing-function: cubic-bezier(.72,-0.03,.45,1.25);
-  
+  transition-timing-function: cubic-bezier(0.72, -0.03, 0.45, 1.25);
+
   .menu-item {
     &.active {
-      color: #F2884B;
+      color: #f2884b;
       i {
         animation-duration: 270ms;
         animation-fill-mode: forwards;

@@ -24,17 +24,15 @@
   </div>
 
   <div class="tab-content">
-    <div :if="this.devices && this.activeMenuItemId === 'devices'">
-      <div
-        class="device-button"
-        :foreach="device in this.devices"
-        :ontouchstart="this.toggleDevice(device)"
-        :class:active="device.value"
-
-      >
-        ${device.name}
-      </div>
-      <!-- Favorites Content -->
+    <div
+      :if="this.devices && this.activeMenuItemId === 'devices'"
+      :innerHTML="this.templates.devices"
+    ></div>
+    <div :if="this.activeMenuItemId === 'automations'">
+      Hello Automations
+    </div>
+    <div :if="this.activeMenuItemId === 'rooms">
+      Hello from Rooms template
     </div>
   </div>
 </div>

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --config vite.config.js --host",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "re-link": "npm rm bindrjs && sudo npm link ../../bindrjs"
   },
   "devDependencies": {
     "sass": "^1.54.9",
@@ -14,7 +15,7 @@
     "vite": "^3.1.0"
   },
   "dependencies": {
-    "bindrjs": "^1.2.26",
+    "bindrjs": "^1.2.27",
     "iconoir": "^5.3.0"
   }
 }

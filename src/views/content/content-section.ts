@@ -4,6 +4,8 @@ import { ISubItem } from "../nav-bar/nav-bar.contants";
 import { ContentIdEndpoint } from "./content-section.constants";
 import template from "./content-section.html";
 
+import DevicesTemplate from "./templates/devices-content.html?raw";
+
 const activeTabIndicator = {
   top: "48px",
   left: "0px",
@@ -22,8 +24,11 @@ export const ContentSection = new Bind({
     settings: [],
     activeIndicatorPosition: activeTabIndicator,
 
+    templates: {
+      devices: DevicesTemplate
+    },
+
     selectTab,
-    toggleDevice,
   },
   onChange,
 });
@@ -90,33 +95,35 @@ function loadContent(id: string) {
       })
         .then((res) => res.json())
         .then((data) => {
-          ContentSection.bind.devices = data;
+          console.log('Data for: ', id);
           console.log(data);
+          ContentSection.bind.devices = data;
+          // console.log(data);
         });
     }
   });
 }
 
-function toggleDevice(device: any) {
-  device.value = !device.value;
-  return new Promise((resolve, reject) => {
-    return fetch(server + "manual-control", {
-      method: "POST",
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        device: device.id,
-        value: device.value,
-      }),
-    })
-      .then((res) => res.json())
-      .then((result) => {
-        console.log(result);
-      })
-      .catch(err => {
-        console.log(err);
-      }) ;
-  });
-}
+// function toggleDevice(device: any) {
+//   device.value = !device.value;
+//   return new Promise((resolve, reject) => {
+//     return fetch(server + "manual-control", {
+//       method: "POST",
+//       headers: {
+//         'Accept': 'application/json',
+//         'Content-Type': 'application/json'
+//       },
+//       body: JSON.stringify({
+//         device: device.id,
+//         value: device.value,
+//       }),
+//     })
+//       .then((res) => res.json())
+//       .then((result) => {
+//         console.log(result);
+//       })
+//       .catch(err => {
+//         console.log(err);
+//       }) ;
+//   });
+// }
