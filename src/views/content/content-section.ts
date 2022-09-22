@@ -4,7 +4,10 @@ import { ISubItem } from "../nav-bar/nav-bar.contants";
 import { ContentIdEndpoint } from "./content-section.constants";
 import template from "./content-section.html";
 
-import DevicesTemplate from "./templates/devices-content.html?raw";
+import DevicesTemplate from "./templates/devices-content.template.html?raw";
+import HomeTemplate from './templates/home-content.template.html?raw';
+import RoomsTemplate from './templates/rooms-content.template.html?raw';
+import AutomationTemplate from './templates/automations-content.template.html?raw';
 
 const activeTabIndicator = {
   top: "48px",
@@ -25,7 +28,10 @@ export const ContentSection = new Bind({
     activeIndicatorPosition: activeTabIndicator,
 
     templates: {
-      devices: DevicesTemplate
+      devices: DevicesTemplate,
+      home: HomeTemplate,
+      rooms: RoomsTemplate,
+      automations: AutomationTemplate
     },
 
     selectTab,
@@ -48,13 +54,13 @@ function onChange(changes: DataChanges) {
     changes.property === "activeMenuItemId" &&
     !ContentSection.bind.tabs.length
   ) {
-    loadContent(ContentSection.bind.activeMenuItemId);
+    getServerData(ContentSection.bind.activeMenuItemId);
   }
 }
 
 function selectTab(tab: ISubItem, event?: TouchEvent) {
   ContentSection.bind.activeTab = tab.name;
-  loadContent(tab.id);
+  // getServerData(tab.id);
 
   if (event) {
     let target = event.target as HTMLElement;
@@ -85,7 +91,7 @@ function setFirstTabAsActive() {
   }, 50);
 }
 
-function loadContent(id: string) {
+function getServerData(id: string) {
   return new Promise((resolve, reject) => {
     if (!ContentIdEndpoint[id]) {
       reject("No endpoint implemented for id: " + id);
@@ -97,33 +103,21 @@ function loadContent(id: string) {
         .then((data) => {
           console.log('Data for: ', id);
           console.log(data);
-          ContentSection.bind.devices = data;
-          // console.log(data);
+          if (id === 'rooms' && data && data.length) {
+            ContentSection.bind.tabs = data.map((room: any) => {
+              return {
+                id: room.room,
+                name: room.room
+              }
+            });
+          }
+          if (id === 'automations' && data && data.length) {
+            ContentSection.bind.automations = data;
+          }
+          if (id === 'devices' && data && data.length) {
+            ContentSection.bind.devices = data;
+          }
         });
     }
   });
 }
-
-// function toggleDevice(device: any) {
-//   device.value = !device.value;
-//   return new Promise((resolve, reject) => {
-//     return fetch(server + "manual-control", {
-//       method: "POST",
-//       headers: {
-//         'Accept': 'application/json',
-//         'Content-Type': 'application/json'
-//       },
-//       body: JSON.stringify({
-//         device: device.id,
-//         value: device.value,
-//       }),
-//     })
-//       .then((res) => res.json())
-//       .then((result) => {
-//         console.log(result);
-//       })
-//       .catch(err => {
-//         console.log(err);
-//       }) ;
-//   });
-// }

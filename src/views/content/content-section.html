@@ -12,7 +12,6 @@
 <div class="main-content">
   <div class="menu-tabs" :if="this.tabs && this.tabs.length">
     <span
-      style="display: inline-block"
       class="tab"
       :foreach="tab in this.tabs"
       :ontouchstart="this.selectTab(tab , event)"
@@ -25,14 +24,22 @@
 
   <div class="tab-content">
     <div
-      :if="this.devices && this.activeMenuItemId === 'devices'"
+      :if="this.activeMenuItemId === 'home'"
+      :innerHTML="this.templates.home"
+    ></div>
+    <div
+      :if="this.activeMenuItemId === 'devices'"
       :innerHTML="this.templates.devices"
     ></div>
-    <div :if="this.activeMenuItemId === 'automations'">
+    <div
+      :if="this.activeMenuItemId === 'rooms'"
+      :innerHTML="this.templates.rooms"
+    ></div>
+    <div
+      :if="this.activeMenuItemId === 'automations'"
+      :innerHTML="this.templates.automations"
+    >
       Hello Automations
-    </div>
-    <div :if="this.activeMenuItemId === 'rooms">
-      Hello from Rooms template
     </div>
   </div>
 </div>
