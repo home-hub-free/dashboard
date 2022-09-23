@@ -15,7 +15,7 @@
     "vite": "^3.1.0"
   },
   "dependencies": {
-    "bindrjs": "^1.2.27",
+    "bindrjs": "^1.2.28",
     "iconoir": "^5.3.0"
   }
 }

@@ -1,1 +1,8 @@
-<div>Hello from rooms</div>
+<div
+  :foreach="tabContent in this.tabs"
+  :if="this.activeTab === tabContent.name"
+>
+  <div>This is the content for:</div>
+
+  <div>${tabContent.name}</div>
+</div>

@@ -3,10 +3,23 @@
     <i class="iconoir-menu"></i>
   </span>
   <span class="header-title"> ${this.header} </span>
-  <span class="contextual-settings">
-    <i class="iconoir-more-vert"></i>
-    <div class="settings-container"></div>
+  <span class="contextual-settings" :ontouchstart="this.expandSettings()">
+    <i
+      :if="this.settings && this.settings.length > 0"
+      class="iconoir-more-vert"
+    ></i>
   </span>
+</div>
+
+<div class="settings-container" :class:expanded="this.settingsExpanded">
+  <div
+    class="setting-button"
+    :foreach="setting in this.settings"
+    :ontouchstart="setting.action()"
+  >
+    <i :class="'iconoir-' + setting.icon" style=""></i>
+    <span> ${setting.display} </span>
+  </div>
 </div>
 
 <div class="main-content">
