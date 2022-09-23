@@ -70,6 +70,7 @@
       }
       .contextual-settings {
         justify-content: flex-end;
+
       }
     }
 
@@ -82,6 +83,7 @@
       position: fixed;
       z-index: 2;
       right: 8px;
+      top: 50px;
       pointer-events: none;
       cursor: pointer;
 
@@ -135,6 +137,44 @@
       }
       .tab-content {
         text-align: center;
+        padding: 10px;
+        .device-button {
+          height: 100px;
+          width: 100px;
+          display: inline-flex;
+          text-align: center;
+          margin: 10px;
+          border-radius: 8px;
+          background-color: rgba(228, 202, 160, 0.4);
+          box-shadow: inset 0px 4px 4px rgba(228, 202, 160, 0.18);
+          color: #909090;
+          flex-direction: column;
+          position: relative;
+          padding: 15px;
+          box-sizing: content-box;
+  
+          &.active {
+            background: #ffffff;
+            box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            color: black;
+            animation-duration: 270ms;
+            animation-fill-mode: forwards;
+            animation-name: active-menu-item;
+            i {
+              color: #F2884B;
+            }
+          }
+  
+          i {
+            font-size: 3em;
+            margin: 0 auto;
+          }
+  
+          .name {
+            margin: auto 0 0;
+          }
+        }
       }
     }
   }

@@ -1,8 +1,8 @@
 <div
-  :foreach="tabContent in this.tabs"
-  :if="this.activeTab === tabContent.name"
+  :foreach="tab in this.tabs"
+  :if="this.activeTab === tab.name"
 >
   <div>This is the content for:</div>
 
-  <div>${tabContent.name}</div>
+  <div>${tab.name}</div>
 </div>

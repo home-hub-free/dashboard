@@ -15,5 +15,6 @@ export default defineConfig({
   ],
   optimizeDeps: {
     include: ['bindrjs']
-  }
+  },
+  publicDir: './public'
 });

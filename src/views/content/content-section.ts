@@ -1,17 +1,18 @@
 import { Bind, DataChanges } from "bindrjs";
-import { server } from "../../contants";
+import { getEndPointData, toggleDevice } from "../../server-handler";
+// import { server } from "../../contants";
 import { ISubItem } from "../nav-bar/nav-bar.contants";
-import {
-  ContentIdEndpoint,
-  ContentSettings,
-} from "./content-section.constants";
+// import {
+//   ContentIdEndpoint,
+//   ContentSettings,
+// } from "./content-section.constants";
 import template from "./content-section.html?raw";
 
 // Imports Content templates as raw strings
 import HomeTemplate from "./templates/home-content.template.html?raw";
-import DevicesTemplate from "./templates/devices-content.template.html?raw";
-import RoomsTemplate from "./templates/rooms-content.template.html?raw";
-import AutomationTemplate from "./templates/automations-content.template.html?raw";
+// import DevicesTemplate from "./templates/devices-content.template.html?raw";
+// import RoomsTemplate from "./templates/rooms-content.template.html?raw";
+// import AutomationTemplate from "./templates/automations-content.template.html?raw";
 
 const activeTabIndicator = {
   left: "0px",
@@ -23,23 +24,24 @@ export const ContentSection = new Bind({
   id: "content",
   template,
   bind: {
-    activeTab: "",
+    activeTabId: "",
     activeMenuItemId: "",
     header: "",
     tabs: [],
-    settings: [],
-    settingsExpanded: false,
+    // settings: [],
+    // settingsExpanded: false,
     activeIndicatorPosition: activeTabIndicator,
 
     templates: {
       home: HomeTemplate,
-      devices: DevicesTemplate,
-      rooms: RoomsTemplate,
-      automations: AutomationTemplate,
+      // devices: DevicesTemplate,
+      // rooms: RoomsTemplate,
+      // automations: AutomationTemplate,
     },
 
     selectTab,
-    expandSettings,
+    toggleDevice,
+    // expandSettings,
   },
   onChange,
 });
@@ -55,25 +57,15 @@ function onChange(changes: DataChanges) {
       resetActiveTab();
     }
   }
-
-  if (changes.property === "activeMenuItemId") {
-    if (!bind.tabs.length) {
-      getServerData(bind.activeMenuItemId);
-    }
-    if (ContentSettings[bind.activeMenuItemId]) {
-      bind.settings = ContentSettings[bind.activeMenuItemId];
-    } else {
-      bind.settingsExpanded = false;
-      setTimeout(() => {
-        bind.settings = [];
-      }, 200);
-    }
-  }
 }
 
 function selectTab(tab: ISubItem, event?: TouchEvent) {
-  bind.activeTab = tab.name;
-  // getServerData(tab.id);
+  bind.activeTabId = tab.id;
+  if (tab.endpoint && !bind[tab.id]) {
+    loadTabServerData(tab.endpoint).then((data) => {
+      bind[tab.id] = data;
+    });
+  }
   if (event) {
     let target = event.target as HTMLElement;
     moveActiveIndicatorToElement(target);
@@ -100,52 +92,10 @@ function setFirstTabAsActive() {
   setTimeout(() => {
     let result = document.querySelector(".tab") as HTMLElement;
     if (result) moveActiveIndicatorToElement(result);
-  });
+  }, 50);
 }
 
-function getServerData(id: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (!ContentIdEndpoint[id]) {
-      return reject("No endpoint implemented for id: " + id);
-    } else {
-      return fetch(server + ContentIdEndpoint[id], {
-        method: "GET",
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          console.log('Data for: ', id);
-          console.log(data);
-          if (id === 'rooms' && data && data.length) {
-            bind.tabs = data.map((room: any) => {
-              return {
-                id: room.room,
-                name: room.room
-              }
-            });
-          }
-          if (id === 'automations' && data && data.length) {
-            bind.automations = data;
-          }
-          if (id === 'devices' && data && data.length) {
-            bind.devices = data;
-          }
-        });
-    }
-  });
-}
-
-
-
-
-
-function expandSettings() {
-  if (canToggleSettings()) {
-    bind.settingsExpanded = !bind.settingsExpanded;
-  }
-}
-
-function canToggleSettings(): boolean {
-  return (
-    bind.settingsExpanded || (!bind.settingsExpanded && bind.settings.length)
-  );
+function loadTabServerData(endpoint: string) {
+  bind.loading = true;
+  return getEndPointData(endpoint).finally(() => (bind.loading = false));
 }

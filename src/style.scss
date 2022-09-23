@@ -1,9 +1,10 @@
 @import "iconoir/css/iconoir.css";
 @import "./platform-styles/desktop-styles.scss";
 @import "./platform-styles/mobile-styles.scss";
-// @import url("https://fonts.googleapis.com/css2?family=Roboto&display=swap");
-@import "/Fonts/Satoshi/css/satoshi.css";
 @import "./animations.scss";
+
+@import '/public/icons/hu-icons.scss';
+@import "/Fonts/Satoshi/css/satoshi.css";
 
 body {
   font-family: "Satoshi-Variable";
@@ -45,6 +46,12 @@ body {
   .menu-item-icon {
     font-size: 2em;
   }
+}
+
+.animated {
+  animation-duration: 270ms;
+  animation-fill-mode: forwards;
+  animation-name: active-menu-item;
 }
 
 @media (min-width: 600px) {

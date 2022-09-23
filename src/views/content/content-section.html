@@ -1,34 +1,25 @@
+<!-- App header -->
 <div class="header">
   <span class="hamburguer-menu">
     <i class="iconoir-menu"></i>
   </span>
   <span class="header-title"> ${this.header} </span>
-  <span class="contextual-settings" :ontouchstart="this.expandSettings()">
-    <i
+  <span class="contextual-settings">
+    <!-- <i
       :if="this.settings && this.settings.length > 0"
       class="iconoir-more-vert"
-    ></i>
+    ></i> -->
   </span>
 </div>
 
-<div class="settings-container" :class:expanded="this.settingsExpanded">
-  <div
-    class="setting-button"
-    :foreach="setting in this.settings"
-    :ontouchstart="setting.action()"
-  >
-    <i :class="'iconoir-' + setting.icon" style=""></i>
-    <span> ${setting.display} </span>
-  </div>
-</div>
-
+<!-- App Content -->
 <div class="main-content">
   <div class="menu-tabs" :if="this.tabs && this.tabs.length">
     <span
       class="tab"
       :foreach="tab in this.tabs"
       :ontouchstart="this.selectTab(tab , event)"
-      :class:active="tab.name === this.activeTab"
+      :class:active="tab.id === this.activeTabId"
     >
       ${tab.name}
     </span>
@@ -40,7 +31,7 @@
       :if="this.activeMenuItemId === 'home'"
       :innerHTML="this.templates.home"
     ></div>
-    <div
+    <!-- <div
       :if="this.activeMenuItemId === 'devices'"
       :innerHTML="this.templates.devices"
     ></div>
@@ -53,6 +44,22 @@
       :innerHTML="this.templates.automations"
     >
       Hello Automations
-    </div>
+    </div> -->
   </div>
 </div>
+
+<!-- Floating settings popup -->
+<!-- <div class="settings-container" :class:expanded="this.settingsExpanded">
+  <div
+    class="setting-button"
+    :foreach="setting in this.settings"
+    :ontouchstart="setting.action()"
+  >
+    <i :class="'iconoir-' + setting.icon" style=""></i>
+    <span> ${setting.display} </span>
+  </div>
+</div> -->
+
+<!-- Floatting overlay content -->
+<!-- <div class="floating-overlay">
+</div> -->

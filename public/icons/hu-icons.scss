@@ -1,0 +1,25 @@
+// i
+i.hu-light-bulb-on::before {
+  background-image: url('./hu-light-bulb-on.svg');
+}
+i.hu-light-bulb-off::before {
+  background-image: url("./hu-light-bulb-off.svg");
+}
+i.hu-motion-sensor-on {
+  background-image: url('./hu-motion-sensor-on.svg');
+}
+i.hu-motion-sensor-off {
+  background-image: url('./hu-motion-sensor-on.svg');
+}
+i.hu::before {
+  content: " ";
+  display: block;
+  background-repeat: no-repeat;
+  // background: currentColor;
+  mask-size: cover;
+  -webkit-mask-size: cover;
+  width: 1em;
+  height: 1em;
+}
+
+
