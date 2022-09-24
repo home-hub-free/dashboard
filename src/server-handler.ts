@@ -1,14 +1,18 @@
 import { server } from "./contants";
 
+interface ServerResponse {
+  data: any,
+  success: boolean
+}
+
 export function getEndPointData(endpoint: string) {
   return fetch(server + endpoint, {
     method: "GET",
   }).then((data) => data.json());
 }
 
-export function toggleDevice(device: any) {
+export function toggleServerDevice(device: any): Promise<ServerResponse> {
   let newVal = !device.value;
-  // device.value = 
   return new Promise((resolve, reject) => {
     return fetch(server + "manual-control", {
       method: "POST",
@@ -18,16 +22,19 @@ export function toggleDevice(device: any) {
       },
       body: JSON.stringify({
         device: device.id,
-        value: device.value,
+        value: newVal,
       }),
     })
       .then((res) => res.json())
       .then((result) => {
         device.value = newVal;
-        console.log(result);
+        resolve({
+          data: result,
+          success: true,
+        })
       })
       .catch((err) => {
-        console.log(err);
+        reject(err)
       });
   });
 }

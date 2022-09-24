@@ -1,7 +1,8 @@
 import { Bind, DataChanges } from "bindrjs";
-import { getEndPointData, toggleDevice } from "../../server-handler";
+import { getEndPointData, toggleServerDevice } from "../../server-handler";
 // import { server } from "../../contants";
 import { ISubItem } from "../nav-bar/nav-bar.contants";
+import { showToaster } from "../popup-message/popup-message";
 // import {
 //   ContentIdEndpoint,
 //   ContentSettings,
@@ -64,6 +65,12 @@ function selectTab(tab: ISubItem, event?: TouchEvent) {
   if (tab.endpoint && !bind[tab.id]) {
     loadTabServerData(tab.endpoint).then((data) => {
       bind[tab.id] = data;
+    }).catch((err) => {
+      showToaster({
+        message: "Oops. Server seems offline",
+        from: 'top',
+        timer: 2000
+      });
     });
   }
   if (event) {
@@ -98,4 +105,8 @@ function setFirstTabAsActive() {
 function loadTabServerData(endpoint: string) {
   bind.loading = true;
   return getEndPointData(endpoint).finally(() => (bind.loading = false));
+}
+
+function toggleDevice(device: any) {
+  toggleServerDevice(device)
 }

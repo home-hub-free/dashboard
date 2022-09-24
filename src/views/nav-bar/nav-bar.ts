@@ -15,11 +15,14 @@ export const NavBar = new Bind({
   },
   ready
 });
+const bind = NavBar.bind;
 
 // Bind ready
 function ready() {
   // Initialize with first Menu item (HOME)
   setActiveMenuItem(MenuItems[0]);
+
+  // bind.items[0].subitems
 }
 
 function setActiveMenuItem(menuItem: IMenuItem) {

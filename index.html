@@ -9,6 +9,7 @@
   <body>
     <div id="nav-bar"></div>
     <div id="content"></div>
+    <div id="popup-message-container" :if="this.toasterOptions" :class="'from-' + this.toasterOptions.from"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

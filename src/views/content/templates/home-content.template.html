@@ -1,35 +1,27 @@
-<div
-  :if="this.activeTabId === 'devices' && this.devices && this.devices.length"
->
+<div :if="this.activeTabId === 'devices'">
   <div
     class="device-button"
     :foreach="device in this.devices"
     :ontouchstart="this.toggleDevice(device)"
     :class:active="device.value"
   >
-    <i
-      class="hu"
-      :class:hu-light-bulb-on="device.value"
-      :class:hu-light-bulb-off="!device.value"
-    ></i>
     ${device.name}
+  </div>
+
+  <div :if="!this.devices || !this.devices.length">
+    No Devices detected in your network :(
   </div>
 </div>
 
-<div
-  :if="this.activeTabId === 'sensors' && this.sensors && this.sensors.length "
->
+<div :if="this.activeTabId === 'sensors'">
   <div
     class="device-button"
     :foreach="sensor in this.sensors"
     :class:active="sensor.value"
   >
-    <!-- <i
-      class="hu"
-      :class:hu-motion-sensor-on="sensor.value"
-      :class:hu-motion-sensor-off="!sensor.value"
-    ></i> -->
     ${sensor.name}
   </div>
-  <!-- <div :foreach="sensor in this.sensors">${sensor.name}</div> -->
+  <div :if="!this.sensors || !this.sensors.length ">
+    No Sensors Detected in your network :(
+  </div>
 </div>

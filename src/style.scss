@@ -2,23 +2,10 @@
 @import "./platform-styles/desktop-styles.scss";
 @import "./platform-styles/mobile-styles.scss";
 @import "./animations.scss";
-
-@import '/public/icons/hu-icons.scss';
 @import "/Fonts/Satoshi/css/satoshi.css";
 
 body {
   font-family: "Satoshi-Variable";
-  // font-family: "Satoshi-VariableItalic";
-  // font-family: "Satoshi-Light";
-  // font-family: "Satoshi-LightItalic";
-  // font-family: "Satoshi-Regular";
-  // font-family: "Satoshi-Italic";
-  // font-family: "Satoshi-Medium";
-  // font-family: "Satoshi-MediumItalic";
-  // font-family: "Satoshi-Bold";
-  // font-family: "Satoshi-BoldItalic";
-  // font-family: "Satoshi-Black";
-  // font-family: "Satoshi-BlackItalic";
 }
 
 #nav-bar {
@@ -45,6 +32,40 @@ body {
   }
   .menu-item-icon {
     font-size: 2em;
+  }
+}
+
+#popup-message-container {
+  .toaster-container {
+    position: absolute;
+    background-color: rgba(247, 244, 225);
+    padding: 10px 25px;
+    border-radius: 10px;
+    left: 50%;
+    width: max-content;
+    transform: translateY(0) translateX(-50%) scale(1);
+    box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1);
+
+    span,
+    i {
+      display: inline-block;
+    }
+    i {
+      vertical-align: sub;
+      font-size: 1.2em;
+    }
+
+    &.from-top,
+    &.from-bottom {
+      animation-duration: 180ms;
+      animation-timing-function: cubic-bezier(0.66, 0.18, 0.59, 1.17);
+    }
+    &.from-top {
+      top: 10px;
+    }
+    &.from-bottom {
+      bottom: 110px;
+    }
   }
 }
 

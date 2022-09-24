@@ -1,0 +1,9 @@
+<div
+  class="toaster-container"
+  :class:hide-toaster="this.hidingToaster"
+  :class:pop-toaster="this.popToast"
+  :class="'from-'+ this.toasterOptions.from"
+>
+  <span>${this.toasterOptions.message}</span>
+  <i class="iconoir-cancel" :ontouchstart="this.hideToaster()"></i>
+</div>
