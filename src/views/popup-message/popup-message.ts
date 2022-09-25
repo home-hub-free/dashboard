@@ -17,7 +17,7 @@ export const PopupMessage = new Bind({
   onChange
 });
 const bind = PopupMessage.bind;
-let currentTimeout: number;
+let currentTimeout: any;
 
 function onChange(changes: DataChanges) {
   if (changes.property === 'message') {

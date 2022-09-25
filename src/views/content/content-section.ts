@@ -108,5 +108,16 @@ function loadTabServerData(endpoint: string) {
 }
 
 function toggleDevice(device: any) {
-  toggleServerDevice(device)
+  toggleServerDevice(device).catch(() => {
+    showToaster({
+      message: 'Could\'nt connect to device',
+      from: 'bottom',
+      timer: 1000
+    })
+  })
+}
+
+export function updateSensor(data: any) {
+  let sensor = bind.sensors.find((sensor: any) => sensor.id === data.id);
+  if (sensor) sensor.value = data.value;
 }
