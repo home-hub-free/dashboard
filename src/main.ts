@@ -30,8 +30,7 @@ socket.on("sensor-declare", (data: any) => {
       ContentSection.bind.sensors.length &&
       ContentSection.bind.sensors.find((sensor: any) => sensor.id === data.id);
     if (!exists) {
-      if (!ContentSection.bind.sensors) ContentSection.bind.sensors = [];
-      ContentSection.bind.sensors.push(data);
+      if (!ContentSection.bind.sensors) ContentSection.bind.sensors = [data];
     }
   }
 });

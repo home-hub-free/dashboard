@@ -5,10 +5,6 @@
   </span>
   <span class="header-title"> ${this.header} </span>
   <span class="contextual-settings">
-    <!-- <i
-      :if="this.settings && this.settings.length > 0"
-      class="iconoir-more-vert"
-    ></i> -->
   </span>
 </div>
 
@@ -31,35 +27,5 @@
       :if="this.activeMenuItemId === 'home'"
       :innerHTML="this.templates.home"
     ></div>
-    <!-- <div
-      :if="this.activeMenuItemId === 'devices'"
-      :innerHTML="this.templates.devices"
-    ></div>
-    <div
-      :if="this.activeMenuItemId === 'rooms'"
-      :innerHTML="this.templates.rooms"
-    ></div>
-    <div
-      :if="this.activeMenuItemId === 'automations'"
-      :innerHTML="this.templates.automations"
-    >
-      Hello Automations
-    </div> -->
   </div>
 </div>
-
-<!-- Floating settings popup -->
-<!-- <div class="settings-container" :class:expanded="this.settingsExpanded">
-  <div
-    class="setting-button"
-    :foreach="setting in this.settings"
-    :ontouchstart="setting.action()"
-  >
-    <i :class="'iconoir-' + setting.icon" style=""></i>
-    <span> ${setting.display} </span>
-  </div>
-</div> -->
-
-<!-- Floatting overlay content -->
-<!-- <div class="floating-overlay">
-</div> -->

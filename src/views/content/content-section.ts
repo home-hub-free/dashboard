@@ -1,19 +1,11 @@
 import { Bind, DataChanges } from "bindrjs";
 import { getEndPointData, toggleServerDevice } from "../../server-handler";
-// import { server } from "../../contants";
 import { ISubItem } from "../nav-bar/nav-bar.contants";
 import { showToaster } from "../popup-message/popup-message";
-// import {
-//   ContentIdEndpoint,
-//   ContentSettings,
-// } from "./content-section.constants";
 import template from "./content-section.html?raw";
 
 // Imports Content templates as raw strings
 import HomeTemplate from "./templates/home-content.template.html?raw";
-// import DevicesTemplate from "./templates/devices-content.template.html?raw";
-// import RoomsTemplate from "./templates/rooms-content.template.html?raw";
-// import AutomationTemplate from "./templates/automations-content.template.html?raw";
 
 const activeTabIndicator = {
   left: "0px",
@@ -29,20 +21,16 @@ export const ContentSection = new Bind({
     activeMenuItemId: "",
     header: "",
     tabs: [],
-    // settings: [],
-    // settingsExpanded: false,
     activeIndicatorPosition: activeTabIndicator,
 
     templates: {
       home: HomeTemplate,
-      // devices: DevicesTemplate,
-      // rooms: RoomsTemplate,
-      // automations: AutomationTemplate,
     },
 
     selectTab,
-    toggleDevice,
-    // expandSettings,
+    touchStart,
+    touchEnd,
+    closeEditMode,
   },
   onChange,
 });
@@ -64,7 +52,11 @@ function selectTab(tab: ISubItem, event?: TouchEvent) {
   bind.activeTabId = tab.id;
   if (tab.endpoint && !bind[tab.id]) {
     loadTabServerData(tab.endpoint).then((data) => {
+      let cloned = JSON.parse(JSON.stringify(data[0]));
+      cloned.id = '30299'
+      data.push(cloned);
       bind[tab.id] = data;
+      // bind[t]
     }).catch((err) => {
       showToaster({
         message: "Oops. Server seems offline",
@@ -107,14 +99,48 @@ function loadTabServerData(endpoint: string) {
   return getEndPointData(endpoint).finally(() => (bind.loading = false));
 }
 
-function toggleDevice(device: any) {
-  toggleServerDevice(device).catch(() => {
+let currentTimeout: NodeJS.Timeout;
+function touchStart(event: any, device: any) {
+  if (bind.deviceEditMode) return;
+
+  let rect = event.target.getBoundingClientRect();
+
+  currentTimeout = setTimeout(() => {
+    // Starting point
+    bind.deviceEditMode = {
+      top: rect.top - 135 + 'px',
+      left: rect.left - 8 + 'px',
+      height: rect.height + 'px',
+      width: rect.width + 'px',
+      expand: false,
+      id: device.id
+    };
+    setTimeout(() => bind.deviceEditMode.expand = true, 1)
+  }, 500);
+}
+function touchEnd(event: any, device: any) {
+  if (currentTimeout) clearTimeout(currentTimeout);
+  if (bind.deviceEditMode) return;
+
+  toggleServerDevice(device)
+    .then((result) => {
+      console.log(result);
+    })
+    .catch(() => {
     showToaster({
       message: 'Could\'nt connect to device',
       from: 'bottom',
-      timer: 1000
+      timer: 2000
     })
   })
+}
+
+function closeEditMode(event: any, device: any) {
+  bind.deviceEditMode.expand = false;
+  setTimeout(() => bind.deviceEditMode = null, 400)
+  event?.preventDefault();
+  event?.stopPropagation();
+  event?.stopImmediatePropagation();
 }
 
 export function updateSensor(data: any) {

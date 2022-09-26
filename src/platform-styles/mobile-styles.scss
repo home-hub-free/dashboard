@@ -70,7 +70,6 @@
       }
       .contextual-settings {
         justify-content: flex-end;
-
       }
     }
 
@@ -101,7 +100,8 @@
       .setting-button {
         padding: 10px;
         i {
-          display: inline-block; vertical-align: sub;
+          display: inline-block;
+          vertical-align: sub;
           margin-right: 5px;
         }
       }
@@ -109,6 +109,7 @@
 
     .main-content {
       padding-top: 20px;
+      height: calc(100% - 80px);
       .menu-tabs {
         border-bottom: 2px;
         border-bottom-style: solid;
@@ -138,6 +139,14 @@
       .tab-content {
         text-align: center;
         padding: 10px;
+        height: calc(100% - 75px);
+        position: relative;
+        & > div {
+          height: 100%;
+          & > div {
+            height: 100%;
+          }
+        }
         .device-button {
           height: 100px;
           width: 100px;
@@ -149,30 +158,70 @@
           box-shadow: inset 0px 4px 4px rgba(228, 202, 160, 0.18);
           color: #909090;
           flex-direction: column;
-          position: relative;
           padding: 15px;
           box-sizing: content-box;
-  
           &.active {
             background: #ffffff;
             box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.05);
-            border-radius: 8px;
             color: black;
             animation-duration: 270ms;
             animation-fill-mode: forwards;
             animation-name: active-menu-item;
-            i {
-              color: #F2884B;
-            }
           }
-  
-          i {
-            font-size: 3em;
-            margin: 0 auto;
+
+          &.closing {
+            position: absolute;
           }
-  
+
           .name {
-            margin: auto 0 0;
+            width: 100%;
+          }
+
+          .close-device-edit-mode {
+            display: inline-block;
+            height: 100%;
+            vertical-align: middle;
+            right: 20px;
+            position: absolute;
+            font-size: 2em;
+          }
+        }
+
+        .edit-mode {
+          position: absolute;
+
+          transition: height 300ms,
+            width 300ms,
+            left 300ms,
+            top 300ms,
+            background-color 100ms ease 300ms;
+
+          transition-timing-function: cubic-bezier(0.35, 0.85, 0.39, 1);
+
+          background: rgba(0, 0, 0, 0);
+          border-radius: 10px;
+          box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);
+          user-select: none;
+          * {
+            opacity: 0;
+          }
+        }
+        .expand {
+          transition: height 300ms ease 100ms,
+            width 300ms ease 100ms,
+            left 300ms ease 100ms,
+            top 300ms ease 100ms,
+            background-color 100ms ease;
+
+          transition-timing-function: cubic-bezier(0.71, 0.23, 0.41, 1.11);
+          background-color: rgb(255, 255, 255);
+          left: 0px !important;
+          z-index: 2;
+          top: 10px !important;
+          height: 100% !important;
+          width: 100% !important;
+          * {
+            opacity: 1;
           }
         }
       }

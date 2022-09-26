@@ -27,11 +27,16 @@ export function toggleServerDevice(device: any): Promise<ServerResponse> {
     })
       .then((res) => res.json())
       .then((result) => {
-        device.value = newVal;
-        resolve({
-          data: result,
-          success: true,
-        })
+        if (result) {
+          device.value = newVal
+          resolve({
+            data: result,
+            success: true,
+          })
+        } else {
+          reject()
+        }
+
       })
       .catch((err) => {
         reject(err)

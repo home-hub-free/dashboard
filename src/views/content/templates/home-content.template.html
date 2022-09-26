@@ -1,16 +1,24 @@
 <div :if="this.activeTabId === 'devices'">
   <div
     class="device-button"
+    :if="this.devices && this.devices.length"
     :foreach="device in this.devices"
-    :ontouchstart="this.toggleDevice(device)"
+    :ontouchstart="this.touchStart(event, device)"
+    :ontouchend="this.touchEnd(event, device)"
     :class:active="device.value"
+    oncontextmenu="return false;"
   >
-    ${device.name}
+    <div class="name">
+      ${device.name}
+      <span
+        class="close-device-edit-mode"
+        :ontouchend="this.closeEditMode(event, device)"
+      >
+        <i :if="device.editMode" class="iconoir-cancel"></i>
+      </span>
+    </div>
   </div>
-
-  <div :if="!this.devices || !this.devices.length">
-    No Devices detected in your network :(
-  </div>
+  <div :else>No Devices detected in your network :(</div>
 </div>
 
 <div :if="this.activeTabId === 'sensors'">
@@ -23,5 +31,21 @@
   </div>
   <div :if="!this.sensors || !this.sensors.length ">
     No Sensors Detected in your network :(
+  </div>
+</div>
+
+<div
+  oncontextmenu="return false;"
+  class="edit-mode"
+  :if="this.deviceEditMode"
+  :style="this.deviceEditMode"
+  :class:expand="this.deviceEditMode.expand"
+>
+  <div>
+    <i
+      class="iconoir-cancel"
+      style="font-size: 2em"
+      :ontouchend="this.closeEditMode()"
+    ></i>
   </div>
 </div>
