@@ -22,14 +22,14 @@ export const ContentSection = new Bind({
     header: "",
     tabs: [],
     activeIndicatorPosition: activeTabIndicator,
-
     templates: {
       home: HomeTemplate,
     },
+    editModeModal: null,
 
     selectTab,
-    touchStart,
-    touchEnd,
+    deviceTouchStart,
+    deviceTouchEnd,
     closeEditMode,
   },
   onChange,
@@ -46,17 +46,23 @@ function onChange(changes: DataChanges) {
       resetActiveTab();
     }
   }
+  if (changes.property === 'activeTabId') {
+    if (bind.editModeModal) closeEditMode();
+    // bind.editModeModal = null;
+  }
 }
 
 function selectTab(tab: ISubItem, event?: TouchEvent) {
   bind.activeTabId = tab.id;
   if (tab.endpoint && !bind[tab.id]) {
+    bind[tab.id] = [
+      {
+        name: 'light',
+        id: '32902'
+      }
+    ]
     loadTabServerData(tab.endpoint).then((data) => {
-      let cloned = JSON.parse(JSON.stringify(data[0]));
-      cloned.id = '30299'
-      data.push(cloned);
       bind[tab.id] = data;
-      // bind[t]
     }).catch((err) => {
       showToaster({
         message: "Oops. Server seems offline",
@@ -100,27 +106,28 @@ function loadTabServerData(endpoint: string) {
 }
 
 let currentTimeout: NodeJS.Timeout;
-function touchStart(event: any, device: any) {
-  if (bind.deviceEditMode) return;
-
+function deviceTouchStart(event: any, data: any) {
+  if (bind.editModeModal) return;
   let rect = event.target.getBoundingClientRect();
 
   currentTimeout = setTimeout(() => {
     // Starting point
-    bind.deviceEditMode = {
+    bind.editModeModal = {
       top: rect.top - 135 + 'px',
       left: rect.left - 8 + 'px',
       height: rect.height + 'px',
       width: rect.width + 'px',
       expand: false,
-      id: device.id
+      id: data.id,
+      header: data.name
     };
-    setTimeout(() => bind.deviceEditMode.expand = true, 1)
+    // Wait for the edit-mode container to get those styles applied before expanding
+    setTimeout(() => bind.editModeModal.expand = true, 50)
   }, 500);
 }
-function touchEnd(event: any, device: any) {
+function deviceTouchEnd(device: any) {
   if (currentTimeout) clearTimeout(currentTimeout);
-  if (bind.deviceEditMode) return;
+  if (bind.editModeModal || bind.activeTabId === 'sensors') return;
 
   toggleServerDevice(device)
     .then((result) => {
@@ -135,9 +142,11 @@ function touchEnd(event: any, device: any) {
   })
 }
 
-function closeEditMode(event: any, device: any) {
-  bind.deviceEditMode.expand = false;
-  setTimeout(() => bind.deviceEditMode = null, 400)
+function closeEditMode(event?: any) {
+  // Goes back to origin position
+  bind.editModeModal.expand = false;
+  // Removes the edit-mode container entirely after animation is complete
+  setTimeout(() => bind.editModeModal = null, 300);
   event?.preventDefault();
   event?.stopPropagation();
   event?.stopImmediatePropagation();

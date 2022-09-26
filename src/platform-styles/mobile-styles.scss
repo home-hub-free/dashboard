@@ -63,7 +63,6 @@
 
       .hamburguer-menu {
         justify-content: flex-start;
-        // margin-left: 10px;
       }
       .header-title {
         font-size: 2em;
@@ -189,40 +188,42 @@
 
         .edit-mode {
           position: absolute;
-
-          transition: height 300ms,
-            width 300ms,
-            left 300ms,
-            top 300ms,
-            background-color 100ms ease 300ms;
-
+          transition: height 200ms,
+            width 200ms,
+            left 200ms,
+            top 200ms,
+            background-color 200ms ease 100ms;
           transition-timing-function: cubic-bezier(0.35, 0.85, 0.39, 1);
-
           background: rgba(0, 0, 0, 0);
           border-radius: 10px;
           box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);
           user-select: none;
-          * {
-            opacity: 0;
+
+          &-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 15px;
           }
         }
         .expand {
-          transition: height 300ms ease 100ms,
-            width 300ms ease 100ms,
-            left 300ms ease 100ms,
-            top 300ms ease 100ms,
-            background-color 100ms ease;
-
+          transition: height 150ms ease 150ms,
+            width 150ms ease 150ms,
+            left 150ms ease 150ms,
+            top 150ms ease 150ms,
+            background-color 150ms ease;
           transition-timing-function: cubic-bezier(0.71, 0.23, 0.41, 1.11);
           background-color: rgb(255, 255, 255);
-          left: 0px !important;
           z-index: 2;
+          left: 0px !important;
+          width: 100% !important;
+        }
+        .expand.devices {
           top: 10px !important;
           height: 100% !important;
-          width: 100% !important;
-          * {
-            opacity: 1;
-          }
+        }
+        .expand.sensors {
+          top: 50px !important; 
         }
       }
     }

@@ -3,9 +3,10 @@
     class="device-button"
     :if="this.devices && this.devices.length"
     :foreach="device in this.devices"
-    :ontouchstart="this.touchStart(event, device)"
-    :ontouchend="this.touchEnd(event, device)"
+    :ontouchstart="this.deviceTouchStart(event, device)"
+    :ontouchend="this.deviceTouchEnd(device)"
     :class:active="device.value"
+    :style:opacity="this.editModeModal && this.editModeModal.id === device.id ? 0 : 1"
     oncontextmenu="return false;"
   >
     <div class="name">
@@ -26,6 +27,9 @@
     class="device-button"
     :foreach="sensor in this.sensors"
     :class:active="sensor.value"
+    :ontouchstart="this.deviceTouchStart(event, sensor)"
+    :ontouchend="this.deviceTouchEnd(sensor)"
+    :style:opacity="this.editModeModal && this.editModeModal.id === sensor.id ? 0 : 1"
   >
     ${sensor.name}
   </div>
@@ -37,15 +41,17 @@
 <div
   oncontextmenu="return false;"
   class="edit-mode"
-  :if="this.deviceEditMode"
-  :style="this.deviceEditMode"
-  :class:expand="this.deviceEditMode.expand"
+  :class="this.activeTabId"
+  :if="this.editModeModal"
+  :style="this.editModeModal"
+  :class:expand="this.editModeModal.expand"
 >
-  <div>
+  <div class="edit-mode-header">
     <i
       class="iconoir-cancel"
-      style="font-size: 2em"
+      style="font-size: 2em; position: absolute"
       :ontouchend="this.closeEditMode()"
     ></i>
+    <span class="edit-mode-title"> ${this.editModeModal.header} </span>
   </div>
 </div>
