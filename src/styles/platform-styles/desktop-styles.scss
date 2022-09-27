@@ -1,12 +1,4 @@
 @mixin dekstop {
-  body {
-    background: linear-gradient(
-      200.2deg,
-      rgba(255, 222, 171, 0.7) 13.23%,
-      rgba(228, 223, 172, 0.7) 93.79%
-    );
-  }
-
   #nav-bar {
     height: 100%;
     width: 300px;

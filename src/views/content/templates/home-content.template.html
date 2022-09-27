@@ -24,7 +24,7 @@
 
 <div :if="this.activeTabId === 'sensors'">
   <div
-    class="device-button"
+    class="sensor-button"
     :foreach="sensor in this.sensors"
     :class:active="sensor.value"
     :ontouchstart="this.deviceTouchStart(event, sensor)"
@@ -37,6 +37,13 @@
     No Sensors Detected in your network :(
   </div>
 </div>
+
+<div
+  class="edit-mode-background"
+  :if="this.editModeModal"
+  :class:expand="this.editModeModal.expand"
+  :ontouchend="this.closeEditMode()"
+></div>
 
 <div
   oncontextmenu="return false;"

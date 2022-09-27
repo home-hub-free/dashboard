@@ -3,16 +3,18 @@
 @import "./platform-styles/mobile-styles.scss";
 @import "./animations.scss";
 @import "/Fonts/Satoshi/css/satoshi.css";
+@import "./colors.scss";
 
 body {
   font-family: "Satoshi-Variable";
+  background-color: var(--background-primary);
 }
 
 #nav-bar {
   position: fixed;
   display: flex;
   cursor: pointer;
-  background: rgba(247, 244, 225, 0.75);
+  background: var(--background-secondary);
   transition-property: height, width;
   transition-duration: 300ms;
   transition-timing-function: cubic-bezier(0.72, -0.03, 0.45, 1.25);
@@ -38,7 +40,7 @@ body {
 #popup-message-container {
   .toaster-container {
     position: absolute;
-    background-color: rgba(247, 244, 225);
+    background-color: var(--background-secondary);
     padding: 10px 25px;
     border-radius: 10px;
     left: 50%;

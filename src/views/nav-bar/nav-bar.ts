@@ -21,15 +21,12 @@ const bind = NavBar.bind;
 function ready() {
   // Initialize with first Menu item (HOME)
   setActiveMenuItem(MenuItems[0]);
-
-  // bind.items[0].subitems
 }
 
 function setActiveMenuItem(menuItem: IMenuItem) {
   // Toggles menu in desktop mode
   menuItem.expanded = !menuItem.expanded;
-  NavBar.bind.activeMenuItemId = menuItem.id;
-
+  bind.activeMenuItemId = menuItem.id;
   updateContentSection(menuItem);
 }
 

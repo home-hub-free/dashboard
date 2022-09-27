@@ -36,28 +36,4 @@ export const MenuItems: IMenuItem[] = [
       }
     ],
   },
-  // {
-  //   id: "devices",
-  //   icon: "xray-view",
-  //   name: "Devices",
-  //   expanded: true,
-  //   activeTabIndex: -1,
-  //   subitems: [],
-  // },
-  // {
-  //   id: "rooms",
-  //   icon: "bed",
-  //   name: "Rooms",
-  //   expanded: true,
-  //   activeTabIndex: -1,
-  //   subitems: [],
-  // },
-  // {
-  //   id: "automations",
-  //   icon: "alarm",
-  //   name: "Automations",
-  //   expanded: true,
-  //   activeTabIndex: -1,
-  //   subitems: []
-  // }
 ];

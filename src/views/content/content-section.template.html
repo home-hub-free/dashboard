@@ -4,8 +4,7 @@
     <i class="iconoir-menu"></i>
   </span>
   <span class="header-title"> ${this.header} </span>
-  <span class="contextual-settings">
-  </span>
+  <span class="contextual-settings"> </span>
 </div>
 
 <!-- App Content -->
@@ -24,6 +23,7 @@
 
   <div class="tab-content">
     <div
+      id="home-content"
       :if="this.activeMenuItemId === 'home'"
       :innerHTML="this.templates.home"
     ></div>

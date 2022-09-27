@@ -1,4 +1,4 @@
-import { server } from "./contants";
+export const server = 'http://192.168.1.72:8080/';
 
 interface ServerResponse {
   data: any,
@@ -28,7 +28,7 @@ export function toggleServerDevice(device: any): Promise<ServerResponse> {
       .then((res) => res.json())
       .then((result) => {
         if (result) {
-          device.value = newVal
+          device.value = newVal;
           resolve({
             data: result,
             success: true,
