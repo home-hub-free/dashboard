@@ -5,9 +5,25 @@
 @import "/Fonts/Satoshi/css/satoshi.css";
 @import "./colors.scss";
 
+// :root {
+//   touch-action: pan-x pan-y;
+//   touch-action: manipulation;
+//   // height: 100% 
+// }
+
+* {
+  -ms-touch-action: manipulation;
+  touch-action: manipulation;
+}
+
 body {
   font-family: "Satoshi-Variable";
   background-color: var(--background-primary);
+  -webkit-touch-callout: none; /* Safari */
+  -webkit-user-select: none; /* Chrome */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none;
 }
 
 #nav-bar {

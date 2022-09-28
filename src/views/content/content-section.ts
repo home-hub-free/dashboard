@@ -1,5 +1,5 @@
 import { Bind, DataChanges } from "bindrjs";
-import { getEndPointData, toggleServerDevice } from "../../server-handler";
+import { getEndPointData, sibmitDataChange, toggleServerDevice } from "../../server-handler";
 import { ISubItem } from "../nav-bar/nav-bar.contants";
 import { showToaster } from "../popup-message/popup-message";
 import { IEditModeModal } from "./content-section.model";
@@ -33,6 +33,7 @@ export const ContentSection = new Bind({
     deviceTouchStart,
     deviceTouchEnd,
     closeEditMode,
+    headerNameKeyPress,
   },
   onChange,
 });
@@ -137,4 +138,21 @@ function closeEditMode(event?: any, timer?: number) {
   event?.preventDefault();
   event?.stopPropagation();
   event?.stopImmediatePropagation();
+}
+
+function headerNameKeyPress(event: KeyboardEvent) {
+  let target = event.target as HTMLElement;
+  let id = bind.editModeModal.id;
+  let type: "device" | "sensor" = bind.activeTabId === 'devices' ? 'device' : 'sensor';
+  let value = target.innerText.trim();
+
+  if (event.code === 'Enter') {
+    sibmitDataChange(id, type, value).then(() => {
+      let editing = bind[bind.activeTabId].find((item: any) => item.id === id);
+      editing.name = value;
+    });
+    target.blur();
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
 }

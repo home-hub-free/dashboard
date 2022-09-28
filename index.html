@@ -3,13 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/home.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
     <title>HomeHubFree - Dashboard</title>
   </head>
   <body>
     <div id="nav-bar"></div>
     <div id="content"></div>
-    <div id="popup-message-container" :if="this.toasterOptions" :class="'from-' + this.toasterOptions.from"></div>
+    <div
+      id="popup-message-container"
+      :if="this.toasterOptions"
+      :class="'from-' + this.toasterOptions.from"
+    ></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

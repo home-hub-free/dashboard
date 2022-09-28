@@ -59,6 +59,12 @@
       style="font-size: 2em; position: absolute"
       :ontouchend="this.closeEditMode()"
     ></i>
-    <span class="edit-mode-title"> ${this.editModeModal.header} </span>
+    <span
+      class="edit-mode-title"
+      contenteditable
+      :onkeypress="this.headerNameKeyPress(event)"
+    >
+      ${this.editModeModal.header}
+    </span>
   </div>
 </div>
