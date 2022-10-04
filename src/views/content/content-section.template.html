@@ -13,7 +13,7 @@
     <span
       class="tab"
       :foreach="tab in this.tabs"
-      :ontouchstart="this.selectTab(tab , event)"
+      :onmouseup="this.selectTab(tab , event)"
       :class:active="tab.id === this.activeTabId"
     >
       ${tab.name}

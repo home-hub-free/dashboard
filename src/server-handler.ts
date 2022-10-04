@@ -48,10 +48,11 @@ export function toggleServerDevice(device: any): Promise<ServerResponse> {
   });
 }
 
-export function sibmitDataChange(
+export function submitDataChange(
   id: string,
   type: "device" | "sensor",
-  name: string
+  prop: string,
+  value: any,
 ) {
   return fetch(server + `${type}-data-set`, {
     method: "POST",
@@ -59,8 +60,25 @@ export function sibmitDataChange(
     body: JSON.stringify({
       id,
       data: {
-        name,
+        [prop]: value
       },
     }),
   }).then(() => true);
+}
+
+export function getDeviceProgrammableActions(id: string) {
+  return fetch(server + "device-get-actions", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      id,
+    }),
+  })
+    .then((res) => res.json())
+    .then((actions) => {
+      // actions.forEach(action => {
+        
+      // });
+      return actions;
+    });
 }

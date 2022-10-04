@@ -1,9 +1,15 @@
 import { Bind, DataChanges } from "bindrjs";
-import { getEndPointData, sibmitDataChange, toggleServerDevice } from "../../server-handler";
+import {
+  // getDeviceProgrammableActions,
+  getEndPointData,
+  submitDataChange,
+  toggleServerDevice,
+} from "../../server-handler";
 import { ISubItem } from "../nav-bar/nav-bar.contants";
 import { showToaster } from "../popup-message/popup-message";
-import { IEditModeModal } from "./content-section.model";
+import { IEditModeModal, IHomeHubDevice } from "./content-section.model";
 import template from "./content-section.template.html?raw";
+import { EditModeModal } from "./edit-mode-modal/edit-mode-modal";
 import HomeTemplate from "./templates/home-content.template.html?raw";
 
 const activeTabIndicator = {
@@ -11,7 +17,54 @@ const activeTabIndicator = {
   width: "0px",
   height: "",
 };
-const editModeModal: IEditModeModal | null = null
+// const editModeModal: IEditModeModal | null = null;
+
+const deviceActions: any = {
+  boolean: [
+    {
+      description: "Turn on",
+      value: "true",
+    },
+    {
+      description: "Turn off",
+      value: "false",
+    },
+  ],
+  value: [
+    {
+      description: "Set value to",
+      value: 0,
+    },
+  ],
+};
+
+
+
+const effects = {
+  sensor: {
+    motion: [
+      {
+        description: "Detects motion",
+        value: true,
+      },
+      {
+        description: "Stops detecting motion",
+        value: false,
+      },
+    ],
+    temperature: [
+      {
+        description: 'Higher than',
+        value: 0
+      },
+      {
+        description: 'Lower than',
+        value: 0,
+      }
+    ]
+  },
+  daily: {},
+};
 
 export const ContentSection = new Bind({
   id: "content",
@@ -25,19 +78,23 @@ export const ContentSection = new Bind({
     templates: {
       home: HomeTemplate,
     },
-    editModeModal: editModeModal,
+
     devices: null,
     sensors: null,
 
     selectTab,
     deviceTouchStart,
     deviceTouchEnd,
-    closeEditMode,
     headerNameKeyPress,
+    headerNameOnBlur,
+    addNewDeviceProgrammableAction,
+    buildAction,
+    submitAction,
   },
   onChange,
 });
 const bind = ContentSection.bind;
+EditModeModal(bind);
 
 function onChange(changes: DataChanges) {
   if (changes.property === "tabs") {
@@ -51,9 +108,6 @@ function onChange(changes: DataChanges) {
     } else {
       resetActiveTab();
     }
-  }
-  if (changes.property === "activeTabId") {
-    if (bind.editModeModal) closeEditMode(null, 10);
   }
 }
 
@@ -98,61 +152,111 @@ function resetActiveTab() {
 
 let currentTimeout: NodeJS.Timeout;
 function deviceTouchStart(event: any, data: any) {
-  if (bind.editModeModal) return;
   let rect = event.target.getBoundingClientRect();
-
   currentTimeout = setTimeout(() => {
-    // Starting point
-    bind.editModeModal = {
+    let startPosition = {
       top: rect.top - 135 + "px",
       left: rect.left - 8 + "px",
       height: rect.height + "px",
       width: rect.width + "px",
-      expand: false,
-      id: data.id,
-      header: data.name,
     };
-    // Wait for the edit-mode container to get those styles applied before expanding
-    setTimeout(() => (bind.editModeModal.expand = true), 50);
+    bind.modal.open(startPosition, data);
   }, 500);
 }
+
 function deviceTouchEnd(device: any) {
   if (currentTimeout) clearTimeout(currentTimeout);
-  if (bind.editModeModal || bind.activeTabId === "sensors") return;
-
-  toggleServerDevice(device)
-    .catch(() => {
-      showToaster({
-        message: "Could'nt connect to device",
-        from: "bottom",
-        timer: 2000,
-      });
+  toggleServerDevice(device).catch(() => {
+    showToaster({
+      message: "Could'nt connect to device",
+      from: "bottom",
+      timer: 2000,
     });
-}
-
-function closeEditMode(event?: any, timer?: number) {
-  // Goes back to origin position
-  bind.editModeModal.expand = false;
-  // Removes the edit-mode container entirely after animation is complete
-  setTimeout(() => (bind.editModeModal = null), timer ? timer : 300);
-  event?.preventDefault();
-  event?.stopPropagation();
-  event?.stopImmediatePropagation();
+  });
 }
 
 function headerNameKeyPress(event: KeyboardEvent) {
   let target = event.target as HTMLElement;
-  let id = bind.editModeModal.id;
-  let type: "device" | "sensor" = bind.activeTabId === 'devices' ? 'device' : 'sensor';
-  let value = target.innerText.trim();
-
-  if (event.code === 'Enter') {
-    sibmitDataChange(id, type, value).then(() => {
-      let editing = bind[bind.activeTabId].find((item: any) => item.id === id);
-      editing.name = value;
-    });
+  if (event.code === "Enter") {
+    headerNameOnBlur(event);
     target.blur();
     event.preventDefault();
     event.stopImmediatePropagation();
   }
+}
+
+function headerNameOnBlur(event: any) {
+  let target = event.target as HTMLElement;
+  let id = bind.modal.id;
+  let type: "device" | "sensor" =
+    bind.activeTabId === "devices" ? "device" : "sensor";
+  let value = target.innerText.trim();
+  submitDataChange(id, type, "name", value).then(() => {
+    let editing = bind[bind.activeTabId].find((item: any) => item.id === id);
+    editing.name = value;
+  });
+}
+
+function addNewDeviceProgrammableAction() {
+  let device: IHomeHubDevice = bind.devices.find(
+    (device: any) => bind.modal.id === device.id
+  );
+
+  if (!bind.sensors) {
+    getEndPointData("get-sensors")
+      .then((data) => {
+        bind.sensors = data;
+      })
+      .catch(() => {
+        showToaster({
+          message: "Oops. Server seems offline",
+          from: "top",
+          timer: 2000,
+        });
+      });
+  }
+
+  bind.modal.actionOptions = deviceActions[device.type];
+  bind.modal.currentAction = {
+    set: {
+      id: bind.modal.id,
+    },
+    when: {
+      id: null,
+      type: null,
+      is: null,
+    },
+  };
+  bind.modal.view = "new-action";
+}
+
+function buildAction(prop: string, event: any) {
+  switch (prop) {
+    case "value":
+      bind.modal.currentAction.set.value = String(event.target.value);
+      break;
+    case "type":
+      bind.modal.currentAction.when.type = event.target.value;
+  }
+
+  // Specific to sensor programmable actions
+  if (bind.modal.currentAction.when.type === "sensor") {
+    if (prop === "id") {
+      bind.modal.currentAction.when.id = event.target.value;
+    }
+    if (prop === "sensor-value") {
+      bind.modal.currentAction.when.is = event.target.value;
+    }
+  }
+}
+
+function submitAction() {
+  let currentAction = bind.modal.currentAction;
+  bind.modal.actions.push(currentAction);
+  submitDataChange(
+    currentAction.set.id,
+    "sensor",
+    "effects",
+    bind.modal.actions
+  );
 }

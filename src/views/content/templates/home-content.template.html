@@ -3,17 +3,17 @@
     class="device-button"
     :if="this.devices && this.devices.length"
     :foreach="device in this.devices"
-    :ontouchstart="this.deviceTouchStart(event, device)"
-    :ontouchend="this.deviceTouchEnd(device)"
+    :onmousedown="this.deviceTouchStart(event, device)"
+    :onmouseup="this.deviceTouchEnd(device)"
     :class:active="device.value"
-    :style:opacity="this.editModeModal && this.editModeModal.id === device.id ? 0 : 1"
+    :style:opacity="this.modal.visible && this.modal.id === device.id ? 0 : 1"
     oncontextmenu="return false;"
   >
     <div class="name">
       ${device.name}
       <span
         class="close-device-edit-mode"
-        :ontouchend="this.closeEditMode(event, device)"
+        :onmouseup="this.closeEditMode(event, device)"
       >
         <i :if="device.editMode" class="iconoir-cancel"></i>
       </span>
@@ -27,9 +27,9 @@
     class="sensor-button"
     :foreach="sensor in this.sensors"
     :class:active="sensor.value"
-    :ontouchstart="this.deviceTouchStart(event, sensor)"
-    :ontouchend="this.deviceTouchEnd(sensor)"
-    :style:opacity="this.editModeModal && this.editModeModal.id === sensor.id ? 0 : 1"
+    :onmousedown="this.deviceTouchStart(event, sensor)"
+    :onmouseup="this.deviceTouchEnd(sensor)"
+    :style:opacity="this.modal && this.modal.id === sensor.id ? 0 : 1"
   >
     ${sensor.name}
   </div>
@@ -38,33 +38,4 @@
   </div>
 </div>
 
-<div
-  class="edit-mode-background"
-  :if="this.editModeModal"
-  :class:expand="this.editModeModal.expand"
-  :ontouchend="this.closeEditMode()"
-></div>
-
-<div
-  oncontextmenu="return false;"
-  class="edit-mode"
-  :class="this.activeTabId"
-  :if="this.editModeModal"
-  :style="this.editModeModal"
-  :class:expand="this.editModeModal.expand"
->
-  <div class="edit-mode-header">
-    <i
-      class="iconoir-cancel"
-      style="font-size: 2em; position: absolute"
-      :ontouchend="this.closeEditMode()"
-    ></i>
-    <span
-      class="edit-mode-title"
-      contenteditable
-      :onkeypress="this.headerNameKeyPress(event)"
-    >
-      ${this.editModeModal.header}
-    </span>
-  </div>
-</div>
+<div :innerHTML="this.modal.template" :if="this.modal.visible"></div>
