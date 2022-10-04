@@ -2,7 +2,7 @@ import io from "socket.io-client/dist/socket.io.js";
 import { server } from "./server-handler";
 import { WebSocketDeviceDeclare, WebSocketDeviceUpdate, WebSocketSensorDeclare, WebSocketSensorUpdate } from "./views/content/content-section-websockets";
 
-const socket = io.connect(`http://${server}:8080`);
+const socket = io.connect(server);
 
 export let socketId = '';
 
