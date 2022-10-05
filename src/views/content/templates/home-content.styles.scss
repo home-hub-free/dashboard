@@ -8,9 +8,9 @@
       text-align: center;
       margin: 10px;
       border-radius: 8px;
-      background-color: rgba(228, 202, 160, 0.4);
+      background-color: var(--box-disabled-color);
       box-shadow: inset 0px 4px 4px rgba(228, 202, 160, 0.18);
-      color: var(--disabled-text-maybe);
+      color: var(--disabled-text);
       flex-direction: column;
       padding: 15px;
       box-sizing: content-box;
@@ -69,8 +69,8 @@
       .add-action-btn {
         background: white;
         outline: none;
-        color: var(--primary-color);
-        border: solid 2px var(--primary-color);
+        color: var(--primary-highlight-color);
+        border: solid 2px var(--primary-highlight-color);
         padding: 8px 22px;
         border-radius: 8px;
         margin: 22px 0;

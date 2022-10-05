@@ -1,9 +1,14 @@
 :root {
-  --background-primary: rgba(255, 222, 171, 0.7);
-  --background-secondary: rgba(247, 244, 225);
-  --white: rgb(255,255,255);
+  --background-primary: rgba(255, 250, 241);
+  --background-secondary: rgb(255, 255, 255);
+  --white: rgb(255, 255, 255);
   --black: rgb(0, 0, 0);
-  --disabled-button-maybe: rgba(228, 202, 160, 0.4);
-  --disabled-text-maybe: #909090;
-  --primary-color: #f2884b;
+  --disabled-text: #909090;
+  --primary-highlight-color: #f2884b;
+  --box-disabled-color: rgb(255, 240, 217);
+  --grey-areas: rgb(249, 249, 249);
+  --brightnessbar-back: rgb(255, 228, 186);
+  --brightnessbar-front: rgb(255, 200, 115); 
+  --text-primary: #2f2f2f; 
+  --text-secondary: #343434;
 }
