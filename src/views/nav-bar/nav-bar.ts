@@ -4,7 +4,7 @@ import type { IMenuItem } from "./nav-bar.contants";
 // import { ContentSection } from "../content/content-section";
 import template from "./nav-bar.html";
 import { Header } from "../content/header/header";
-import { Tabs } from "../content/tabs/tabs";
+import { TabsBind } from "../content/tabs/tabs";
 
 export const NavBar = new Bind<NavBarState>({
   id: "nav-bar",
@@ -31,8 +31,8 @@ function setActiveNavBarItem(menuItem: IMenuItem) {
   // menuItem.expanded = !menuItem.expanded;
   bind.activeMenuItemId = menuItem.id;
   Header.bind.name = menuItem.name;
-
-  Tabs.bind.tabs = menuItem.tabs;
+  TabsBind.activeMenuItemId = menuItem.id;
+  TabsBind.tabs = menuItem.tabs;
 
 }
 

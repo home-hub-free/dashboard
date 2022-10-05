@@ -1,3 +1,41 @@
-<div>
-  Tab Content
+<div :if="this.activeMenuItemId === 'home'">
+  <div :if="this.activeTabId === 'devices'">
+    <div
+      class="device-button"
+      :if="this.devices && this.devices.length"
+      :foreach="device in this.devices"
+      :onmousedown="this.deviceTouchStart(event, device)"
+      :onmouseup="this.deviceTouchEnd(device)"
+      :class:active="device.value"
+      :style:opacity="this.modal.visible && this.modal.id === device.id ? 0 : 1"
+      oncontextmenu="return false;"
+    >
+      <div class="name">
+        ${device.name}
+        <span
+          class="close-device-edit-mode"
+          :onmouseup="this.closeEditMode(event, device)"
+        >
+          <i :if="device.editMode" class="iconoir-cancel"></i>
+        </span>
+      </div>
+    </div>
+    <div :else>No Devices detected in your network :(</div>
+  </div>
+  
+  <div :if="this.activeTabId === 'sensors'">
+    <div
+      class="sensor-button"
+      :foreach="sensor in this.sensors"
+      :class:active="sensor.value"
+      :onmousedown="this.deviceTouchStart(event, sensor)"
+      :onmouseup="this.deviceTouchEnd(sensor)"
+      :style:opacity="this.modal && this.modal.id === sensor.id ? 0 : 1"
+    >
+      ${sensor.name}
+    </div>
+    <div :if="!this.sensors || !this.sensors.length ">
+      No Sensors Detected in your network :(
+    </div>
+  </div>
 </div>

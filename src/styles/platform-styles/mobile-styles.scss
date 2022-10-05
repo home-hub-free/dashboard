@@ -73,7 +73,6 @@
 
     #tabs {
       padding-top: 20px;
-      height: calc(100% - 80px);
       .menu-tabs {
         border-bottom: 2px;
         border-bottom-style: solid;
@@ -100,17 +99,18 @@
           position: absolute;
         }
       }
-      .tab-content {
-        @include home-content();
-        text-align: center;
-        padding: 10px;
-        height: calc(100% - 75px);
-        position: relative;
+    }
+
+    #tab-content {
+      @include home-content();
+      text-align: center;
+      padding: 10px;
+      height: calc(100% - 150px);
+      position: relative;
+      & > div {
+        height: 100%;
         & > div {
           height: 100%;
-          & > div {
-            height: 100%;
-          }
         }
       }
     }
