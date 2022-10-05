@@ -4,7 +4,7 @@ import {
   getEndPointData,
   submitDataChange,
   toggleServerDevice,
-} from "../../server-handler";
+} from "../../utils/server-handler";
 import { ISubItem } from "../nav-bar/nav-bar.contants";
 import { showToaster } from "../popup-message/popup-message";
 import { IEditModeModal, IHomeHubDevice } from "./content-section.model";
@@ -66,35 +66,37 @@ const effects = {
   daily: {},
 };
 
-export const ContentSection = new Bind({
-  id: "content",
-  template,
-  bind: {
-    activeTabId: "",
-    activeMenuItemId: "",
-    header: "",
-    tabs: [],
-    activeIndicatorPosition: activeTabIndicator,
-    templates: {
-      home: HomeTemplate,
-    },
+// export const ContentSection = new Bind<any>({
+//   id: "content",
+//   // template,
+//   bind: {
+//     activeTabId: "sensors",
+//     activeMenuItemId: "",
+//     header: "",
+//     tabs: [],
+//     activeIndicatorPosition: activeTabIndicator,
+//     templates: {
+//       home: HomeTemplate,
+//     },
 
-    devices: null,
-    sensors: null,
+//     loading: false,
 
-    selectTab,
-    deviceTouchStart,
-    deviceTouchEnd,
-    headerNameKeyPress,
-    headerNameOnBlur,
-    addNewDeviceProgrammableAction,
-    buildAction,
-    submitAction,
-  },
-  onChange,
-});
-const bind = ContentSection.bind;
-EditModeModal(bind);
+//     devices: null,
+//     sensors: null,
+
+//     selectTab,
+//     deviceTouchStart,
+//     deviceTouchEnd,
+//     headerNameKeyPress,
+//     headerNameOnBlur,
+//     addNewDeviceProgrammableAction,
+//     buildAction,
+//     submitAction,
+//   },
+//   onChange,
+// });
+// const bind = ContentSection.bind;
+// EditModeModal(bind);
 
 function onChange(changes: DataChanges) {
   if (changes.property === "tabs") {
@@ -113,9 +115,9 @@ function onChange(changes: DataChanges) {
 
 function selectTab(tab: ISubItem, event?: TouchEvent) {
   bind.activeTabId = tab.id;
-  if (tab.endpoint && !bind[tab.id]) {
+  if (tab.id === 'sensors' || tab.id === 'devices' && tab.endpoint && !bind[tab.id]) {
     bind.loading = true;
-    getEndPointData(tab.endpoint)
+    getEndPointData(tab.endpoint || '')
       .then((data) => {
         bind[tab.id] = data;
       })
@@ -147,7 +149,8 @@ function resetActiveTab() {
     width: "0px",
     height: "",
   };
-  bind.activeTab = "";
+  bind.activeTabId = '';
+  // bind.activeTab = "";
 }
 
 let currentTimeout: NodeJS.Timeout;

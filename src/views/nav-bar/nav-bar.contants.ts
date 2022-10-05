@@ -1,27 +1,27 @@
+import { Tab } from "../content/tabs/tabs";
+
+export interface NavBarState {
+  activeMenuItemId: string,
+  items: IMenuItem[],
+  actions: { [key: string]: any }
+}
 export interface IMenuItem {
   id: string;
   icon: string;
   name: string;
-  subitems?: ISubItem[];
+  tabs?: Tab[];
   expanded: boolean;
   activeTabIndex: number,
 }
 
-export interface ISubItem {
-  id: string,
-  name: string;
-  icon?: string;
-  endpoint?: string
-}
-
-export const MenuItems: IMenuItem[] = [
+export const NavBarItems: IMenuItem[] = [
   {
     id: "home",
     icon: "home-simple-door",
     name: "Home",
     expanded: true,
     activeTabIndex: -1,
-    subitems: [
+    tabs: [
       {
         id: 'devices',
         name: "Devices",

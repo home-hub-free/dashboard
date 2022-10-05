@@ -2,7 +2,7 @@
 import {
   getDeviceProgrammableActions,
   getEndPointData,
-} from "../../../server-handler";
+} from "../../../utils/server-handler";
 import template from "./edit-mode-modal.template.html?raw";
 
 const effectss = [
