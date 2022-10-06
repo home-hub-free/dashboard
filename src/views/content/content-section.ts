@@ -12,59 +12,59 @@ import template from "./content-section.template.html?raw";
 import { EditModeModal } from "./edit-mode-modal/edit-mode-modal";
 import HomeTemplate from "./templates/home-content.template.html?raw";
 
-const activeTabIndicator = {
-  left: "0px",
-  width: "0px",
-  height: "",
-};
-// const editModeModal: IEditModeModal | null = null;
+// const activeTabIndicator = {
+//   left: "0px",
+//   width: "0px",
+//   height: "",
+// };
+// // const editModeModal: IEditModeModal | null = null;
 
-const deviceActions: any = {
-  boolean: [
-    {
-      description: "Turn on",
-      value: "true",
-    },
-    {
-      description: "Turn off",
-      value: "false",
-    },
-  ],
-  value: [
-    {
-      description: "Set value to",
-      value: 0,
-    },
-  ],
-};
+// const deviceActions: any = {
+//   boolean: [
+//     {
+//       description: "Turn on",
+//       value: "true",
+//     },
+//     {
+//       description: "Turn off",
+//       value: "false",
+//     },
+//   ],
+//   value: [
+//     {
+//       description: "Set value to",
+//       value: 0,
+//     },
+//   ],
+// };
 
 
 
-const effects = {
-  sensor: {
-    motion: [
-      {
-        description: "Detects motion",
-        value: true,
-      },
-      {
-        description: "Stops detecting motion",
-        value: false,
-      },
-    ],
-    temperature: [
-      {
-        description: 'Higher than',
-        value: 0
-      },
-      {
-        description: 'Lower than',
-        value: 0,
-      }
-    ]
-  },
-  daily: {},
-};
+// const effects = {
+//   sensor: {
+//     motion: [
+//       {
+//         description: "Detects motion",
+//         value: true,
+//       },
+//       {
+//         description: "Stops detecting motion",
+//         value: false,
+//       },
+//     ],
+//     temperature: [
+//       {
+//         description: 'Higher than',
+//         value: 0
+//       },
+//       {
+//         description: 'Lower than',
+//         value: 0,
+//       }
+//     ]
+//   },
+//   daily: {},
+// };
 
 // export const ContentSection = new Bind<any>({
 //   id: "content",
@@ -98,85 +98,85 @@ const effects = {
 // const bind = ContentSection.bind;
 // EditModeModal(bind);
 
-function onChange(changes: DataChanges) {
-  if (changes.property === "tabs") {
-    // Select first available tab if there's any
-    if (bind.tabs.length) {
-      selectTab(bind.tabs[0]);
-      setTimeout(() => {
-        let result = document.querySelector(".tab") as HTMLElement;
-        if (result) moveActiveIndicatorToElement(result);
-      }, 50);
-    } else {
-      resetActiveTab();
-    }
-  }
-}
+// function onChange(changes: DataChanges) {
+//   if (changes.property === "tabs") {
+//     // Select first available tab if there's any
+//     if (bind.tabs.length) {
+//       selectTab(bind.tabs[0]);
+//       setTimeout(() => {
+//         let result = document.querySelector(".tab") as HTMLElement;
+//         if (result) moveActiveIndicatorToElement(result);
+//       }, 50);
+//     } else {
+//       resetActiveTab();
+//     }
+//   }
+// }
 
-function selectTab(tab: ISubItem, event?: TouchEvent) {
-  bind.activeTabId = tab.id;
-  if (tab.id === 'sensors' || tab.id === 'devices' && tab.endpoint && !bind[tab.id]) {
-    bind.loading = true;
-    getEndPointData(tab.endpoint || '')
-      .then((data) => {
-        bind[tab.id] = data;
-      })
-      .catch(() => {
-        showToaster({
-          message: "Oops. Server seems offline",
-          from: "top",
-          timer: 2000,
-        });
-      })
-      .finally(() => (bind.loading = false));
-  }
-  if (event) {
-    let target = event.target as HTMLElement;
-    moveActiveIndicatorToElement(target);
-  }
-}
+// function selectTab(tab: ISubItem, event?: TouchEvent) {
+//   bind.activeTabId = tab.id;
+//   if (tab.id === 'sensors' || tab.id === 'devices' && tab.endpoint && !bind[tab.id]) {
+//     bind.loading = true;
+//     getEndPointData(tab.endpoint || '')
+//       .then((data) => {
+//         bind[tab.id] = data;
+//       })
+//       .catch(() => {
+//         showToaster({
+//           message: "Oops. Server seems offline",
+//           from: "top",
+//           timer: 2000,
+//         });
+//       })
+//       .finally(() => (bind.loading = false));
+//   }
+//   if (event) {
+//     let target = event.target as HTMLElement;
+//     moveActiveIndicatorToElement(target);
+//   }
+// }
 
-function moveActiveIndicatorToElement(element: HTMLElement) {
-  let rect = element.getBoundingClientRect();
-  let parentScroll = element.parentElement?.scrollLeft || 0;
-  bind.activeIndicatorPosition.left = rect.x - 8 + parentScroll + "px";
-  bind.activeIndicatorPosition.width = rect.width + "px";
-}
+// function moveActiveIndicatorToElement(element: HTMLElement) {
+//   let rect = element.getBoundingClientRect();
+//   let parentScroll = element.parentElement?.scrollLeft || 0;
+//   bind.activeIndicatorPosition.left = rect.x - 8 + parentScroll + "px";
+//   bind.activeIndicatorPosition.width = rect.width + "px";
+// }
 
-function resetActiveTab() {
-  bind.activeIndicatorPosition = {
-    left: "0px",
-    width: "0px",
-    height: "",
-  };
-  bind.activeTabId = '';
-  // bind.activeTab = "";
-}
+// function resetActiveTab() {
+//   bind.activeIndicatorPosition = {
+//     left: "0px",
+//     width: "0px",
+//     height: "",
+//   };
+//   bind.activeTabId = '';
+//   // bind.activeTab = "";
+// }
 
-let currentTimeout: NodeJS.Timeout;
-function deviceTouchStart(event: any, data: any) {
-  let rect = event.target.getBoundingClientRect();
-  currentTimeout = setTimeout(() => {
-    let startPosition = {
-      top: rect.top - 135 + "px",
-      left: rect.left - 8 + "px",
-      height: rect.height + "px",
-      width: rect.width + "px",
-    };
-    bind.modal.open(startPosition, data);
-  }, 500);
-}
+// let currentTimeout: NodeJS.Timeout;
+// function deviceTouchStart(event: any, data: any) {
+//   let rect = event.target.getBoundingClientRect();
+//   currentTimeout = setTimeout(() => {
+//     let startPosition = {
+//       top: rect.top - 135 + "px",
+//       left: rect.left - 8 + "px",
+//       height: rect.height + "px",
+//       width: rect.width + "px",
+//     };
+//     bind.modal.open(startPosition, data);
+//   }, 500);
+// }
 
-function deviceTouchEnd(device: any) {
-  if (currentTimeout) clearTimeout(currentTimeout);
-  toggleServerDevice(device).catch(() => {
-    showToaster({
-      message: "Could'nt connect to device",
-      from: "bottom",
-      timer: 2000,
-    });
-  });
-}
+// function deviceTouchEnd(device: any) {
+//   if (currentTimeout) clearTimeout(currentTimeout);
+//   toggleServerDevice(device).catch(() => {
+//     showToaster({
+//       message: "Could'nt connect to device",
+//       from: "bottom",
+//       timer: 2000,
+//     });
+//   });
+// }
 
 function headerNameKeyPress(event: KeyboardEvent) {
   let target = event.target as HTMLElement;
