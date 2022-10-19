@@ -1,4 +1,4 @@
-export const server = "http://192.168.1.72:8080/";
+export const server = "http://localhost:8080/";
 
 const headers = {
   Accept: "application/json",
@@ -39,11 +39,6 @@ export function toggleServerDevice(device: any): Promise<ServerResponse> {
         } else {
           reject();
         }
-      })
-      .catch((err) => {
-        // Return to original if something went wrong
-        device.value = !device.value;
-        reject(err);
       });
   });
 }
@@ -52,7 +47,7 @@ export function submitDataChange(
   id: string,
   type: "device" | "sensor",
   prop: string,
-  value: any,
+  value: any
 ) {
   return fetch(server + `${type}-data-set`, {
     method: "POST",
@@ -60,7 +55,7 @@ export function submitDataChange(
     body: JSON.stringify({
       id,
       data: {
-        [prop]: value
+        [prop]: value,
       },
     }),
   }).then(() => true);
@@ -77,7 +72,7 @@ export function getDeviceProgrammableActions(id: string) {
     .then((res) => res.json())
     .then((actions) => {
       // actions.forEach(action => {
-        
+
       // });
       return actions;
     });

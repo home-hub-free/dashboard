@@ -1,0 +1,116 @@
+<div :if="true">
+  <div style="font-weight: bold; text-align: left">
+    Programmable actions
+  </div>
+
+  <div :if="false" class="actions-list">
+    <div class="device-button">
+      Hi
+    </div>
+    <div :foreach="action in this.modal.actions">
+      ${action.set.value ? 'Turn on' : 'Turn Off'}
+      <strong>When</strong>
+      ${ action.when.type === 'sensor' ? 'Sensor ' : 'Time is: ' }
+      <span :if="action.when.type === 'sensor'">
+        <div :if="this.sensors && this.sensors.length && this.sensors.find(sensor => action.when.id)">
+          ${ this.sensors.find(sensor => action.when.id).name }
+        </div>
+        <div :else>
+          (Sensor ${action.when.id} seems offline)
+        </div>
+        ${ action.when.value ? 'Is on' : 'Tucola'}
+      </span>
+      <span :if="action.when.type === 'time-of-day'">
+        (idk, show time or sumthn)
+      </span>
+    </div>
+  </div>
+  <div :else style="text-align: left">
+    You have not programmed any actions yet.
+  </div>
+
+  <button
+    class="add-action-btn"
+    :onmouseup="this.addNewDeviceProgrammableAction()"
+  >
+    Add Programable Action
+  </button>
+</div>
+
+<div :if="false">
+  <div style="font-weight: bold; text-align: left">Program an action</div>
+
+  <div class="steps">
+    <!-- Select action to perform -->
+    <div class="available-actions">
+      <select
+        name="action"
+        id="action-options"
+        :onchange="this.buildAction('value', event)"
+      >
+        <option value="">Choose an action</option>
+        <option
+          :foreach="option in this.modal.actionOptions"
+          :value="option.value"
+        >
+          ${option.description}
+        </option>
+      </select>
+    </div>
+
+    <!-- Select effect type -->
+    <div
+      :if="this.modal.currentAction.set.value"
+      class="available-effects"
+    >
+      When:
+      <select :onchange="this.buildAction('type', event)">
+        <option value=""></option>
+        <option
+          :foreach="effect in this.modal.effects"
+          :value="effect.id"
+        >
+          ${effect.name}
+        </option>
+      </select>
+    </div>
+
+    <!-- If effect type is sensor -->
+    <div :if="this.modal.currentAction.when.type === 'sensor'">
+      <div :if="this.sensors">
+        <select :onchange="this.buildAction('id', event)">
+          <option>Select a sensor:</option>
+          <option :foreach="sensor in this.sensors" :value="sensor.id">
+            ${sensor.name}
+          </option>
+        </select>
+        <!-- <span :foreach="sensor in this.sensors" class="device-button action-button"> ${sensor.name} </span> -->
+      </div>
+      <div :else>No sensors available</div>
+
+      <div
+        :if="this.modal.currentAction.when.id"
+        :onchange="this.buildAction('sensor-value', event)"
+      >
+        <select>
+          <option value="">State:</option>
+          <option
+            :foreach="options in this.modal.effects[0].options"
+            :value="options.value"
+          >
+            ${options.name}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <!-- If effect type is time of day -->
+    <div :if="this.modal.currentAction.when.type === 'time-of-day'">
+      Select a time:
+    </div>
+  </div>
+
+  <button class="add-action-btn" :onmouseup="this.submitAction()">
+    Submit action
+  </button>
+</div>

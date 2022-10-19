@@ -1,12 +1,11 @@
 <div :if="this.activeTabId === 'devices'">
   <div
-    class="device-button"
     :if="this.devices && this.devices.length"
+    class="device-button"
     :foreach="device in this.devices"
-    :onmousedown="this.deviceTouchStart(event, device)"
-    :onmouseup="this.deviceTouchEnd(device)"
+    :ontouchstart="this.actions.deviceTouchStart(event, device)"
+    :onmouseup="this.actions.deviceTouchEnd(device)"
     :class:active="device.value"
-    :style:opacity="this.modal.visible && this.modal.id === device.id ? 0 : 1"
     oncontextmenu="return false;"
   >
     <div class="name">
@@ -37,5 +36,3 @@
     No Sensors Detected in your network :(
   </div>
 </div>
-
-<div :innerHTML="this.modal.template" :if="this.modal.visible"></div>

@@ -5,12 +5,6 @@
 @import "/Fonts/Satoshi/css/satoshi.css";
 @import "./colors.scss";
 
-// :root {
-//   touch-action: pan-x pan-y;
-//   touch-action: manipulation;
-//   // height: 100% 
-// }
-
 * {
   -ms-touch-action: manipulation;
   touch-action: manipulation;
@@ -24,6 +18,8 @@ body {
   -moz-user-select: none; /* Firefox */
   -ms-user-select: none; /* Internet Explorer/Edge */
   user-select: none;
+
+  margin: 0;
 }
 
 #nav-bar {
@@ -92,6 +88,85 @@ body {
   animation-fill-mode: forwards;
   animation-name: active-menu-item;
 }
+
+.overlay-modal-content {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  
+  &.opening {
+    transition: background-color 150ms ease 150ms;
+    transition-delay: 150ms;
+  }
+  &.closing {
+    transition: background-color 200ms;
+    transition-delay: 0ms;
+  }
+
+  .content {
+    position: absolute;
+    background: white;
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0);
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);
+  }
+  .content.visible {
+    background-color: rgba(255,255,255,1);
+    // translate: -50% -50% !important;
+    // left: 50% !important;
+    // top: 50% !important;
+  }
+  .content.opening {
+    background-color: rgba(255,255,255,1);
+    transition:
+      height 150ms ease 150ms,
+      width 150ms ease 150ms,
+      left 150ms ease 150ms,
+      top 150ms ease 150ms,
+      background-color 500ms ease,
+      font-weight 150ms ease;
+    
+    transition-timing-function: cubic-bezier(0.71, 0.23, 0.41, 1.11);
+  }
+  .content.closing {
+    background-color: rgba(0,0,0,0);
+    transition:
+      height 200ms,
+      width 200ms,
+      left 200ms,
+      top 200ms,
+      background-color 200ms ease 100ms,
+      font-weight 200ms ease 100ms;
+    transition-timing-function: cubic-bezier(0.35, 0.85, 0.39, 1);
+  }
+}
+
+.device-button,
+.sensor-button {
+  height: 100px;
+  width: 100px;
+  display: inline-flex;
+  text-align: center;
+  margin: 10px;
+  border-radius: 8px;
+  background-color: var(--box-disabled-color);
+  box-shadow: inset 0px 4px 4px rgba(228, 202, 160, 0.18);
+  color: var(--disabled-text);
+  flex-direction: column;
+  padding: 15px;
+  box-sizing: content-box;
+  &.active {
+    background: var(--white);
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.05);
+    color: black;
+    animation-duration: 270ms;
+    animation-fill-mode: forwards;
+    animation-name: active-menu-item;
+  }
+}
+
 
 @media (min-width: 600px) {
   @include dekstop();

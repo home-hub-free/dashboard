@@ -1,40 +1,6 @@
-<div id="home-content" :if="this.activeMenuItemId === 'home'">
-  <div :if="this.activeTabId === 'devices'">
-    <div
-      :if="this.devices && this.devices.length"
-      class="device-button"
-      :foreach="device in this.devices"
-      :onmousedown="this.actions.deviceTouchStart(event, device)"
-      :onmouseup="this.actions.deviceTouchEnd(device)"
-      :class:active="device.value"
-      oncontextmenu="return false;"
-    >
-      <div class="name">
-        ${device.name}
-        <span
-          class="close-device-edit-mode"
-          :onmouseup="this.closeEditMode(event, device)"
-        >
-          <i :if="device.editMode" class="iconoir-cancel"></i>
-        </span>
-      </div>
-    </div>
-    <div :else>No Devices detected in your network :(</div>
-  </div>
-  
-  <div :if="this.activeTabId === 'sensors'">
-    <div
-      class="sensor-button"
-      :foreach="sensor in this.sensors"
-      :class:active="sensor.value"
-      :onmousedown="this.deviceTouchStart(event, sensor)"
-      :onmouseup="this.deviceTouchEnd(sensor)"
-      :style:opacity="this.modal && this.modal.id === sensor.id ? 0 : 1"
-    >
-      ${sensor.name}
-    </div>
-    <div :if="!this.sensors || !this.sensors.length ">
-      No Sensors Detected in your network :(
-    </div>
-  </div>
-</div>
+<!-- To add more tabs content, add more divs with the proper "if" -->
+<div
+  id="home-content"
+  :if="this.activeMenuItemId === 'home' "
+  :innerHTML="this.templates.home"
+></div>

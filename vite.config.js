@@ -16,7 +16,6 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       'bindrjs',
-      'socket.io-client'
     ]
   },
   publicDir: './public'

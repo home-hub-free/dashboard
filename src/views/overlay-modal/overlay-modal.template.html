@@ -1,1 +1,16 @@
-<div class="overlay-modal-content" :innerHTML="this.template"></div>
+<div
+  class="overlay-modal-content"
+  :if="this.visible"
+  :class:opening="this.opening"
+  :class:closing="this.closing"
+  :onmouseup="this.closeOverlay()"
+>
+  <div
+    class="content animated"
+    :class:visible="this.visible"
+    :class:opening="this.opening"
+    :class:closing="this.closing"
+    :style="this.position"
+    :innerHTML="this.template"
+  ></div>
+</div>

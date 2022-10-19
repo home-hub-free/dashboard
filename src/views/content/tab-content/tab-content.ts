@@ -1,48 +1,39 @@
-import { Bind } from "bindrjs";
-import { toggleServerDevice } from "../../../utils/server-handler";
-import { showToaster } from "../../popup-message/popup-message";
-// import { bind } from "../header/header";
-import template from './tab-content.template.html?raw';
-// import EditModeModal from "../edit-mode-modal/edit-mode-modal.template.html?raw";
+import { Bind, DataChanges } from "bindrjs";
+import template from "./tab-content.template.html?raw";
+import HomeTemplate from "./home-menu/home-menu.template.html?raw";
+import { HomeService } from "./home-menu/home-menu";
 
-export const TabContent = new Bind({
-  id: 'tab-content',
+const menus: any = {
+  home: {
+    actions: HomeService,
+    template: HomeTemplate,
+  }
+}
+
+const TabContent = new Bind({
+  id: "tab-content",
   template,
   bind: {
-    activeMenuItemId: '',
-    activeTabId: '',
+    activeMenuItemId: "",
+    activeTabId: "",
     devices: null,
     sensors: null,
 
-    actions: {
-      deviceTouchStart,
-      deviceTouchEnd
-    }
-  }
+    templates: {
+      home: HomeTemplate
+    },
+    actions: {},
+  },
+  onChange,
 });
-
-let currentTimeout: NodeJS.Timeout;
-function deviceTouchStart(event: any, data: any) {
-  let rect = event.target.getBoundingClientRect();
-  currentTimeout = setTimeout(() => {
-    let startPosition = {
-      top: rect.top - 135 + "px",
-      left: rect.left - 8 + "px",
-      height: rect.height + "px",
-      width: rect.width + "px",
-    };
-  }, 500);
-}
-
-function deviceTouchEnd(device: any) {
-  if (currentTimeout) clearTimeout(currentTimeout);
-  toggleServerDevice(device).catch(() => {
-    showToaster({
-      message: "Could'nt connect to device",
-      from: "bottom",
-      timer: 2000,
-    });
-  });
-}
-
 export const TabContentBind = TabContent.bind;
+
+function onChange(changes: DataChanges) {
+  if (changes.property === 'activeMenuItemId') {
+    setTimeout(() => {
+      let menu = menus[changes.newValue];
+      TabContentBind.template = menu.template;
+      TabContentBind.actions = menu.actions;
+    }, 100);
+  }
+}
