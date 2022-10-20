@@ -12,7 +12,11 @@ interface ModalContext {
   template: string,
   data: any,
   startRect: ModalRectangle,
-  endRect: ModalRectangle,
+  padding: {
+    x: number,
+    y: number
+  }
+  // endRect: ModalRectangle,
 };
 
 export const OverlayModal = new Bind({
@@ -30,8 +34,7 @@ export const OverlayModal = new Bind({
 });
 const bind = OverlayModal.bind;
 
-const position = { start: {}, end: {} }
-
+let startPosition: any = { }
 export function openOverlay(context: ModalContext) {
   bind.template = context.template;
   bind.data = context.data;
@@ -39,23 +42,23 @@ export function openOverlay(context: ModalContext) {
   bind.opening = true;
   // Let the modal take its initial position
   bind.position = context.startRect;
-  position.start = context.startRect;
+  startPosition = context.startRect;
   setTimeout(() => {
     bind.position = {
-      top: '60px',
-      left: '20px',
-      height: 'calc(100% - 120px)',
-      width: 'calc(100% - 40px)'
+      top: context.padding.y + 'px',
+      left: context.padding.x + 'px',
+      height: `calc(100% - ${context.padding.y * 2}px)`,
+      width: `calc(100% - ${context.padding.x * 2}px)`
     }
   });
   // It takes 500ms to animate open this modal
-  setTimeout(() => bind.opening = false, 500);
+  setTimeout(() => bind.opening = false, 300);
 }
 
 export function closeOverlay() {
   bind.closing = true;
   // bind.visible = false;
-  bind.position = position.start;
+  bind.position = startPosition;
   setTimeout(() => {
     bind.visible = false;
     bind.closing = false;

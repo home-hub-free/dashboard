@@ -1,7 +1,8 @@
-import { toggleServerDevice } from "../../../../utils/server-handler";
-import { getGlobalPosition } from "../../../../utils/utils.service";
+import { toggleServerDevice } from "../../../utils/server-handler";
+import { getGlobalPosition } from "../../../utils/utils.service";
 import { openOverlay } from "../../../overlay-modal/overlay-modal";
 import { showToaster } from "../../../popup-message/popup-message";
+
 import DeviceEditView from './overlay-views/devices-edit.template.html?raw';
 
 export const HomeService = {
@@ -24,12 +25,7 @@ export function deviceTouchStart(event: any, data: any) {
       template: DeviceEditView,
       data: {},
       startRect: startPosition,
-      endRect: {
-        top: 40 + 'px',
-        left: 10 + 'px',
-        height: 500 + 'px',
-        width: 'calc(100% - 80px)'
-      }
+      padding: { x: 10, y: 50 }
     });
   }, 800);
 }

@@ -111,12 +111,14 @@ body {
     border-radius: 10px;
     background-color: rgba(0, 0, 0, 0);
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);
+    * {
+      opacity: 1;
+      transition: opacity 100ms ease;
+    }
   }
+
   .content.visible {
     background-color: rgba(255,255,255,1);
-    // translate: -50% -50% !important;
-    // left: 50% !important;
-    // top: 50% !important;
   }
   .content.opening {
     background-color: rgba(255,255,255,1);
@@ -127,8 +129,11 @@ body {
       top 150ms ease 150ms,
       background-color 500ms ease,
       font-weight 150ms ease;
-    
     transition-timing-function: cubic-bezier(0.71, 0.23, 0.41, 1.11);
+    
+    * {
+      opacity: 0;
+    }
   }
   .content.closing {
     background-color: rgba(0,0,0,0);
@@ -140,6 +145,10 @@ body {
       background-color 200ms ease 100ms,
       font-weight 200ms ease 100ms;
     transition-timing-function: cubic-bezier(0.35, 0.85, 0.39, 1);
+
+    * {
+      opacity: 0;
+    }
   }
 }
 

@@ -1,9 +1,9 @@
 // Views
-import { NavBar } from "./views/nav-bar/nav-bar";
-// import { ContentSection } from "./views/content/content-section";
-import { PopupMessage } from "./views/popup-message/popup-message";
+import { NavBar } from "./nav-bar/nav-bar";
+// import { ContentSection } from "./content/content-section";
+import { PopupMessage } from "./popup-message/popup-message";
 import { initWebSockets } from "./utils/ws-handler";
-import { OverlayModal } from "./views/overlay-modal/overlay-modal";
+import { OverlayModal } from "./overlay-modal/overlay-modal";
 
 // CSS
 import "./styles/style.scss";

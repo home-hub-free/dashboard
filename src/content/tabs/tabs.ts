@@ -1,5 +1,5 @@
 import { Bind, DataChanges } from "bindrjs";
-import { getEndPointData } from "../../../utils/server-handler";
+import { getEndPointData } from "../../utils/server-handler";
 import { showToaster } from "../../popup-message/popup-message";
 import { TabContentBind } from "../tab-content/tab-content";
 import template from './tabs.template.html?raw';
