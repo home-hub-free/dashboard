@@ -7,8 +7,8 @@ const menus: any = {
   home: {
     actions: HomeService,
     template: HomeTemplate,
-  }
-}
+  },
+};
 
 const TabContent = new Bind({
   id: "tab-content",
@@ -16,24 +16,34 @@ const TabContent = new Bind({
   bind: {
     activeMenuItemId: "",
     activeTabId: "",
-    devices: null,
-    sensors: null,
-
     templates: {
-      home: HomeTemplate
+      home: HomeTemplate,
     },
     actions: {},
+    data: {},
   },
   onChange,
 });
 export const TabContentBind = TabContent.bind;
 
 function onChange(changes: DataChanges) {
-  if (changes.property === 'activeMenuItemId') {
-    setTimeout(() => {
-      let menu = menus[changes.newValue];
-      TabContentBind.template = menu.template;
-      TabContentBind.actions = menu.actions;
-    }, 100);
+  switch (changes.property) {
+    case "activeMenuItemId":
+      onMenuChange(changes.newValue);
+      break;
+    case "activeTabId":
+      onTabChange(changes.newValue);
+      break;
   }
+}
+
+function onMenuChange(value: string) {
+  setTimeout(() => {
+    let menu = menus[value];
+    TabContentBind.actions = menu.actions;
+  }, 100);
+}
+
+function onTabChange(value: string) {
+  // Overrida data here for the menu - tab combination
 }

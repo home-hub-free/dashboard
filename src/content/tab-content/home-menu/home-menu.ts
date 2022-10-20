@@ -7,11 +7,11 @@ import DeviceEditView from './overlay-views/devices-edit.template.html?raw';
 
 export const HomeService = {
   deviceTouchStart,
-  deviceTouchEnd,
+  deviceTouchEnd
 };
 
 let currentTimeout: NodeJS.Timeout;
-export function deviceTouchStart(event: any, data: any) {
+export function deviceTouchStart(event: any) {
   let rect = getGlobalPosition(event.target);
   let startPosition = {
     top: rect.top + 'px',

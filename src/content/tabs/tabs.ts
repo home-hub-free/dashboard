@@ -1,13 +1,10 @@
 import { Bind, DataChanges } from "bindrjs";
-import { getEndPointData } from "../../utils/server-handler";
-import { showToaster } from "../../popup-message/popup-message";
+// import { getEndPointData } from "../../utils/server-handler";
+// import { showToaster } from "../../popup-message/popup-message";
 import { TabContentBind } from "../tab-content/tab-content";
 import template from './tabs.template.html?raw';
 
-enum TabTypes {
-  SENSORS = 'sensors',
-  DEVICES = 'devices'
-}
+type TabTypes = 'sensors' | 'devices'
 
 export interface Tab {
   id: TabTypes,
@@ -65,22 +62,8 @@ function onChange(changes: DataChanges) {
   }
 }
 
-function selectTab(tab: Tab, event?: TouchEvent) {
-  TabContentBind.activeTabId = tab.id;
-  if (tab.endpoint && !TabContentBind[tab.id]) {
-    getEndPointData(tab.endpoint || '')
-      .then((data) => {
-        TabContentBind[tab.id] = data;
-      })
-      .catch(() => {
-        showToaster({
-          message: "Oops. Server seems offline",
-          from: "top",
-          timer: 2000,
-        });
-      })
-      .finally(() => (TabsBind.loading = false));
-  }
+function selectTab(tab: string, event?: TouchEvent) {
+  TabContentBind.activeTabId = tab;
   if (event) {
     let target = event.target as HTMLElement;
     moveActiveIndicatorToElement(target);

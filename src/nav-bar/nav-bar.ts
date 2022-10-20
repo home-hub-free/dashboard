@@ -27,17 +27,8 @@ function ready() {
 }
 
 function setActiveNavBarItem(menuItem: IMenuItem) {
-  // Toggles menu in desktop mode
-  // menuItem.expanded = !menuItem.expanded;
   bind.activeMenuItemId = menuItem.id;
   Header.bind.name = menuItem.name;
   TabsBind.activeMenuItemId = menuItem.id;
   TabsBind.tabs = menuItem.tabs;
-
 }
-
-// function updateContentSection(menuItem: IMenuItem) {
-//   // ContentSection.bind.header = menuItem.name;
-//   // ContentSection.bind.tabs = JSON.parse(JSON.stringify(menuItem.subitems));
-//   // ContentSection.bind.activeMenuItemId = menuItem.id;
-// }
