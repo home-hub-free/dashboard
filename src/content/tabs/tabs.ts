@@ -1,7 +1,7 @@
 import { Bind, DataChanges } from "bindrjs";
 // import { getEndPointData } from "../../utils/server-handler";
 // import { showToaster } from "../../popup-message/popup-message";
-import { TabContentBind } from "../tab-content/tab-content";
+import { loadEndpointData, TabContentBind } from "../tab-content/tab-content";
 import template from './tabs.template.html?raw';
 
 type TabTypes = 'sensors' | 'devices'
@@ -46,7 +46,7 @@ const Tabs = new Bind<TabsModel>({
 export const TabsBind = Tabs.bind;
 
 function onChange(changes: DataChanges) {
-  if (changes.property === "tabs") {
+  if (changes.property === "tabs" && changes.newValue) {
     if (TabsBind.tabs.length) {
       selectTab(TabsBind.tabs[0]);
       setTimeout(() => {
@@ -62,8 +62,9 @@ function onChange(changes: DataChanges) {
   }
 }
 
-function selectTab(tab: string, event?: TouchEvent) {
-  TabContentBind.activeTabId = tab;
+function selectTab(tab: Tab, event?: TouchEvent) {
+  TabContentBind.activeTabId = tab.id;
+  if (tab.endpoint) loadEndpointData(tab.endpoint);
   if (event) {
     let target = event.target as HTMLElement;
     moveActiveIndicatorToElement(target);

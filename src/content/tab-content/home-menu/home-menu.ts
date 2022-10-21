@@ -25,7 +25,7 @@ export function deviceTouchStart(event: any) {
       template: DeviceEditView,
       data: {},
       startRect: startPosition,
-      padding: { x: 10, y: 50 }
+      padding: { x: 50, y: 200 }
     });
   }, 800);
 }

@@ -36,4 +36,12 @@ export const NavBarItems: IMenuItem[] = [
       }
     ],
   },
+
+  {
+    id: 'automations',
+    icon: 'hourglass',
+    name: 'Automations',
+    expanded: false,
+    activeTabIndex: -1
+  }
 ];

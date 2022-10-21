@@ -1,38 +1,39 @@
 <div :if="this.activeTabId === 'devices'">
   <div
-    :if="this.devices && this.devices.length"
+    :if="this.data.home.devices"
     class="device-button"
-    :foreach="device in this.devices"
+    :foreach="device in this.data.home.devices"
     :ontouchstart="this.actions.deviceTouchStart(event, device)"
     :onmouseup="this.actions.deviceTouchEnd(device)"
     :class:active="device.value"
     oncontextmenu="return false;"
   >
-    <div class="name">
-      ${device.name}
+  ${device.name}
+    <!-- <div class="name">
       <span
         class="close-device-edit-mode"
         :onmouseup="this.closeEditMode(event, device)"
       >
         <i :if="device.editMode" class="iconoir-cancel"></i>
       </span>
-    </div>
+    </div> -->
   </div>
   <div :else>No Devices detected in your network :(</div>
 </div>
 
 <div :if="this.activeTabId === 'sensors'">
   <div
+    :if="this.data.home.sensors"
     class="sensor-button"
-    :foreach="sensor in this.sensors"
+    :foreach="sensor in this.data.home.sensors"
     :class:active="sensor.value"
-    :onmousedown="this.deviceTouchStart(event, sensor)"
-    :onmouseup="this.deviceTouchEnd(sensor)"
-    :style:opacity="this.modal && this.modal.id === sensor.id ? 0 : 1"
+    :ontouchstart="this.actions.deviceTouchStart(event, sensor)"
+    :onmouseup="this.actions.deviceTouchEnd(sensor)"
+    oncontextmenu="return false;"
   >
     ${sensor.name}
   </div>
-  <div :if="!this.sensors || !this.sensors.length ">
+  <div :else>
     No Sensors Detected in your network :(
   </div>
 </div>
