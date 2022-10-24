@@ -1,18 +1,11 @@
-import { Bind, DataChanges } from "bindrjs";
+import { Bind } from "bindrjs";
 import template from "./tab-content.template.html?raw";
 import HomeTemplate from "./home-menu/home-menu.template.html?raw";
 import AutomationTemplate from './automations-menu/automations-menu.template.html?raw';
 import { HomeService } from "./home-menu/home-menu";
 import { getEndPointData } from "../../utils/server-handler";
-
-const menus: any = {
-  home: {
-    actions: HomeService,
-  },
-  automations: {
-    actions: {},
-  }
-};
+import { AutomationsActions } from "./automations-menu/automations-menu";
+import { IMenuItem, NavBarItems } from "../../nav-bar/nav-bar.contants";
 
 const TabContent = new Bind({
   id: "tab-content",
@@ -24,7 +17,10 @@ const TabContent = new Bind({
       home: HomeTemplate,
       automations: AutomationTemplate
     },
-    actions: {},
+    actions: {
+      home: HomeService,
+      automations: AutomationsActions
+    },
     data: {
       home: {
         devices: null,
@@ -35,39 +31,15 @@ const TabContent = new Bind({
       }
     },
   },
-  onChange,
+  ready,
 });
 export const TabContentBind = TabContent.bind;
 
-export function loadEndpointData(endpoint: string) {
-  getEndPointData(endpoint).then((data) => {
-    let menu = TabContentBind.activeMenuItemId as 'home' | 'automations';
-    let tab = TabContentBind.activeTabId;
-    switch (menu) {
-      case 'home':
-        TabContentBind.data.home[tab as 'devices' | 'sensors'] = data;
-        break;
-      case 'automations':
-        TabContentBind.data.automations[tab as 'effects'] = data;
-        break;
-    }
-  });
-}
-
-function onChange(changes: DataChanges) {
-  switch (changes.property) {
-    case "activeMenuItemId":
-      onMenuChange(changes.newValue);
-      break;
-    case "activeTabId":
-      // onTabChange(changes.newValue);
-      break;
-  }
-}
-
-function onMenuChange(value: string) {
-  setTimeout(() => {
-    let menu = menus[value];
-    TabContentBind.actions = menu.actions;
-  }, 100);
+function ready() {
+  NavBarItems.forEach((item: IMenuItem) => {
+    (item.tabs || []).forEach(async({ endpoint, id }) => {
+      let bind: any = TabContentBind;
+      bind.data[item.id][id] = await getEndPointData(endpoint || '');;
+    });
+  })
 }

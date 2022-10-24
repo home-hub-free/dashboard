@@ -3,8 +3,8 @@
     :if="this.data.home.devices"
     class="device-button"
     :foreach="device in this.data.home.devices"
-    :ontouchstart="this.actions.deviceTouchStart(event, device)"
-    :onmouseup="this.actions.deviceTouchEnd(device)"
+    :ontouchstart="this.actions.home.deviceTouchStart(event, device)"
+    :onmouseup="this.actions.home.deviceTouchEnd(device)"
     :class:active="device.value"
     oncontextmenu="return false;"
   >
@@ -27,8 +27,8 @@
     class="sensor-button"
     :foreach="sensor in this.data.home.sensors"
     :class:active="sensor.value"
-    :ontouchstart="this.actions.deviceTouchStart(event, sensor)"
-    :onmouseup="this.actions.deviceTouchEnd(sensor)"
+    :ontouchstart="this.actions.home.deviceTouchStart(event, sensor)"
+    :onmouseup="this.actions.home.deviceTouchEnd(sensor)"
     oncontextmenu="return false;"
   >
     ${sensor.name}

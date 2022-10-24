@@ -1,4 +1,4 @@
-export const server = "http://localhost:8080/";
+export const server = "http://192.168.1.99:8080/";
 
 const headers = {
   Accept: "application/json",
@@ -71,9 +71,14 @@ export function getDeviceProgrammableActions(id: string) {
   })
     .then((res) => res.json())
     .then((actions) => {
-      // actions.forEach(action => {
-
-      // });
       return actions;
     });
+}
+
+export function saveEffect(effect: any) {
+  return fetch(server + 'set-effect', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({effect})
+  });
 }

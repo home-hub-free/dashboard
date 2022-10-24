@@ -1,1 +1,33 @@
-Hehe
+<!-- Used in tab-content.ts -->
+<style>
+  .effect-list {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    row-gap: 10px;
+  }
+  .effect-container {
+    height: 40px;
+    border-radius: 5px;
+    background-color: white;
+    box-shadow: 4px 4px 4px rgba(100, 100, 100, 0.3);
+    padding: 15px;
+  }
+</style>
+<div class="automation-container">
+  <button :onclick="this.actions.automations.newAutomation(event, this.data)">New automation</button>
+  
+  <div :if="this.data.automations.auto" class="effect-list">
+    <span
+      class="effect-container"
+      :foreach="effect in this.data.automations.auto">
+      <span>
+        ${this.actions.automations.parseEffectSentense(this.data, effect)}
+      </span>
+
+    </span>
+  </div>
+  <div :else>
+    You don't have any automations yet. Add One
+  </div>
+</div>

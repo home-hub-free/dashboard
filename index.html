@@ -19,7 +19,8 @@
       :class="'from-' + this.toasterOptions.from"
     ></div>
 
-    <div id="overlay-modal">
+    <div id="overlay-modal" 
+    :onmouseup="this.closeOverlay()">
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

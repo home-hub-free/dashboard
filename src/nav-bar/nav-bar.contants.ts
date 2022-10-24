@@ -42,6 +42,14 @@ export const NavBarItems: IMenuItem[] = [
     icon: 'hourglass',
     name: 'Automations',
     expanded: false,
-    activeTabIndex: -1
+    activeTabIndex: -1,
+    tabs: [
+      {
+        id: 'auto',
+        name: '',
+        icon: '',
+        endpoint: 'get-effects'
+      }
+    ]
   }
 ];

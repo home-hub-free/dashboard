@@ -13,18 +13,11 @@ export const HomeService = {
 let currentTimeout: NodeJS.Timeout;
 export function deviceTouchStart(event: any) {
   let rect = getGlobalPosition(event.target);
-  let startPosition = {
-    top: rect.top + 'px',
-    left: rect.left + 'px',
-    height: rect.height + 'px',
-    width: rect.width + 'px',
-  };
-
   currentTimeout = setTimeout(() => {
     openOverlay({
       template: DeviceEditView,
       data: {},
-      startRect: startPosition,
+      startRect: rect,
       padding: { x: 50, y: 200 }
     });
   }, 800);

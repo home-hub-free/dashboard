@@ -3,7 +3,7 @@
   :if="this.visible"
   :class:opening="this.opening"
   :class:closing="this.closing"
-  :onmouseup="this.closeOverlay()"
+  :onmouseup="this.closeOverlay();"
 >
   <div
     class="content animated"
@@ -12,5 +12,6 @@
     :class:closing="this.closing"
     :style="this.position"
     :innerHTML="this.template"
+    :onmouseup="event.stopImmediatePropagation();"
   ></div>
 </div>
