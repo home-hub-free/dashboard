@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 
 /** @type {import('vite').UserConfig} */
 export default defineConfig({
+  server: {
+    port: 8081
+  },
   assetsInclude: [
     '**/*.html'
   ],
