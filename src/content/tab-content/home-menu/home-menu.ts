@@ -12,7 +12,7 @@ export const HomeService = {
   saveNameById
 };
 
-let currentTimeout: NodeJS.Timeout;
+let currentTimeout: any;
 export function deviceTouchStart(event: any, data: any, type: string) {
   let rect = getGlobalPosition(event.target);
   currentTimeout = setTimeout(() => {
