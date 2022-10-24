@@ -1,8 +1,7 @@
 import { Bind } from "bindrjs";
 import { NavBarItems, NavBarState } from "./nav-bar.contants";
 import type { IMenuItem } from "./nav-bar.contants";
-// import { ContentSection } from "../content/content-section";
-import template from "./nav-bar.html";
+import template from "./nav-bar.html?raw";
 import { Header } from "../content/header/header";
 import { TabsBind } from "../content/tabs/tabs";
 

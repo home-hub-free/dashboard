@@ -1,5 +1,5 @@
 import { Bind } from "bindrjs";
-import template from './header.template.html';
+import template from './header.template.html?raw';
 
 interface IHeader {
   name: string | null;

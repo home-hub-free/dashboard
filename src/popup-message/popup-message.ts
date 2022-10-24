@@ -1,5 +1,5 @@
 import { Bind, DataChanges } from "bindrjs";
-import template from "./popup-message.html";
+import template from "./popup-message.html?raw";
 
 type ToasterOptions = {
   from: "top" | "bottom" | "left" | "right";
