@@ -1,3 +1,21 @@
-<div>
-  Hi
+<style>
+  .edit-container {
+    box-sizing: border-box;
+    padding: 20px;
+    text-align: center;
+  }
+  input {
+    width: 50%;
+    height: 30px;
+  }
+  button {
+    margin-top: 20px;
+    width: 50%;
+    height: 30px;
+  }
+</style>
+<div class="edit-container">
+  <label :for="this.data.name">Device name</label>
+  <input :id="this.data.id" :name="this.data.name" type="text" :value="this.data.name">
+  <button :onclick="this.actions.saveNameById(this.data)">Save</button>
 </div>

@@ -61,6 +61,7 @@ export function closeOverlay() {
   setRectStyles(startPosition);
   setTimeout(() => {
     bind.data = {};
+    bind.actions = {};
     bind.visible = false;
     bind.closing = false;
   }, 300);

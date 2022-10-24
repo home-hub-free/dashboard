@@ -1,4 +1,5 @@
 export const server = "http://192.168.1.99:8080/";
+// export const server = "http://localhost:8080/";
 
 const headers = {
   Accept: "application/json",
@@ -45,7 +46,7 @@ export function toggleServerDevice(device: any): Promise<ServerResponse> {
 
 export function submitDataChange(
   id: string,
-  type: "device" | "sensor",
+  type: "devices" | "sensors",
   prop: string,
   value: any
 ) {

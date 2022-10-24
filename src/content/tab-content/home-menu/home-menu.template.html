@@ -3,20 +3,12 @@
     :if="this.data.home.devices"
     class="device-button"
     :foreach="device in this.data.home.devices"
-    :ontouchstart="this.actions.home.deviceTouchStart(event, device)"
+    :ontouchstart="this.actions.home.deviceTouchStart(event, device , 'devices')"
     :onmouseup="this.actions.home.deviceTouchEnd(device)"
     :class:active="device.value"
     oncontextmenu="return false;"
   >
   ${device.name}
-    <!-- <div class="name">
-      <span
-        class="close-device-edit-mode"
-        :onmouseup="this.closeEditMode(event, device)"
-      >
-        <i :if="device.editMode" class="iconoir-cancel"></i>
-      </span>
-    </div> -->
   </div>
   <div :else>No Devices detected in your network :(</div>
 </div>
@@ -27,7 +19,7 @@
     class="sensor-button"
     :foreach="sensor in this.data.home.sensors"
     :class:active="sensor.value"
-    :ontouchstart="this.actions.home.deviceTouchStart(event, sensor)"
+    :ontouchstart="this.actions.home.deviceTouchStart(event, sensor, 'sensors')"
     :onmouseup="this.actions.home.deviceTouchEnd(sensor)"
     oncontextmenu="return false;"
   >
