@@ -1,7 +1,7 @@
 import { Bind, DataChanges } from "bindrjs";
 import template from "./popup-message.html";
 
-interface ToasterOptions {
+type ToasterOptions = {
   from: "top" | "bottom" | "left" | "right";
   message: string;
   timer: number;
@@ -12,6 +12,8 @@ export const PopupMessage = new Bind({
   template,
   bind: {
     toasterOptions: null,
+    popToast: false,
+    hidingToaster: false,
     hideToaster,
   },
   onChange

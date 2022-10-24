@@ -1,4 +1,5 @@
-import { openOverlay } from "../../../overlay-modal/overlay-modal";
+import { closeOverlay, openOverlay } from "../../../overlay-modal/overlay-modal";
+import { showToaster } from "../../../popup-message/popup-message";
 import { saveEffect } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import NewAutomationOverlay from "./overlay-views/new-automation-overlay.html?raw";
@@ -54,7 +55,14 @@ function saveAutomation(data: any) {
       is: sensorState || dateSelected,
     },
   };
-  saveEffect(effect);
+  saveEffect(effect).then(() => {
+    closeOverlay();
+    showToaster({
+      from: 'bottom',
+      message: 'Saved automation',
+      timer: 2000
+    });
+  });
 }
 
 function parseEffectSentense(data: any, effect: any) {

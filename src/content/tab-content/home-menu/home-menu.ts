@@ -50,6 +50,11 @@ function saveNameById(data: any) {
       let original = list.find((item: any) => item.id === data.id);
       original.name = name;
       closeOverlay();
+      showToaster({
+        from: 'bottom',
+        message: `Saved ${data.type.substring(0, data.type.length - 1)} name`,
+        timer: 2000
+      });
     });
   }
 }
