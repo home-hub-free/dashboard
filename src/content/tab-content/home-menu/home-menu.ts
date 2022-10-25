@@ -1,6 +1,6 @@
 import { submitDataChange, toggleServerDevice } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
-import { closeOverlay, openOverlay } from "../../../overlay-modal/overlay-modal";
+import { openOverlay } from "../../../overlay-modal/overlay-modal";
 import { showToaster } from "../../../popup-message/popup-message";
 
 import DeviceEditView from './overlay-views/devices-edit.template.html?raw';
