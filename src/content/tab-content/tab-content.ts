@@ -34,6 +34,7 @@ const TabContent = new Bind({
   ready,
 });
 export const TabContentBind = TabContent.bind;
+const bind = TabContentBind;
 
 function ready() {
   NavBarItems.forEach((item: IMenuItem) => {
@@ -42,4 +43,27 @@ function ready() {
       bind.data[item.id][id] = await getEndPointData(endpoint || '');;
     });
   })
+}
+
+export function WebSocketDeviceDeclare(data: any) {
+  if (!bind.data.home.devices) bind.data.home.devices = [];
+  let device = bind.data.home.devices.find((device: any) => device.id === data.id);
+  if (!device) bind.data.home.devices.push(data);
+}
+
+export function WebSocketDeviceUpdate(data: any) {
+  let device = bind.data.home.devices.find((device: any) => device.id === data.id);
+  if (device && device.value !== data.value) device.value = data.value;
+  if (device && device.manual !== data.manual) device.manual = data.manual;
+}
+
+export function WebSocketSensorDeclare(data: any) {
+  if (!bind.data.home.sensors) bind.data.home.sensors = [];
+  let sensor = bind.data.home.sensors.find((sensor: any) => sensor.id === data.id);
+  if (!sensor) bind.data.home.sensors.push(data);
+}
+
+export function WebSocketSensorUpdate(data: any) {
+  let sensor = bind.data.home.sensors.find((sensor: any) => sensor.id === data.id);
+  if (sensor) sensor.value = data.value;
 }
