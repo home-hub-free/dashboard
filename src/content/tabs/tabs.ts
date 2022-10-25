@@ -19,7 +19,6 @@ interface TabsModel {
     height: string,
   },
   tabs: Tab[] | null,
-  loading: boolean,
   actions: any,
 }
 
@@ -34,7 +33,6 @@ const Tabs = new Bind<TabsModel>({
       height: "",
     },
     tabs: null,
-    loading: false,
     actions: {
       selectTab,
     }

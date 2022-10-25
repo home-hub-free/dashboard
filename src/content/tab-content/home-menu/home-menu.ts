@@ -31,6 +31,8 @@ export function deviceTouchStart(event: any, data: any, type: string) {
 
 export function deviceTouchEnd(device: any) {
   if (currentTimeout) clearTimeout(currentTimeout);
+  // For immidiate feedback, update the value before the server call
+  device.value = !device.value;
   toggleServerDevice(device)
   .then(({data, success}) => {
     if (!success) {
@@ -41,11 +43,11 @@ export function deviceTouchEnd(device: any) {
       })
     }
     TabContentBind.data.home.devices.forEach((device: any) => {
+      /**
+       * Find and update element props directly becasue BindrJS
+       * still doesn't know how to override entire array elements
+       */
       if (device.id === data.id) {
-        /**
-         * Find and update element props directly becasue BindrJS
-         * still doesn't know how to override entire array elements
-         */
         device.manual = data.manual;
       }
     });
@@ -56,7 +58,8 @@ export function deviceTouchEnd(device: any) {
       from: "bottom",
       timer: 2000,
     });
-    device.value = false;
+    // Revert value if failed
+    device.value = !device.value;
   });
 }
 

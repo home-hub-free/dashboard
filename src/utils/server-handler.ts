@@ -1,5 +1,5 @@
-export const server = "http://192.168.1.99:8080/";
-// export const server = "http://localhost:8080/";
+// export const server = "http://192.168.1.99:8080/";
+export const server = "http://localhost:8080/";
 
 const headers = {
   Accept: "application/json",
@@ -18,16 +18,13 @@ export function getEndPointData(endpoint: string) {
 }
 
 export function toggleServerDevice(device: any): Promise<ServerResponse> {
-  // For immidiate feedback, update the value before the server call
-  let newVal = !device.value;
   return new Promise((resolve, reject) => {
-    device.value = newVal;
     return fetch(server + "device-update", {
       method: "POST",
       headers,
       body: JSON.stringify({
         id: device.id,
-        value: newVal,
+        value: device.value,
       }),
     })
       .then((res) => res.json())
