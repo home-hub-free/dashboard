@@ -1,14 +1,31 @@
+<style>
+  .auto-indicator {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    color: lightgray;
+  }
+  .auto-indicator.on {
+    color: var(--primary-highlight-color);
+  }
+  .device-button {
+    position: relative;
+  }
+</style>
 <div :if="this.activeTabId === 'devices'">
   <div
-    :if="this.data.home.devices"
     class="device-button"
+    :if="this.data.home.devices"
     :foreach="device in this.data.home.devices"
     :ontouchstart="this.actions.home.deviceTouchStart(event, device , 'devices')"
     :onmouseup="this.actions.home.deviceTouchEnd(device)"
     :class:active="device.value"
     oncontextmenu="return false;"
   >
-  ${device.name}
+  <span>
+    ${device.name}
+  </span>
+  <span class="auto-indicator" :class:on="!device.manual">A</span>
   </div>
   <div :else>No Devices detected in your network :(</div>
 </div>
