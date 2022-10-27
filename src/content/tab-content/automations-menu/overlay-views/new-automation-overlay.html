@@ -63,7 +63,7 @@
       </select>
     </div>
 
-    <div :if="this.data.automations.sensorState">
+    <div :if="this.data.automations.sensorState !== undefined">
       <button :onclick="this.actions.saveAutomation(this.data.automations)"> Save Automation </button>
     </div>
   </div>
