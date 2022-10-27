@@ -53,8 +53,10 @@ export function WebSocketDeviceDeclare(data: any) {
 
 export function WebSocketDeviceUpdate(data: any) {
   let device = bind.data.home.devices.find((device: any) => device.id === data.id);
-  if (device && device.value !== data.value) device.value = data.value;
-  if (device && device.manual !== data.manual) device.manual = data.manual;
+  if (device) {
+    device.value = data.value;
+    device.manual = data.manual;
+  }
 }
 
 export function WebSocketSensorDeclare(data: any) {
