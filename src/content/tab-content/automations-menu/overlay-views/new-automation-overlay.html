@@ -56,7 +56,7 @@
     </select>
 
     <div :if="this.data.automations.sensorSelected">
-      <select :oninput="this.data.automations.sensorState = event.target.value">
+      <select :oninput="this.data.automations.sensorState = JSON.parse(event.target.value)">
         <option value="null">Is: </option>
         <option value="true">Active</option>
         <option value="false">Inactive</option>
