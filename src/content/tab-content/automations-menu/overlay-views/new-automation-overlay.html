@@ -34,7 +34,7 @@
     </div>
   </div>
 
-  <div :if="this.data.automations.setTo">
+  <div :if="this.data.automations.setTo !== undefined">
     ${this.data.automations.effectSelected ? 'Based on: ' : ''}
     <select :oninput="this.data.automations.effectSelected = event.target.value">
       <option value="null">Baed on: </option>
