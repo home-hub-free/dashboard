@@ -23,7 +23,7 @@
 
   <div :if="this.data.automations.deviceSelected">
     <div :if="this.data.automations.deviceSelected.type === 'boolean'">
-      <select :oninput="this.data.automations.setTo = event.target.value">
+      <select :oninput="this.data.automations.setTo = JSON.parse(event.target.value)">
         <option value="null">Do: </option>
         <option value="true">Turn on</option>
         <option value="false">Turn off</option>
