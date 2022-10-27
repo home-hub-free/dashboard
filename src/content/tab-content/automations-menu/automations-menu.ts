@@ -44,6 +44,10 @@ function saveAutomation(data: any) {
     sensorSelected,
     sensorState,
   } = data;
+  let is = sensorState;
+  if (effectSelected === 'time') {
+    is = dateSelected;
+  }
   let effect: AutoEffect = {
     set: {
       id: deviceSelected.id,
@@ -52,7 +56,7 @@ function saveAutomation(data: any) {
     when: {
       id: sensorSelected.id,
       type: effectSelected,
-      is: sensorState || dateSelected,
+      is,
     },
   };
   saveEffect(effect).then(() => {
