@@ -7,6 +7,7 @@
     "dev": "vite --config vite.config.js --host",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "prod": "npm run build && http-server dist -p 8081",
     "re-link": "npm rm bindrjs && sudo npm link ../../bindrjs",
     "link": "npm run re-link && npm run dev"
   },
