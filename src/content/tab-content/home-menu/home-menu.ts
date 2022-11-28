@@ -9,6 +9,7 @@ import { TabContentBind } from "../tab-content";
 export const HomeService = {
   deviceTouchStart,
   deviceTouchEnd,
+  sensorTouchEnd,
   saveProp,
 };
 
@@ -32,6 +33,8 @@ export function deviceTouchStart(event: any, data: any, type: string) {
 export function deviceTouchEnd(device: any) {
   if (currentTimeout) clearTimeout(currentTimeout);
   // For immidiate feedback, update the value before the server call
+  
+  // if (device)
   device.value = !device.value;
   toggleServerDevice(device)
   .then(({data, success}) => {
@@ -61,6 +64,10 @@ export function deviceTouchEnd(device: any) {
     // Revert value if failed
     device.value = !device.value;
   });
+}
+
+export function sensorTouchEnd() {
+  if (currentTimeout) clearTimeout(currentTimeout);
 }
 
 function saveProp(data: any, prop: string) {

@@ -37,7 +37,7 @@
     :foreach="sensor in this.data.home.sensors"
     :class:active="sensor.value"
     :ontouchstart="this.actions.home.deviceTouchStart(event, sensor , 'sensors')"
-    :onmouseup="this.actions.home.deviceTouchEnd(sensor)"
+    :onmouseup="this.actions.home.sensorTouchEnd(sensor)"
     oncontextmenu="return false;"
   >
     ${sensor.name}
