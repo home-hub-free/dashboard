@@ -31,7 +31,7 @@
     <label :for="this.data.id + '_name' ">Name</label>
     <input :id="this.data.id" :name="this.data.id + '_name'" type="text" :value="this.data.name">
   </div>
-  <div>
+  <div :if="this.data.type === 'device'">
     <label :for="this.data.id + '_auto' ">Auto</label>
     <input :if="this.data.manual" :id="this.data.id + '_manual'" type="checkbox" :oninput="this.actions.saveProp(this.data, 'manual')">
     <input :else type="checkbox" :id="this.data.id + '_manual'" checked :oninput="this.actions.saveProp(this.data, 'manual')">
@@ -39,5 +39,5 @@
       Automatic mode allow this device to be affected by external events, like sensor/time type of automations
     </p>
   </div>
-  <button :onclick="this.actions.saveProp(this.data, 'name')">Save</button>
+  <button :onmouseup="this.actions.saveProp(this.data, 'name')">Save</button>
 </div>
