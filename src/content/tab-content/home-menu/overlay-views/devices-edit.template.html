@@ -31,7 +31,7 @@
     <label :for="this.data.id + '_name' ">Name</label>
     <input :id="this.data.id" :name="this.data.id + '_name'" type="text" :value="this.data.name">
   </div>
-  <div :if="this.type === 'device'">
+  <div>
     <label :for="this.data.id + '_auto' ">Auto</label>
     <input :if="this.data.manual" :id="this.data.id + '_manual'" type="checkbox" :oninput="this.actions.saveProp(this.data, 'manual')">
     <input :else type="checkbox" :id="this.data.id + '_manual'" checked :oninput="this.actions.saveProp(this.data, 'manual')">
