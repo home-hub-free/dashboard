@@ -74,9 +74,22 @@ export function getDeviceProgrammableActions(id: string) {
 }
 
 export function saveEffect(effect: any) {
-  return fetch(server + 'set-effect', {
-    method: 'POST',
+  return fetch(server + "set-effect", {
+    method: "POST",
     headers,
-    body: JSON.stringify({effect})
+    body: JSON.stringify({ effect }),
   });
+}
+
+export function requestCalendarData() {
+  return fetch(server + "emma-calendar", {
+    method: "GET",
+    headers,
+  }).then((res) => res.json());
+}
+
+export function requestWeatherData() {
+  return fetch(server + "emma-weather", {
+    method: "GET",
+  }).then((res) => res.json());
 }

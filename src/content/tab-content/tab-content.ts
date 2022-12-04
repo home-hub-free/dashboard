@@ -2,10 +2,12 @@ import { Bind } from "bindrjs";
 import template from "./tab-content.template.html?raw";
 import HomeTemplate from "./home-menu/home-menu.template.html?raw";
 import AutomationTemplate from './automations-menu/automations-menu.template.html?raw';
+import AssistantTemplate from './assistant-menu/assistant-menu.template.html?raw';
 import { HomeService } from "./home-menu/home-menu";
 import { getEndPointData } from "../../utils/server-handler";
-import { AutomationsActions } from "./automations-menu/automations-menu";
+import { AutomationsService } from "./automations-menu/automations-menu";
 import { IMenuItem, NavBarItems } from "../../nav-bar/nav-bar.contants";
+import { AssistantService } from "./assistant-menu/assistant-menu";
 
 const TabContent = new Bind({
   id: "tab-content",
@@ -15,11 +17,13 @@ const TabContent = new Bind({
     activeTabId: "",
     templates: {
       home: HomeTemplate,
-      automations: AutomationTemplate
+      automations: AutomationTemplate,
+      assistant: AssistantTemplate,
     },
     actions: {
       home: HomeService,
-      automations: AutomationsActions
+      automations: AutomationsService,
+      assistant: AssistantService
     },
     data: {
       home: {
@@ -28,6 +32,9 @@ const TabContent = new Bind({
       },
       automations: {
         effects: null
+      },
+      assistant: {
+        info: null
       }
     },
   },
@@ -40,7 +47,8 @@ function ready() {
   NavBarItems.forEach((item: IMenuItem) => {
     (item.tabs || []).forEach(async({ endpoint, id }) => {
       let bind: any = TabContentBind;
-      bind.data[item.id][id] = await getEndPointData(endpoint || '');;
+      bind.data[item.id][id] = await getEndPointData(endpoint || '');
+      console.log(bind.data[item.id][id]);
     });
   })
 }

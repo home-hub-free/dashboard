@@ -51,5 +51,20 @@ export const NavBarItems: IMenuItem[] = [
         endpoint: 'get-effects'
       }
     ]
+  },
+  {
+    id: 'assistant',
+    icon: 'hexagon',
+    name: 'VAssistant',
+    expanded: false,
+    activeTabIndex: -1,
+    tabs: [
+      {
+        id: 'info',
+        name: 'Info',
+        icon: '',
+        endpoint: 'emma'
+      }
+    ]
   }
 ];

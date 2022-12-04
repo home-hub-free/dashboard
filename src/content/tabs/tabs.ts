@@ -2,10 +2,10 @@ import { Bind, DataChanges } from "bindrjs";
 import { TabContentBind } from "../tab-content/tab-content";
 import template from './tabs.template.html?raw';
 
-type TabTypes = 'sensors' | 'devices' | 'auto'
+// type TabTypes = 'sensors' | 'devices' | 'auto' | 'assistant'
 
 export interface Tab {
-  id: TabTypes,
+  id: string,
   name: string;
   icon?: string;
   endpoint?: string,

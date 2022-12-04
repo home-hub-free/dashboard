@@ -4,7 +4,7 @@ import { saveEffect } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import NewAutomationOverlay from "./overlay-views/new-automation-overlay.html?raw";
 
-export const AutomationsActions = {
+export const AutomationsService = {
   newAutomation,
   saveAutomation,
   parseEffectSentense
@@ -27,7 +27,7 @@ function newAutomation(event: MouseEvent, data: any) {
   openOverlay({
     template: NewAutomationOverlay,
     data,
-    actions: AutomationsActions,
+    actions: AutomationsService,
     startRect: rect,
     padding: { x: 0, y: 140 },
   });
