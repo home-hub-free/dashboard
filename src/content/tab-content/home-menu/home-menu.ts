@@ -11,31 +11,45 @@ export const HomeService = {
   deviceTouchEnd,
   sensorTouchEnd,
   saveProp,
+  updateDevice,
 };
 
 let currentTimeout: any;
 export function deviceTouchStart(event: any, data: any, type: string) {
   let rect = getGlobalPosition(event.target);
+  let inputType: any = null;
+  if (type === 'devices') {
+    inputType = 'text';
+    if (data.type === 'value') {
+      inputType = 'range';
+    }
+  }
   currentTimeout = setTimeout(() => {
     openOverlay({
       template: DeviceEditView,
       data: {
         ...data,
-        type
+        type,
+        inputType,
       },
       actions: HomeService,
       startRect: rect,
-      padding: { x: 50, y: 200 }
+      padding: { x: 40, y: 80 }
     });
   }, 800);
 }
 
 export function deviceTouchEnd(device: any) {
   if (currentTimeout) clearTimeout(currentTimeout);
-  // For immidiate feedback, update the value before the server call
-  
-  // if (device)
-  device.value = !device.value;
+
+  if (device.type === 'boolean') {
+    // For immidiate feedback, update the value before the server call
+    device.value = !device.value;
+    updateDevice(device);
+  } 
+}
+
+export function updateDevice(device: any) {
   toggleServerDevice(device)
   .then(({data, success}) => {
     if (!success) {
