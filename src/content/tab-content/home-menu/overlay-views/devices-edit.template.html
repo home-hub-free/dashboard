@@ -34,7 +34,7 @@
   <div :if="this.data.inputType === 'range'">
     <input 
       type="range"
-      min="1" max="100"
+      min="0" max="100"
       :value="this.data.value.toString()"
       :oninput="this.data.value = event.target.value"
       :onchange="this.actions.updateDevice(this.data)">
