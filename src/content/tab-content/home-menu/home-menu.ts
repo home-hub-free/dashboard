@@ -60,10 +60,10 @@ export function deviceTouchMove(event: TouchEvent, device: any, type: string) {
   if (recordSwipe && device.type === 'value' && type === 'devices' && newValue >= 0 && newValue <= 100) {
     device.value = newValue;
     ((OverlayModal.bind.data as any).value) = newValue.toString();
-    // Avoid endpoint calls every change
-    if (newValue % 10 === 0 || newValue === 0) {
-      updateDevice(device);
-    }
+    // // Avoid endpoint calls every change
+    // if (newValue % 10 === 0) {
+    // }
+    updateDevice(device);
   }
 }
 
