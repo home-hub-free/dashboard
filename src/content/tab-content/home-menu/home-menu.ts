@@ -34,6 +34,8 @@ export function deviceTouchStart(event: any, data: any, type: string) {
   }
   currentTimeout = setTimeout(() => {
     recordSwipe = true;
+    if (!originalValue) originalValue = parseInt(data.value);
+
     openOverlay({
       template: DeviceEditView,
       data: {
@@ -45,24 +47,20 @@ export function deviceTouchStart(event: any, data: any, type: string) {
       startRect: rect,
       padding: { x: 40, y: 80 }
     });
-  }, 800);
+  }, 600);
 }
 
 export function deviceTouchMove(event: TouchEvent, device: any, type: string) {
   const newTouchPosition = event.touches[0][swipeOnAxis];
   currentTouchPosition = newTouchPosition - touchStartPosition;
 
-  if (!originalValue) originalValue = parseInt(device.value);
-  const calculated = Math.round(originalValue + (currentTouchPosition / 1.5));
-  
+  const calculated = Math.round(originalValue + (currentTouchPosition / 2));  
   const newValue = calculated < 0 ? 0 : calculated > 100 ? 100 : calculated;
 
   if (recordSwipe && device.type === 'value' && type === 'devices' && newValue >= 0 && newValue <= 100) {
     device.value = newValue;
-    ((OverlayModal.bind.data as any).value) = newValue.toString();
-    // // Avoid endpoint calls every change
-    // if (newValue % 10 === 0) {
-    // }
+    ((OverlayModal.bind.data as any).value) = newValue;
+
     updateDevice(device);
   }
 }

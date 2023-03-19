@@ -35,7 +35,7 @@
     <input 
       type="range"
       min="0" max="100"
-      :value="this.data.value"
+      :value="this.data.value + ''"
       :oninput="this.data.value = event.target.value"
       :onchange="this.actions.updateDevice(this.data)">
     <span>${this.data.value}</span>

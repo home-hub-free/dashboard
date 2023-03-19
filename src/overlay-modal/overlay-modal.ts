@@ -37,6 +37,7 @@ const bind = OverlayModal.bind;
 
 let startPosition: any = {};
 export function openOverlay(context: ModalContext) {
+  if (bind.visible) return;
   bind.template = context.template;
   bind.data = context.data;
   bind.actions = context.actions || {};

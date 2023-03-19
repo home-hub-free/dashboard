@@ -104,6 +104,7 @@
       padding: 10px;
       height: calc(100% - 150px);
       position: relative;
+      overflow: scroll;
       & > div {
         height: 100%;
         & > div {

@@ -19,13 +19,14 @@
     :if="this.data.home.devices"
     :foreach="device in this.data.home.devices"
     :ontouchstart="this.actions.home.deviceTouchStart(event, device , 'devices')"
-    :onmouseup="this.actions.home.deviceTouchEnd(event, device)"
+    :ontouchend="this.actions.home.deviceTouchEnd(event, device)"
     :ontouchmove="this.actions.home.deviceTouchMove(event, device , 'devices')"
     :class:active="device.value"
     oncontextmenu="return false;"
   >
   <span>
     ${device.name}
+    <span :if="device.type === 'value'"> ${device.value} </span>
   </span>
   <span class="auto-indicator" :class:on="!device.manual">A</span>
   </div>
