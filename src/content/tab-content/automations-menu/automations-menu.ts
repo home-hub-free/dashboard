@@ -10,7 +10,7 @@ export const AutomationsService = {
   parseEffectSentense
 };
 
-type AutoEffect = {
+export type AutoEffect = {
   set: {
     id: string;
     value: any;
@@ -20,6 +20,7 @@ type AutoEffect = {
     type: string;
     is: any;
   };
+  sentence?: string
 };
 
 function newAutomation(event: MouseEvent, data: any) {
@@ -71,6 +72,8 @@ function saveAutomation(data: any) {
 
 function parseEffectSentense(data: any, effect: any) {
   let device = data.home.devices.find((d: any) => d.id == effect.set.id);
+  if (!device) return '';
+
   let text = device.name;
 
   switch (device.type) {
@@ -78,7 +81,7 @@ function parseEffectSentense(data: any, effect: any) {
       text += ' turns ' + (JSON.parse(effect.set.value) ? 'on ' : 'off ')
       break;
     case 'value':
-      text += ' sets to: ' + effect.set.value;
+      text += ' sets to: ' + effect.set.value + ' ';
       break;
   }
   
@@ -91,6 +94,8 @@ function parseEffectSentense(data: any, effect: any) {
       let sensor = data.home.sensors.find((s: any) => s.id == effect.when.id);
       text += `sensor(${sensor.name}) is ${JSON.parse(effect.when.is) ? 'Active' : 'Inactive'}`
   }
+
+  effect.sentence = text;
 
   return text;
 

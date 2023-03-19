@@ -20,9 +20,10 @@
   <div :if="this.data.automations.auto" class="effect-list">
     <span
       class="effect-container"
-      :foreach="effect in this.data.automations.auto">
+      :foreach="effect in this.data.automations.auto"
+      :if="effect.sentence">
       <span>
-        ${this.actions.automations.parseEffectSentense(this.data, effect)}
+        ${effect.sentence}
       </span>
 
     </span>

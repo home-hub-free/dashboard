@@ -5,7 +5,7 @@ import AutomationTemplate from './automations-menu/automations-menu.template.htm
 import AssistantTemplate from './assistant-menu/assistant-menu.template.html?raw';
 import { HomeService } from "./home-menu/home-menu";
 import { getEndPointData } from "../../utils/server-handler";
-import { AutomationsService } from "./automations-menu/automations-menu";
+import { AutoEffect, AutomationsService } from "./automations-menu/automations-menu";
 import { IMenuItem, NavBarItems } from "../../nav-bar/nav-bar.contants";
 import { AssistantService } from "./assistant-menu/assistant-menu";
 
@@ -48,7 +48,11 @@ function ready() {
     (item.tabs || []).forEach(async({ endpoint, id }) => {
       let bind: any = TabContentBind;
       bind.data[item.id][id] = await getEndPointData(endpoint || '');
-      console.log(bind.data[item.id][id]);
+      if ( id === 'auto') {
+        bind.data[item.id][id].map((automation: AutoEffect) => {
+          automation.sentence = AutomationsService.parseEffectSentense(bind.data, automation);
+        });
+      }
     });
   })
 }

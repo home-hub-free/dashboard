@@ -1,6 +1,6 @@
 import { submitDataChange, toggleServerDevice } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
-import { openOverlay } from "../../../overlay-modal/overlay-modal";
+import { openOverlay, OverlayModal } from "../../../overlay-modal/overlay-modal";
 import { showToaster } from "../../../popup-message/popup-message";
 
 import DeviceEditView from './overlay-views/devices-edit.template.html?raw';
@@ -8,15 +8,23 @@ import { TabContentBind } from "../tab-content";
 
 export const HomeService = {
   deviceTouchStart,
+  deviceTouchMove,
   deviceTouchEnd,
   sensorTouchEnd,
   saveProp,
   updateDevice,
 };
 
+let originalValue = 0;
+let touchStartPosition = 0;
+let currentTouchPosition = 0;
+let recordSwipe = false;
+const swipeOnAxis = 'clientX';
+
 let currentTimeout: any;
 export function deviceTouchStart(event: any, data: any, type: string) {
   let rect = getGlobalPosition(event.target);
+  touchStartPosition = event.touches[0][swipeOnAxis];
   let inputType: any = null;
   if (type === 'devices') {
     inputType = 'text';
@@ -25,6 +33,7 @@ export function deviceTouchStart(event: any, data: any, type: string) {
     }
   }
   currentTimeout = setTimeout(() => {
+    recordSwipe = true;
     openOverlay({
       template: DeviceEditView,
       data: {
@@ -39,7 +48,32 @@ export function deviceTouchStart(event: any, data: any, type: string) {
   }, 800);
 }
 
+export function deviceTouchMove(event: TouchEvent, device: any, type: string) {
+  const newTouchPosition = event.touches[0][swipeOnAxis];
+  currentTouchPosition = newTouchPosition - touchStartPosition;
+
+  if (!originalValue) originalValue = parseInt(device.value);
+  const calculated = Math.round(originalValue + (currentTouchPosition / 1.5));
+  
+  const newValue = calculated < 0 ? 0 : calculated > 100 ? 100 : calculated;
+
+  if (recordSwipe && device.type === 'value' && type === 'devices' && newValue >= 0 && newValue <= 100) {
+    device.value = newValue;
+    ((OverlayModal.bind.data as any).value) = newValue.toString();
+    // Avoid endpoint calls every change
+    if (newValue % 10 === 0 || newValue === 0) {
+      updateDevice(device);
+    }
+  }
+}
+
 export function deviceTouchEnd(event: any, device: any) {
+  if (recordSwipe) {
+    recordSwipe = false;
+    originalValue = 0;
+    updateDevice(device);
+  }
+
   if (currentTimeout) clearTimeout(currentTimeout);
 
   switch (device.type) {

@@ -1,3 +1,4 @@
+
 <style>
   .auto-indicator {
     position: absolute;
@@ -19,6 +20,7 @@
     :foreach="device in this.data.home.devices"
     :ontouchstart="this.actions.home.deviceTouchStart(event, device , 'devices')"
     :onmouseup="this.actions.home.deviceTouchEnd(event, device)"
+    :ontouchmove="this.actions.home.deviceTouchMove(event, device , 'devices')"
     :class:active="device.value"
     oncontextmenu="return false;"
   >
