@@ -47,7 +47,7 @@ export function deviceTouchStart(event: any, data: any, type: string) {
       startRect: rect,
       padding: { x: 40, y: 80 }
     });
-  }, 600);
+  }, 800);
 }
 
 export function deviceTouchMove(event: TouchEvent, device: any, type: string) {
@@ -60,19 +60,27 @@ export function deviceTouchMove(event: TouchEvent, device: any, type: string) {
   if (recordSwipe && device.type === 'value' && type === 'devices' && newValue >= 0 && newValue <= 100) {
     device.value = newValue;
     ((OverlayModal.bind.data as any).value) = newValue;
-
-    updateDevice(device);
+    if (newValue % 10 === 0) {
+      updateDevice(device);
+    }
   }
 }
 
 export function deviceTouchEnd(event: any, device: any) {
-  if (recordSwipe) {
+  if (recordSwipe && device.type === 'value') {
+    event.preventDefault();
+    event.stopImmediatePropagation();
     recordSwipe = false;
     originalValue = 0;
-    updateDevice(device);
+    setTimeout(() => {
+      updateDevice(device);
+    }, 50);
+    return;
   }
 
   if (currentTimeout) clearTimeout(currentTimeout);
+
+  if (recordSwipe && device.type === 'boolean') return;
 
   switch (device.type) {
     case 'value':
