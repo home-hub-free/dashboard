@@ -84,7 +84,7 @@ export function deviceTouchEnd(event: any, device: any) {
         data: {
           ...device,
           type: 'devices',
-          inputType: 'rage',
+          inputType: 'range',
         },
         actions: HomeService,
         startRect: rect,
