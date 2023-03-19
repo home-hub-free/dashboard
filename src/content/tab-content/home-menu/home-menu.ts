@@ -39,14 +39,31 @@ export function deviceTouchStart(event: any, data: any, type: string) {
   }, 800);
 }
 
-export function deviceTouchEnd(device: any) {
+export function deviceTouchEnd(event: any, device: any) {
   if (currentTimeout) clearTimeout(currentTimeout);
 
-  if (device.type === 'boolean') {
-    // For immidiate feedback, update the value before the server call
-    device.value = !device.value;
-    updateDevice(device);
-  } 
+  switch (device.type) {
+    case 'value':
+      let rect = getGlobalPosition(event.target);
+      openOverlay({
+        template: DeviceEditView,
+        data: {
+          ...device,
+          type: 'devices',
+          inputType: 'rage',
+        },
+        actions: HomeService,
+        startRect: rect,
+        padding: { x: 40, y: 80 }
+      });
+      break;
+    case 'boolean':
+      // For immidiate feedback, update the value before the server call
+      device.value = !device.value;
+      updateDevice(device);
+      break;
+
+  }
 }
 
 export function updateDevice(device: any) {
