@@ -91,7 +91,7 @@ function parseEffectSentense(data: any, effect: any) {
     case 'time':
       text += 'time is ' + effect.when.is;
     case 'sensor':
-      let sensor = data.home.sensors.find((s: any) => s.id == effect.when.id);
+      let sensor = data.home.sensors.find((s: any) => s.id == effect.when.id) || { name: 'N/A' };
       text += `sensor(${sensor.name}) is ${JSON.parse(effect.when.is) ? 'Active' : 'Inactive'}`
   }
 

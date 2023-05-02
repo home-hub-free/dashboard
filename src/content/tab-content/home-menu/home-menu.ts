@@ -13,6 +13,7 @@ export const HomeService = {
   sensorTouchEnd,
   saveProp,
   updateDevice,
+  saveOperationalRanges,
 };
 
 let originalValue = 0;
@@ -45,9 +46,9 @@ export function deviceTouchStart(event: any, data: any, type: string) {
       },
       actions: HomeService,
       startRect: rect,
-      padding: { x: 40, y: 80 }
+      padding: { x: 50, y: 80 }
     });
-  }, 800);
+  }, 600);
 }
 
 export function deviceTouchMove(event: TouchEvent, device: any, type: string) {
@@ -159,5 +160,31 @@ function saveProp(data: any, prop: string) {
         timer: 2000
       });
     });
+  }
+}
+
+function saveOperationalRanges(data: any) {
+  let elements: HTMLInputElement[] = [
+    document.getElementById(data.id + '_operationalRangesFrom') as HTMLInputElement,
+    document.getElementById(data.id + '_operationalRangesTo') as HTMLInputElement,
+  ];
+
+  let missingValues = 0;
+  let range = elements
+    .map((element) => {
+      if (!element.value) missingValues++;
+      return element.value;
+    })
+    .join('-');
+
+  if (missingValues) {
+    showToaster({
+      from: 'bottom',
+      message: 'Missing value in operational range time',
+      timer: 3000,
+    });
+  } else {
+    data.operationalRanges.push(range);
+    submitDataChange(data.id, data.type, 'operationalRanges', data.operationalRanges);
   }
 }

@@ -1,12 +1,17 @@
 
 <style>
-  .auto-indicator {
+  .auto-indicator,
+  .motion-indicator {
     position: absolute;
     bottom: 10px;
     left: 10px;
     color: lightgray;
   }
-  .auto-indicator.on {
+  .motion-indicator {
+    font-size: 24px;
+  }
+  .auto-indicator.on,
+  .motion-indicator.on {
     color: var(--primary-highlight-color);
   }
   .device-button {
@@ -26,7 +31,9 @@
   >
   <span>
     ${device.name}
-    <span :if="device.type === 'value'"> ${device.value} </span>
+    <div :if="device.type === 'value'">
+      ${device.value}
+    </div>
   </span>
   <span class="auto-indicator" :class:on="!device.manual">A</span>
   </div>
@@ -43,7 +50,12 @@
     :onmouseup="this.actions.home.sensorTouchEnd(sensor)"
     oncontextmenu="return false;"
   >
-    ${sensor.name}
+    <span>
+      ${sensor.name}
+    </span>
+    <span class="motion-indicator" :class:on="sensor.value">
+      <i class="iconoir-antenna-signal"></i>
+    </span>
   </div>
   <div :else>
     No Sensors Detected in your network :(

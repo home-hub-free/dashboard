@@ -50,6 +50,7 @@ export function openOverlay(context: ModalContext) {
       top: context.padding.y + "px",
       left: context.padding.x + "px",
       height: `calc(100% - ${context.padding.y * 2}px)`,
+      maxHeight: `calc(100% - ${context.padding.y * 2}px)`,
       width: `calc(100% - ${context.padding.x * 2}px)`,
     };
   });
@@ -74,6 +75,7 @@ function setRectStyles(rect: ModalRectangle) {
     top: rect.top + "px",
     left: rect.left + "px",
     height: rect.height + "px",
+    maxHeight: rect.height + 'px',
     width: rect.width + "px",
   };
 }

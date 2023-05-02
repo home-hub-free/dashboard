@@ -17,7 +17,7 @@
     width: 50%;
     height: 30px;
   }
-  button {
+  button.save-btn {
     margin-top: 20px;
     width: 50%;
     height: 30px;
@@ -25,11 +25,34 @@
     bottom: 10px;
     transform: translateX(-50%);
   }
+  .device-setting {
+    display: flex;
+    border-bottom: 1px solid black;
+    padding: 20px 0 20px;
+    flex-direction: column;
+  }
+  .device-setting-row {
+    flex: 1;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    flex-direction: row;
+    margin: 5px 0 5px 0;
+  }
+  .device-setting > label {
+    width: 50%;
+  }
+  .device-setting > label.full-width {
+    width: 100%;
+  }
+  .device-setting > input {
+    color: red;
+  }
 </style>
 <div class="edit-container">
   <div>
     <label :for="this.data.id + '_name' ">Name</label>
-    <input :id="this.data.id + '_name'" :name="this.data.id + '_name'" type="text" :value="this.data.name">
+    <input :id="this.data.id + '_name'" :name="this.data.id + '_name'" type="text" :value="this.data.name" :oninput="this.actions.saveProp(this.data, 'name')">
   </div>
   <div :if="this.data.inputType === 'range'">
     <input 
@@ -41,9 +64,47 @@
     <span>${this.data.value}</span>
   </div>
   <div :if="this.data.type === 'devices'">
-    <label :for="this.data.id + '_auto' ">Auto</label>
-    <input :if="this.data.manual" :id="this.data.id + '_manual'" type="checkbox" :oninput="this.actions.saveProp(this.data, 'manual')">
-    <input :else type="checkbox" :id="this.data.id + '_manual'" checked :oninput="this.actions.saveProp(this.data, 'manual')">
+    <div class="device-setting">
+      <div class="device-setting-row">
+        <label :for="this.data.id + '_auto' ">Auto</label>
+        <input
+          :if="this.data.manual"
+          :id="this.data.id + '_manual'"
+          type="checkbox"
+          :oninput="this.actions.saveProp(this.data, 'manual')">
+        <input 
+          :else
+          :id="this.data.id + '_manual'" 
+          type="checkbox"
+          checked 
+          :oninput="this.actions.saveProp(this.data, 'manual')">
+      </div>
+    </div>
+
+    <div class="device-setting">
+      <div class="device-setting-row">
+        <label class="full-width" :for="this.data.id">Allow auto-trigger time</label>
+      </div>
+      <div :foreach="range in this.data.operationalRanges">
+        ${range}
+      </div>
+      <div class="device-setting-row">
+        From: 
+        <input 
+          :id="this.data.id + '_operationalRangesFrom'"
+          type="time" 
+          >
+        To: 
+        <input 
+          :id="this.data.id + '_operationalRangesTo'"
+          type="time" 
+          >
+      </div>
+      <div class="device-setting-row">
+        <button :onmouseup="this.actions.saveOperationalRanges(this.data)"> + </button>
+      </div>
+    </div>
+    
   </div>
-  <button :onmouseup="this.actions.saveProp(this.data, 'name')">Save</button>
+  <!-- <button class="save-btn" :onmouseup="this.actions.saveProp(this.data, 'name')">Save</button> -->
 </div>
