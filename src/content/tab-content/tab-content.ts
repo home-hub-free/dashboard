@@ -31,7 +31,7 @@ const TabContent = new Bind({
         sensors: null,
       },
       automations: {
-        effects: null
+        auto: null,
       },
       assistant: {
         info: null
@@ -48,7 +48,7 @@ function ready() {
     (item.tabs || []).forEach(async({ endpoint, id }) => {
       let bind: any = TabContentBind;
       bind.data[item.id][id] = await getEndPointData(endpoint || '');
-      if ( id === 'auto') {
+      if (id === 'auto') {
         bind.data[item.id][id].map((automation: AutoEffect) => {
           automation.sentence = AutomationsService.parseEffectSentense(bind.data, automation);
         });

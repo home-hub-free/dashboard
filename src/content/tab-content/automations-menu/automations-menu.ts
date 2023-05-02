@@ -1,13 +1,15 @@
 import { closeOverlay, openOverlay } from "../../../overlay-modal/overlay-modal";
 import { showToaster } from "../../../popup-message/popup-message";
-import { saveEffect } from "../../../utils/server-handler";
+import { saveEffect, saveEffects } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
+import { TabContentBind } from "../tab-content";
 import NewAutomationOverlay from "./overlay-views/new-automation-overlay.html?raw";
 
 export const AutomationsService = {
   newAutomation,
   saveAutomation,
-  parseEffectSentense
+  parseEffectSentense,
+  removeAutomation,
 };
 
 export type AutoEffect = {
@@ -72,7 +74,7 @@ function saveAutomation(data: any) {
 
 function parseEffectSentense(data: any, effect: any) {
   let device = data.home.devices.find((d: any) => d.id == effect.set.id);
-  if (!device) return '';
+  if (!device) device = { name: 'DEVICE N/A ' };
 
   let text = device.name;
 
@@ -91,7 +93,7 @@ function parseEffectSentense(data: any, effect: any) {
     case 'time':
       text += 'time is ' + effect.when.is;
     case 'sensor':
-      let sensor = data.home.sensors.find((s: any) => s.id == effect.when.id) || { name: 'N/A' };
+      let sensor = data.home.sensors.find((s: any) => s.id == effect.when.id) || { name: 'SENSOR N/A' };
       text += `sensor(${sensor.name}) is ${JSON.parse(effect.when.is) ? 'Active' : 'Inactive'}`
   }
 
@@ -99,4 +101,9 @@ function parseEffectSentense(data: any, effect: any) {
 
   return text;
 
+}
+
+function removeAutomation(index: number) {
+  TabContentBind.data.automations.auto.splice(index, 1);
+  saveEffects(TabContentBind.data.automations.auto);
 }

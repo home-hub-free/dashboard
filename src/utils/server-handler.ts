@@ -1,3 +1,5 @@
+import { AutoEffect } from "../content/tab-content/automations-menu/automations-menu";
+
 export const server = "http://192.168.1.199:8080/";
 // export const server = "http://localhost:8080/";
 
@@ -79,6 +81,14 @@ export function saveEffect(effect: any) {
     headers,
     body: JSON.stringify({ effect }),
   });
+}
+
+export function saveEffects(effects: AutoEffect[]) {
+  return fetch(server + 'set-effects', {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ effects })
+  })
 }
 
 export function requestCalendarData() {
