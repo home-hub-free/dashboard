@@ -1,18 +1,19 @@
-import { requestCalendarData, requestWeatherData } from "../../../utils/server-handler";
+import { requestCalendarData, requestWeatherData, updateInsideSensorTemperature } from "../../../utils/server-handler";
 
 export const AssistantService = {
   readCalendar,
-  readForecast
+  readForecast,
+  setInsideSensorTemperature,
 };
 
 function readCalendar() {
-  requestCalendarData().then(log => {
-    console.log(log);
-  });
+  requestCalendarData();
 }
 
 function readForecast() {
-  requestWeatherData().then((log) => {
-    console.log(log);
-  })
+  requestWeatherData();
+}
+
+function setInsideSensorTemperature(sensorId: string) {
+  updateInsideSensorTemperature(sensorId);
 }

@@ -9,6 +9,14 @@ import { AutoEffect, AutomationsService } from "./automations-menu/automations-m
 import { IMenuItem, NavBarItems } from "../../nav-bar/nav-bar.contants";
 import { AssistantService } from "./assistant-menu/assistant-menu";
 
+type Sensor = {
+  id: string,
+  type: 'boolean' | 'value'
+  name: string,
+  value: any,
+  sensorType: 'motion' | 'temp/humidity',
+}
+
 const TabContent = new Bind({
   id: "tab-content",
   template,
@@ -54,7 +62,8 @@ function ready() {
         });
       }
       if (id === 'sensors') {
-        console.log(bind.data[item.id][id]);
+        const sensors = bind.data[item.id][id];
+        formatSensorsValues(sensors);
       }
     });
   })
@@ -84,4 +93,20 @@ export function WebSocketSensorUpdate(data: any) {
   console.log('update')
   let sensor = bind.data.home.sensors.find((sensor: any) => sensor.id === data.id);
   if (sensor) sensor.value = data.value;
+}
+
+function formatSensorsValues(sensors: Sensor[]) {
+  sensors.forEach((sensor) => {
+    switch (sensor.sensorType) {
+      case 'temp/humidity':
+        formatTempHumiditySensor(sensor);
+    }
+  })
+} 
+
+function formatTempHumiditySensor(sensor: Sensor) {
+  const values = sensor.value.split(':');
+  sensor.value = {};
+  sensor.value.temperature = values[0] + '°C';
+  sensor.value.humidity = values[1] + '%'
 }

@@ -1,8 +1,32 @@
 <div>
-  <button :onmouseup="this.actions.assistant.readForecast()">
-    Forecast
-  </button>
-  <button :onmouseup="this.actions.assistant.readCalendar()">
-    Calendars
-  </button>
+  <h3>
+    Quick actions:
+  </h3>
+  <div>
+    <button :onmouseup="this.actions.assistant.readForecast()">
+      Forecast
+    </button>
+    <button :onmouseup="this.actions.assistant.readCalendar()">
+      Calendars
+    </button>
+  </div>
+
+  <div>
+    <h3>
+      Sensor to include in temperature announcements:
+    </h3>
+    <select 
+      name="select" 
+      :oninput="this.actions.assistant.setInsideSensorTemperature(event.target.value)"
+      :value="this.data.assistant.info.houseData.insideSensorTemperature || null">
+      <option value="null">none</option>
+      <option 
+        :foreach="sensor in this.data.home.sensors"
+        selected
+        :value="sensor.id">
+        ${sensor.name}
+      </option>
+
+    </select>
+  </div>
 </div>
