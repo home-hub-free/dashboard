@@ -53,6 +53,9 @@ function ready() {
           automation.sentence = AutomationsService.parseEffectSentense(bind.data, automation);
         });
       }
+      if (id === 'sensors') {
+        console.log(bind.data[item.id][id]);
+      }
     });
   })
 }
