@@ -93,6 +93,7 @@ export function WebSocketSensorUpdate(data: any) {
   console.log('update')
   let sensor = bind.data.home.sensors.find((sensor: any) => sensor.id === data.id);
   if (sensor) sensor.value = data.value;
+  formatSensorsValues([sensor])
 }
 
 function formatSensorsValues(sensors: Sensor[]) {
