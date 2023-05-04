@@ -22,6 +22,7 @@
       <option value="null">none</option>
       <option 
         :foreach="sensor in this.data.home.sensors"
+        :if="sensor.sensorType === 'temp/humidity'"
         selected
         :value="sensor.id">
         ${sensor.name}
