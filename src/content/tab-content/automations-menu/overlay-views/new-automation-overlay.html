@@ -53,15 +53,20 @@
       <option value="null">
         Select sensor:
       </option>
-      <option :foreach="sensor in this.data.home.sensors" :value="sensor.id">${sensor.name}</option>
+      <option :foreach="sensor in this.data.home.sensors" :value="sensor.id">${sensor.name + ' (' + sensor.sensorType + ')'}</option>
     </select>
 
     <div :if="this.data.automations.sensorSelected">
-      <select :oninput="this.data.automations.sensorState = (event.target.value)">
+      <select :if="this.data.automations.sensorSelected.sensorType === 'motion'" :oninput="this.data.automations.sensorState = (event.target.value)">
         <option value="null">Is: </option>
         <option value="true">Active</option>
         <option value="false">Inactive</option>
       </select>
+
+      <div :if="this.data.automations.sensorSelected.sensorType === 'temp/humidity'">
+        <label for="temperature-input">Temperature</label>
+        <input type="number" name="temperature-input" placeholder="higher than" :oninput="this.data.automations.sensorState = (event.target.value)">
+      </div>
     </div>
 
     <div :if="this.data.automations.sensorState !== undefined">
