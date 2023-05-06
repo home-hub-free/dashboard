@@ -54,6 +54,9 @@
     </div>
   </span>
   <span class="auto-indicator" :class:on="!device.manual">A</span>
+  <span :if="device.deviceCategory === 'cooling-system'" class="device-icon">
+    <i class="iconoir-cooling"></i>
+  </span>
   </div>
   <div :else>No Devices detected in your network :(</div>
 </div>
