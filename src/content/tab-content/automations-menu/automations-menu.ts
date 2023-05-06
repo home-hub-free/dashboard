@@ -94,7 +94,7 @@ function parseEffectSentense(data: any, effect: any) {
       text += 'time is ' + effect.when.is;
     case 'sensor':
       let sensor = data.home.sensors.find((s: any) => s.id == effect.when.id) || { name: 'SENSOR N/A' };
-      text += `sensor(${sensor.name}) is ${JSON.parse(effect.when.is) ? 'Active' : 'Inactive'}`
+      text += `sensor(${sensor.name})`
       let is = 'is ';
       if (sensor.sensorType === 'motion') {
         is += `${JSON.parse(effect.when.is) ? 'Active' : 'Inactive'}`
@@ -102,6 +102,7 @@ function parseEffectSentense(data: any, effect: any) {
       if (sensor.sensorType === 'temp/humidity') {
         is += 'higher than ' + effect.when.is; 
       }
+      text += is;
   }
 
   effect.sentence = text;
