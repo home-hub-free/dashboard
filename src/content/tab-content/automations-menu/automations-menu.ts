@@ -46,10 +46,14 @@ function saveAutomation(data: any) {
     dateSelected,
     sensorSelected,
     sensorState,
+    comparassion,
   } = data;
   let is = sensorState;
   if (effectSelected === 'time') {
     is = dateSelected;
+  }
+  if (sensorSelected.sensorType === 'temp/humidity') {
+    is = `${comparassion ? comparassion : 'higher-than'}:${sensorState}`
   }
   let effect: AutoEffect = {
     set: {

@@ -21,8 +21,14 @@ const bind = NavBar.bind;
 
 // Bind ready
 function ready() {
-  // Initialize with first NavBar item (HOME)
-  setActiveNavBarItem(NavBarItems[0]);
+  let activeMenuItemId = localStorage.getItem('activeMenuItemId');
+  let activeMenuItem: IMenuItem | null = NavBarItems.find((menuItem) => menuItem.id === activeMenuItemId) || null;
+  if (activeMenuItem) {
+    setActiveNavBarItem(activeMenuItem);
+  } else {
+    // Initialize with first NavBar item (HOME)
+    setActiveNavBarItem(NavBarItems[0]);
+  }
 }
 
 function setActiveNavBarItem(menuItem: IMenuItem) {

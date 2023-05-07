@@ -36,7 +36,7 @@
   </div>
 
   <div :if="this.data.automations.setTo !== undefined">
-    ${this.data.automations.effectSelected ? 'Based on: ' : ''}
+    ${this.data.automations.effectSelected ? 'When: ' : ''}
     <select :oninput="this.data.automations.effectSelected = event.target.value">
       <option value="null">Baed on: </option>
       <option value="time">Time of day</option>
@@ -64,8 +64,15 @@
       </select>
 
       <div :if="this.data.automations.sensorSelected.sensorType === 'temp/humidity'">
-        <label for="temperature-input">Temperature</label>
-        <input type="number" name="temperature-input" placeholder="higher than" :oninput="this.data.automations.sensorState = (event.target.value)">
+
+        <span>Temperature is</span>
+
+        <select name="comparassion" id="comparassion" value="higher-than" :oninput="this.data.automations.comparassion = (event.target.value)">
+          <option value="higher-than">Higher Than</option>
+          <option value="lower-than">Lower Than</option>
+        </select>
+
+        <input type="number" name="temperature-input" placeholder="temperature..." :oninput="this.data.automations.sensorState = (event.target.value)">
       </div>
     </div>
 

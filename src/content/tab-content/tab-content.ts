@@ -42,7 +42,9 @@ const TabContent = new Bind({
         auto: null,
       },
       assistant: {
-        info: null
+        info: {
+          houseData: null
+        }
       }
     },
   },
@@ -90,7 +92,6 @@ export function WebSocketSensorDeclare(data: any) {
 }
 
 export function WebSocketSensorUpdate(data: any) {
-  console.log('update')
   let sensor = bind.data.home.sensors.find((sensor: any) => sensor.id === data.id);
   if (sensor) sensor.value = data.value;
   formatSensorsValues([sensor])

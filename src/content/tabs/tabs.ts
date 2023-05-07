@@ -1,4 +1,5 @@
 import { Bind, DataChanges } from "bindrjs";
+import { storageGet, storageSet } from "../../utils/utils.service";
 import { TabContentBind } from "../tab-content/tab-content";
 import template from './tabs.template.html?raw';
 
@@ -13,6 +14,7 @@ export interface Tab {
 
 interface TabsModel {
   activeMenuItemId: string,
+  activeTabId: string,
   activeIndicatorPosition: {
     left: string,
     width: string,
@@ -27,6 +29,7 @@ const Tabs = new Bind<TabsModel>({
   template,
   bind: {
     activeMenuItemId: '',
+    activeTabId: '',
     activeIndicatorPosition: {
       left: "0px",
       width: "0px",
@@ -44,9 +47,16 @@ export const TabsBind = Tabs.bind;
 function onChange(changes: DataChanges) {
   if (changes.property === "tabs" && changes.newValue) {
     if (TabsBind.tabs.length) {
-      selectTab(TabsBind.tabs[0]);
+      const activeMenuTabs = storageGet('activeMenuTabs');
+      if (activeMenuTabs[TabContentBind.activeMenuItemId]) {
+        let tab = TabsBind.tabs.find((tab: any) => tab.id === activeMenuTabs[TabContentBind.activeMenuItemId])
+        selectTab(tab);
+      } else {
+        selectTab(TabsBind.tabs[0]);
+      }
+
       setTimeout(() => {
-        let result = document.querySelector(".tab") as HTMLElement;
+        let result = document.querySelector(".tab.active") as HTMLElement;
         if (result) moveActiveIndicatorToElement(result);
       }, 50);
     } else {
@@ -55,11 +65,17 @@ function onChange(changes: DataChanges) {
   }
   if (changes.property === 'activeMenuItemId') {
     TabContentBind.activeMenuItemId = changes.newValue;
+    localStorage.setItem('activeMenuItemId', changes.newValue);
+
   }
 }
 
 function selectTab(tab: Tab, event?: TouchEvent) {
   TabContentBind.activeTabId = tab.id;
+  TabsBind.activeTabId = tab.id;
+  let activeMenuTabs: any = storageGet('activeMenuTabs') || {};
+  activeMenuTabs[TabsBind.activeMenuItemId] = tab.id;
+  storageSet('activeMenuTabs', activeMenuTabs);
   if (event) {
     let target = event.target as HTMLElement;
     moveActiveIndicatorToElement(target);

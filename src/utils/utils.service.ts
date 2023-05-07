@@ -8,3 +8,11 @@ export function getGlobalPosition(element: HTMLElement) {
     height: elemRect.height
   }
 }
+
+export function storageSet(key: string, data: any) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+export function storageGet(key: string) {
+  return JSON.parse(localStorage.getItem(key) || 'null');
+}
