@@ -1,4 +1,4 @@
-import { requestCalendarData, requestWeatherData, updateHouseData, updateInsideSensorTemperature } from "../../../utils/server-handler";
+import { requestCalendarData, requestWeatherData, updateHouseData } from "../../../utils/server-handler";
 
 export const AssistantService = {
   readCalendar,

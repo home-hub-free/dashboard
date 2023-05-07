@@ -104,17 +104,6 @@ export function requestWeatherData() {
   }).then((res) => res.json());
 }
 
-export function updateInsideSensorTemperature(sensorId: string) {
-  return fetch(server + "update-house-data", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      property: 'insideSensorTemperature',
-      value: sensorId,
-    })
-  });
-}
-
 export function updateHouseData(property: string, value: any) {
   return fetch(server + "update-house-data", {
     method: "POST",
