@@ -32,6 +32,8 @@
   </div>
   <div>
     <h3>Turn off cooling systems when outside temperature is cooler than inside temperature</h3>
-    <input type="checkbox" :oninput="this.actions.assistant.updateHouseData('controlsCooling', event.target.checked)">
+    <input :if="!this.data.assistant.info.houseData.controlsCooling" type="checkbox" :oninput="this.actions.assistant.updateHouseData('controlsCooling', event.target.checked)">
+    <input :else checked type="checkbox" :oninput="this.actions.assistant.updateHouseData('controlsCooling', event.target.checked)">
+
   </div>
 </div>
