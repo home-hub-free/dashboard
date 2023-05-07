@@ -112,5 +112,16 @@ export function updateInsideSensorTemperature(sensorId: string) {
       property: 'insideSensorTemperature',
       value: sensorId,
     })
-  })
+  });
+}
+
+export function updateHouseData(property: string, value: any) {
+  return fetch(server + "update-house-data", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      property,
+      value,
+    })
+  });
 }
