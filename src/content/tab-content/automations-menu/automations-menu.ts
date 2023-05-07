@@ -116,6 +116,10 @@ function parseEffectSentense(data: any, effect: any) {
 }
 
 function removeAutomation(index: number) {
-  TabContentBind.data.automations.auto.splice(index, 1);
+  if (TabContentBind.data.automations.auto.length === 1) {
+    TabContentBind.data.automations.auto = [];
+  } else {
+    TabContentBind.data.automations.auto.splice(index, 1);
+  }
   saveEffects(TabContentBind.data.automations.auto);
 }

@@ -85,8 +85,9 @@
       <div class="device-setting-row">
         <label class="full-width" :for="this.data.id">Allow auto-trigger time</label>
       </div>
-      <div :foreach="range in this.data.operationalRanges">
-        ${range}
+      <div :foreach="range in this.data.operationalRanges" :index>
+        <span>${range}</span>
+        <span><i class="iconoir-cancel" :onmouseup="this.actions.removeOperationalRange(this.data, :index)"></i></span>
       </div>
       <div class="device-setting-row">
         From: 

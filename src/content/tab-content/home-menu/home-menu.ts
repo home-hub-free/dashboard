@@ -14,6 +14,7 @@ export const HomeService = {
   saveProp,
   updateDevice,
   saveOperationalRanges,
+  removeOperationalRange,
 };
 
 let originalValue = 0;
@@ -187,4 +188,13 @@ function saveOperationalRanges(data: any) {
     data.operationalRanges.push(range);
     submitDataChange(data.id, data.type, 'operationalRanges', data.operationalRanges);
   }
+}
+
+function removeOperationalRange(device: any, index: any) {
+  if (device.operationalRanges.length === 1) {
+    device.operationalRanges = [];
+  } else {
+    device.operationalRanges.splice(index, 1);
+  }
+  submitDataChange(device.id, 'devices', 'operationalRanges', device.operationalRanges);
 }
