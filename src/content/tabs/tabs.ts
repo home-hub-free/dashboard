@@ -86,7 +86,7 @@ function resetActiveTab() {
   TabsBind.activeIndicatorPosition = {
     left: "0px",
     width: "0px",
-    height: "",
+    height: "0px",
   };
   TabContentBind.activeTabId = '';
 }
@@ -94,6 +94,6 @@ function resetActiveTab() {
 function moveActiveIndicatorToElement(element: HTMLElement) {
   let rect = element.getBoundingClientRect();
   let parentScroll = element.parentElement?.scrollLeft || 0;
-  TabsBind.activeIndicatorPosition.left = rect.x - 8 + parentScroll + "px";
+  TabsBind.activeIndicatorPosition.left = rect.x + parentScroll + "px";
   TabsBind.activeIndicatorPosition.width = rect.width + "px";
 }

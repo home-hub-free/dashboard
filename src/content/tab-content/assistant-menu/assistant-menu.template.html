@@ -1,4 +1,4 @@
-<div>
+<div :if="this.data.assistant && this.data.assistant.info && this.data.assistant.info.houseData">
   <h3>
     Quick actions:
   </h3>
@@ -11,7 +11,11 @@
     </button>
   </div>
 
-  <div>
+  <div :if="
+    this.data.assistant &&
+    this.data.assistant.info && 
+    this.data.assistant.info.houseData &&
+    this.data.assistant.info.houseData.insideSensorTemperature">
     <h3>
       Sensor to include in temperature announcements:
     </h3>
