@@ -3,6 +3,9 @@ import { AutoEffect } from "../content/tab-content/automations-menu/automations-
 export const server = "http://192.168.1.199:8080/";
 // export const server = "http://localhost:8080/";
 
+export type BlindsConfigureActions = 'spin' | 'switch-direction' | 'home-position' | 'set-limit'
+
+
 const headers = {
   Accept: "application/json",
   "Content-Type": "application/json",
@@ -27,6 +30,30 @@ export function toggleServerDevice(device: any): Promise<ServerResponse> {
       body: JSON.stringify({
         id: device.id,
         value: device.value,
+      }),
+    })
+      .then((res) => res.json())
+      .then((result) => {
+        if (result) {
+          resolve({
+            data: result,
+            success: true,
+          });
+        } else {
+          reject();
+        }
+      });
+  });
+}
+
+export function configureBlinds(device: any, action: BlindsConfigureActions) {
+  return new Promise((resolve, reject) => {
+    return fetch(server + "device-blinds-configure", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        id: device.id,
+        action,
       }),
     })
       .then((res) => res.json())

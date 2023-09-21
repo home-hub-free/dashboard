@@ -17,10 +17,10 @@
   }
 </style>
 <div class="automation-container">
-  <button :onclick="this.actions.automations.newAutomation(event, this.data)">New automation</button>
+  <!-- <button :onclick="this.actions.automations.newAutomation(event, this.data)">New automation</button> -->
   
   <div :if="this.data.automations.auto" class="effect-list">
-    <span
+    <!-- <span
       class="effect-container"
       :foreach="effect in this.data.automations.auto"
       :index
@@ -33,7 +33,7 @@
         <i class="iconoir-cancel"></i>
       </span>
 
-    </span>
+    </span> -->
   </div>
   <div :else>
     You don't have any automations yet. Add One

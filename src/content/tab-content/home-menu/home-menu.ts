@@ -1,10 +1,12 @@
-import { submitDataChange, toggleServerDevice } from "../../../utils/server-handler";
+import { BlindsConfigureActions, configureBlinds, submitDataChange, toggleServerDevice } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import { openOverlay, OverlayModal } from "../../../overlay-modal/overlay-modal";
 import { showToaster } from "../../../popup-message/popup-message";
 
 import DeviceEditView from './overlay-views/devices-edit.template.html?raw';
 import { TabContentBind } from "../tab-content";
+
+// export type BlindsConfigureActions = 'spin' | 'switch-direction' | 'home-position' | 'set-limit'
 
 export const HomeService = {
   deviceTouchStart,
@@ -15,6 +17,10 @@ export const HomeService = {
   updateDevice,
   saveOperationalRanges,
   removeOperationalRange,
+  updateCameraSetting,
+  configureBlinds: (device: any, action: BlindsConfigureActions) => {
+    configureBlinds(device, action);
+  }
 };
 
 let originalValue = 0;
@@ -137,6 +143,20 @@ export function updateDevice(device: any) {
     // Revert value if failed
     device.value = !device.value;
   });
+}
+
+export function updateCameraSetting(property: string, ip: string, value: string) {
+  return fetch('http://' + ip + ':81/settings', {
+    method: "POST",
+    body: JSON.stringify({
+      var: property,
+      val: value,
+    }),
+  })
+    .then((res) => res.json())
+    .then((result) => {
+      console.log(result);
+    });
 }
 
 export function sensorTouchEnd() {

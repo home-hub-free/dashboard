@@ -35,6 +35,15 @@
   .device-button {
     position: relative;
   }
+  .device-camera {
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 130px;
+    width: 130px;
+  }
 </style>
 <div :if="this.activeTabId === 'devices'">
   <div
@@ -54,9 +63,10 @@
     </div>
   </span>
   <span class="auto-indicator" :class:on="!device.manual">A</span>
-  <span :if="device.deviceCategory === 'cooling-system'" class="device-icon">
-    <i class="iconoir-cooling"></i>
-  </span>
+  <span :if="device.deviceCategory === 'cooling-system'" class="device-icon"><i class="iconoir-cooling"></i></span>
+  <div :if="device.deviceCategory === 'camera'" class="device-camera">
+    <!-- <img :src="'http://' + device.ip + ':81/capture'" alt="" height="100%" width="100%"> -->
+  </div>
   </div>
   <div :else>No Devices detected in your network :(</div>
 </div>

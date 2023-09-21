@@ -63,6 +63,7 @@
       :onchange="this.actions.updateDevice(this.data)">
     <span>${this.data.value}</span>
   </div>
+
   <div :if="this.data.type === 'devices'">
     <div class="device-setting">
       <div class="device-setting-row">
@@ -78,6 +79,18 @@
           type="checkbox"
           checked 
           :oninput="this.actions.saveProp(this.data, 'manual')">
+      </div>
+    </div>
+
+    <div :if="this.data.deviceCategory === 'blinds'" class="device-setting">
+      <div class="device-setting-row">
+        <p> Use these buttons to set the initial configuration: </p>
+      </div>
+      <div class="device-setting-row">
+        <button :onclick="this.actions.configureBlinds(this.data, 'spin')">Spin</button>
+        <button :onclick="this.actions.configureBlinds(this.data, 'switch-direction')">Switch direction</button>
+        <button :onclick="this.actions.configureBlinds(this.data, 'home-position')">Home Position</button>
+        <button :onclick="this.actions.configureBlinds(this.data, 'set-limit')">Set limit</button>
       </div>
     </div>
 

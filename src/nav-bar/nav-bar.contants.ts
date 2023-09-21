@@ -40,7 +40,7 @@ export const NavBarItems: IMenuItem[] = [
   {
     id: 'automations',
     icon: 'hourglass',
-    name: 'Automations',
+    name: 'Your Automations',
     expanded: false,
     activeTabIndex: -1,
     tabs: [
