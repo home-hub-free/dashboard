@@ -1,5 +1,5 @@
 <!-- To add more tabs content, add more divs with the proper "if" -->
-<div
+<!-- <div
   id="home-content"
   :if="this.activeMenuItemId === 'home' "
   :innerHTML="this.templates.home"
@@ -15,4 +15,7 @@
   id="assistant"
   :if="this.activeMenuItemId === 'assistant'"
   :innerHTML="this.templates.assistant"
-></div>
+></div> -->
+<div :id="this.activeMenuItemId">
+  ${this.activeMenuItemId}
+</div>

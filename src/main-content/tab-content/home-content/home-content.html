@@ -1,6 +1,6 @@
 
 <style>
-  .auto-indicator,
+  /* .auto-indicator,
   .motion-indicator,
   .th-indicator {
     position: absolute;
@@ -43,10 +43,11 @@
     overflow: hidden;
     height: 130px;
     width: 130px;
-  }
+  } */
 </style>
+Home Content
 <div :if="this.activeTabId === 'devices'">
-  <div
+  <!-- <div
     class="device-button"
     :if="this.data.home.devices"
     :foreach="device in this.data.home.devices"
@@ -65,7 +66,7 @@
   <span class="auto-indicator" :class:on="!device.manual">A</span>
   <span :if="device.deviceCategory === 'cooling-system'" class="device-icon"><i class="iconoir-cooling"></i></span>
   <div :if="device.deviceCategory === 'camera'" class="device-camera">
-    <!-- <img :src="'http://' + device.ip + ':81/capture'" alt="" height="100%" width="100%"> -->
+    <img :src="'http://' + device.ip + ':81/capture'" alt="" height="100%" width="100%">
   </div>
   </div>
   <div :else>No Devices detected in your network :(</div>
@@ -100,5 +101,5 @@
   </div>
   <div :else>
     No Sensors Detected in your network :(
-  </div>
+  </div> -->
 </div>

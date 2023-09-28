@@ -4,7 +4,9 @@ import { openOverlay, OverlayModal } from "../../../overlay-modal/overlay-modal"
 import { showToaster } from "../../../popup-message/popup-message";
 
 import DeviceEditView from './overlay-views/devices-edit.template.html?raw';
-import { TabContentBind } from "../tab-content";
+import { Bind } from "bindrjs";
+import template from './home-content.html?raw';
+// import { TabContentBind } from "../tab-content";
 
 // export type BlindsConfigureActions = 'spin' | 'switch-direction' | 'home-position' | 'set-limit'
 
@@ -22,6 +24,22 @@ export const HomeService = {
     configureBlinds(device, action);
   }
 };
+
+class HomeContentClass {
+  bind!: any;
+  constructor() {}
+
+  initView() {
+    const { bind } = new Bind({
+      id: 'home',
+      template,
+    });
+
+    this.bind = bind;
+  }
+}
+
+export const HomeContent = new HomeContentClass();
 
 let originalValue = 0;
 let touchStartPosition = 0;
@@ -124,15 +142,15 @@ export function updateDevice(device: any) {
         timer: 2000,
       })
     }
-    TabContentBind.data.home.devices.forEach((device: any) => {
-      /**
-       * Find and update element props directly becasue BindrJS
-       * still doesn't know how to override entire array elements
-       */
-      if (device.id === data.id) {
-        device.manual = data.manual;
-      }
-    });
+    // TabContentBind.data.home.devices.forEach((device: any) => {
+    //   /**
+    //    * Find and update element props directly becasue BindrJS
+    //    * still doesn't know how to override entire array elements
+    //    */
+    //   if (device.id === data.id) {
+    //     device.manual = data.manual;
+    //   }
+    // });
   })
   .catch(() => {
     showToaster({
@@ -171,9 +189,9 @@ function saveProp(data: any, prop: string) {
   }
   if (element && value !== undefined) {
     submitDataChange(data.id, data.type, prop, value).then(() => {
-      let list = TabContentBind.data.home[data.type as 'devices' | 'sensors'];
-      let original = list.find((item: any) => item.id === data.id);
-      original[prop] = value;
+      // let list = TabContentBind.data.home[data.type as 'devices' | 'sensors'];
+      // let original = list.find((item: any) => item.id === data.id);
+      // original[prop] = value;
 
       showToaster({
         from: 'bottom',

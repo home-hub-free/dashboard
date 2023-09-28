@@ -1,4 +1,4 @@
-import { AutoEffect } from "../main-content/tab-content/automations-menu/automations-menu";
+import { AutoEffect } from "../main-content/tab-content/automations-content/automations-content";
 
 export const server = "http://192.168.1.199:8080/";
 // export const server = "http://localhost:8080/";

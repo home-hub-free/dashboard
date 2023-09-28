@@ -1,29 +1,38 @@
+import { Bind } from "bindrjs";
 import { closeOverlay, openOverlay } from "../../../overlay-modal/overlay-modal";
 import { showToaster } from "../../../popup-message/popup-message";
 import { saveEffect, saveEffects } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
-import { TabContentBind } from "../tab-content";
+import { AutoEffect } from "./automations-content.model";
+// import { TabContentBind } from "../tab-content";
 import NewAutomationOverlay from "./overlay-views/new-automation-overlay.html?raw";
+import template from './automations-content.html?raw';
 
 export const AutomationsService = {
   newAutomation,
   saveAutomation,
   parseEffectSentense,
-  removeAutomation,
+  // removeAutomation,
 };
 
-export type AutoEffect = {
-  set: {
-    id: string;
-    value: any;
-  };
-  when: {
-    id: string;
-    type: string;
-    is: any;
-  };
-  sentence?: string
-};
+class AutomationsContentClass {
+  bind!: any;
+  constructor() {}
+
+  initView() {
+    const { bind } = new Bind({
+      id: 'automations',
+      template,
+      bind: {
+        // test: ''
+      }
+    });
+
+    this.bind = bind;
+  }
+}
+
+export const AutomationsContent = new AutomationsContentClass();
 
 function newAutomation(event: MouseEvent, data: any) {
   let rect = getGlobalPosition(event.target as HTMLElement);
@@ -115,11 +124,11 @@ function parseEffectSentense(data: any, effect: any) {
 
 }
 
-function removeAutomation(index: number) {
-  if (TabContentBind.data.automations.auto.length === 1) {
-    TabContentBind.data.automations.auto = [];
-  } else {
-    TabContentBind.data.automations.auto.splice(index, 1);
-  }
-  saveEffects(TabContentBind.data.automations.auto);
-}
+// function removeAutomation(index: number) {
+//   if (TabContentBind.data.automations.auto.length === 1) {
+//     TabContentBind.data.automations.auto = [];
+//   } else {
+//     TabContentBind.data.automations.auto.splice(index, 1);
+//   }
+//   saveEffects(TabContentBind.data.automations.auto);
+// }

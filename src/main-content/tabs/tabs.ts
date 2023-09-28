@@ -4,6 +4,7 @@ import { storageGet, storageSet } from "../../utils/utils.service";
 import template from './tabs.template.html?raw';
 import { Tab, TabsModel } from "./tabs.model";
 import { NavBar } from "../../nav-bar/nav-bar";
+import { TabContent } from "../tab-content/tab-content";
 
 class TabsClass {
   
@@ -37,6 +38,8 @@ class TabsClass {
 
   ready() {
     this.setActiveTabForActiveMenu();
+    TabContent.initView();
+
     // const activeMenuTabs = storageGet('activeMenuTabs');
     // const activeMenu = NavBar.bind.activeMenuItemId;
     // this.bind.activeTabId = activeMenuTabs[activeMenu];
@@ -47,6 +50,8 @@ class TabsClass {
     switch (<keyof TabsModel>(changes.property)) {
       case 'tabs':
         this.setActiveTabForActiveMenu();
+        TabContent.initView();
+
         // const tabs = 
     }
     // if (changes.property === )
