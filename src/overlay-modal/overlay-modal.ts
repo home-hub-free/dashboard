@@ -1,5 +1,5 @@
 import { Bind } from "bindrjs";
-import template from "./overlay-modal.template.html?raw";
+import template from "./overlay-modal.html?raw";
 
 interface ModalRectangle {
   top: number;

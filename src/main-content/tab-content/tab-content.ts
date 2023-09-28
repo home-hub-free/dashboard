@@ -83,7 +83,7 @@ class TabContentClass {
         // console.log('changes', changes);
         switch (<keyof typeof bind>changes.property) {
           case 'activeMenuItemId':
-            // this.getTabContentView()?.initView();
+            this.getTabContentView()?.initView();
         }
       }
     });

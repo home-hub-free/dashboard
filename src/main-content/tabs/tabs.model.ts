@@ -1,7 +1,3 @@
-
-// type TabTypes = 'sensors' | 'devices' | 'auto' | 'assistant'
-
-
 export interface Tab {
   id: string,
   name: string;
@@ -9,8 +5,7 @@ export interface Tab {
   endpoint?: string,
 }
 
-export interface TabsModel {
-  // activeMenuItemId: string,
+export interface TabsState {
   activeTabId: string,
   activeIndicatorPosition: {
     left: string,
@@ -18,5 +13,5 @@ export interface TabsModel {
     height: string,
   },
   tabs: Tab[],
-  actions: any,
+  selectTab: (tab: Tab, event: Event) => void;
 }

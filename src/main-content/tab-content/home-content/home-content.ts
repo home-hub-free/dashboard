@@ -6,6 +6,7 @@ import { showToaster } from "../../../popup-message/popup-message";
 import DeviceEditView from './overlay-views/devices-edit.template.html?raw';
 import { Bind } from "bindrjs";
 import template from './home-content.html?raw';
+import { Tabs } from "../../tabs/tabs";
 // import { TabContentBind } from "../tab-content";
 
 // export type BlindsConfigureActions = 'spin' | 'switch-direction' | 'home-position' | 'set-limit'
@@ -33,6 +34,12 @@ class HomeContentClass {
     const { bind } = new Bind({
       id: 'home',
       template,
+      bind: {
+        activeTabId: Tabs.bind.activeTabId,
+      },
+      // onChange: (changes) => {
+      //   console.log(changes)
+      // }
     });
 
     this.bind = bind;
