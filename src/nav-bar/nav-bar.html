@@ -1,7 +1,7 @@
 <div
   class="menu-item"
   :foreach="item in this.items"
-  :onmousedown="this.actions.setActiveMenuItem(item)"
+  :onmousedown="this.setActiveNavBarItem(item)"
   :class:active="this.activeMenuItemId === item.id"
 >
   <div class="item-container">

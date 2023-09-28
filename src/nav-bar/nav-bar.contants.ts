@@ -1,10 +1,11 @@
-import { Tab } from "../content/tabs/tabs";
+import { Tab } from "../main-content/tabs/tabs.model";
 
 export interface NavBarState {
   activeMenuItemId: string,
   items: IMenuItem[],
-  actions: { [key: string]: any }
+  setActiveNavBarItem: (menuItem: IMenuItem) => void
 }
+
 export interface IMenuItem {
   id: string;
   icon: string;

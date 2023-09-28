@@ -8,19 +8,15 @@
   </head>
   <body>
     <div id="nav-bar"></div>
-    <div id="content">
-      <div id="header"></div>
-      <div id="tabs"></div>
-      <div id="tab-content"></div>
-    </div>
+    <div id="main-content"></div>
+
     <div
       id="popup-message-container"
       :if="this.toasterOptions"
       :class="'from-' + this.toasterOptions.from"
     ></div>
 
-    <div id="overlay-modal" 
-    :onmouseup="this.closeOverlay()">
+    <div id="overlay-modal" :onmouseup="this.closeOverlay()">
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
