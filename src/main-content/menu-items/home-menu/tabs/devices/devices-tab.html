@@ -1,0 +1,24 @@
+<div
+    class="device-button"
+    :if="this.data"
+    :foreach="device in this.data"
+    :ontouchstart="this.actions.deviceTouchStart(event, device , 'devices')"
+    :ontouchend="this.actions.deviceTouchEnd(event, device)"
+    :ontouchmove="this.actions.deviceTouchMove(event, device , 'devices')"
+    :class:active="device.value"
+    oncontextmenu="return false;"
+  >
+  <span>
+    ${device.name}
+    <div :if="device.type === 'value'">
+      ${device.value}
+    </div>
+  </span>
+  <span class="auto-indicator" :class:on="!device.manual">A</span>
+  <span :if="device.deviceCategory === 'cooling-system'" class="device-icon"><i class="iconoir-cooling"></i></span>
+  <div :if="device.deviceCategory === 'camera'" class="device-camera">
+    <img :src="'http://' + device.ip + ':81/capture'" alt="" height="100%" width="100%">
+  </div>
+  </div>
+  <div :else>No Devices detected in your network :(</div>
+</div>

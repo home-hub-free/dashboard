@@ -5,8 +5,12 @@ import { showToaster } from "../../../popup-message/popup-message";
 
 import DeviceEditView from './overlay-views/devices-edit.template.html?raw';
 import { Bind } from "bindrjs";
-import template from './home-content.html?raw';
+import template from './home-menu.html?raw';
 import { Tabs } from "../../tabs/tabs";
+// import { NavBarItems } from "../../../nav-bar/nav-bar.contants";
+import { DevicesTab } from "./tabs/devices/devices-tab";
+import { SensorsTab } from "./tabs/sensors/sensors-tab";
+
 // import { TabContentBind } from "../tab-content";
 
 // export type BlindsConfigureActions = 'spin' | 'switch-direction' | 'home-position' | 'set-limit'
@@ -40,12 +44,27 @@ class HomeContentClass {
       // onChange: (changes) => {
       //   console.log(changes)
       // }
+      ready: () => {
+        this.initTabView();
+      }
     });
-
     this.bind = bind;
   }
-}
 
+  initTabView() {
+    const id = this.bind.activeTabId;
+    let view = null;
+    console.log(id);
+    switch (id) {
+      case 'devices':
+        view = DevicesTab;
+        break;
+      case 'sensors':
+        view = SensorsTab;
+    }
+    if (view) view.initView();
+  }
+}
 export const HomeContent = new HomeContentClass();
 
 let originalValue = 0;

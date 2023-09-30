@@ -45,8 +45,12 @@
     width: 130px;
   } */
 </style>
-Home Content ${this.activeTabId}
-<div :if="this.activeTabId === 'devices'">
+
+<div :id="this.activeTabId">
+  ${this.activeTabId}
+</div>
+
+<!-- <div :if="this.activeTabId === 'devices'"> -->
   <!-- <div
     class="device-button"
     :if="this.data.home.devices"
@@ -102,4 +106,4 @@ Home Content ${this.activeTabId}
   <div :else>
     No Sensors Detected in your network :(
   </div> -->
-</div>
+<!-- </div> -->

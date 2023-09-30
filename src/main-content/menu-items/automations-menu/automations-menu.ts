@@ -1,12 +1,12 @@
 import { Bind } from "bindrjs";
 import { closeOverlay, openOverlay } from "../../../overlay-modal/overlay-modal";
 import { showToaster } from "../../../popup-message/popup-message";
-import { saveEffect, saveEffects } from "../../../utils/server-handler";
+import { saveEffect } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
-import { AutoEffect } from "./automations-content.model";
+import { AutoEffect } from "./automations-menu.model";
 // import { TabContentBind } from "../tab-content";
 import NewAutomationOverlay from "./overlay-views/new-automation-overlay.html?raw";
-import template from './automations-content.html?raw';
+import template from './automations-menu.html?raw';
 
 export const AutomationsService = {
   newAutomation,

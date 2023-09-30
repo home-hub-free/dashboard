@@ -4,7 +4,7 @@ import { storageGet, storageSet } from "../../utils/utils.service";
 import template from './tabs.template.html?raw';
 import { Tab, TabsState } from "./tabs.model";
 import { NavBar } from "../../nav-bar/nav-bar";
-import { TabContent } from "../tab-content/tab-content";
+import { TabContent } from "../menu-items/menu-content";
 
 /**
  * This view's only job is to display the tabs for the active manu

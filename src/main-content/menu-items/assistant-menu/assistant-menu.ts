@@ -1,6 +1,6 @@
 import { Bind } from "bindrjs";
 import { requestCalendarData, requestWeatherData, updateHouseData } from "../../../utils/server-handler";
-import template from './assistant-content.html?raw';
+import template from './assistant-menu.html?raw';
 
 export const AssistantService = {
   readCalendar,

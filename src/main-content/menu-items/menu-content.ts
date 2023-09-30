@@ -1,5 +1,5 @@
 import { Bind, DataChanges } from "bindrjs";
-import template from "./tab-content.html?raw";
+import template from "./menu-content.html?raw";
 // import HomeTemplate from "./home-menu/home-menu.template.html?raw";
 // import AutomationTemplate from './automations-menu/automations-menu.template.html?raw';
 // import AssistantTemplate from './assistant-menu/assistant-menu.template.html?raw';
@@ -7,10 +7,10 @@ import template from "./tab-content.html?raw";
 // import { getEndPointData } from "../../utils/server-handler";
 // import { AutoEffect, AutomationsService } from "./automations-content/automations-content";
 // import { IMenuItem, NavBarItems } from "../../nav-bar/nav-bar.contants";
-import { VAssistantContent } from "./assistant-content/assistant-content";
+import { VAssistantContent } from "./assistant-menu/assistant-menu";
 import { NavBar } from "../../nav-bar/nav-bar";
-import { AutomationsContent } from "./automations-content/automations-content";
-import { HomeContent } from "./home-content/home-content";
+import { AutomationsContent } from "./automations-menu/automations-menu";
+import { HomeContent } from "./home-menu/home-menu";
 
 // type Sensor = {
 //   id: string,
@@ -187,18 +187,3 @@ export const TabContent = new TabContentClass();
 //   formatSensorsValues([sensor])
 // }
 
-// function formatSensorsValues(sensors: Sensor[]) {
-//   sensors.forEach((sensor) => {
-//     switch (sensor.sensorType) {
-//       case 'temp/humidity':
-//         formatTempHumiditySensor(sensor);
-//     }
-//   })
-// } 
-
-// function formatTempHumiditySensor(sensor: Sensor) {
-//   const values = sensor.value.split(':');
-//   sensor.value = {};
-//   sensor.value.temperature = values[0] + '°C';
-//   sensor.value.humidity = values[1] + '%'
-// }
