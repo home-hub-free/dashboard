@@ -1,0 +1,26 @@
+<style>
+  .edit-container {
+    box-sizing: border-box;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    height: 100%;
+    width: 100%;
+  }
+  .edit-container > div {
+    border: 1px solid lightgray;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+  }
+  input {
+    width: 50%;
+    height: 30px;
+  }
+</style>
+<div class="edit-container">
+  <div>
+    <label :for="this.data.id + '_name' ">Name</label>
+    <input :id="this.data.id + '_name'" :name="this.data.id + '_name'" type="text" :value="this.data.name" :oninput="this.actions.saveProp(this.data, 'name')">
+  </div>
+</div>

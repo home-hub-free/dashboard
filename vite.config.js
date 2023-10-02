@@ -5,5 +5,10 @@ export default defineConfig({
   server: {
     port: 8081
   },
-  publicDir: './public'
+  publicDir: './public',
+  // optimizeDeps: {
+  //   include: [
+  //     'bindrjs'
+  //   ]
+  // }
 });

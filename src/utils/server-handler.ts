@@ -1,11 +1,11 @@
-import { AutoEffect } from "../main-content/menu-items/automations-menu/automations-menu";
+import { AutoEffect } from "../main-content/menu-items/automations-menu/automations-menu.model";
 
 // export const server = "http://192.168.1.199:8080/";
 export const server = "http://localhost:8080/";
 
 export type BlindsConfigureActions = 'spin' | 'switch-direction' | 'home-position' | 'set-limit'
 
-const headers = {
+export const headers = {
   Accept: "application/json",
   "Content-Type": "application/json",
 };

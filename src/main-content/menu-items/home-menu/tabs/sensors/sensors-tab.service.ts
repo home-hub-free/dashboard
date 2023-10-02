@@ -1,0 +1,42 @@
+import { showToaster } from "../../../../../popup-message/popup-message";
+import { submitDataChange } from "../../../../../utils/server-handler";
+import { Sensor } from "./sensors-tab.model";
+
+export class SensorsServiceClass {
+  constructor () {}
+
+  saveProp(data: any, prop: string) {
+    let element: HTMLInputElement | null = document.getElementById(data.id + `_${prop}`) as HTMLInputElement;
+    let value: any = element?.value;
+    if (prop === 'manual') {
+      value = !element.checked;
+    }
+    if (element && value !== undefined) {
+      submitDataChange(data.id, data.type, prop, value).then(() => {
+        showToaster({
+          from: 'bottom',
+          message: `Saved ${data.type.substring(0, data.type.length - 1)} ${prop}`,
+          timer: 2000
+        });
+      });
+    }
+  }
+
+  formatSensorsValues(sensors: Sensor[]) {
+    sensors.forEach((sensor) => {
+      switch (sensor.sensorType) {
+        case 'temp/humidity':
+          this.formatTempHumiditySensor(sensor);
+      }
+    })
+  } 
+
+  private formatTempHumiditySensor(sensor: Sensor) {
+    const values = sensor.value.split(':');
+    sensor.value = {};
+    sensor.value.temperature = values[0] + '°C';
+    sensor.value.humidity = values[1] + '%'
+  }
+}
+
+export const SensorsService = new SensorsServiceClass();

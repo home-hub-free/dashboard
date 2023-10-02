@@ -1,18 +1,17 @@
 <div>
-  VAssistant Content
-  <!-- <h3>
+  <h3>
     Quick actions:
   </h3>
   <div>
-    <button :onmouseup="this.actions.assistant.readForecast()">
+    <button :onmouseup="this.readForecast()">
       Forecast
     </button>
-    <button :onmouseup="this.actions.assistant.readCalendar()">
+    <button :onmouseup="this.readCalendar()">
       Calendars
     </button>
   </div>
 
-  <div :if="
+  <!-- <div :if="
     this.data.assistant &&
     this.data.assistant.info && 
     this.data.assistant.info.houseData &&
@@ -22,7 +21,7 @@
     </h3>
     <select 
       name="select" 
-      :oninput="this.actions.assistant.updateHouseData('insideSensorTemperature', event.target.value)"
+      :oninput="this.updateHouseData('insideSensorTemperature', event.target.value)"
       :value="this.data.assistant.info.houseData && this.data.assistant.info.houseData.insideSensorTemperature || null">
       <option value="null">none</option>
       <option 
@@ -34,11 +33,11 @@
       </option>
 
     </select>
-  </div>
-  <div>
+  </div> -->
+  <!-- <div>
     <h3>Turn off cooling systems when outside temperature is cooler than inside temperature</h3>
-    <input :if="this.data.assistant.info.houseData.controlsCooling" type="checkbox" :oninput="this.actions.assistant.updateHouseData('controlsCooling', event.target.checked)" checked>
-    <input :else type="checkbox" :oninput="this.actions.assistant.updateHouseData('controlsCooling', event.target.checked)">
+    <input :if="this.data.assistant.info.houseData.controlsCooling" type="checkbox" :oninput="this.updateHouseData('controlsCooling', event.target.checked)" checked>
+    <input :else type="checkbox" :oninput="this.updateHouseData('controlsCooling', event.target.checked)">
 
   </div> -->
 </div>

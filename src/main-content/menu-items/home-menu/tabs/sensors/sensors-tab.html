@@ -1,10 +1,9 @@
   <div
-    :if="this.data"
+    :if="this.sensors"
     class="sensor-button"
-    :foreach="sensor in this.data"
+    :foreach="sensor in this.sensors"
     :class:active="sensor.value"
-    :ontouchstart="this.actions.home.deviceTouchStart(event, sensor , 'sensors')"
-    :onmouseup="this.actions.home.sensorTouchEnd(sensor)"
+    :onmouseup="this.sensorTouchEnd(event, sensor)"
     oncontextmenu="return false;"
   >
     <span>

@@ -1,6 +1,6 @@
 
 <style>
-  /* .auto-indicator,
+  .auto-indicator,
   .motion-indicator,
   .th-indicator {
     position: absolute;
@@ -43,67 +43,9 @@
     overflow: hidden;
     height: 130px;
     width: 130px;
-  } */
+  }
 </style>
 
 <div :id="this.activeTabId">
   ${this.activeTabId}
 </div>
-
-<!-- <div :if="this.activeTabId === 'devices'"> -->
-  <!-- <div
-    class="device-button"
-    :if="this.data.home.devices"
-    :foreach="device in this.data.home.devices"
-    :ontouchstart="this.actions.home.deviceTouchStart(event, device , 'devices')"
-    :ontouchend="this.actions.home.deviceTouchEnd(event, device)"
-    :ontouchmove="this.actions.home.deviceTouchMove(event, device , 'devices')"
-    :class:active="device.value"
-    oncontextmenu="return false;"
-  >
-  <span>
-    ${device.name}
-    <div :if="device.type === 'value'">
-      ${device.value}
-    </div>
-  </span>
-  <span class="auto-indicator" :class:on="!device.manual">A</span>
-  <span :if="device.deviceCategory === 'cooling-system'" class="device-icon"><i class="iconoir-cooling"></i></span>
-  <div :if="device.deviceCategory === 'camera'" class="device-camera">
-    <img :src="'http://' + device.ip + ':81/capture'" alt="" height="100%" width="100%">
-  </div>
-  </div>
-  <div :else>No Devices detected in your network :(</div>
-</div>
-
-<div :if="this.activeTabId === 'sensors'">
-  <div
-    :if="this.data.home.sensors"
-    class="sensor-button"
-    :foreach="sensor in this.data.home.sensors"
-    :class:active="sensor.value"
-    :ontouchstart="this.actions.home.deviceTouchStart(event, sensor , 'sensors')"
-    :onmouseup="this.actions.home.sensorTouchEnd(sensor)"
-    oncontextmenu="return false;"
-  >
-    <span>
-      ${sensor.name}
-    </span>
-    <span :if="sensor.type === 'boolean'" class="motion-indicator" :class:on="sensor.value">
-      <i class="iconoir-antenna-signal"></i>
-    </span>
-    <span :if="sensor.type === 'value'" class="th-indicator">
-      <div class="temperature">
-        <i class="iconoir-home-temperature-in"></i>
-        ${sensor.value.temperature}
-      </div>
-      <div class="humidity">
-        <i class="iconoir-droplet"></i>
-        ${sensor.value.humidity}
-      </div>
-    </span>
-  </div>
-  <div :else>
-    No Sensors Detected in your network :(
-  </div> -->
-<!-- </div> -->

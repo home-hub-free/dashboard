@@ -1,87 +1,30 @@
 import { Bind, DataChanges } from "bindrjs";
 import template from "./menu-content.html?raw";
-// import HomeTemplate from "./home-menu/home-menu.template.html?raw";
-// import AutomationTemplate from './automations-menu/automations-menu.template.html?raw';
-// import AssistantTemplate from './assistant-menu/assistant-menu.template.html?raw';
-// import { HomeService } from "./home-content/home-content";
-// import { getEndPointData } from "../../utils/server-handler";
-// import { AutoEffect, AutomationsService } from "./automations-content/automations-content";
-// import { IMenuItem, NavBarItems } from "../../nav-bar/nav-bar.contants";
 import { VAssistantContent } from "./assistant-menu/assistant-menu";
 import { NavBar } from "../../nav-bar/nav-bar";
 import { AutomationsContent } from "./automations-menu/automations-menu";
 import { HomeContent } from "./home-menu/home-menu";
+import { MenuContentState } from "./menu-content.model";
 
-// type Sensor = {
-//   id: string,
-//   type: 'boolean' | 'value'
-//   name: string,
-//   value: any,
-//   sensorType: 'motion' | 'temp/humidity',
-// }
 
 class TabContentClass {
 
-  bind!: any;
+  bind!: MenuContentState;
 
   constructor() {}
 
   initView() {
-    const { bind } = new Bind({
+    const { bind } = new Bind<MenuContentState>({
       id: "tab-content",
       template,
       bind: {
         activeMenuItemId: NavBar.bind.activeMenuItemId,
-        // activeTabId: "",
-        // templates: {
-        //   home: HomeTemplate,
-        //   automations: AutomationTemplate,
-        //   assistant: AssistantTemplate,
-        // },
-        // actions: {
-        //   home: HomeService,
-        //   automations: AutomationsService,
-        //   assistant: AssistantService
-        // },
-        // data: {
-        //   home: {
-        //     devices: null,
-        //     sensors: null,
-        //   },
-        //   automations: {
-        //     auto: null,
-        //   },
-        //   assistant: {
-        //     info: {
-        //       houseData: null
-        //     }
-        //   }
-        // },
       },
       ready: () => {
         this.getTabContentView()?.initView();
-        // Init proper content view
-      //   ready() {
-      //     //   NavBarItems.forEach((item: IMenuItem) => {
-      //     //     (item.tabs || []).forEach(async({ endpoint, id }) => {
-      //     //       let bind: any = TabContentBind;
-      //     //       bind.data[item.id][id] = await getEndPointData(endpoint || '');
-      //     //       if (id === 'auto') {
-      //     //         bind.data[item.id][id].map((automation: AutoEffect) => {
-      //     //           automation.sentence = AutomationsService.parseEffectSentense(bind.data, automation);
-      //     //         });
-      //     //       }
-      //     //       if (id === 'sensors') {
-      //     //         const sensors = bind.data[item.id][id];
-      //     //         formatSensorsValues(sensors);
-      //     //       }
-      //     //     });
-      //     //   })
-      //     // }
       },
       onChange: (changes: DataChanges) => {
-        // console.log('changes', changes);
-        switch (<keyof typeof bind>changes.property) {
+        switch (<keyof MenuContentState>changes.property) {
           case 'activeMenuItemId':
             this.getTabContentView()?.initView();
         }
@@ -106,74 +49,6 @@ class TabContentClass {
 }
 
 export const TabContent = new TabContentClass();
-
-// const TabContent = new Bind({
-//   id: "tab-content",
-//   template,
-//   bind: {
-//     activeMenuItemId: "",
-//     activeTabId: "",
-//     templates: {
-//       home: HomeTemplate,
-//       automations: AutomationTemplate,
-//       assistant: AssistantTemplate,
-//     },
-//     actions: {
-//       home: HomeService,
-//       automations: AutomationsService,
-//       assistant: AssistantService
-//     },
-//     data: {
-//       home: {
-//         devices: null,
-//         sensors: null,
-//       },
-//       automations: {
-//         auto: null,
-//       },
-//       assistant: {
-//         info: {
-//           houseData: null
-//         }
-//       }
-//     },
-//   },
-//   ready,
-// });
-// export const TabContentBind = TabContent.bind;
-// const bind = TabContentBind;
-
-// function ready() {
-//   NavBarItems.forEach((item: IMenuItem) => {
-//     (item.tabs || []).forEach(async({ endpoint, id }) => {
-//       let bind: any = TabContentBind;
-//       bind.data[item.id][id] = await getEndPointData(endpoint || '');
-//       if (id === 'auto') {
-//         bind.data[item.id][id].map((automation: AutoEffect) => {
-//           automation.sentence = AutomationsService.parseEffectSentense(bind.data, automation);
-//         });
-//       }
-//       if (id === 'sensors') {
-//         const sensors = bind.data[item.id][id];
-//         formatSensorsValues(sensors);
-//       }
-//     });
-//   })
-// }
-
-// export function WebSocketDeviceDeclare(data: any) {
-//   if (!bind.data.home.devices) bind.data.home.devices = [];
-//   let device = bind.data.home.devices.find((device: any) => device.id === data.id);
-//   if (!device) bind.data.home.devices.push(data);
-// }
-
-// export function WebSocketDeviceUpdate(data: any) {
-//   let device = bind.data.home.devices.find((device: any) => device.id === data.id);
-//   if (device) {
-//     device.value = data.value;
-//     device.manual = data.manual;
-//   }
-// }
 
 // export function WebSocketSensorDeclare(data: any) {
 //   if (!bind.data.home.sensors) bind.data.home.sensors = [];

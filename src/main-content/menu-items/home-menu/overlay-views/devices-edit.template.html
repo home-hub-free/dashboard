@@ -64,25 +64,22 @@
     <span>${this.data.value}</span>
   </div>
 
-  <div :if="this.data.type === 'devices'">
-    <div class="device-setting">
-      <div class="device-setting-row">
-        <label :for="this.data.id + '_auto' ">Auto</label>
-        <input
-          :if="this.data.manual"
-          :id="this.data.id + '_manual'"
-          type="checkbox"
-          :oninput="this.actions.saveProp(this.data, 'manual')">
-        <input 
-          :else
-          :id="this.data.id + '_manual'" 
-          type="checkbox"
-          checked 
-          :oninput="this.actions.saveProp(this.data, 'manual')">
-      </div>
+  <div class="device-setting">
+    <div class="device-setting-row">
+      <label :for="this.data.id + '_auto' ">Auto</label>
+      <input
+        :if="this.data.manual"
+        :id="this.data.id + '_manual'"
+        type="checkbox"
+        :oninput="this.actions.saveProp(this.data, 'manual')">
+      <input 
+        :else
+        :id="this.data.id + '_manual'" 
+        type="checkbox"
+        checked 
+        :oninput="this.actions.saveProp(this.data, 'manual')">
     </div>
-
-    <div :if="this.data.deviceCategory === 'blinds'" class="device-setting">
+    <!-- <div :if="this.data.deviceCategory === 'blinds'" class="device-setting">
       <div class="device-setting-row">
         <p> Use these buttons to set the initial configuration: </p>
       </div>
@@ -92,7 +89,7 @@
         <button :onclick="this.actions.configureBlinds(this.data, 'home-position')">Home Position</button>
         <button :onclick="this.actions.configureBlinds(this.data, 'set-limit')">Set limit</button>
       </div>
-    </div>
+    </div> -->
 
     <div class="device-setting">
       <div class="device-setting-row">

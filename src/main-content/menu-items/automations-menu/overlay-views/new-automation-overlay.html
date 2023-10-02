@@ -11,73 +11,73 @@
     margin: 5px;
   }
 </style>
-<div id="new-automation" :if="this.data.home && this.data.automations">
+<div id="new-automation">
   <div>
-    <select :oninput="this.data.automations.deviceSelected = this.data.home.devices.find(device => device.id == event.target.value) || null">
+    <select :oninput="this.actions.setNewEffectDevice(event.target.value, this.data.newEffect)">
       <option value="null">
         Select device:
       </option>
-      <option :foreach="device in this.data.home.devices" :value="device.id">${device.name}</option>
+      <option :foreach="device in this.data.devices" :value="device.id">${device.name}</option>
     </select>
   </div>
 
-  <div :if="this.data.automations.deviceSelected">
-    <div :if="this.data.automations.deviceSelected.type === 'boolean'">
-      <select :oninput="this.data.automations.setTo = (event.target.value)">
+  <div :if="this.data.newEffect.device">
+    <div :if="this.data.newEffect.device.type === 'boolean'">
+      <select :oninput="this.data.newEffect.setTo = event.target.value">
         <option value="null">Do: </option>
         <option value="true">Turn on</option>
         <option value="false">Turn off</option>
       </select>
     </div>
-    <div :if="this.data.automations.deviceSelected.type === 'value'">
+    <div :if="this.data.newEffect.device.type === 'value'">
       <label for="">Set to: </label>
-      <input :oninput="this.data.automations.setTo = (event.target.value)" type="number" max="100" min="0" placeholder="value">
+      <input :oninput="this.data.newEffect.setTo = (event.target.value)" type="number" max="100" min="0" placeholder="value">
     </div>
   </div>
 
-  <div :if="this.data.automations.setTo !== undefined">
-    ${this.data.automations.effectSelected ? 'When: ' : ''}
-    <select :oninput="this.data.automations.effectSelected = event.target.value">
-      <option value="null">Baed on: </option>
+  <div :if="this.data.newEffect.setTo !== null">
+    ${this.data.newEffect.trigger ? 'When: ' : ''}
+    <select :oninput="this.data.newEffect.trigger = event.target.value">
+      <option value="null">Based on: </option>
       <option value="time">Time of day</option>
       <option value="sensor">Sensor</option>
     </select>
   </div>
 
-  <div :if="this.data.automations.effectSelected === 'time'">
-    <input type="datetime" placeholder="Time is:" :oninput="this.data.automations.dateSelected = event.target.value;">
+  <div :if="this.data.newEffect.trigger === 'time'">
+    <input type="datetime" placeholder="Time is:" :oninput="this.data.newEffect.time = event.target.value;">
   </div>
 
-  <div :if="this.data.automations.effectSelected === 'sensor'">
-    <select :oninput="this.data.automations.sensorSelected = this.data.home.sensors.find(sensor => sensor.id == event.target.value)">
+  <div :if="this.data.newEffect.trigger === 'sensor'">
+    <select :oninput="this.actions.setNewEffectSensor(event.target.value, this.data.newEffect)">
       <option value="null">
         Select sensor:
       </option>
-      <option :foreach="sensor in this.data.home.sensors" :value="sensor.id">${sensor.name + ' (' + sensor.sensorType + ')'}</option>
+      <option :foreach="sensor in this.data.sensors" :value="sensor.id">${sensor.name + ' (' + sensor.sensorType + ')'}</option>
     </select>
 
-    <div :if="this.data.automations.sensorSelected">
-      <select :if="this.data.automations.sensorSelected.sensorType === 'motion'" :oninput="this.data.automations.sensorState = (event.target.value)">
+    <div :if="this.data.newEffect.sensor">
+      <select :if="this.data.newEffect.sensor.sensorType === 'motion'" :oninput="this.data.newEffect.sensorState = (event.target.value)">
         <option value="null">Is: </option>
         <option value="true">Active</option>
         <option value="false">Inactive</option>
       </select>
 
-      <div :if="this.data.automations.sensorSelected.sensorType === 'temp/humidity'">
+      <div :if="this.data.newEffect.sensor.type === 'value'">
 
-        <span>Temperature is</span>
+        <span :if="this.data.newEffect.sensor.sensorType === 'temperature'">Temperature is</span>
 
-        <select name="comparassion" id="comparassion" value="higher-than" :oninput="this.data.automations.comparassion = (event.target.value)">
+        <select name="comparassion" id="comparassion" value="higher-than" :oninput="this.data.newEffect.comparassion = (event.target.value)">
           <option value="higher-than">Higher Than</option>
           <option value="lower-than">Lower Than</option>
         </select>
 
-        <input type="number" name="temperature-input" placeholder="temperature..." :oninput="this.data.automations.sensorState = (event.target.value)">
+        <input type="number" name="temperature-input" placeholder="temperature..." :oninput="this.data.newEffect.sensorState = (event.target.value)">
       </div>
     </div>
 
-    <div :if="this.data.automations.sensorState !== undefined">
-      <button :onclick="this.actions.saveAutomation(this.data.automations)"> Save Automation </button>
+    <div :if="this.data.newEffect.sensorState !== undefined">
+      <button :onclick="this.actions.saveNewEffect(this.data.newEffect)"> Save Automation </button>
     </div>
   </div>
 </div>

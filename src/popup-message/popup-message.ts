@@ -18,7 +18,7 @@ export const PopupMessage = new Bind({
   },
   onChange
 });
-const bind = PopupMessage.bind;
+const bind: any = PopupMessage.bind;
 let currentTimeout: any;
 
 function onChange(changes: DataChanges) {

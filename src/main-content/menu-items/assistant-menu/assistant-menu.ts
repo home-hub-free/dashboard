@@ -1,20 +1,7 @@
 import { Bind } from "bindrjs";
 import { requestCalendarData, requestWeatherData, updateHouseData } from "../../../utils/server-handler";
 import template from './assistant-menu.html?raw';
-
-export const AssistantService = {
-  readCalendar,
-  readForecast,
-  updateHouseData: updateHouseData,
-};
-
-function readCalendar() {
-  requestCalendarData();
-}
-
-function readForecast() {
-  requestWeatherData();
-}
+import { AssistantMenuState } from "./assistant-menu.model";
 
 class VAssistantContentClass {
   bind!: any;
@@ -22,11 +9,13 @@ class VAssistantContentClass {
   constructor() {}
 
   initView() {
-    const { bind } = new Bind({
+    const { bind } = new Bind<AssistantMenuState>({
       id: 'assistant',
       template,
       bind: {
-        test: 'test',
+        readCalendar: requestCalendarData,
+        readForecast: requestWeatherData,
+        updateHouseData: updateHouseData,
       }
     });
     this.bind = bind;
