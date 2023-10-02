@@ -49,16 +49,3 @@ class TabContentClass {
 }
 
 export const TabContent = new TabContentClass();
-
-// export function WebSocketSensorDeclare(data: any) {
-//   if (!bind.data.home.sensors) bind.data.home.sensors = [];
-//   let sensor = bind.data.home.sensors.find((sensor: any) => sensor.id === data.id);
-//   if (!sensor) bind.data.home.sensors.push(data);
-// }
-
-// export function WebSocketSensorUpdate(data: any) {
-//   let sensor = bind.data.home.sensors.find((sensor: any) => sensor.id === data.id);
-//   if (sensor) sensor.value = data.value;
-//   formatSensorsValues([sensor])
-// }
-

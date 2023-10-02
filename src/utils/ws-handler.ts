@@ -2,9 +2,9 @@ import io from "socket.io-client/dist/socket.io.js";
 // import { WebSocketDeviceDeclare, WebSocketDeviceUpdate, WebSocketSensorDeclare, WebSocketSensorUpdate } from "../main-content/tab-content/tab-content";
 import { server } from "./server-handler";
 import { DevicesTab } from "../main-content/menu-items/home-menu/tabs/devices/devices-tab";
-import { DeviceWSEvents } from "../main-content/menu-items/home-menu/tabs/devices/devices-tab.model";
+import { SensorsTab } from "../main-content/menu-items/home-menu/tabs/sensors/sensors-tab";
 
-const socket: io.Socket<DeviceWSEvents> = io.connect(server);
+const socket = io.connect(server);
 
 export let socketId = '';
 
@@ -15,15 +15,9 @@ export function initWebSockets() {
     socketId = socket.id;
   });
   
-  // socket.on("device-declare")
-  // Device events
   DevicesTab.initializeWSHooks(socket);
-  // socket.on("device-declare", WebSocketDeviceDeclare);
-  // socket.on("device-update", WebSocketDeviceUpdate);
-  
-  // Sensor events
-  // socket.on("sensor-declare", WebSocketSensorDeclare);
-  // socket.on("sensor-update", WebSocketSensorUpdate);
+  SensorsTab.initializeWSHooks(socket);
+
 }
 
 export function getSocketId() {

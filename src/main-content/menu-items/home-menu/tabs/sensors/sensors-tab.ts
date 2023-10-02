@@ -3,20 +3,24 @@ import { NavBarItems } from "../../../../../nav-bar/nav-bar.contants";
 import template from './sensors-tab.html?raw';
 import { Tab } from "../../../../tabs/tabs.model";
 import { getEndPointData } from "../../../../../utils/server-handler";
-import { Sensor } from "./sensors-tab.model";
+import { Sensor, SensorWSEvents, SensorsTabState } from "./sensors-tab.model";
 import { getGlobalPosition } from "../../../../../utils/utils.service";
 import { openOverlay } from "../../../../../overlay-modal/overlay-modal";
 import SensorEditView from "../../overlay-views/sensors-edit.template.html?raw";
 import { SensorsService, SensorsServiceClass } from "./sensors-tab.service";
+import io from "socket.io-client/dist/socket.io.js";
 
 class SensorsTabClass {
-  bind!: any;
-  sensorsService!: SensorsServiceClass;
-
-  #definition: Tab = NavBarItems.find((menuItem) => menuItem.id === 'home')?.tabs?.find((tab) => tab.id === 'sensors') as Tab;
+  bind!: SensorsTabState;
   data: any = null;
-  devicesService: any;
-
+  sensorsService!: SensorsServiceClass;
+  
+  #definition: Tab = NavBarItems.find((menuItem) => menuItem.id === 'home')?.tabs?.find((tab) => tab.id === 'sensors') as Tab;
+  #WSHooks: SensorWSEvents = {
+    'sensor-declare': this.sensorWSDeclare.bind(this),
+    'sensor-update': this.sensorWSUpdate.bind(this),
+  }
+  
   // constructor get called ONCE
   constructor(sensorsService: SensorsServiceClass) {
     this.sensorsService = sensorsService;
@@ -31,14 +35,13 @@ class SensorsTabClass {
 
   // initView gets called everytime the devices view is rendered
   initView() {
-    const { bind } = new Bind({
+    const { bind } = new Bind<SensorsTabState>({
       id: 'sensors',
       template,
       bind: {
         sensors: this.data,
         sensorTouchEnd: this.sensorTouchEnd.bind(this),
       },
-
     });
     this.bind = bind;
   }  
@@ -56,6 +59,24 @@ class SensorsTabClass {
       startRect: rect,
       padding: { x: 50, y: 200 }
     });
+  }
+
+  initializeWSHooks(socket: io.Socket<SensorWSEvents>) {
+    (Object.keys(this.#WSHooks) as  (keyof SensorWSEvents)[]).forEach((key) => {
+      socket.on(key, this.#WSHooks[key]);
+    });
+  }
+
+  sensorWSDeclare(declaredSensor: Sensor) {
+    if (!this.bind.sensors) this.bind.sensors = [];
+    let sensor = this.bind.sensors.find((sensor: any) => sensor.id === declaredSensor.id);
+    if (!sensor) this.bind.sensors.push(declaredSensor);
+  }
+
+  sensorWSUpdate(updatedSensor: Sensor) {
+    let sensor = this.bind.sensors.find((sensor: any) => sensor.id === updatedSensor.id);
+    if (sensor) sensor.value = updatedSensor.value;
+    this.sensorsService.formatSensorsValues([sensor as Sensor])
   }
 }
 

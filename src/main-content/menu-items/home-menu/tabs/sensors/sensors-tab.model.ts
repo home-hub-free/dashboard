@@ -9,3 +9,13 @@ export type Sensor = {
   operationalRanges: string[],
   sensorType: string;
 }
+
+export type SensorWSEvents = {
+  'sensor-declare': (sensor: Sensor) => void;
+  'sensor-update': (sensor: Sensor) => void;
+}
+
+export type SensorsTabState = {
+  sensors: Sensor[],
+  sensorTouchEnd: (event: any, sensor: Sensor) => void
+}

@@ -8,7 +8,7 @@ import "./styles/style.scss";
 function init() {
   NavBar.initView();
   MainContent.initView();
+  initWebSockets();
 }
 
 init();
-initWebSockets();

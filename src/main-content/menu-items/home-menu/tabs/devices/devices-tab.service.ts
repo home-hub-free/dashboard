@@ -6,8 +6,6 @@ import DeviceEditView from '../../overlay-views/devices-edit.template.html?raw';
 import { Device } from "./devices-tab.model";
 
 export class DevicesServiceClass {
-
-
   originalValue = 0;
   touchStartPosition = 0;
   currentTouchPosition = 0;
@@ -97,7 +95,7 @@ export class DevicesServiceClass {
     }
   }
 
-  updateDevice(device: any) {
+  updateDevice(device: Device) {
     toggleServerDevice(device)
     .then(({ success }) => {
       if (!success) {
@@ -136,10 +134,10 @@ export class DevicesServiceClass {
     }
   }
   
-  saveOperationalRanges(data: any) {
+  saveOperationalRanges(device: Device) {
     let elements: HTMLInputElement[] = [
-      document.getElementById(data.id + '_operationalRangesFrom') as HTMLInputElement,
-      document.getElementById(data.id + '_operationalRangesTo') as HTMLInputElement,
+      document.getElementById(device.id + '_operationalRangesFrom') as HTMLInputElement,
+      document.getElementById(device.id + '_operationalRangesTo') as HTMLInputElement,
     ];
   
     let missingValues = 0;
@@ -157,12 +155,12 @@ export class DevicesServiceClass {
         timer: 3000,
       });
     } else {
-      data.operationalRanges.push(range);
-      submitDataChange(data.id, data.type, 'operationalRanges', data.operationalRanges);
+      device.operationalRanges.push(range);
+      submitDataChange(device.id, 'devices', 'operationalRanges', device.operationalRanges);
     }
   }
   
-  removeOperationalRange(device: any, index: any) {
+  removeOperationalRange(device: Device, index: any) {
     if (device.operationalRanges.length === 1) {
       device.operationalRanges = [];
     } else {

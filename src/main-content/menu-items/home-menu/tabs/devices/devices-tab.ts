@@ -10,11 +10,10 @@ import io from "socket.io-client/dist/socket.io.js";
 
 class DevicesTabClass {
   bind!: DevicesTabState;
-  devicesService!: DevicesServiceClass;
   data: any = null;
+  devicesService!: DevicesServiceClass;
 
   #definition: Tab = NavBarItems.find((menuItem) => menuItem.id === 'home')?.tabs?.find((tab) => tab.id === 'devices') as Tab;
-
   #WSHooks: DeviceWSEvents = {
     'device-declare': this.deviceWSDeclare.bind(this),
     'device-update': this.deviceWSDeclare.bind(this),
@@ -40,7 +39,7 @@ class DevicesTabClass {
         deviceTouchStart: this.devicesService.deviceTouchStart.bind(this.devicesService),
         deviceTouchEnd: this.devicesService.deviceTouchEnd.bind(this.devicesService),
         deviceTouchMove: this.devicesService.deviceTouchMove.bind(this.devicesService),
-      }
+      },
     });
     this.bind = bind;
   }  

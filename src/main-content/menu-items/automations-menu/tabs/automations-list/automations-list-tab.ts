@@ -18,21 +18,20 @@ import { AutomationsListTabState } from "./automations-list-tab.model";
 
 class AutomationsListClass {
   bind!: AutomationsListTabState;
+  data!: any;
+  automationsListTabService: AutomationsListTabServiceClass;
 
   #definition = NavBarItems.find((i) => i.id === 'automations')?.tabs?.find(t => t.id === 'automations-list') as Tab;
-  #data!: any;
-  newEffect = {};
+  // #WSHooks = {};
 
   constructor(automationsListTabService: AutomationsListTabServiceClass) {
+    this.automationsListTabService = automationsListTabService;
     getEndPointData(this.#definition.endpoint || '').then((data) => {
-      this.#data = data;
-      this.#data.map((effect: AutoEffect) => {
-        effect.sentence = automationsListTabService.parseEffectSentense({
-          devices: DevicesTab.data,
-          sensors: SensorsTab.data,
-        }, effect);
-      });
-      if (this.bind) this.bind.effects = data;
+      this.data = data;
+      if (this.bind) {
+        this.bind.effects = data
+        this.parseEffects();
+      };
     });
   }
 
@@ -41,11 +40,24 @@ class AutomationsListClass {
       id: 'automations-list',
       template,
       bind: {
-        effects: this.#data,
+        effects: this.data,
         newAutomation: this.newAutomation.bind(this),
-      }
+      },
     });
+
     this.bind = bind;
+    if (this.data) {
+      this.parseEffects();
+    }
+  }
+
+  parseEffects() {
+    this.bind.effects.map((effect: AutoEffect) => {
+      effect.sentence = this.automationsListTabService.parseEffectSentense({
+        devices: DevicesTab.data || [],
+        sensors: SensorsTab.data || [],
+      }, effect);
+    });
   }
 
   newAutomation(event: MouseEvent) {
