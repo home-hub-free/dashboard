@@ -1,7 +1,7 @@
 import { AutoEffect } from "../main-content/menu-items/automations-menu/automations-menu.model";
 
-// export const server = "http://192.168.1.199:8080/";
-export const server = "http://localhost:8080/";
+export const server = "http://192.168.1.199:8080/";
+// export const server = "http://localhost:8080/";
 
 export type BlindsConfigureActions = 'spin' | 'switch-direction' | 'home-position' | 'set-limit'
 
