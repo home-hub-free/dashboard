@@ -20,4 +20,5 @@ export function storageGet(key: string) {
   } catch(e) {
     localStorage.removeItem(key);
   }
+  return data;
 }
