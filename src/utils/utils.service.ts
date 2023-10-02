@@ -14,5 +14,10 @@ export function storageSet(key: string, data: any) {
 }
 
 export function storageGet(key: string) {
-  return JSON.parse(localStorage.getItem(key) || 'null');
+  let data = null;
+  try {
+    data = JSON.parse(localStorage.getItem(key) || 'null');
+  } catch(e) {
+    localStorage.removeItem(key);
+  }
 }
