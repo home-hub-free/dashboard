@@ -16,6 +16,7 @@ export class DevicesServiceClass {
   constructor () {}
 
   deviceTouchStart(event: any, device: Device) {
+    this.recordSwipe = false;
     let rect = getGlobalPosition(event.target);
     this.touchStartPosition = event.touches[0][this.swipeOnAxis];
     let inputType: any = 'text';
