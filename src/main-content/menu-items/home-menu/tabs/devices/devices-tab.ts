@@ -16,7 +16,7 @@ class DevicesTabClass {
   #definition: Tab = NavBarItems.find((menuItem) => menuItem.id === 'home')?.tabs?.find((tab) => tab.id === 'devices') as Tab;
   #WSHooks: DeviceWSEvents = {
     'device-declare': this.deviceWSDeclare.bind(this),
-    'device-update': this.deviceWSDeclare.bind(this),
+    'device-update': this.deviceWSUpdate.bind(this),
   }
 
   // constructor get called ONCE

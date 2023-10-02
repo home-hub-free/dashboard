@@ -29,7 +29,7 @@ class TabsClass {
           height: "",
         },
         tabs: this.tabs,
-        selectTab: (tab: Tab, event: Event) => this.selectTab(tab, event)
+        selectTab: this.selectTab.bind(this)
       },
       onChange: (changes) => this.onChange(changes),
       ready: () => this.ready(),

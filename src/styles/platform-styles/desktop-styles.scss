@@ -1,7 +1,9 @@
+$nav-bar-width: 300px;
+
 @mixin dekstop {
   #nav-bar {
     height: 100%;
-    width: 300px;
+    width: $nav-bar-width;
     left: 0;
     bottom: 0;
     flex-direction: column;
@@ -54,8 +56,8 @@
 
   #content {
     height: 100%;
-    width: calc(100% - 300px);
-    margin-left: 300px;
+    width: calc(100% - $nav-bar-width);
+    margin-left: $nav-bar-width;
     .header {
       display: none;
     }
@@ -63,6 +65,7 @@
 
   #tabs {
     padding-top: 20px;
+    margin-left: $nav-bar-width;
     .menu-tabs {
       border-bottom: 2px;
       border-bottom-style: solid;
@@ -92,6 +95,7 @@
   }
 
   #tab-content {
+    margin-left: $nav-bar-width;
     text-align: center;
     padding: 10px;
     height: calc(100% - 150px);

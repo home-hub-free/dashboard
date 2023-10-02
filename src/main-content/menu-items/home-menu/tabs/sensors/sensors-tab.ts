@@ -76,6 +76,11 @@ class SensorsTabClass {
   sensorWSUpdate(updatedSensor: Sensor) {
     let sensor = this.bind.sensors.find((sensor: any) => sensor.id === updatedSensor.id);
     if (sensor) sensor.value = updatedSensor.value;
+    if (sensor) {
+      // Update manually for now, to avoid possibly overrideg FE specific stuff
+      sensor.value = updatedSensor.value;
+      sensor.name = updatedSensor.name;
+    }
     this.sensorsService.formatSensorsValues([sensor as Sensor])
   }
 }

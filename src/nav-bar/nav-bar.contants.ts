@@ -47,7 +47,7 @@ export const NavBarItems: IMenuItem[] = [
     tabs: [
       {
         id: 'automations-list',
-        name: 'List',
+        name: 'All',
         icon: '',
         endpoint: 'get-effects'
       }

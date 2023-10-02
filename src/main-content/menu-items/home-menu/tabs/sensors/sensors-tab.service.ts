@@ -12,10 +12,10 @@ export class SensorsServiceClass {
       value = !element.checked;
     }
     if (element && value !== undefined) {
-      submitDataChange(data.id, data.type, prop, value).then(() => {
+      submitDataChange(data.id, 'sensors', prop, value).then(() => {
         showToaster({
           from: 'bottom',
-          message: `Saved ${data.type.substring(0, data.type.length - 1)} ${prop}`,
+          message: `Saved sensor ${prop}`,
           timer: 2000
         });
       });

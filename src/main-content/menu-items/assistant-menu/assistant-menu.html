@@ -12,9 +12,8 @@
   </div>
 
   <div class="custom-speech">
-    <textarea name="custom-speech" id="custom-speech" cols="30" rows="10" :oninput="this.customSpeech = event.target.value">
-      ${this.customSpeech}
-    </textarea>
+    <textarea name="custom-speech" id="custom-speech" cols="30" rows="10" :oninput="this.customSpeech = event.target.value"
+    >${this.customSpeech}</textarea>
 
     <button :onmouseup="this.assistantSay(this.customSpeech)">Say</button>
   </div>

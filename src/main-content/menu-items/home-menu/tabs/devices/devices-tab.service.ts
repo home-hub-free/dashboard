@@ -124,10 +124,10 @@ export class DevicesServiceClass {
       value = !element.checked;
     }
     if (element && value !== undefined) {
-      submitDataChange(data.id, data.type, prop, value).then(() => {
+      submitDataChange(data.id, 'devices', prop, value).then(() => {
         showToaster({
           from: 'bottom',
-          message: `Saved ${data.type.substring(0, data.type.length - 1)} ${prop}`,
+          message: `Saved device ${prop}`,
           timer: 2000
         });
       });

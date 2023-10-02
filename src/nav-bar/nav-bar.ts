@@ -16,9 +16,7 @@ class NavBarClass {
   bind!: NavBarState;
   private activeMenuItemId: string = storageGet('activeMenuItemId');
 
-  constructor () {
-    // let activeMenuItemId = 
-  }
+  constructor () {}
 
   initView() {
     const { bind } = new Bind<NavBarState>({
@@ -35,7 +33,6 @@ class NavBarClass {
     this.bind = bind as NavBarState;
   }
   
-  // Bind ready
   ready() {
     let activeMenuItem: IMenuItem | null = NavBarItems.find((menuItem) => menuItem.id === this.activeMenuItemId) || null;
     if (activeMenuItem) {
@@ -49,15 +46,12 @@ class NavBarClass {
   private setActiveNavBarItem(menuItem: IMenuItem) {
     this.bind.activeMenuItemId = menuItem.id;
     MainContent.bind.header = menuItem.name;
+    Tabs.tabs = menuItem.tabs as Tab[];
     if (Tabs.bind) {
       Tabs.bind.tabs = menuItem.tabs as Tab[];
-    } else {
-      Tabs.tabs = menuItem.tabs as Tab[];
     }
     
     storageSet('activeMenuItemId', menuItem.id);
-    // Header.bind.name = menuItem.name;
-    // Tabs.bind.activeMenuItemId = menuItem.id;
   }
 }
 
