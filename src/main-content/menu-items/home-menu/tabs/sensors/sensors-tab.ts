@@ -79,7 +79,7 @@ class SensorsTabClass {
     if (sensor) {
       // Update manually for now, to avoid possibly overrideg FE specific stuff
       sensor.value = updatedSensor.value;
-      sensor.name = updatedSensor.name;
+      sensor.name = updatedSensor.name || sensor.name;
     }
     this.sensorsService.formatSensorsValues([sensor as Sensor])
   }
