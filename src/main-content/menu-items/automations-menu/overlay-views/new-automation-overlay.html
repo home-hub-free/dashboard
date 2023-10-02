@@ -11,7 +11,7 @@
     margin: 5px;
   }
 </style>
-<div id="new-automation">
+<div id="new-automation" :if="this.data.newEffect">
   <div>
     <select :oninput="this.actions.setNewEffectDevice(event.target.value, this.data.newEffect)">
       <option value="null">
