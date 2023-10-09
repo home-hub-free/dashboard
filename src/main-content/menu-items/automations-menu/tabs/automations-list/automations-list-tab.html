@@ -14,6 +14,8 @@
     padding: 15px;
     display: flex;
     margin-bottom: 10px;
+    flex-direction: column;
+    text-align: left;
   }
 </style>
 
@@ -21,7 +23,10 @@
   <div class="effects-actions">
     <button :onclick="this.newAutomation(event)">New Automation</button>
   </div>
-  <div :foreach="effect in this.effects" class="effect-container">
-    ${effect.sentence}
+
+  <div :foreach="group in this.groups" class="effect-container">
+    <strong>${group.name}</strong>
+    <div :foreach="effect in group.effects" :innerHTML="effect.sentence">
+    </div>
   </div>
 </div>

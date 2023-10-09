@@ -10,7 +10,7 @@ import io from "socket.io-client/dist/socket.io.js";
 
 class DevicesTabClass {
   bind!: DevicesTabState;
-  data: any = null;
+  data!: Device[];
   devicesService!: DevicesServiceClass;
 
   #definition: Tab = NavBarItems.find((menuItem) => menuItem.id === 'home')?.tabs?.find((tab) => tab.id === 'devices') as Tab;

@@ -13,7 +13,7 @@ import { DevicesTab } from "../../../home-menu/tabs/devices/devices-tab";
 import { SensorsTab } from "../../../home-menu/tabs/sensors/sensors-tab";
 import { Device } from "../../../home-menu/tabs/devices/devices-tab.model";
 import { Sensor } from "../../../home-menu/tabs/sensors/sensors-tab.model";
-import { AutomationsListTabState } from "./automations-list-tab.model";
+import { AutomationsListTabState, EffectsGroup } from "./automations-list-tab.model";
 
 
 class AutomationsListClass {
@@ -41,6 +41,7 @@ class AutomationsListClass {
       template,
       bind: {
         effects: this.data,
+        groups: [],
         newAutomation: this.newAutomation.bind(this),
       },
     });
@@ -58,6 +59,19 @@ class AutomationsListClass {
         sensors: SensorsTab.data || [],
       }, effect);
     });
+    this.groupEffects();
+  }
+
+  groupEffects() {
+    const groups: { [key: string]: EffectsGroup } = {};
+    this.bind.effects.forEach((effect: AutoEffect) => {
+      if (!groups[effect.set.id]) {
+        const device = DevicesTab.devicesService.getDeviceById(effect.set.id);
+        groups[effect.set.id] = { effects: [], name: device?.name || 'N/A' };
+      }
+      groups[effect.set.id].effects.push(effect);
+    });
+    this.bind.groups = Object.values(groups);
   }
 
   newAutomation(event: MouseEvent) {
@@ -87,7 +101,7 @@ class AutomationsListClass {
   }
 
   setNewEffectDevice(deviceId: string, newEffect: NewEffect) {
-    const device: Device = DevicesTab.data.find((device: Device) => device.id === deviceId);
+    const device: Device = DevicesTab.data.find((device: Device) => device.id === deviceId) as Device;
     newEffect.device = device; 
   }  
 

@@ -1,3 +1,4 @@
+import { DevicesTab } from "../../../home-menu/tabs/devices/devices-tab";
 import { Device } from "../../../home-menu/tabs/devices/devices-tab.model";
 import { Sensor } from "../../../home-menu/tabs/sensors/sensors-tab.model";
 import { AutoEffect } from "../../automations-menu.model";
@@ -7,17 +8,17 @@ export class AutomationsListTabServiceClass {
   constructor() {}
 
   parseEffectSentense(data: { devices: Device[], sensors: Sensor[]}, effect: AutoEffect) {
-    let device = data.devices.find((d: any) => d.id == effect.set.id);
+    let device = DevicesTab.devicesService.getDeviceById(effect.set.id);
     if (!device) device = { name: 'DEVICE N/A '} as Device;
   
-    let text = device.name;
+    let text = '';
   
     switch (device.type) {
       case 'boolean':
-        text += ' turns ' + (JSON.parse(effect.set.value) ? 'on ' : 'off ')
+        text += '<strong> turns ' + (JSON.parse(effect.set.value) ? 'on ' : 'off ') + '</strong>'
         break;
       case 'value':
-        text += ' sets to: ' + effect.set.value + ' ';
+        text += '<strong> sets to: ' + effect.set.value + ' </strong>';
         break;
     }
     
@@ -31,7 +32,7 @@ export class AutomationsListTabServiceClass {
         text += `sensor(${sensor.name})`
         let is = ' is ';
         if (sensor.sensorType === 'motion') {
-          is += `${JSON.parse(effect.when.is) ? 'Active' : 'Inactive'}`
+          is += `<strong>${JSON.parse(effect.when.is) ? 'Active' : 'Inactive'}</strong>`
         }
         if (sensor.sensorType === 'temp/humidity') {
           is += 'higher than ' + effect.when.is; 

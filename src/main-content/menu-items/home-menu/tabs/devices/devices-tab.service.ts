@@ -3,6 +3,7 @@ import { showToaster } from "../../../../../popup-message/popup-message";
 import { submitDataChange, toggleServerDevice } from "../../../../../utils/server-handler";
 import { getGlobalPosition } from "../../../../../utils/utils.service";
 import DeviceEditView from '../../overlay-views/devices-edit.template.html?raw';
+import { DevicesTab } from "./devices-tab";
 import { Device } from "./devices-tab.model";
 
 export class DevicesServiceClass {
@@ -184,7 +185,9 @@ export class DevicesServiceClass {
       });
   }
 
-
+  getDeviceById(id: string): Device | null {
+    return DevicesTab.data.find((device) => device.id === id) || null;
+  }
 
 }
 export const DevicesService = new DevicesServiceClass();
