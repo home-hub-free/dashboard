@@ -45,30 +45,6 @@ export function toggleServerDevice(device: any): Promise<ServerResponse> {
   });
 }
 
-export function configureBlinds(device: any, action: BlindsConfigureActions) {
-  return new Promise((resolve, reject) => {
-    return fetch(server + "device-blinds-configure", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        id: device.id,
-        action,
-      }),
-    })
-      .then((res) => res.json())
-      .then((result) => {
-        if (result) {
-          resolve({
-            data: result,
-            success: true,
-          });
-        } else {
-          reject();
-        }
-      });
-  });
-}
-
 export function submitDataChange(
   id: string,
   type: "devices" | "sensors",

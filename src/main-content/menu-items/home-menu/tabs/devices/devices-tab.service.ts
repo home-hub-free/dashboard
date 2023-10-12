@@ -1,6 +1,6 @@
 import { openOverlay, OverlayModal } from "../../../../../overlay-modal/overlay-modal";
 import { showToaster } from "../../../../../popup-message/popup-message";
-import { submitDataChange, toggleServerDevice } from "../../../../../utils/server-handler";
+import { BlindsConfigureActions, headers, server, submitDataChange, toggleServerDevice } from "../../../../../utils/server-handler";
 import { getGlobalPosition } from "../../../../../utils/utils.service";
 import DeviceEditView from '../../overlay-views/devices-edit.template.html?raw';
 import { DevicesTab } from "./devices-tab";
@@ -187,6 +187,30 @@ export class DevicesServiceClass {
 
   getDeviceById(id: string): Device | null {
     return DevicesTab.data.find((device) => device.id === id) || null;
+  }
+
+  configureBlinds(device: any, action: BlindsConfigureActions) {
+    return new Promise((resolve, reject) => {
+      return fetch(server + "device-blinds-configure", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          id: device.id,
+          action,
+        }),
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          if (result) {
+            resolve({
+              data: result,
+              success: true,
+            });
+          } else {
+            reject();
+          }
+        });
+    });
   }
 
 }

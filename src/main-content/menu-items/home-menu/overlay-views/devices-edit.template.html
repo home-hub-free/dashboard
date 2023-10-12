@@ -79,7 +79,8 @@
         checked 
         :oninput="this.actions.saveProp(this.data, 'manual')">
     </div>
-    <!-- <div :if="this.data.deviceCategory === 'blinds'" class="device-setting">
+
+    <div :if="this.data.deviceCategory === 'blinds'" class="device-setting">
       <div class="device-setting-row">
         <p> Use these buttons to set the initial configuration: </p>
       </div>
@@ -89,7 +90,7 @@
         <button :onclick="this.actions.configureBlinds(this.data, 'home-position')">Home Position</button>
         <button :onclick="this.actions.configureBlinds(this.data, 'set-limit')">Set limit</button>
       </div>
-    </div> -->
+    </div>
 
     <div class="device-setting">
       <div class="device-setting-row">
