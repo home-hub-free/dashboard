@@ -3,7 +3,7 @@ import { NavBarItems } from "../../../../../nav-bar/nav-bar.contants";
 import template from './sensors-tab.html?raw';
 import { Tab } from "../../../../tabs/tabs.model";
 import { getEndPointData } from "../../../../../utils/server-handler";
-import { Sensor, SensorWSEvents, SensorsTabState } from "./sensors-tab.model";
+import { Sensor, SensorUpdateEvent, SensorWSEvents, SensorsTabState } from "./sensors-tab.model";
 import { getGlobalPosition } from "../../../../../utils/utils.service";
 import { openOverlay } from "../../../../../overlay-modal/overlay-modal";
 import SensorEditView from "../../overlay-views/sensors-edit.template.html?raw";
@@ -73,15 +73,30 @@ class SensorsTabClass {
     if (!sensor) this.bind.sensors.push(declaredSensor);
   }
 
-  sensorWSUpdate(updatedSensor: Sensor) {
+  sensorWSUpdate(updatedSensor: SensorUpdateEvent) {
     let sensor = this.bind.sensors.find((sensor: any) => sensor.id === updatedSensor.id);
-    if (sensor) sensor.value = updatedSensor.value;
+    // if (sensor) sensor.value = this.parseSensorValue(updatedSensor);
     if (sensor) {
+
       // Update manually for now, to avoid possibly overrideg FE specific stuff
-      sensor.value = updatedSensor.value;
-      sensor.name = updatedSensor.name || sensor.name;
+      if (updatedSensor.value) {
+        sensor.value = this.parseSensorValue(sensor, updatedSensor.value);
+      }
+      if (updatedSensor.name) {
+        sensor.name = updatedSensor.name || sensor.name;
+      }
     }
     this.sensorsService.formatSensorsValues([sensor as Sensor])
+  }
+
+  parseSensorValue(sensor: Sensor, value: any) {
+    switch (sensor.sensorType) {
+      case 'temp/humidity':
+        let [temperature, humidity] = value.split(':');
+        return { temperature, humidity };
+      default: 
+        return value
+    }
   }
 }
 

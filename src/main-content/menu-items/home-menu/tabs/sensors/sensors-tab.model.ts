@@ -7,12 +7,18 @@ export type Sensor = {
   type: 'boolean' | 'value'
   ip?: string;
   operationalRanges: string[],
-  sensorType: string;
+  sensorType: 'motion' | 'temp/humidity';
+}
+
+export type SensorUpdateEvent = {
+  id: string,
+  value?: any;
+  name?: string;
 }
 
 export type SensorWSEvents = {
   'sensor-declare': (sensor: Sensor) => void;
-  'sensor-update': (sensor: Sensor) => void;
+  'sensor-update': (sensor: SensorUpdateEvent) => void;
 }
 
 export type SensorsTabState = {
