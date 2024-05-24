@@ -80,23 +80,13 @@ class SensorsTabClass {
 
       // Update manually for now, to avoid possibly overrideg FE specific stuff
       if (updatedSensor.value) {
-        sensor.value = this.parseSensorValue(sensor, updatedSensor.value);
+        sensor.value = updatedSensor.value;
       }
       if (updatedSensor.name) {
         sensor.name = updatedSensor.name || sensor.name;
       }
     }
     this.sensorsService.formatSensorsValues([sensor as Sensor])
-  }
-
-  parseSensorValue(sensor: Sensor, value: any) {
-    switch (sensor.sensorType) {
-      case 'temp/humidity':
-        let [temperature, humidity] = value.split(':');
-        return { temperature, humidity };
-      default: 
-        return value
-    }
   }
 }
 
