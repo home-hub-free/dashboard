@@ -32,10 +32,10 @@ export class SensorsServiceClass {
   } 
 
   private formatTempHumiditySensor(sensor: Sensor) {
-    const values = sensor.value.split(':');
+    const [temperature, humidity] = sensor.value.split(':');
     sensor.value = {
-      temperature: parseFloat(values[0]) + '°C',
-      humidity: parseFloat(values[1]) + '%',
+      temperature: parseFloat(temperature) + ' °C',
+      humidity: parseFloat(humidity) + ' %',
     };
   }
 }

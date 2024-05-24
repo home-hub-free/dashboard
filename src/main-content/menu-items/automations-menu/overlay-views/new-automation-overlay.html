@@ -65,14 +65,25 @@
 
       <div :if="this.data.newEffect.sensor.type === 'value'">
 
-        <span :if="this.data.newEffect.sensor.sensorType === 'temperature'">Temperature is</span>
+        <div :if="this.data.newEffect.sensor.sensorType === 'temp/humidity'">
+          <select name="check-value" id="check-value" value="temp" :oninput="this.data.newEffect.valueToCheck = (event.target.value)">
+            <option value="null">Value to check: </option>
+            <option value="temp">Temperature</option>
+            <option value="humidity">Humidity</option>
+          </select>
 
-        <select name="comparassion" id="comparassion" value="higher-than" :oninput="this.data.newEffect.comparassion = (event.target.value)">
-          <option value="higher-than">Higher Than</option>
-          <option value="lower-than">Lower Than</option>
-        </select>
+          <select name="comparassion" id="comparassion" value="higher-than" :oninput="this.data.newEffect.comparassion = (event.target.value)">
+            <option value="null">Comparassion</option>
+            <option value="higher-than">Higher Than</option>
+            <option value="lower-than">Lower Than</option>
+          </select>
 
-        <input type="number" name="temperature-input" placeholder="temperature..." :oninput="this.data.newEffect.sensorState = (event.target.value)">
+          <input type="number" name="temp/humidity-input" placeholder="" :oninput="this.data.newEffect.sensorState = (event.target.value)">   
+        </div>
+        <div :else>
+
+        </div>
+
       </div>
     </div>
 

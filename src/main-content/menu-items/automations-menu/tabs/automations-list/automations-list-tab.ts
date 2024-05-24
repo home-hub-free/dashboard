@@ -140,12 +140,28 @@ class EffectBuilder {
         target = newEffect.time;
       case 'sensor':
         const type = newEffect.sensor?.type;
-        target = type === 'value'  ? `${newEffect.comparassion}:${newEffect.sensorState}` : newEffect.sensorState
+        if (type === 'value') {
+          if (newEffect.sensor?.sensorType === 'temp/humidity') {
+            target = this.buildTempHumidityTarget(newEffect);
+          } else {
+            target = this.buildValueTarget(newEffect);
+          }
+        } else {
+          target = newEffect.sensorState;
+        }
     }
     this.when = {
       id: newEffect.sensor?.id || null,
       type: newEffect.trigger,
       is: target,
     }
+  }
+
+  private buildTempHumidityTarget(newEffect: NewEffect) {
+    return `${newEffect.valueToCheck}:${newEffect.comparassion}:${newEffect.sensorState}`;
+  }
+
+  private buildValueTarget(newEffect: NewEffect) {
+    return `${newEffect.comparassion}:${newEffect.sensorState}`;
   }
 }

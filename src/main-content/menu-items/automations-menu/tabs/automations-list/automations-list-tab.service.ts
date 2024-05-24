@@ -29,21 +29,51 @@ export class AutomationsListTabServiceClass {
         text += 'time is ' + effect.when.is;
       case 'sensor':
         let sensor = data.sensors.find((s: any) => s.id == effect.when.id) || { name: 'SENSOR N/A' } as Sensor;
-        text += `sensor(${sensor.name})`
-        let is = ' is ';
-        if (sensor.sensorType === 'motion') {
-          is += `<strong>${JSON.parse(effect.when.is) ? 'Active' : 'Inactive'}</strong>`
-        }
-        if (sensor.sensorType === 'temp/humidity') {
-          is += 'higher than ' + effect.when.is; 
-        }
-        text += is;
+        text += this.parseSensor(sensor, effect);
     }
   
     effect.sentence = text;
   
     return text;
   
+  }
+
+  parseSensor(sensor: Sensor, effect: AutoEffect) {
+    switch (sensor.sensorType) {
+      case 'motion':
+        return `sensor(${sensor.name}) is <strong>${JSON.parse(effect.when.is) ? 'Active' : 'Inactive'}</strong>`;
+      case 'temp/humidity':
+      return this.parseTempHumiditySentense(sensor, effect);
+    }
+  }
+
+  parseTempHumiditySentense(sensor: Sensor, effect: AutoEffect) {
+    let sentense = `sensor(${sensor.name})`;
+    const [valueToCheck, comparassion, targetValue] = effect.when.is.split(':');
+
+    switch (valueToCheck) {
+      case 'temp':
+        sentense += 'temperature';
+        break;
+      case 'humidity':
+        sentense += 'humidity';
+        break;
+      default:
+        sentense += valueToCheck;
+    }
+
+    sentense += ' is';
+
+    switch (comparassion) {
+      case 'higher-than':
+        sentense += ' higher than';
+        break;
+      case 'lower-than':
+        sentense += ' lower than';
+        break;
+    }
+
+    return sentense += ' ' + targetValue;
   }
 }
 

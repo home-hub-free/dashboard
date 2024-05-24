@@ -20,7 +20,7 @@ export type NewEffect = {
   trigger: 'time' | 'sensor';
   sensor?: Sensor;
   sensorState?: boolean | string;
-  // For value based sensors we have this comparassion prop
-  comparassion?: 'higher-than' | 'lower-than'
+  valueToCheck?: string; // For multi value type sensors
+  comparassion?: 'higher-than' | 'lower-than' // For value based sensors we have this comparassion prop
   time?: Date
 }
