@@ -1,6 +1,6 @@
 <div
     class="device-button"
-    :if="this.devices"
+    :if="this.devices && this.devices.length"
     :foreach="device in this.devices"
     :ontouchstart="this.deviceTouchStart(event, device)"
     :ontouchend="this.deviceTouchEnd(event, device)"
@@ -8,20 +8,38 @@
     :class:active="device.value"
     oncontextmenu="return false;"
   >
-  <div>
-    ${device.name}
-    <div :if="device.type === 'value' && device.deviceCategory !== 'evap-cooler'">
-      ${device.value}
+  <div class="device-header">
+    <div class="name">
+      <i :if="device.deviceCategory === 'evap-cooler'" class="iconoir-snow-flake"></i>
+      <i :if="device.deviceCategory === 'light'" class="iconoir-light-bulb"></i>
+      <i :if="device.deviceCategory === 'dimmable-light'" class="iconoir-control-slider"></i>
+
+      ${device.name}
+    </div>
+
+    <!-- Displays value in header for range value devices -->
+    <div class="value range" :if="device.type === 'value' && device.deviceCategory !== 'evap-cooler'">
+      <div class="indicator" :style:width="device.value + '%'"></div>
+    </div>
+
+    <!-- Display fan/water pump state for evap-cooler -->
+    <div class="value evap-cooler" :if="device.deviceCategory === 'evap-cooler'">
+      <div class="fan-state" :class:on="device.value.fan">
+        <i class="iconoir-wind"></i>
+        Fan
+      </div>
+      <div class="water-pump-state" :class:on="device.value.water">
+        <i class="iconoir-droplet"></i>
+        Water
+      </div>
+
+    </div>
+
+    <div class="value light" :if="device.deviceCategory === 'light'">
+      ${device.value ? 'ON' : 'OFF'}
     </div>
   </div>
-  <span class="auto-indicator" :class:on="!device.manual">A</span>
 
-  <span :if="device.deviceCategory === 'evap-cooler'" class="device-icon">
-    <i class="iconoir-cooling"></i>
-  </span>
-
-  <!-- <div :if="device.deviceCategory === 'camera'" class="device-camera">
-    <img :src="'http://' + device.ip + ':81/capture'" alt="" height="100%" width="100%">
-  </div> -->
+  <span class="auto-indicator" :class:on="!device.manual">${device.manual ? 'Manual' : 'Automatic'}</span>
 </div>
-<div :else>No Devices detected in your network :(</div>
+<div :else> No Devices detected in your network :( </div>

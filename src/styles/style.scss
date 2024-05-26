@@ -162,17 +162,15 @@ body {
 .device-button,
 .sensor-button {
   height: 100px;
-  width: 100px;
-  display: inline-flex;
-  text-align: center;
+  width: 100%;
   margin: 10px;
   border-radius: 8px;
   background-color: var(--box-disabled-color);
   box-shadow: inset 0px 4px 4px rgba(228, 202, 160, 0.18);
   color: var(--disabled-text);
   flex-direction: column;
-  padding: 15px;
-  box-sizing: content-box;
+  padding: 16px;
+  box-sizing: border-box;
   position: relative;
   &.active {
     background: var(--white);
@@ -192,3 +190,16 @@ body {
 @media (max-width: 600px) {
   @include mobile();
 }
+
+.iconoir-snow-flake {
+  color: #6aa2e9;
+}
+.iconoir-light-bulb {
+  color: rgb(254 181 72)
+}
+// .iconor-control-slider {
+//   col
+// }
+// <i :if="device.deviceCategory === 'evap-cooler'" class="iconoir-snow-flake"></i>
+// <i :if="device.deviceCategory === 'light'" class="iconoir-light-bulb"></i>
+// <i :if="device.deviceCategory === 'dimmable-light'" class="iconoir-control-slider"></i>
