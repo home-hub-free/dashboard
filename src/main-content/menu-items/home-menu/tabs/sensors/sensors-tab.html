@@ -6,8 +6,10 @@
     :onmouseup="this.sensorTouchEnd(event, sensor)"
     oncontextmenu="return false;"
   >
-    <span>
-      ${sensor.name}
+    <span class="sensor-header">
+      <div class="name">
+        ${sensor.name}
+      </div>
     </span>
     <span :if="sensor.type === 'boolean'" class="motion-indicator" :class:on="sensor.value">
       <i class="iconoir-antenna-signal"></i>

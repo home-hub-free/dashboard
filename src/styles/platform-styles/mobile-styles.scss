@@ -110,13 +110,13 @@
           height: 100%;
           display: flex;
           flex-direction: column;
-          justify-content: center;
           align-items: center;
         }
       }
 
 
-      .device-header {
+      .device-header,
+      .sensor-header {
         display: flex;
         flex-direction: row;
         justify-content: space-between;
