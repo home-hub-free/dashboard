@@ -16,6 +16,8 @@ export type AutoEffect = {
 
 export type NewEffect = {
   device: Device;
+  // For multi value devices
+  valueToSet?: any;
   setTo: any;
   trigger: 'time' | 'sensor';
   sensor?: Sensor;

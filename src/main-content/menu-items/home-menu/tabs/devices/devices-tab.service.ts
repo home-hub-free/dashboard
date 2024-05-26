@@ -6,6 +6,12 @@ import DeviceEditView from '../../overlay-views/devices-edit.template.html?raw';
 import { DevicesTab } from "./devices-tab";
 import { Device } from "./devices-tab.model";
 
+const DeviceInputType: {[key in Device['deviceCategory']]?: string} = {
+  'evap-cooler': 'button',
+  'dimmable-light': 'range',
+  'blinds': 'range',
+};
+
 export class DevicesServiceClass {
   originalValue = 0;
   touchStartPosition = 0;
@@ -22,7 +28,7 @@ export class DevicesServiceClass {
     this.touchStartPosition = event.touches[0][this.swipeOnAxis];
     let inputType: any = 'text';
     if (device.type === 'value') {
-      inputType = 'range';
+      inputType = DeviceInputType[device.deviceCategory];
     }
 
     this.currentTimeout = setTimeout(() => {
@@ -77,11 +83,13 @@ export class DevicesServiceClass {
     switch (device.type) {
       case 'value':
         let rect = getGlobalPosition(event.target);
+        let inputType = DeviceInputType[device.deviceCategory];
+
         openOverlay({
           template: DeviceEditView,
           data: {
             ...device,
-            inputType: 'range',
+            inputType,
           },
           actions: this,
           startRect: rect,
@@ -110,7 +118,7 @@ export class DevicesServiceClass {
     })
     .catch(() => {
       showToaster({
-        message: "Could'nt connect to device",
+        message: "Couldn't connect to device",
         from: "bottom",
         timer: 2000,
       });

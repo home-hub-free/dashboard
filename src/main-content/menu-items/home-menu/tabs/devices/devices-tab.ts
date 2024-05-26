@@ -25,7 +25,6 @@ class DevicesTabClass {
     getEndPointData(this.#definition.endpoint || '').then((data: Device[]) => {
       this.data = data;
       if (this.bind) this.bind.devices = data;
-
     });
   }
 

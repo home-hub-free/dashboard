@@ -125,13 +125,18 @@ export const AutomationsList = new AutomationsListClass(AutomationsListTabServic
 
 class EffectBuilder {
 
-  set: { id: string, value: any };
+  set: { id: string, valueToSet: string, value: any };
   when: { id: string | null, type: 'time' | 'sensor', is: any };
 
   constructor(newEffect: NewEffect) {
     this.set = {
       id: newEffect.device.id,
+      valueToSet: newEffect.valueToSet,
       value: newEffect.setTo,
+    }
+
+    if (newEffect.valueToSet) {
+      this.set.valueToSet = newEffect.valueToSet;
     }
 
     let target = null;

@@ -92,6 +92,23 @@
       </div>
     </div>
 
+    <div :if="this.data.deviceCategory === 'evap-cooler'">
+      <div class="device-setting-row">
+        <label for="">Fan</label>
+        <input 
+          type="checkbox"
+          :oninput="this.data.value.fan = event.target.checked"
+          :onchange="this.actions.updateDevice(this.data)">
+      </div>
+
+      <div class="device-settings-row">
+        <label for="">Water Pump</label>
+        <input type="checkbox"
+          :oninput="this.data.value.water = event.target.checked"
+          :onchange="this.actions.updateDevice(this.data)">
+      </div>
+    </div>
+
     <div class="device-setting">
       <div class="device-setting-row">
         <label class="full-width" :for="this.data.id">Allow auto-trigger time</label>

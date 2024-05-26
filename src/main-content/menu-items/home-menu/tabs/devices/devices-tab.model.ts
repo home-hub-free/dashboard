@@ -1,6 +1,6 @@
 export type Device = {
   id: string
-  deviceCategory: string
+  deviceCategory: 'light' | 'evap-cooler' | 'dimmable-light' | 'blinds' | 'camera'
   manual: boolean
   name: string
   value: any

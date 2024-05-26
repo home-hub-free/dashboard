@@ -10,13 +10,13 @@
   >
   <div>
     ${device.name}
-    <div :if="device.type === 'value'">
+    <div :if="device.type === 'value' && device.deviceCategory !== 'evap-cooler'">
       ${device.value}
     </div>
   </div>
   <span class="auto-indicator" :class:on="!device.manual">A</span>
 
-  <span :if="device.deviceCategory === 'cooling-system'" class="device-icon">
+  <span :if="device.deviceCategory === 'evap-cooler'" class="device-icon">
     <i class="iconoir-cooling"></i>
   </span>
 
