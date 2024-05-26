@@ -92,10 +92,18 @@
       </div>
     </div>
 
-    <div :if="this.data.deviceCategory === 'evap-cooler'">
+    <div :if="this.data.value && this.data.deviceCategory === 'evap-cooler'">
       <div class="device-setting-row">
         <label for="">Fan</label>
         <input 
+          :if="this.data.value.fan"
+          :oninput="this.data.value.fan = event.target.checked"
+          :onchange="this.actions.updateDevice(this.data)"
+          checked
+          type="checkbox"
+          >
+        <input 
+          :else
           type="checkbox"
           :oninput="this.data.value.fan = event.target.checked"
           :onchange="this.actions.updateDevice(this.data)">
@@ -104,6 +112,13 @@
       <div class="device-settings-row">
         <label for="">Water Pump</label>
         <input type="checkbox"
+          :if="this.data.value.water"
+          :oninput="this.data.value.water = event.target.checked"
+          :onchange="this.actions.updateDevice(this.data)"
+          checked>
+        <input
+          :else 
+          type="checkbox"
           :oninput="this.data.value.water = event.target.checked"
           :onchange="this.actions.updateDevice(this.data)">
       </div>

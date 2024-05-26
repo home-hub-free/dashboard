@@ -33,7 +33,13 @@ export class DevicesServiceClass {
 
     this.currentTimeout = setTimeout(() => {
       this.recordSwipe = true;
-      if (!this.originalValue) this.originalValue = parseInt(device.value);
+      if (!this.originalValue && device.deviceCategory === 'evap-cooler') {
+        this.originalValue = device.value;
+      }
+
+      if (!this.originalValue && device.deviceCategory !== 'evap-cooler') {
+        this.originalValue = parseInt(device.value);
+      }
 
       openOverlay({
         template: DeviceEditView,
