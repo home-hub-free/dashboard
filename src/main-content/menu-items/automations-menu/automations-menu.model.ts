@@ -4,6 +4,8 @@ import { Sensor } from "../home-menu/tabs/sensors/sensors-tab.model";
 export type AutoEffect = {
   set: {
     id: string;
+    // For multi value devices
+    valueToSet?: string;
     value: any;
   };
   when: {

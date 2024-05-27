@@ -3,6 +3,13 @@ import { Device } from "../../../home-menu/tabs/devices/devices-tab.model";
 import { Sensor } from "../../../home-menu/tabs/sensors/sensors-tab.model";
 import { AutoEffect } from "../../automations-menu.model";
 
+const valueToDisplay: any = {
+  'temp': 'temperature',
+  'true': 'on',
+  'false': 'off',
+  'water': 'water pump'
+}
+
 export class AutomationsListTabServiceClass {
 
   constructor() {}
@@ -12,13 +19,19 @@ export class AutomationsListTabServiceClass {
     if (!device) device = { name: 'DEVICE N/A '} as Device;
   
     let text = '';
+    let valueToSet = null;
+    if (effect.set.valueToSet) {
+      valueToSet = valueToDisplay[effect.set.valueToSet] ? valueToDisplay[effect.set.valueToSet] : effect.set.valueToSet;
+    }
+
   
     switch (device.type) {
       case 'boolean':
         text += '<strong> turns ' + (JSON.parse(effect.set.value) ? 'on ' : 'off ') + '</strong>'
         break;
       case 'value':
-        text += '<strong> sets to: ' + effect.set.value + ' </strong>';
+        const value = valueToDisplay[effect.set.value] ? valueToDisplay[effect.set.value]  : effect.set.value;
+        text += `sets${valueToSet ? `(${valueToSet})` : ''} to: <strong>  ${value} </strong>`;
         break;
     }
     
@@ -53,10 +66,10 @@ export class AutomationsListTabServiceClass {
 
     switch (valueToCheck) {
       case 'temp':
-        sentense += 'temperature';
+        sentense += '<strong> temperature </strong>';
         break;
       case 'humidity':
-        sentense += 'humidity';
+        sentense += '<strong> humidity </strong>';
         break;
       default:
         sentense += valueToCheck;
@@ -66,14 +79,14 @@ export class AutomationsListTabServiceClass {
 
     switch (comparassion) {
       case 'higher-than':
-        sentense += ' higher than';
+        sentense += ' <strong> higher than';
         break;
       case 'lower-than':
-        sentense += ' lower than';
+        sentense += '<strong> lower than';
         break;
     }
 
-    return sentense += ' ' + targetValue;
+    return sentense += ' ' + targetValue + '</strong>';
   }
 }
 
