@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "prod": "npm run build && http-server dist -p 8081",
     "re-link": "npm rm bindrjs && sudo npm link ../../bindrjs",
-    "link": "npm run re-link && npm run dev"
+    "link": "npm run re-link && npm run dev",
+    "deploy": "git pull && pm2 restart dashboard"
   },
   "devDependencies": {
     "sass": "^1.54.9",
