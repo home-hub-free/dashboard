@@ -12,6 +12,8 @@ const DeviceInputType: {[key in Device['deviceCategory']]?: string} = {
   'blinds': 'range',
 };
 
+const SCROLL_THRESHOLD = 5;
+
 export class DevicesServiceClass {
   originalValue = 0;
   touchStartPosition = 0;
@@ -66,7 +68,7 @@ export class DevicesServiceClass {
     const newValue = calculated < 0 ? 0 : calculated > 100 ? 100 : calculated;
 
     // Scroll threshold
-    if (this.currentY > 80) {
+    if (this.currentY >= SCROLL_THRESHOLD) {
       clearTimeout(this.currentTimeout);
     }
 
@@ -94,6 +96,11 @@ export class DevicesServiceClass {
     if (this.currentTimeout) clearTimeout(this.currentTimeout);
   
     if (this.recordSwipe && device.type === 'boolean') return;
+
+    if (this.currentY >= SCROLL_THRESHOLD) {
+      this.currentY = 0;
+      return;
+    };
   
     switch (device.type) {
       case 'value':
