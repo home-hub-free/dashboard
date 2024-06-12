@@ -16,6 +16,7 @@ export class DevicesServiceClass {
   originalValue = 0;
   touchStartPosition = 0;
   currentTouchPosition = 0;
+  currentY = 0;
   recordSwipe = false;
   swipeOnAxis: 'clientX' | 'clientY' = 'clientX';
   currentTimeout: any;
@@ -55,11 +56,19 @@ export class DevicesServiceClass {
   }
 
   deviceTouchMove(event: TouchEvent, device: Device) {
-    const newTouchPosition: any = event.touches[0][this.swipeOnAxis];
-    this.currentTouchPosition = newTouchPosition - this.touchStartPosition;
+    const newTouchPositionX: any = event.touches[0][this.swipeOnAxis];
+    const newTouchPositionY: any = event.touches[0]['clientY'];
+
+    this.currentTouchPosition = newTouchPositionX - this.touchStartPosition;
+    this.currentY = newTouchPositionY - this.currentY;
 
     const calculated = Math.round(this.originalValue + (this.currentTouchPosition / 2));  
     const newValue = calculated < 0 ? 0 : calculated > 100 ? 100 : calculated;
+
+    // Scroll threshold
+    if (this.currentY > 80) {
+      clearTimeout(this.currentTimeout);
+    }
 
     if (this.recordSwipe && device.type === 'value' && newValue >= 0 && newValue <= 100) {
       device.value = newValue;
