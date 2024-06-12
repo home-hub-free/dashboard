@@ -19,6 +19,8 @@ export class DevicesServiceClass {
   touchStartPosition = 0;
   currentTouchPosition = 0;
   currentY = 0;
+  initialScroll = 0;
+  scrollChange = 0;
   recordSwipe = false;
   swipeOnAxis: 'clientX' | 'clientY' = 'clientX';
   currentTimeout: any;
@@ -26,6 +28,8 @@ export class DevicesServiceClass {
   constructor () {}
 
   deviceTouchStart(event: any, device: Device) {
+    const listElement = window.document.getElementById('tab-content');
+    this.initialScroll = listElement?.scrollTop || 0;
     this.recordSwipe = false;
     let rect = getGlobalPosition(event.target);
     this.touchStartPosition = event.touches[0][this.swipeOnAxis];
@@ -59,16 +63,16 @@ export class DevicesServiceClass {
 
   deviceTouchMove(event: TouchEvent, device: Device) {
     const newTouchPositionX: any = event.touches[0][this.swipeOnAxis];
-    const newTouchPositionY: any = event.touches[0]['clientY'];
 
     this.currentTouchPosition = newTouchPositionX - this.touchStartPosition;
-    this.currentY = newTouchPositionY - this.currentY;
+    const listElement = window.document.getElementById('tab-content');
+    this.scrollChange = Math.abs(listElement?.scrollTop || 0 - this.initialScroll);
 
     const calculated = Math.round(this.originalValue + (this.currentTouchPosition / 2));  
     const newValue = calculated < 0 ? 0 : calculated > 100 ? 100 : calculated;
 
-    // Scroll threshold
-    if (this.currentY >= SCROLL_THRESHOLD) {
+    // Scroll threshold to avoid activating elements while scrolling
+    if (this.scrollChange >= SCROLL_THRESHOLD) {
       clearTimeout(this.currentTimeout);
     }
 
@@ -97,8 +101,9 @@ export class DevicesServiceClass {
   
     if (this.recordSwipe && device.type === 'boolean') return;
 
-    if (this.currentY >= SCROLL_THRESHOLD) {
-      this.currentY = 0;
+    if (this.scrollChange >= SCROLL_THRESHOLD) {
+
+      this.scrollChange = 0;
       return;
     };
   
