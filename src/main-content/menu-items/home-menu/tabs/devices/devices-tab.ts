@@ -6,6 +6,8 @@ import { getEndPointData } from "../../../../../utils/server-handler";
 import { Device, DeviceWSEvents, DevicesTabState } from "./devices-tab.model";
 import { DevicesService, DevicesServiceClass } from "./devices-tab.service";
 import io from "socket.io-client/dist/socket.io.js";
+import { subscribeCameraFeed } from "../../../../../utils/ws-camera-handler";
+import { OverlayModal } from "../../../../../overlay-modal/overlay-modal";
 
 
 class DevicesTabClass {
@@ -24,7 +26,14 @@ class DevicesTabClass {
     this.devicesService = devicesService;
     getEndPointData(this.#definition.endpoint || '').then((data: Device[]) => {
       this.data = data;
-      if (this.bind) this.bind.devices = data;
+      data.forEach((device) => {
+        if (device.deviceCategory === "camera") {
+          subscribeCameraFeed(device.id);
+        }
+      });
+      if (this.bind) {
+        this.bind.devices = data
+      };
     });
   }
 
@@ -39,6 +48,14 @@ class DevicesTabClass {
         deviceTouchEnd: this.devicesService.deviceTouchEnd.bind(this.devicesService),
         deviceTouchMove: this.devicesService.deviceTouchMove.bind(this.devicesService),
       },
+      onChange: (changes) => {
+        // Check if change is 3 levels deep and includes devices in the path
+        const isDeviceChange = changes.pathArray.length === 3 && changes.pathArray.includes('devices');
+        // Relay tab changes to overlay if needed
+        if (OverlayModal.bind.template && isDeviceChange) {
+          OverlayModal.bind.data[changes.property] = changes.newValue;
+        }
+      }
     });
     this.bind = bind;
   }  
@@ -56,6 +73,10 @@ class DevicesTabClass {
     let device = this.bind.devices.find((device: any) => device.id === declaredDevice.id);
 
     if (!device) this.bind.devices.push(declaredDevice);
+
+    if (device?.deviceCategory === 'camera') {
+      subscribeCameraFeed(device.id);
+    }
   }
 
   // Devices that are being updated in real time

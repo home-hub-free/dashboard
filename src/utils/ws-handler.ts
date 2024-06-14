@@ -17,7 +17,6 @@ export function initWebSockets() {
   
   DevicesTab.initializeWSHooks(socket);
   SensorsTab.initializeWSHooks(socket);
-
 }
 
 export function getSocketId() {

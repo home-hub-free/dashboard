@@ -18,7 +18,7 @@
     </div>
 
     <!-- Displays value in header for range value devices -->
-    <div class="value range" :if="device.type === 'value' && device.deviceCategory !== 'evap-cooler'">
+    <div class="value range" :if="device.deviceCategory === 'dimmable-light'">
       <div class="indicator" :style:width="device.value + '%'"></div>
     </div>
 
@@ -38,6 +38,10 @@
     <!-- Show ON/OFF for light devices -->
     <div class="value light" :if="device.deviceCategory === 'light'">
       ${device.value ? 'ON' : 'OFF'}
+    </div>
+
+    <div class="value camera" :if="device.deviceCategory === 'camera'">
+      <img :src="device.value" alt="">
     </div>
   </div>
 

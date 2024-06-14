@@ -102,7 +102,6 @@ export class DevicesServiceClass {
     if (this.recordSwipe && device.type === 'boolean') return;
 
     if (this.scrollChange >= SCROLL_THRESHOLD) {
-
       this.scrollChange = 0;
       return;
     };

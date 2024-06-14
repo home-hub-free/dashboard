@@ -64,7 +64,7 @@
     <span>${this.data.value}</span>
   </div>
 
-  <div class="device-setting">
+  <div class="device-setting" :if="this.data.deviceCategory !== 'camera'">
     <div class="device-setting-row">
       <label :for="this.data.id + '_auto' ">Auto</label>
       <input
@@ -148,6 +148,9 @@
         <button :onmouseup="this.actions.saveOperationalRanges(this.data)"> + </button>
       </div>
     </div>
-    
+  </div>
+
+  <div class="device-setting" :if="this.data.deviceCategory === 'camera'">
+    <img :src="this.data.value" alt="">
   </div>
 </div>

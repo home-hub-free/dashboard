@@ -19,7 +19,7 @@ type ModalContext = {
   };
 };
 
-export const OverlayModal = new Bind({
+export const OverlayModal = new Bind<any>({
   id: "overlay-modal",
   template,
   bind: {
