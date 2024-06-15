@@ -18,6 +18,7 @@ export class DevicesServiceClass {
   originalValue = 0;
   touchStartPosition = 0;
   currentTouchPosition = 0;
+  initialY = 0;
   currentY = 0;
   initialScroll = 0;
   scrollChange = 0;
@@ -31,8 +32,11 @@ export class DevicesServiceClass {
     const listElement = window.document.getElementById('tab-content');
     this.initialScroll = listElement?.scrollTop || 0;
     this.recordSwipe = false;
+
     let rect = getGlobalPosition(event.target);
     this.touchStartPosition = event.touches[0][this.swipeOnAxis];
+    this.initialY = event.touches[0]['clientY'];
+
     let inputType: any = 'text';
     if (device.type === 'value') {
       inputType = DeviceInputType[device.deviceCategory];
@@ -63,8 +67,11 @@ export class DevicesServiceClass {
 
   deviceTouchMove(event: TouchEvent, device: Device) {
     const newTouchPositionX: any = event.touches[0][this.swipeOnAxis];
+    const newY = event.touches[0]['clientY'];
 
     this.currentTouchPosition = newTouchPositionX - this.touchStartPosition;
+    this.currentY = Math.abs(newY - this.initialY);
+
     const listElement = window.document.getElementById('tab-content');
     this.scrollChange = Math.abs(listElement?.scrollTop || 0 - this.initialScroll);
 
@@ -101,8 +108,10 @@ export class DevicesServiceClass {
   
     if (this.recordSwipe && device.type === 'boolean') return;
 
-    if (this.scrollChange >= SCROLL_THRESHOLD) {
+    if (this.scrollChange >= SCROLL_THRESHOLD || this.currentY >= SCROLL_THRESHOLD) {
       this.scrollChange = 0;
+      this.initialY = 0;
+      this.currentY = 0;
       return;
     };
   

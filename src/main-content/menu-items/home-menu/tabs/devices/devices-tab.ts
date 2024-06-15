@@ -52,8 +52,13 @@ class DevicesTabClass {
         // Check if change is 3 levels deep and includes devices in the path
         const isDeviceChange = changes.pathArray.length === 3 && changes.pathArray.includes('devices');
         // Relay tab changes to overlay if needed
-        if (OverlayModal.bind.template && isDeviceChange) {
-          OverlayModal.bind.data[changes.property] = changes.newValue;
+        if (isDeviceChange && OverlayModal.bind.template) {
+          const index = parseInt(changes.pathArray[2]);
+          const device = this.bind.devices[index];
+          // Check if device in overlay is the one changing
+          if (OverlayModal.bind.data.id === device.id) {
+            OverlayModal.bind.data[changes.property] = changes.newValue;
+          }
         }
       }
     });
