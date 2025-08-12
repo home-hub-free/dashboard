@@ -119,6 +119,8 @@
                 display: flex;
                 flex-direction: row;
                 justify-content: space-between;
+                font-size: 1.2em;
+                flex: 1;
                 // Avoid interfering with the animation target
                 pointer-events: none;
                 .name {
@@ -130,44 +132,54 @@
                         font-size: 24px;
                     }
                 }
+            }
+
+            .device-value {
+                flex: 1;
+                height: 100%;
                 .value {
                     flex: 1;
                     position: relative;
                     border-radius: 8px;
                     display: flex;
-                    .indicator {
-                        height: 100%;
-                        position: absolute;
-                        background-color: var(--accent);
-                        top: 0;
-                        left: 0;
-                        transition: width 220ms
-                            cubic-bezier(0.65, 0.41, 0.33, 1.21);
+                }
+
+                .light {
+                    font-size: 1.5em;
+                    background: var(--background);
+                    width: 60px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 4px 8px;
+                    color: var(--text-secondary);
+                    &.on {
+                        color: var(--background);
+                        background-color: var(--primary);
                     }
                 }
 
                 .range {
-                    border-radius: 8px;
-                    overflow: hidden;
-                    background-color: var(--background);
-                    border: 1px solid #ddd;
-                }
-
-                .evap-cooler {
-                    gap: 16px;
-                    .fan-state,
-                    .water-pump-state {
-                        display: flex;
-                        align-items: center;
-                        gap: 4px;
-                        color: var(--disabled-text);
-                        border-radius: 4px;
-                        padding: 0 8px;
-                        background: var(--grey-areas);
+                    flex-direction: row;
+                    justify-content: center;
+                    align-items: baseline;
+                    gap: 32px;
+                    .percent {
+                        width: 50px;
+                        font-size: 1.5em;
                     }
-                    .on {
-                        border: solid 1px;
-                        color: #6aa2e9;
+                    .bar-track {
+                        background-color: var(--surface-alt);
+                        flex-grow: 1;
+                        height: 6px;
+                        border-radius: 3px;
+                        overflow: hidden;
+                        .bar-value {
+                            height: 100%;
+                            background: var(--primary);
+                            transition: width 220ms
+                                cubic-bezier(0.65, 0.41, 0.33, 1.21);
+                        }
                     }
                 }
 
@@ -181,6 +193,34 @@
                     overflow: hidden;
                     img {
                         width: 100%;
+                    }
+                }
+
+                .evap-cooler {
+                    gap: 16px;
+                    display: flex;
+                    .fan-state,
+                    .water-pump-state {
+                        font-size: 1.1em;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+
+                        /* color: var(--disabled-text); */
+                        border-radius: 8px;
+                        padding: 4px 8px;
+                        background-color: var(--surface-alt);
+                        /* background: var(--grey-areas); */
+                    }
+                    .on {
+                        background-color: var(--primary);
+                        color: var(--background);
+                        /* border: solid 1px; */
+                        /* color: #6aa2e9; */
+                    }
+                    .target-temp {
+                        margin-left: auto;
+                        font-size: 1.8em;
                     }
                 }
             }

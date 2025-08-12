@@ -12,7 +12,7 @@
         <div class="name">
             <i
                 :if="device.deviceCategory === 'evap-cooler'"
-                class="iconoir-snow-flake"
+                class="iconoir-lifebelt"
             ></i>
             <i
                 :if="device.deviceCategory === 'light'"
@@ -20,17 +20,39 @@
             ></i>
             <i
                 :if="device.deviceCategory === 'dimmable-light'"
-                class="iconoir-control-slider"
+                class="iconoir-light-bulb"
             ></i>
             ${device.name}
         </div>
+        <span class="auto-indicator" :class:on="!device.manual"
+            >${device.manual ? 'MANUAL' : 'AUTO'}</span
+        >
+    </div>
 
+    <div class="device-value">
         <!-- Displays value in header for range value devices -->
         <div
             class="value range"
             :if="device.deviceCategory === 'dimmable-light'"
         >
-            <div class="indicator" :style:width="device.value + '%'"></div>
+            <div class="percent">${device.value + '%'}</div>
+
+            <div class="bar-track">
+                <div class="bar-value" :style:width="device.value + '%'"></div>
+            </div>
+        </div>
+
+        <!-- Show ON/OFF for light devices -->
+        <div
+            class="value light"
+            :if="device.deviceCategory === 'light'"
+            :class:on="device.value"
+        >
+            ${device.value ? 'ON' : 'OFF'}
+        </div>
+
+        <div class="value camera" :if="device.deviceCategory === 'camera'">
+            <img :src="device.value" alt="" />
         </div>
 
         <!-- Display fan/water pump state for evap-cooler -->
@@ -39,27 +61,16 @@
             class="value evap-cooler"
         >
             <div class="fan-state" :class:on="device.value.fan">
-                <i class="iconoir-wind"></i>
-                Fan
+                <i class="iconoir-airplane-rotation"></i>
+                ${device.value.fan ? 'ON' : 'OFF'}
             </div>
             <div class="water-pump-state" :class:on="device.value.water">
                 <i class="iconoir-droplet"></i>
-                Water
+                ${device.value.water ? 'ON' : 'OFF'}
             </div>
-        </div>
 
-        <!-- Show ON/OFF for light devices -->
-        <div class="value light" :if="device.deviceCategory === 'light'">
-            ${device.value ? 'ON' : 'OFF'}
-        </div>
-
-        <div class="value camera" :if="device.deviceCategory === 'camera'">
-            <img :src="device.value" alt="" />
+            <div class="target-temp">${device.value.target}°C</div>
         </div>
     </div>
-
-    <span class="auto-indicator" :class:on="!device.manual"
-        >${device.manual ? 'Manual' : 'Automatic'}</span
-    >
 </div>
 <div :else>No Devices detected in your network :(</div>
