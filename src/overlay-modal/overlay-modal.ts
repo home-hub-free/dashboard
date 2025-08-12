@@ -75,7 +75,7 @@ function setRectStyles(rect: ModalRectangle) {
     top: rect.top + "px",
     left: rect.left + "px",
     height: rect.height + "px",
-    maxHeight: rect.height + 'px',
+    maxHeight: rect.height + "px",
     width: rect.width + "px",
   };
 }

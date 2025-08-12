@@ -1,156 +1,584 @@
 <style>
-  .edit-container {
-    box-sizing: border-box;
-    padding: 20px;
-    text-align: center;
-    position: relative;
-    height: 100%;
-    width: 100%;
-  }
-  .edit-container > div {
-    border: 1px solid lightgray;
-    margin-bottom: 10px;
-    padding: 10px;
-    border-radius: 5px;
-  }
-  input {
-    width: 50%;
-    height: 30px;
-  }
-  button.save-btn {
-    margin-top: 20px;
-    width: 50%;
-    height: 30px;
-    position: absolute;
-    bottom: 10px;
-    transform: translateX(-50%);
-  }
-  .device-setting {
-    display: flex;
-    border-bottom: 1px solid black;
-    padding: 20px 0 20px;
-    flex-direction: column;
-  }
-  .device-setting-row {
-    flex: 1;
-    display: flex;
-    justify-content: space-evenly;
-    align-items: center;
-    flex-direction: row;
-    margin: 5px 0 5px 0;
-  }
-  .device-setting > label {
-    width: 50%;
-  }
-  .device-setting > label.full-width {
-    width: 100%;
-  }
-  .device-setting > input {
-    color: red;
-  }
+    /* Main container */
+    .edit-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        max-width: 600px;
+        margin: auto;
+        padding: 1rem;
+        background: var(--surface);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px var(--primary);
+    }
+
+    /* Form groups */
+    .form-group,
+    .form-group-inline {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .form-group-inline {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--primary-dark);
+    }
+
+    /* Text inputs & time pickers */
+    input[type="text"],
+    input[type="time"] {
+        width: 100%;
+        padding: 0.6rem;
+        font-size: 1rem;
+        border: 1px solid var(--primary-light);
+        border-radius: 8px;
+        background: var(--background);
+        color: var(--primary-dark);
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    input[type="text"]:focus,
+    input[type="time"]:focus {
+        border-color: var(--primary-dark);
+    }
+
+    /* Range slider */
+    input[type="range"] {
+        width: 100%;
+        appearance: none;
+        background: transparent;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+        height: 6px;
+        background: var(--surface-alt);
+        border-radius: 3px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        background: var(--primary-dark);
+        border-radius: 50%;
+        cursor: pointer;
+        margin-top: -6px;
+    }
+    input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        background: var(--surface-alt);
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    /* Range value display */
+    .range-value {
+        text-align: right;
+        font-size: 0.85rem;
+        color: var(--primary-dark);
+    }
+
+    /* Toggle buttons */
+    .toggle-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .toggle-button {
+        flex: 1;
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        background: var(--background);
+        color: var(--primary);
+        transition:
+            background 0.2s,
+            color 0.2s;
+    }
+
+    .toggle-button.active {
+        background: var(--primary);
+        color: var(--surface);
+    }
+
+    /* Device setting sections */
+    .device-setting {
+        padding: 0.8rem;
+        background: var(--background);
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .section-title {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        margin-bottom: 0.4rem;
+    }
+
+    /* Grid for multiple action buttons */
+    .button-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.5rem;
+    }
+
+    /* Status display */
+    .status-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        padding: 0.6rem;
+        border-radius: 8px;
+    }
+
+    .status-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+    }
+
+    .status-label {
+        color: var(--primary);
+    }
+
+    .status-value {
+        font-weight: 700;
+        color: var(--primary-dark);
+    }
+
+    /* Operational ranges */
+    .operational-range {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--primary);
+        color: var(--surface);
+        padding: 0.4rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+    }
+
+    .remove-btn {
+        cursor: pointer;
+        color: var(--disabled-text);
+        top: 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Add range button */
+    .add-range-btn {
+        background: var(--primary);
+        color: var(--surface);
+        padding: 0.6rem;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        width: 100%;
+        cursor: pointer;
+    }
+
+    .add-range-btn:hover {
+        background: var(--hover-highlight);
+    }
+
+    /* Camera preview */
+    .device-setting img {
+        max-width: 100%;
+        border-radius: 8px;
+    }
+
+    .automation-schedule {
+        border-radius: 6px;
+        font-family: system-ui, sans-serif;
+    }
+
+    .bar-label {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+        font-size: 0.95rem;
+    }
+
+    .time-bar {
+        position: relative;
+        height: 28px;
+        border-radius: 12px;
+        background: var(--surface);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+        /* Add vertical tick marks every 1/12th (about 8.33%) */
+        background-image: repeating-linear-gradient(
+            to right,
+            transparent,
+            transparent calc(100% / 12 - 1px),
+            rgba(0, 0, 0, 0.1) calc(100% / 12 - 1px),
+            rgba(0, 0, 0, 0.1) calc(100% / 12)
+        );
+    }
+
+    .hour-ticks {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: var(--disabled-text);
+        user-select: none;
+        margin-top: 2px;
+        margin-bottom: 1rem;
+        width: 100%;
+        margin-left: -4px;
+    }
+
+    .hour-ticks span {
+        position: relative;
+        width: 0;
+
+        /* padding: 0 2px; */
+    }
+
+    .time-range {
+        position: absolute;
+        top: 2px;
+        bottom: 2px;
+        background: var(--primary);
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 1px 5px var(--primary-light);
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        /* padding-right: 6px; */
+        color: var(--white);
+        font-weight: 700;
+        user-select: none;
+    }
+
+    .time-range:hover,
+    .time-range:focus {
+        box-shadow: 0 0 8px 3px var(--accent-light);
+        outline: none;
+    }
+
+    .remove-btn {
+        margin-left: 6px;
+        font-size: 16px;
+        color: var(--white);
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        line-height: 18px;
+        text-align: center;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .remove-btn:hover {
+        background: rgba(0, 0, 0, 0.5);
+    }
+
+    @media (max-width: 480px) {
+        .time-range {
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 600px) {
+        .form-group-inline {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .button-grid {
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        }
+    }
 </style>
 <div class="edit-container">
-  <div>
-    <label :for="this.data.id + '_name' ">Name</label>
-    <input :id="this.data.id + '_name'" :name="this.data.id + '_name'" type="text" :value="this.data.name" :oninput="this.actions.saveProp(this.data, 'name')">
-  </div>
-  <div :if="this.data.inputType === 'range'">
-    <input 
-      type="range"
-      min="0" max="100"
-      :value="this.data.value + ''"
-      :oninput="this.data.value = event.target.value"
-      :onchange="this.actions.updateDevice(this.data)">
-    <span>${this.data.value}</span>
-  </div>
-
-  <div class="device-setting" :if="this.data.deviceCategory !== 'camera'">
-    <div class="device-setting-row">
-      <label :for="this.data.id + '_auto' ">Auto</label>
-      <input
-        :if="this.data.manual"
-        :id="this.data.id + '_manual'"
-        type="checkbox"
-        :oninput="this.actions.saveProp(this.data, 'manual')">
-      <input 
-        :else
-        :id="this.data.id + '_manual'" 
-        type="checkbox"
-        checked 
-        :oninput="this.actions.saveProp(this.data, 'manual')">
-    </div>
-
-    <div :if="this.data.deviceCategory === 'blinds'" class="device-setting">
-      <div class="device-setting-row">
-        <p> Use these buttons to set the initial configuration: </p>
-      </div>
-      <div class="device-setting-row">
-        <button :onclick="this.actions.configureBlinds(this.data, 'spin')">Spin</button>
-        <button :onclick="this.actions.configureBlinds(this.data, 'switch-direction')">Switch direction</button>
-        <button :onclick="this.actions.configureBlinds(this.data, 'home-position')">Home Position</button>
-        <button :onclick="this.actions.configureBlinds(this.data, 'set-limit')">Set limit</button>
-      </div>
-    </div>
-
-    <div :if="this.data.value && this.data.deviceCategory === 'evap-cooler'">
-      <div class="device-setting-row">
-        <label for="">Fan</label>
-        <input 
-          :if="this.data.value.fan"
-          :oninput="this.data.value.fan = event.target.checked"
-          :onchange="this.actions.updateDevice(this.data)"
-          checked
-          type="checkbox"
-          >
-        <input 
-          :else
-          type="checkbox"
-          :oninput="this.data.value.fan = event.target.checked"
-          :onchange="this.actions.updateDevice(this.data)">
-      </div>
-
-      <div class="device-settings-row">
-        <label for="">Water Pump</label>
-        <input type="checkbox"
-          :if="this.data.value.water"
-          :oninput="this.data.value.water = event.target.checked"
-          :onchange="this.actions.updateDevice(this.data)"
-          checked>
+    <!-- Device Name -->
+    <div class="form-group">
+        <label :for="this.data.id + '_name'">Name</label>
         <input
-          :else 
-          type="checkbox"
-          :oninput="this.data.value.water = event.target.checked"
-          :onchange="this.actions.updateDevice(this.data)">
-      </div>
+            :id="this.data.id + '_name'"
+            :name="this.data.id + '_name'"
+            type="text"
+            :value="this.data.name"
+            :oninput="this.actions.saveProp(this.data, 'name')"
+        />
     </div>
 
+    <!-- Range Control -->
+    <div class="form-group" :if="this.data.inputType === 'range'">
+        <label>Value</label>
+        <input
+            type="range"
+            min="0"
+            max="100"
+            :value="this.data.value + ''"
+            :oninput="this.data.value = event.target.value"
+            :onchange="this.actions.updateDevice(this.data)"
+        />
+        <div class="range-value">${this.data.value}%</div>
+    </div>
+
+    <!-- Auto/Manual Toggle -->
+    <div class="form-group" :if="this.data.deviceCategory !== 'camera'">
+        <label>Mode</label>
+        <div class="toggle-group">
+            <button
+                class="toggle-button"
+                :class:active="!this.data.manual"
+                :onclick="this.actions.saveProp(this.data, 'manual', false)"
+            >
+                Auto
+            </button>
+            <button
+                class="toggle-button"
+                :class:active="this.data.manual"
+                :onclick="this.actions.saveProp(this.data, 'manual', true)"
+            >
+                Manual
+            </button>
+        </div>
+        <div :if="!this.data.manual">
+            This device will react to sensors or pre-defined automations (if
+            any) in auto mode
+        </div>
+        <div :else>
+            This device will ignore any pre-defined automations (if any) in
+            manual mode
+        </div>
+    </div>
+
+    <!-- Blinds Configuration -->
+    <div class="device-setting" :if="this.data.deviceCategory === 'blinds'">
+        <p class="section-title">Initial Configuration</p>
+        <div class="button-grid">
+            <button :onclick="this.actions.configureBlinds(this.data, 'spin')">
+                Spin
+            </button>
+            <button
+                :onclick="this.actions.configureBlinds(this.data, 'switch-direction')"
+            >
+                Switch Direction
+            </button>
+            <button
+                :onclick="this.actions.configureBlinds(this.data, 'home-position')"
+            >
+                Home Position
+            </button>
+            <button
+                :onclick="this.actions.configureBlinds(this.data, 'set-limit')"
+            >
+                Set Limit
+            </button>
+        </div>
+    </div>
+
+    <!-- Evap Cooler Controls -->
+    <div
+        class="device-setting"
+        :if="this.data.value && this.data.deviceCategory === 'evap-cooler'"
+    >
+        <p class="section-title">Controls</p>
+
+        <!-- Fan Toggle -->
+        <div class="form-group">
+            <label>Fan</label>
+            <div class="toggle-group">
+                <button
+                    class="toggle-button"
+                    :class:active="this.data.value.fan"
+                    :onclick="this.data.value.fan = true, this.actions.updateDevice(this.data)"
+                >
+                    On
+                </button>
+                <button
+                    class="toggle-button"
+                    :class:active="!this.data.value.fan"
+                    :onclick="this.data.value.fan = false, this.actions.updateDevice(this.data)"
+                >
+                    Off
+                </button>
+            </div>
+        </div>
+
+        <!-- Water Pump Toggle -->
+        <div class="form-group">
+            <label>Water Pump</label>
+            <div class="toggle-group">
+                <button
+                    class="toggle-button"
+                    :class:active="this.data.value.water"
+                    :onmouseup="this.data.value.water = true, this.actions.updateDevice(this.data)"
+                >
+                    On
+                </button>
+                <button
+                    class="toggle-button"
+                    :class:active="!this.data.value.water"
+                    :onmouseup="this.data.value.water = false, this.actions.updateDevice(this.data)"
+                >
+                    Off
+                </button>
+            </div>
+        </div>
+
+        <!-- Water Pump Toggle -->
+        <div class="form-group">
+            <label>Target Temperature</label>
+            <div class="toggle-group">
+                <button
+                    class="toggle-button active"
+                    :onmouseup="this.actions.updateEvapCoolerTarget(this.data, -1)"
+                >
+                    -
+                </button>
+                <span> ${this.data.value.target || '25'} </span>
+                <button
+                    class="toggle-button active"
+                    :onmouseup="this.actions.updateEvapCoolerTarget(this.data, 1)"
+                >
+                    +
+                </button>
+            </div>
+        </div>
+
+        <!-- Read-only temperatures -->
+        <div class="status-group">
+            <div class="status-item">
+                <span class="status-label">Unit Temp</span>
+                <span class="status-value">
+                    ${Math.round(this.data.value['unit-temp'])}°C</span
+                >
+            </div>
+            <div class="status-item">
+                <span class="status-label">Room Temp</span>
+                <span class="status-value"
+                    >${Math.round(this.data.value['room-temp'])}°C</span
+                >
+            </div>
+        </div>
+    </div>
+
+    <!-- Operational Ranges -->
     <div class="device-setting">
-      <div class="device-setting-row">
-        <label class="full-width" :for="this.data.id">Allow auto-trigger time</label>
-      </div>
-      <div :foreach="range in this.data.operationalRanges" :index>
-        <span>${range}</span>
-        <span><i class="iconoir-cancel" :onmouseup="this.actions.removeOperationalRange(this.data, :index)"></i></span>
-      </div>
-      <div class="device-setting-row">
-        From: 
-        <input 
-          :id="this.data.id + '_operationalRangesFrom'"
-          type="time" 
-          >
-        To: 
-        <input 
-          :id="this.data.id + '_operationalRangesTo'"
-          type="time" 
-          >
-      </div>
-      <div class="device-setting-row">
-        <button :onmouseup="this.actions.saveOperationalRanges(this.data)"> + </button>
-      </div>
-    </div>
-  </div>
+        <p class="section-title">Automation active hours</p>
+        <div class="automation-schedule">
+            <div class="bar-label">AM (12:00 AM - 11:59 AM)</div>
+            <div class="time-bar" aria-label="Automation active hours AM">
+                <div
+                    :if="this.data.parsedRanges && this.data.parsedRanges.am && this.data.parsedRanges.am.length"
+                    :foreach="graphRange in this.data.parsedRanges.am"
+                    :style="{
+                        left: 'calc((' + graphRange.start.decimal + ' /12 * 100%)',
+                        width: 'calc((' + (graphRange.end.decimal - graphRange.start.decimal) + ' /12 * 100%)',
+                    }"
+                    class="time-range"
+                    tabindex="0"
+                ></div>
+            </div>
+            <div class="hour-ticks" aria-hidden="true">
+                <span>12</span>
+                <span>1</span>
+                <span>2</span>
+                <span>3</span>
+                <span>4</span>
+                <span>5</span>
+                <span>6</span>
+                <span>7</span>
+                <span>8</span>
+                <span>9</span>
+                <span>10</span>
+                <span>11</span>
+                <span></span>
+            </div>
 
-  <div class="device-setting" :if="this.data.deviceCategory === 'camera'">
-    <img :src="this.data.value" alt="">
-  </div>
+            <div class="bar-label">PM (12:00 PM - 11:59 PM)</div>
+            <div class="time-bar" aria-label="Automation active hours PM">
+                <div
+                    :if="this.data.parsedRanges && this.data.parsedRanges.pm && this.data.parsedRanges.pm.length"
+                    :foreach="graphRange in this.data.parsedRanges.pm"
+                    :style="{
+                        left: 'calc((' + graphRange.start.decimal + ' /12 * 100%)',
+                        width: 'calc((' + (graphRange.end.decimal - graphRange.start.decimal) + ' /12 * 100%)',
+                    }"
+                    class="time-range"
+                    tabindex="0"
+                ></div>
+            </div>
+            <div class="hour-ticks" aria-hidden="true">
+                <span>12</span>
+                <span>1</span>
+                <span>2</span>
+                <span>3</span>
+                <span>4</span>
+                <span>5</span>
+                <span>6</span>
+                <span>7</span>
+                <span>8</span>
+                <span>9</span>
+                <span>10</span>
+                <span>11</span>
+                <span></span>
+            </div>
+
+            <!-- <button class="add-range-btn">+ Add Range</button> -->
+        </div>
+        <div
+            :foreach="range in this.data.operationalRanges"
+            :index
+            class="operational-range"
+        >
+            <span>${range}</span>
+            <span class="remove-btn"
+                ><i
+                    class="iconoir-cancel"
+                    :onmouseup="this.actions.removeOperationalRange(this.data, :index)"
+                ></i
+            ></span>
+        </div>
+        <p>
+            Automations for this device will only run during these times. Manual
+            control is always available
+        </p>
+
+        <div class="form-group-inline">
+            <label>From</label>
+            <input :id="this.data.id + '_operationalRangesFrom'" type="time" />
+            <label>To</label>
+            <input :id="this.data.id + '_operationalRangesTo'" type="time" />
+        </div>
+
+        <button
+            class="add-range-btn"
+            :onmouseup="this.actions.saveOperationalRanges(this.data)"
+        >
+            + Add Range
+        </button>
+    </div>
+
+    <!-- Camera Preview -->
+    <div class="device-setting" :if="this.data.deviceCategory === 'camera'">
+        <p class="section-title">Camera View</p>
+        <img :src="this.data.value" alt="Camera Feed" />
+    </div>
 </div>

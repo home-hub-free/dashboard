@@ -1,14 +1,35 @@
 :root {
-  --background-primary: rgba(255, 250, 241);
-  --background-secondary: rgb(255, 255, 255);
-  --white: rgb(255, 255, 255);
-  --black: rgb(0, 0, 0);
-  --disabled-text: #909090;
-  --primary-highlight-color: #f2884b;
-  --box-disabled-color: rgb(255, 240, 217);
-  --grey-areas: rgb(249, 249, 249);
-  --brightnessbar-back: rgb(255, 228, 186);
-  --brightnessbar-front: rgb(255, 200, 115); 
-  --text-primary: #2f2f2f; 
-  --text-secondary: #343434;
+    /* Primary */
+    --primary: #7a9e7e; /* Sage green */
+    --primary-light: #a8c0a8; /* Light sage */
+    --primary-dark: #5e7d61; /* Deep sage */
+    --primary-contrast: #ffffff; /* White for text */
+
+    /* Secondary */
+    --secondary: #c2b280; /* Warm beige */
+    --secondary-light: #e5dcc3; /* Pale sand */
+    --secondary-dark: #9e8c54; /* Earth brown */
+    --secondary-contrast: #2e2e2e; /* Dark text */
+
+    /* Accent */
+    --accent: #b27c66; /* Clay */
+    --accent-light: #d2a593; /* Soft clay */
+    --accent-dark: #8b5c46; /* Deep clay */
+    --accent-contrast: #ffffff; /* White text */
+
+    /* Backgrounds */
+    --background: #f7f5f2; /* Warm off-white */
+    --surface: #ffffff; /* Pure white for cards/panels */
+    --surface-alt: #f0ece8; /* Slightly darker for contrast */
+
+    /* Text */
+    --text-primary: #2f3e34; /* Deep earthy green */
+    --text-secondary: #5a6b60; /* Muted sage gray */
+    --text-disabled: #9eada3; /* Soft gray-green */
+
+    /* Status colors */
+    --success: #89b99b; /* Fresh green */
+    --warning: #d9a066; /* Warm gold */
+    --error: #c1655a; /* Soft terracotta red */
+    --info: #7a9e7e; /* Sage (same as primary) */
 }

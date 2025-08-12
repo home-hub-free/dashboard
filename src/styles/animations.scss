@@ -1,46 +1,46 @@
 // @keyframes active-menu-item {}
 
 @keyframes active-menu-item {
-  0% {
-    transform: scale(1) translate3d(0, 0, 0);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  80% {
-    transform: scale(0.95);
-  }
-  100% {
-    transform: scale(1) translate3d(0, 0, 0);
-  }
+    0% {
+        transform: scale(1) translate3d(0, 0, 0);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    80% {
+        transform: scale(0.98);
+    }
+    100% {
+        transform: scale(1) translate3d(0, 0, 0);
+    }
 }
 
 @keyframes pop-toast {
-  0% {
-    opacity: 0;
-    transform: translateY(0) translateX(-50%) scale(1);
-  }
-  50% {
-    transform: translateY(0) translateX(-50%) scale(1.05);
-  }
-  80% {
-    opacity: 1;
-    transform: translateY(0) translateX(-50%) scale(0.95);
-  }
-  100% {
-    transform: translateY(0) translateX(-50%) scale(1);
-  }
+    0% {
+        opacity: 0;
+        transform: translateY(0) translateX(-50%) scale(1);
+    }
+    50% {
+        transform: translateY(0) translateX(-50%) scale(1.05);
+    }
+    80% {
+        opacity: 1;
+        transform: translateY(0) translateX(-50%) scale(0.95);
+    }
+    100% {
+        transform: translateY(0) translateX(-50%) scale(1);
+    }
 }
 
 .pop-toaster {
-  animation-name: pop-toast;
+    animation-name: pop-toast;
 }
 
 // The element should be removed after 180ms for this effect to work
 .hide-toaster {
-  opacity: 0;
-  transform-origin: center;
-  transform: translateY(0) translateX(-50%) scale(0.8) !important;
-  transition-property: opacity, transform;
-  transition-duration: 180ms;
+    opacity: 0;
+    transform-origin: center;
+    transform: translateY(0) translateX(-50%) scale(0.8) !important;
+    transition-property: opacity, transform;
+    transition-duration: 180ms;
 }

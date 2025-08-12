@@ -1,55 +1,52 @@
-
 <style>
-  .auto-indicator,
-  .motion-indicator,
-  .th-indicator {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-  }
-  .auto-indicator {
-    color: lightgray;
-    font-size: 16px;
-  }
-  .motion-indicator {
-    color: lightgray;
-    font-size: 24px;
-  }
-  .th-indicator {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: calc(100% - 20px);
-  }
-  .th-indicator > div {
-    display: flex;
-    flex-direction: row;
-    /* justify-content: space-between; */
-    align-items: center;
-    width: 100%;
-    gap: 20px;
-  }
-  .th-indicator > div > i {
-    font-size: 20px;
-  }
-  .auto-indicator.on,
-  .motion-indicator.on {
-    color: var(--primary-highlight-color);
-  }
-  .device-button {
-    position: relative;
-  }
-  .device-camera {
-    position: absolute;
-    left: 0;
-    top: 0;
-    border-radius: 8px;
-    overflow: hidden;
-    height: 130px;
-    width: 130px;
-  }
+    .auto-indicator,
+    .motion-indicator,
+    .th-indicator {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+    }
+    .auto-indicator {
+        color: lightgray;
+        font-size: 16px;
+    }
+    .motion-indicator {
+        color: lightgray;
+        font-size: 24px;
+    }
+    .th-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: calc(100% - 20px);
+    }
+    .th-indicator > div {
+        display: flex;
+        flex-direction: row;
+        /* justify-content: space-between; */
+        align-items: center;
+        width: 100%;
+        gap: 20px;
+    }
+    .th-indicator > div > i {
+        font-size: 20px;
+    }
+    .auto-indicator.on,
+    .motion-indicator.on {
+        color: var(--primary);
+    }
+    .device-button {
+        position: relative;
+    }
+    .device-camera {
+        position: absolute;
+        left: 0;
+        top: 0;
+        border-radius: 8px;
+        overflow: hidden;
+        height: 130px;
+        width: 130px;
+    }
 </style>
 
-<div :id="this.activeTabId">
-  ${this.activeTabId}
-</div>
+<div :id="this.activeTabId">${this.activeTabId}</div>
