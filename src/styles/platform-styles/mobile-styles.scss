@@ -205,22 +205,24 @@
                         display: flex;
                         align-items: center;
                         gap: 8px;
-
-                        /* color: var(--disabled-text); */
                         border-radius: 8px;
                         padding: 4px 8px;
                         background-color: var(--surface-alt);
-                        /* background: var(--grey-areas); */
                     }
                     .on {
                         background-color: var(--primary);
                         color: var(--background);
-                        /* border: solid 1px; */
-                        /* color: #6aa2e9; */
                     }
                     .target-temp {
                         margin-left: auto;
                         font-size: 1.8em;
+                    }
+                    .actual-temp {
+                        color: var(--secondary);
+                        align-self: end;
+                        &.reached {
+                            color: var(--primary);
+                        }
                     }
                 }
             }

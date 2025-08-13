@@ -1,9 +1,9 @@
 import { Tab } from "../main-content/tabs/tabs.model";
 
 export interface NavBarState {
-  activeMenuItemId: string,
-  items: IMenuItem[],
-  setActiveNavBarItem: (menuItem: IMenuItem) => void
+  activeMenuItemId: string;
+  items: IMenuItem[];
+  setActiveNavBarItem: (menuItem: IMenuItem) => void;
 }
 
 export interface IMenuItem {
@@ -12,7 +12,7 @@ export interface IMenuItem {
   name: string;
   tabs?: Tab[];
   expanded: boolean;
-  activeTabIndex: number,
+  activeTabIndex: number;
 }
 
 export const NavBarItems: IMenuItem[] = [
@@ -24,48 +24,48 @@ export const NavBarItems: IMenuItem[] = [
     activeTabIndex: -1,
     tabs: [
       {
-        id: 'devices',
+        id: "devices",
         name: "Devices",
         icon: "star-outline",
-        endpoint: 'get-devices',
+        endpoint: "get-devices",
       },
       {
-        id: 'sensors',
+        id: "sensors",
         name: "Sensors",
         icon: "clock",
-        endpoint: 'get-sensors'
-      }
+        endpoint: "get-sensors",
+      },
     ],
   },
 
   {
-    id: 'automations',
-    icon: 'hourglass',
-    name: 'Your Automations',
+    id: "automations",
+    icon: "hourglass",
+    name: "Automations",
     expanded: false,
     activeTabIndex: -1,
     tabs: [
       {
-        id: 'automations-list',
-        name: 'All',
-        icon: '',
-        endpoint: 'get-effects'
-      }
-    ]
+        id: "automations-list",
+        name: "All",
+        icon: "",
+        endpoint: "get-effects",
+      },
+    ],
   },
   {
-    id: 'assistant',
-    icon: 'hexagon',
-    name: 'VAssistant',
+    id: "assistant",
+    icon: "hexagon",
+    name: "VAssistant",
     expanded: false,
     activeTabIndex: -1,
     tabs: [
       {
-        id: 'info',
-        name: 'Info',
-        icon: '',
-        endpoint: 'emma'
-      }
-    ]
-  }
+        id: "info",
+        name: "Info",
+        icon: "",
+        endpoint: "emma",
+      },
+    ],
+  },
 ];

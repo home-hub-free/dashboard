@@ -235,3 +235,16 @@ body {
 .iconoir-light-bulb {
     color: rgb(254 181 72);
 }
+
+/* Reusable spin utility */
+.spin {
+    animation: spin 2s linear infinite;
+    display: inline-block; /* helps with SVGs/font icons */
+    transform-origin: center; /* keep rotation centered */
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(-360deg);
+    }
+}

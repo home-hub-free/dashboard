@@ -61,7 +61,10 @@
             class="value evap-cooler"
         >
             <div class="fan-state" :class:on="device.value.fan">
-                <i class="iconoir-airplane-rotation"></i>
+                <i
+                    class="iconoir-airplane-rotation"
+                    :class:spin="device.value.fan"
+                ></i>
                 ${device.value.fan ? 'ON' : 'OFF'}
             </div>
             <div class="water-pump-state" :class:on="device.value.water">
@@ -70,6 +73,13 @@
             </div>
 
             <div class="target-temp">${device.value.target}°C</div>
+
+            <div
+                class="actual-temp"
+                :class:reached="Math.round(device.value['room-temp']) <= device.value.target"
+            >
+                ${Math.round(device.value['room-temp'])}°C
+            </div>
         </div>
     </div>
 </div>

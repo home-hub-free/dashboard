@@ -400,6 +400,26 @@
     >
         <p class="section-title">Controls</p>
 
+        <!-- Target temperature input -->
+        <div class="form-group">
+            <label>Target Temperature</label>
+            <div class="toggle-group">
+                <button
+                    class="toggle-button active"
+                    :onmouseup="this.actions.updateEvapCoolerTarget(this.data, -1)"
+                >
+                    -
+                </button>
+                <span> ${this.data.value.target || '25'} °C</span>
+                <button
+                    class="toggle-button active"
+                    :onmouseup="this.actions.updateEvapCoolerTarget(this.data, 1)"
+                >
+                    +
+                </button>
+            </div>
+        </div>
+
         <!-- Fan Toggle -->
         <div class="form-group">
             <label>Fan</label>
@@ -438,26 +458,6 @@
                     :onmouseup="this.data.value.water = false, this.actions.updateDevice(this.data)"
                 >
                     Off
-                </button>
-            </div>
-        </div>
-
-        <!-- Water Pump Toggle -->
-        <div class="form-group">
-            <label>Target Temperature</label>
-            <div class="toggle-group">
-                <button
-                    class="toggle-button active"
-                    :onmouseup="this.actions.updateEvapCoolerTarget(this.data, -1)"
-                >
-                    -
-                </button>
-                <span> ${this.data.value.target || '25'} </span>
-                <button
-                    class="toggle-button active"
-                    :onmouseup="this.actions.updateEvapCoolerTarget(this.data, 1)"
-                >
-                    +
                 </button>
             </div>
         </div>
