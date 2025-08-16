@@ -78,7 +78,7 @@
                 class="actual-temp"
                 :class:reached="Math.round(device.value['room-temp']) <= device.value.target"
             >
-                ${Math.round(device.value['room-temp'])}°C
+                ${(device.value['room-temp']).toFixed(1)}°C
             </div>
         </div>
     </div>

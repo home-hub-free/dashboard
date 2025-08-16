@@ -467,13 +467,13 @@
             <div class="status-item">
                 <span class="status-label">Unit Temp</span>
                 <span class="status-value">
-                    ${Math.round(this.data.value['unit-temp'])}°C</span
+                    ${(this.data.value['unit-temp']).toFixed(1)}°C</span
                 >
             </div>
             <div class="status-item">
                 <span class="status-label">Room Temp</span>
                 <span class="status-value"
-                    >${Math.round(this.data.value['room-temp'])}°C</span
+                    >${(this.data.value['room-temp']).toFixed(1)}°C</span
                 >
             </div>
         </div>
