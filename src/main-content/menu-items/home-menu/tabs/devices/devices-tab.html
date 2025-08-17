@@ -2,6 +2,7 @@
     class="device-button"
     :if="this.devices && this.devices.length"
     :foreach="device in this.devices"
+    :class:camera="device.deviceCategory === 'camera'"
     oncontextmenu="return false;"
 >
     <div class="device-header">
@@ -21,6 +22,10 @@
                 :class:iconoir-light-bulb-on="device.value > 0"
                 :class:iconoir-light-bulb="device.value <= 0"
                 :class:on="device.value > 0"
+            ></i>
+            <i
+                :if="device.deviceCategory === 'camera'"
+                class="iconoir-video-camera"
             ></i>
             ${device.name}
         </div>
