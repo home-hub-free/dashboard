@@ -138,32 +138,24 @@ export class DevicesServiceClass {
       this.currentY = 0;
       return;
     }
+  }
 
+  editClick(event: any, device: Device) {
     const parsedRanges = this.parseOperationalRanges(device.operationalRanges);
+    let rect = getGlobalPosition(event.target);
+    let inputType = DeviceInputType[device.deviceCategory];
 
-    switch (device.type) {
-      case "value":
-        let rect = getGlobalPosition(event.target);
-        let inputType = DeviceInputType[device.deviceCategory];
-
-        openOverlay({
-          template: DeviceEditView,
-          data: {
-            ...device,
-            inputType,
-            parsedRanges,
-          },
-          actions: this,
-          startRect: rect,
-          padding: { x: 6, y: 50 },
-        });
-        break;
-      case "boolean":
-        // For immidiate feedback, update the value before the server call
-        device.value = !device.value;
-        this.updateDevice(device);
-        break;
-    }
+    openOverlay({
+      template: DeviceEditView,
+      data: {
+        ...device,
+        inputType,
+        parsedRanges,
+      },
+      actions: this,
+      startRect: rect,
+      padding: { x: 6, y: 50 },
+    });
   }
 
   updateDevice(device: Device) {

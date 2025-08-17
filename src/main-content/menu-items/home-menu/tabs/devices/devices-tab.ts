@@ -46,15 +46,33 @@ class DevicesTabClass {
       template,
       bind: {
         devices: this.data,
-        deviceTouchStart: this.devicesService.deviceTouchStart.bind(
-          this.devicesService,
-        ),
-        deviceTouchEnd: this.devicesService.deviceTouchEnd.bind(
-          this.devicesService,
-        ),
-        deviceTouchMove: this.devicesService.deviceTouchMove.bind(
-          this.devicesService,
-        ),
+        onDeviceSliderChange: (event: Event, device: Device) => {
+          const target = event.target as HTMLInputElement;
+          device.value = target.value;
+          event.stopPropagation();
+        },
+        onDeviceToggleChange: (device: Device) => {
+          device.value = !device.value;
+          this.devicesService.updateDevice(device);
+        },
+        onEvapCoolerToggleClick: (prop: "fan" | "water", device: Device) => {
+          const newValue = !device.value[prop];
+          device.value[prop] = newValue;
+          this.devicesService.updateDevice(device);
+        },
+
+        onManualToggleClick: (device: Device) => {
+          const newValue = !device.manual;
+          device.manual = newValue;
+          this.devicesService.saveProp(device, "manual", newValue);
+        },
+        onEditClick: (event: any, device) => {
+          this.devicesService.editClick(event, device);
+          event.stopPropagation();
+        },
+        triggerDeviceUpdate: (device: Device) => {
+          this.devicesService.updateDevice(device);
+        },
       },
     });
     this.bind = bind;

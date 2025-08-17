@@ -2,10 +2,6 @@
     class="device-button"
     :if="this.devices && this.devices.length"
     :foreach="device in this.devices"
-    :ontouchstart="this.deviceTouchStart(event, device)"
-    :ontouchend="this.deviceTouchEnd(event, device)"
-    :ontouchmove="this.deviceTouchMove(event, device)"
-    :class:active="device.value"
     oncontextmenu="return false;"
 >
     <div class="device-header">
@@ -16,17 +12,28 @@
             ></i>
             <i
                 :if="device.deviceCategory === 'light'"
-                class="iconoir-light-bulb"
+                :class:iconoir-light-bulb-on="device.value"
+                :class:iconoir-light-bulb="!device.value"
+                :class:on="device.value"
             ></i>
             <i
                 :if="device.deviceCategory === 'dimmable-light'"
-                class="iconoir-light-bulb"
+                :class:iconoir-light-bulb-on="device.value > 0"
+                :class:iconoir-light-bulb="device.value <= 0"
+                :class:on="device.value > 0"
             ></i>
             ${device.name}
         </div>
-        <span class="auto-indicator" :class:on="!device.manual"
-            >${device.manual ? 'MANUAL' : 'AUTO'}</span
-        >
+        <span
+            :onclick="this.onManualToggleClick(device)"
+            class="auto-indicator"
+            :class:on="!device.manual"
+            >${device.manual ? 'MANUAL' : 'AUTO'}
+        </span>
+        <i
+            class="iconoir-edit-pencil"
+            :onclick="this.onEditClick(event, device)"
+        ></i>
     </div>
 
     <div class="device-value">
@@ -38,7 +45,20 @@
             <div class="percent">${device.value + '%'}</div>
 
             <div class="bar-track">
-                <div class="bar-value" :style:width="device.value + '%'"></div>
+                <input
+                    style="position: absolute; left: 0"
+                    type="range"
+                    min="0"
+                    max="100"
+                    :value="device.value + ''"
+                    :oninput="this.onDeviceSliderChange(event, device)"
+                    :onchange="this.triggerDeviceUpdate(device)"
+                />
+                <div
+                    class="bar-value"
+                    style="position: absolute"
+                    :style:width="device.value + '%'"
+                ></div>
             </div>
         </div>
 
@@ -47,6 +67,7 @@
             class="value light"
             :if="device.deviceCategory === 'light'"
             :class:on="device.value"
+            :onclick="this.onDeviceToggleChange(device)"
         >
             ${device.value ? 'ON' : 'OFF'}
         </div>
@@ -60,14 +81,22 @@
             :if="device.deviceCategory === 'evap-cooler'"
             class="value evap-cooler"
         >
-            <div class="fan-state" :class:on="device.value.fan">
+            <div
+                class="fan-state"
+                :class:on="device.value.fan"
+                :onclick="this.onEvapCoolerToggleClick('fan', device)"
+            >
                 <i
                     class="iconoir-airplane-rotation"
                     :class:spin="device.value.fan"
                 ></i>
                 ${device.value.fan ? 'ON' : 'OFF'}
             </div>
-            <div class="water-pump-state" :class:on="device.value.water">
+            <div
+                class="water-pump-state"
+                :class:on="device.value.water"
+                :onclick="this.onEvapCoolerToggleClick('water', device)"
+            >
                 <i class="iconoir-droplet"></i>
                 ${device.value.water ? 'ON' : 'OFF'}
             </div>
@@ -79,6 +108,7 @@
                 :class:reached="Math.round(device.value['room-temp']) <= device.value.target"
             >
                 ${(device.value['room-temp']).toFixed(1)}°C
+                <i class="iconoir-home-temperature-in"></i>
             </div>
         </div>
     </div>
