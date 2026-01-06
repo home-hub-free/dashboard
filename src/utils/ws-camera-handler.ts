@@ -26,12 +26,14 @@ export function subscribeCameraFeed(id?: string) {
   cameraWS.on(id, (frame) => {
     camera = DevicesTab.bind.devices.find((device) => device.id === id);
     if (camera) {
-      camera.value = frame;
+      const blob = new Blob([frame], { type: "image/jpeg" });
+      const url = URL.createObjectURL(blob);
+      camera.value = url;
       if (
         OverlayModal.bind.template &&
         OverlayModal.bind.data.id === camera.id
       ) {
-        OverlayModal.bind.data.value = frame;
+        OverlayModal.bind.data.value = url;
       }
     }
   });

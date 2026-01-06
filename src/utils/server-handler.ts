@@ -3,7 +3,11 @@ import { AutoEffect } from "../main-content/menu-items/automations-menu/automati
 export const server = "http://192.168.1.199:8080/";
 // export const server = "http://localhost:8080/";
 
-export type BlindsConfigureActions = 'spin' | 'switch-direction' | 'home-position' | 'set-limit'
+export type BlindsConfigureActions =
+  | "spin"
+  | "switch-direction"
+  | "home-position"
+  | "set-limit";
 
 export const headers = {
   Accept: "application/json",
@@ -49,7 +53,7 @@ export function submitDataChange(
   id: string,
   type: "devices" | "sensors",
   prop: string,
-  value: any
+  value: any,
 ) {
   return fetch(server + `${type}-data-set`, {
     method: "POST",
@@ -86,11 +90,11 @@ export function saveEffect(effect: any) {
 }
 
 export function saveEffects(effects: AutoEffect[]) {
-  return fetch(server + 'set-effects', {
+  return fetch(server + "set-effects", {
     method: "POST",
     headers,
-    body: JSON.stringify({ effects })
-  })
+    body: JSON.stringify({ effects }),
+  });
 }
 
 export function requestCalendarData() {
@@ -113,6 +117,6 @@ export function updateHouseData(property: string, value: any) {
     body: JSON.stringify({
       property,
       value,
-    })
+    }),
   });
 }
