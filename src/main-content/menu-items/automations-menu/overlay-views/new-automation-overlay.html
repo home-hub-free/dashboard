@@ -103,7 +103,7 @@
 
         <div :if="this.data.newEffect.sensor">
             <select
-                :if="this.data.newEffect.sensor.sensorType === 'motion'"
+                :if="this.data.newEffect.sensor.sensorType === 'motion' || this.data.newEffect.sensor.sensorType === 'presence'"
                 :oninput="this.data.newEffect.sensorState = (event.target.value)"
             >
                 <option value="null">Is:</option>

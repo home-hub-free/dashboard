@@ -54,6 +54,7 @@ export class AutomationsListTabServiceClass {
   parseSensor(sensor: Sensor, effect: AutoEffect) {
     switch (sensor.sensorType) {
       case 'motion':
+      case 'presence':
         return `sensor(${sensor.name}) is <strong>${JSON.parse(effect.when.is) ? 'Active' : 'Inactive'}</strong>`;
       case 'temp/humidity':
       return this.parseTempHumiditySentense(sensor, effect);

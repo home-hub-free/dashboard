@@ -7,7 +7,7 @@ export type Sensor = {
   type: 'boolean' | 'value'
   ip?: string;
   operationalRanges: string[],
-  sensorType: 'motion' | 'temp/humidity';
+  sensorType: 'motion' | 'presence' | 'temp/humidity' ;
 }
 
 export type SensorUpdateEvent = {
