@@ -3,7 +3,7 @@ import { AutoEffect } from "../views/automations/automations.model";
 // Server URL. Defaults to the fixed Raspberry Pi IP on the home LAN, but can be
 // overridden for local development/verification via the VITE_SERVER_URL env var.
 export const server =
-  (import.meta as any).env?.VITE_SERVER_URL || "http://192.168.1.199:8088/";
+  (import.meta as any).env?.VITE_SERVER_URL || "http://192.168.1.199:8080/";
 
 export type BlindsConfigureActions =
   | "spin"
