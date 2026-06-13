@@ -4,7 +4,7 @@ import type { ToasterOptions, PopupMessageState } from "./popup-message.model";
 import template from "./popup-message.html?raw";
 
 class PopupMessageClass extends Component<PopupMessageState> {
-  private currentTimeout: NodeJS.Timeout | null = null;
+  private currentTimeout: ReturnType<typeof setTimeout> | null = null;
 
   mount() {
     this.createBind({
