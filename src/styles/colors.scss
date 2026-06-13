@@ -1,35 +1,43 @@
+// ============================================================================
+// LEGACY COLOR ALIASES - Maps new system to old class names
+// For backwards compatibility during migration
+// ============================================================================
+
 :root {
-    /* Primary */
-    --primary: #7a9e7e; /* Sage green */
-    --primary-light: #a8c0a8; /* Light sage */
-    --primary-dark: #5e7d61; /* Deep sage */
-    --primary-contrast: #ffffff; /* White for text */
+    /* Primary - now use --color-primary */
+    --primary: var(--color-primary);
+    --primary-light: var(--color-primary-light);
+    --primary-dark: var(--color-primary-dark);
+    --primary-contrast: var(--color-text-inverse);
 
-    /* Secondary */
-    --secondary: #c2b280; /* Warm beige */
-    --secondary-light: #e5dcc3; /* Pale sand */
-    --secondary-dark: #9e8c54; /* Earth brown */
-    --secondary-contrast: #2e2e2e; /* Dark text */
+    /* Secondary - now use --color-secondary (purple) */
+    --secondary: var(--color-secondary);
+    --secondary-light: var(--color-secondary-light);
+    --secondary-dark: var(--color-secondary-dark);
+    --secondary-contrast: var(--color-text-inverse);
 
-    /* Accent */
-    --accent: #b27c66; /* Clay */
-    --accent-light: #d2a593; /* Soft clay */
-    --accent-dark: #8b5c46; /* Deep clay */
-    --accent-contrast: #ffffff; /* White text */
+    /* Accent - now use --color-info */
+    --accent: var(--color-info);
+    --accent-light: var(--color-info-light);
+    --accent-dark: var(--color-info-dark);
+    --accent-contrast: var(--color-text-inverse);
 
     /* Backgrounds */
-    --background: #faf4eb; /* Warm off-white */
-    --surface: #fcfaf8; /* Pure white for cards/panels */
-    --surface-alt: #f0ece8; /* Slightly darker for contrast */
+    --background: var(--color-background);
+    --surface: var(--color-surface);
+    --surface-alt: var(--color-surface-secondary);
 
     /* Text */
-    --text-primary: #2f3e34; /* Deep earthy green */
-    --text-secondary: #5a6b60; /* Muted sage gray */
-    --text-disabled: #9eada3; /* Soft gray-green */
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-disabled: var(--color-text-disabled);
 
     /* Status colors */
-    --success: #89b99b; /* Fresh green */
-    --warning: #d9a066; /* Warm gold */
-    --error: #c1655a; /* Soft terracotta red */
-    --info: #7a9e7e; /* Sage (same as primary) */
+    --success: var(--color-success);
+    --warning: var(--color-warning);
+    --error: var(--color-error);
+    --info: var(--color-info);
+
+    /* Additional surfaces */
+    --background-secondary: var(--color-surface-secondary);
 }

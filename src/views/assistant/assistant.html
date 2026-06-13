@@ -1,0 +1,26 @@
+<div class="assistant-view">
+    <section class="assistant-section">
+        <p class="section-title">Quick actions</p>
+        <div class="toggle-group">
+            <button class="toggle-button" :onmouseup="this.readForecast()">
+                <i class="iconoir-sun-light"></i> Forecast
+            </button>
+            <button class="toggle-button" :onmouseup="this.readCalendar()">
+                <i class="iconoir-calendar"></i> Calendars
+            </button>
+        </div>
+    </section>
+
+    <section class="assistant-section">
+        <p class="section-title">Custom speech</p>
+        <textarea
+            class="assistant-textarea"
+            name="custom-speech"
+            id="custom-speech"
+            :oninput="this.customSpeech = event.target.value"
+        >${this.customSpeech}</textarea>
+        <button class="add-range-btn" :onmouseup="this.assistantSay(this.customSpeech)">
+            <i class="iconoir-megaphone"></i> Say
+        </button>
+    </section>
+</div>

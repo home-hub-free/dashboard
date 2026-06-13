@@ -1,0 +1,510 @@
+// ============================================================================
+// DESIGN SYSTEM VARIABLES
+// Complete design token system for Home Hub Dashboard
+// ============================================================================
+
+// ============================================================================
+// 1. COLOR SYSTEM
+// ============================================================================
+
+:root {
+  // Primary Colors (Main brand, actions, focus) - Warm Sage Green
+  --color-primary: #7a9e7f;        // Warm sage green (primary actions)
+  --color-primary-light: #9eb89a;  // Light sage (hover states)
+  --color-primary-lighter: #c5d9c9; // Very light sage (backgrounds)
+  --color-primary-dark: #5d7d62;   // Dark sage (pressed states)
+  --color-primary-darker: #45594a; // Darker sage (strong emphasis)
+
+  // Secondary Colors (Alternative actions) - Warm Terracotta
+  --color-secondary: #a67c52;      // Warm terracotta (secondary actions)
+  --color-secondary-light: #c39968; // Light terracotta (hover states)
+  --color-secondary-lighter: #e8d5c4; // Very light terracotta (backgrounds)
+  --color-secondary-dark: #8a6643; // Dark terracotta (pressed states)
+
+  // Status Colors (Semantic meanings) - Warm & Muted
+  --color-success: #6b9d7a;        // Muted forest green (on/active/success)
+  --color-success-light: #8fb897;  // Light green (hover states)
+  --color-success-lighter: #bdd4c4; // Very light (backgrounds)
+  --color-success-dark: #4f7359;   // Dark green (emphasis)
+
+  --color-error: #c85a54;          // Warm terracotta red (off/error/danger)
+  --color-error-light: #d97a71;    // Light terracotta red (hover states)
+  --color-error-lighter: #e8bbb5;  // Very light (backgrounds)
+  --color-error-dark: #a63e38;     // Dark red (emphasis)
+
+  --color-warning: #d4a574;        // Warm honey/amber (caution/pending)
+  --color-warning-light: #deb88a;  // Light amber (hover states)
+  --color-warning-lighter: #e9d4bd; // Very light (backgrounds)
+  --color-warning-dark: #b88a5f;   // Dark amber (emphasis)
+
+  --color-info: #6b8a9e;           // Soft blue-gray (information/neutral)
+  --color-info-light: #8fa4b3;     // Light blue-gray (hover states)
+  --color-info-lighter: #c0cfd8;   // Very light (backgrounds)
+  --color-info-dark: #4d6378;      // Dark blue-gray (emphasis)
+
+  // Neutral Colors (Dark mode: warm grays and darks)
+  --color-white: #e8e4da;          // Warm cream (not pure white)
+  --color-black: #1a1a1a;          // Warm charcoal (not pure black)
+
+  // Light backgrounds/text (stay light for contrast)
+  --color-gray-50: #e8e4da;        // Lightest - warm cream (light backgrounds)
+  --color-gray-100: #d4cfc7;       // Very light (light text)
+
+  // Dark backgrounds/surfaces
+  --color-gray-200: #242424;       // Light gray (borders)
+  --color-gray-300: #1f1f1f;       // Medium-light gray (disabled text)
+  --color-gray-400: #a19c92;       // Medium gray (muted text)
+  --color-gray-500: #8b8680;       // Medium-dark gray (secondary text)
+  --color-gray-600: #6b6560;       // Dark gray
+  --color-gray-700: #4f4a44;       // Very dark gray
+  --color-gray-800: #2d2d2d;       // Almost black
+  --color-gray-900: #1a1a1a;       // Darkest (dark background)
+
+  // Additional light variants for contrast on dark
+  --color-gray-light-50: #e8e4da;  // Warm cream (lightest)
+  --color-gray-light-100: #d4cfc7; // Very light
+  --color-gray-light-200: #c5bfb5; // Light
+
+  // Semantic aliases (dark mode optimized)
+  --color-surface: #3a3a3a;        // Card/panel backgrounds (dark)
+  --color-surface-secondary: #303030;
+  --color-surface-tertiary: #262626;
+  --color-background: #1a1a1a;     // Page background (warm charcoal)
+  --color-background-alt: #242424; // Alternative background
+  --color-border-light: #4a4a4a;   // Light borders for subtle separation
+
+  // Text Colors (dark mode optimized)
+  --color-text-primary: #e8e4da;      // Warm cream (main text)
+  --color-text-secondary: #b5ada0;    // Light warm gray (secondary text - brighter)
+  --color-text-tertiary: #9a9188;     // Light-medium gray (tertiary - still readable)
+  --color-text-disabled: #6b6560;     // Disabled text (darker, less contrast)
+  --color-text-inverse: #1a1a1a;      // Text on light backgrounds
+  --color-border: #3a3a3a;            // Borders on dark backgrounds
+}
+
+// ============================================================================
+// 2. SPACING SYSTEM (8px base unit)
+// ============================================================================
+
+:root {
+  // Base unit = 8px for consistency
+  --space-0: 0;
+  --space-1: 0.25rem;    // 4px (micro)
+  --space-2: 0.5rem;     // 8px (extra small)
+  --space-3: 0.75rem;    // 12px
+  --space-4: 1rem;       // 16px (small)
+  --space-5: 1.25rem;    // 20px
+  --space-6: 1.5rem;     // 24px (medium)
+  --space-7: 1.75rem;    // 28px
+  --space-8: 2rem;       // 32px (large)
+  --space-9: 2.25rem;    // 36px
+  --space-10: 2.5rem;    // 40px
+  --space-12: 3rem;      // 48px (extra large)
+  --space-16: 4rem;      // 64px
+  --space-20: 5rem;      // 80px
+
+  // Common aliases
+  --space-xs: var(--space-2);     // 8px - minimal spacing
+  --space-sm: var(--space-4);     // 16px - small spacing
+  --space-md: var(--space-6);     // 24px - medium spacing
+  --space-lg: var(--space-8);     // 32px - large spacing
+  --space-xl: var(--space-12);    // 48px - extra large spacing
+  --space-2xl: var(--space-16);   // 64px - huge spacing
+}
+
+// Padding presets
+:root {
+  --padding-button: var(--space-2) var(--space-4);      // 8px 16px
+  --padding-card: var(--space-6);                        // 24px
+  --padding-section: var(--space-8);                     // 32px
+  --padding-page: var(--space-4) var(--space-6);        // 16px 24px (mobile)
+}
+
+// Gaps for grids/flex
+:root {
+  --gap-xs: var(--space-2);       // 8px
+  --gap-sm: var(--space-4);       // 16px
+  --gap-md: var(--space-6);       // 24px
+  --gap-lg: var(--space-8);       // 32px
+}
+
+// ============================================================================
+// 3. TYPOGRAPHY SYSTEM
+// ============================================================================
+
+:root {
+  // Font families
+  --font-family-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: 'Courier New', Courier, monospace;
+
+  // Font sizes (relative to 16px base)
+  --font-size-xs: 0.75rem;      // 12px
+  --font-size-sm: 0.875rem;     // 14px
+  --font-size-base: 1rem;       // 16px
+  --font-size-lg: 1.125rem;     // 18px
+  --font-size-xl: 1.25rem;      // 20px
+  --font-size-2xl: 1.5rem;      // 24px
+  --font-size-3xl: 1.875rem;    // 30px
+  --font-size-4xl: 2.25rem;     // 36px
+
+  // Font weights
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  // Line heights
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  --line-height-loose: 2;
+
+  // Letter spacing
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0.025em;
+}
+
+// Typography presets (use in components)
+:root {
+  // Display/Hero (Page title)
+  --typography-display: {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tight);
+  }
+
+  // Heading 1 (Section title)
+  --typography-h1: {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-tight);
+  }
+
+  // Heading 2 (Subsection title)
+  --typography-h2: {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+  }
+
+  // Heading 3 (Card title)
+  --typography-h3: {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-normal);
+  }
+
+  // Heading 4 (Minor heading)
+  --typography-h4: {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-normal);
+  }
+
+  // Body text (default)
+  --typography-body: {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-normal);
+  }
+
+  // Body small (secondary info)
+  --typography-body-sm: {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-normal);
+  }
+
+  // Label (form labels, tags)
+  --typography-label: {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+  }
+
+  // Caption (small helper text)
+  --typography-caption: {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-normal);
+    color: var(--color-text-secondary);
+  }
+}
+
+// ============================================================================
+// 4. BORDER RADIUS (Consistency)
+// ============================================================================
+
+:root {
+  --radius-none: 0;
+  --radius-xs: 2px;               // Minimal rounding
+  --radius-sm: 4px;               // Small
+  --radius-md: 8px;               // Medium (default)
+  --radius-lg: 12px;              // Large
+  --radius-xl: 16px;              // Extra large
+  --radius-2xl: 24px;             // Huge
+  --radius-full: 9999px;          // Pill shape
+}
+
+// ============================================================================
+// 5. SHADOWS (Elevation)
+// ============================================================================
+
+:root {
+  // Subtle shadows for elevation
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  // Semantic shadows
+  --shadow-card: var(--shadow-sm);
+  --shadow-hover: var(--shadow-md);
+  --shadow-modal: var(--shadow-2xl);
+}
+
+// ============================================================================
+// 6. TRANSITIONS & ANIMATIONS
+// ============================================================================
+
+:root {
+  // Duration presets
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+
+  // Timing functions (easing)
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  // Common transitions
+  --transition-fast: all var(--duration-fast) var(--ease-in-out);
+  --transition-normal: all var(--duration-normal) var(--ease-in-out);
+  --transition-slow: all var(--duration-slow) var(--ease-in-out);
+}
+
+// ============================================================================
+// 7. Z-INDEX HIERARCHY
+// ============================================================================
+
+:root {
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 900;
+  --z-modal: 1000;
+  --z-tooltip: 1100;
+  --z-notification: 1200;
+}
+
+// ============================================================================
+// 8. RESPONSIVE BREAKPOINTS
+// ============================================================================
+
+:root {
+  // Note: Use in SCSS as: @media (min-width: var(--breakpoint-md)) { }
+  // Actually use CSS @media queries directly, not CSS variables
+  // These are here for reference
+  --breakpoint-xs: 320px;   // Mobile small
+  --breakpoint-sm: 640px;   // Mobile large
+  --breakpoint-md: 768px;   // Tablet
+  --breakpoint-lg: 1024px;  // Desktop
+  --breakpoint-xl: 1280px;  // Desktop large
+  --breakpoint-2xl: 1536px; // Desktop extra large
+}
+
+// SCSS Breakpoint mixins (use in .scss files)
+$breakpoint-xs: 320px;
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+$breakpoint-2xl: 1536px;
+
+@mixin respond-to-sm {
+  @media (min-width: $breakpoint-sm) {
+    @content;
+  }
+}
+
+@mixin respond-to-md {
+  @media (min-width: $breakpoint-md) {
+    @content;
+  }
+}
+
+@mixin respond-to-lg {
+  @media (min-width: $breakpoint-lg) {
+    @content;
+  }
+}
+
+@mixin respond-to-xl {
+  @media (min-width: $breakpoint-xl) {
+    @content;
+  }
+}
+
+// ============================================================================
+// 9. COLOR MODES & STATES
+// ============================================================================
+
+:root {
+  // Default state colors
+  --color-state-default: var(--color-gray-500);
+  --color-state-hover: var(--color-primary);
+  --color-state-active: var(--color-primary-dark);
+  --color-state-focus: var(--color-primary);
+  --color-state-disabled: var(--color-gray-300);
+
+  // Device states - Keep saturated status colors for clarity
+  --color-device-on: var(--color-success);
+  --color-device-off: var(--color-gray-500);
+  --color-device-error: var(--color-error);
+  --color-device-pending: var(--color-warning);
+
+  // Automation states - Keep saturated for visibility
+  --color-automation-enabled: var(--color-success);
+  --color-automation-disabled: var(--color-gray-400);
+  --color-automation-scheduled: var(--color-info);
+  --color-automation-running: var(--color-warning);
+}
+
+// ============================================================================
+// 10. RGBA COLOR VARIANTS (For animations and shadows)
+// ============================================================================
+
+:root {
+  // Primary sage green RGBA variants
+  --color-primary-rgba-10: rgba(122, 158, 127, 0.1);
+  --color-primary-rgba-20: rgba(122, 158, 127, 0.2);
+  --color-primary-rgba-40: rgba(122, 158, 127, 0.4);
+  --color-primary-rgba-60: rgba(122, 158, 127, 0.6);
+
+  // Primary light RGBA variants
+  --color-primary-light-rgba-40: rgba(158, 184, 154, 0.4);
+
+  // Primary lighter RGBA variants
+  --color-primary-lighter-rgba-20: rgba(197, 217, 201, 0.2);
+
+  // Error terracotta RGBA variants
+  --color-error-rgba-10: rgba(200, 90, 84, 0.1);
+  --color-error-rgba-40: rgba(200, 90, 84, 0.4);
+
+  // Success green RGBA variants
+  --color-success-rgba-10: rgba(107, 157, 122, 0.1);
+  --color-success-rgba-40: rgba(107, 157, 122, 0.4);
+
+  // Warning honey RGBA variants
+  --color-warning-rgba-10: rgba(212, 165, 116, 0.1);
+  --color-warning-rgba-40: rgba(212, 165, 116, 0.4);
+
+  // Info blue-gray RGBA variants
+  --color-info-rgba-10: rgba(107, 138, 158, 0.1);
+  --color-info-rgba-40: rgba(107, 138, 158, 0.4);
+
+  // Gray RGBA variants
+  --color-gray-500-rgba-20: rgba(139, 134, 128, 0.2);
+  --color-gray-500-rgba-50: rgba(139, 134, 128, 0.5);
+}
+
+// ============================================================================
+// 10b. DASHBOARD REDESIGN TOKENS
+// Semantic tokens introduced by the tile dashboard. See DESIGN.md.
+// Two accent meanings: WARM (amber) = a light is on / illumination;
+// COOL (sage primary) = interactive control / "active but not a light".
+// ============================================================================
+
+:root {
+  // Warm "lit" accent (a light is ON)
+  --color-active-warm: #eaa53f;
+  --color-active-warm-light: #f7cd76;
+  --gradient-active-warm: linear-gradient(150deg, #f7cd76 0%, #eaa53f 100%);
+  --glow-active-warm: 0 12px 28px -12px rgba(234, 165, 63, 0.75);
+
+  // Cool "active" accent (blinds open, selected control)
+  --gradient-active-cool: linear-gradient(150deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+  --glow-active-cool: 0 12px 28px -12px var(--color-primary-rgba-60);
+
+  // Text/icon color when placed on any filled accent surface (warm or cool)
+  --color-on-fill: #241a02;
+  --color-on-fill-muted: rgba(37, 26, 2, 0.72);
+  --color-on-fill-faint: rgba(37, 26, 2, 0.5);
+
+  // Tile / control geometry — keep all surfaces on this rhythm
+  --radius-tile: 22px;     // device tiles, overlay sheet
+  --radius-chip: 18px;     // sensor chips, smaller cards
+  --radius-control: 12px;  // inputs, buttons, toggle segments
+  --tile-min-height: 122px;
+  --tap-target-min: 44px;  // WCAG minimum interactive size
+}
+
+// ============================================================================
+// 11. UTILITY CLASSES (Quick helpers)
+// ============================================================================
+
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-tertiary {
+  color: var(--color-text-tertiary);
+}
+
+.text-success {
+  color: var(--color-success-dark);
+}
+
+.text-error {
+  color: var(--color-error-dark);
+}
+
+.text-warning {
+  color: var(--color-warning-dark);
+}
+
+.text-info {
+  color: var(--color-info-dark);
+}
+
+// Background utilities
+.bg-surface {
+  background-color: var(--color-surface);
+}
+
+.bg-surface-secondary {
+  background-color: var(--color-surface-secondary);
+}
+
+.bg-primary-light {
+  background-color: var(--color-primary-lighter);
+}
+
+.bg-success-light {
+  background-color: var(--color-success-light);
+}
+
+.bg-error-light {
+  background-color: var(--color-error-light);
+}
+
+.bg-warning-light {
+  background-color: var(--color-warning-light);
+}

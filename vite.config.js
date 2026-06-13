@@ -6,9 +6,12 @@ export default defineConfig({
     port: 8081
   },
   publicDir: './public',
-  // optimizeDeps: {
-  //   include: [
-  //     'bindrjs'
-  //   ]
-  // }
+  optimizeDeps: {
+    include: ['bindrjs', 'socket.io-client']
+  },
+  build: {
+    commonjsOptions: {
+      include: [/bindrjs/, /socket\.io-client/]
+    }
+  }
 });

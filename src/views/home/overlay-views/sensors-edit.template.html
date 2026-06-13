@@ -1,0 +1,21 @@
+<div class="edit-container">
+    <div class="overlay-header">
+        <span class="oh-icon">
+            <i :if="this.data.sensorType === 'motion'" class="iconoir-walking"></i>
+            <i :if="this.data.sensorType === 'presence'" class="iconoir-running"></i>
+            <i :if="this.data.sensorType === 'temp/humidity'" class="iconoir-home-temperature-in"></i>
+        </span>
+        <span class="oh-title">${this.data.name}</span>
+    </div>
+
+    <div class="form-group device-setting">
+        <label :for="this.data.id + '_name'">Name</label>
+        <input
+            :id="this.data.id + '_name'"
+            :name="this.data.id + '_name'"
+            type="text"
+            :value="this.data.name"
+            :oninput="this.actions.saveProp(this.data, 'name')"
+        />
+    </div>
+</div>

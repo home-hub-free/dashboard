@@ -1,0 +1,803 @@
+// ============================================================================
+// FORM COMPONENT SYSTEM
+// Input fields, labels, dropdowns, sliders, validation — all token-based
+// ============================================================================
+
+// ============================================================================
+// 1. BASE FORM STYLING
+// ============================================================================
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+// ============================================================================
+// 2. FORM GROUPS & LAYOUTS
+// ============================================================================
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.form-group-inline {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+.form-row {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+
+  > .form-group {
+    flex: 1;
+  }
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background-color: var(--color-surface-secondary);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// ============================================================================
+// 3. LABELS
+// ============================================================================
+
+label {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-normal);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  margin-bottom: var(--space-2);
+  transition: var(--transition-normal);
+
+  // For inline labels (side-by-side)
+  &.inline {
+    display: inline;
+    margin-right: var(--space-4);
+    margin-bottom: 0;
+  }
+
+  // Required field indicator
+  .required {
+    color: var(--color-error);
+    margin-left: var(--space-1);
+  }
+
+  // Help text under label
+  .help-text {
+    display: block;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-normal);
+    color: var(--color-text-secondary);
+    text-transform: none;
+    letter-spacing: normal;
+    margin-top: var(--space-1);
+  }
+
+  // Focus state (when input below is focused)
+  &:focus-within {
+    color: var(--color-primary);
+  }
+}
+
+// ============================================================================
+// 4. TEXT INPUTS & TEXT AREAS
+// ============================================================================
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="time"],
+input[type="date"],
+textarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: var(--transition-normal);
+  box-sizing: border-box;
+  outline: none;
+  appearance: none;
+
+  // Default state
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+
+  // Placeholder text
+  &::placeholder {
+    color: var(--color-text-tertiary);
+  }
+
+  // Hover state
+  &:hover:not(:disabled):not(:read-only) {
+    border-color: var(--color-border-light);
+    background-color: var(--color-surface);
+  }
+
+  // Focus state
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-lighter);
+    background-color: var(--color-surface);
+  }
+
+  // Focus visible (keyboard nav)
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 0;
+  }
+
+  // Disabled state
+  &:disabled,
+  &:read-only {
+    background-color: var(--color-surface-secondary);
+    color: var(--color-text-tertiary);
+    border-color: var(--color-border);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  // Error state
+  &.error,
+  &[aria-invalid="true"] {
+    border-color: var(--color-error);
+    color: var(--color-text-primary);
+
+    &:focus {
+      border-color: var(--color-error-dark);
+      box-shadow: 0 0 0 3px var(--color-error-lighter);
+    }
+  }
+
+  // Success state
+  &.success,
+  &[aria-invalid="false"] {
+    border-color: var(--color-success);
+
+    &:focus {
+      border-color: var(--color-success-dark);
+      box-shadow: 0 0 0 3px var(--color-success-lighter);
+    }
+  }
+}
+
+// Textarea specific
+textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-size: var(--font-size-base);
+}
+
+// ============================================================================
+// 5. DROPDOWNS / SELECT ELEMENTS
+// ============================================================================
+
+select.dropdown,
+select {
+  width: 100%;
+  padding: var(--space-3) var(--space-6) var(--space-3) var(--space-4);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  box-sizing: border-box;
+  outline: none;
+  appearance: none;
+
+  // Custom dropdown arrow (using SVG data URI with primary color)
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg fill='%237a9e7f' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-2) center;
+  background-size: 1.2em;
+  padding-right: var(--space-8);
+
+  // Hover state
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background-color: var(--color-surface);
+  }
+
+  // Focus state
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-lighter);
+    background-color: var(--color-surface);
+  }
+
+  // Focus visible
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 0;
+  }
+
+  // Disabled state
+  &:disabled {
+    background-color: var(--color-surface-secondary);
+    color: var(--color-text-tertiary);
+    border-color: var(--color-border);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  // Error state
+  &.error,
+  &[aria-invalid="true"] {
+    border-color: var(--color-error);
+
+    &:focus {
+      border-color: var(--color-error-dark);
+      box-shadow: 0 0 0 3px var(--color-error-lighter);
+    }
+  }
+
+  // Option text colors (fallback)
+  option {
+    color: var(--color-text-primary);
+    background-color: var(--color-surface);
+  }
+
+  option:checked {
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+  }
+}
+
+// ============================================================================
+// 6. RANGE SLIDERS
+// ============================================================================
+
+input[type="range"] {
+  width: 100%;
+  padding: var(--space-2) 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+// WebKit browsers (Chrome, Safari, Edge)
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background: var(--color-surface-secondary);
+  border-radius: var(--radius-sm);
+  border: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  cursor: pointer;
+  border: 2px solid var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  margin-top: -7px;
+  transition: var(--transition-normal);
+
+  &:hover {
+    background: var(--color-primary-dark);
+    box-shadow: var(--shadow-md);
+    transform: scale(1.1);
+  }
+
+  &:active {
+    background: var(--color-primary-dark);
+    transform: scale(1);
+  }
+}
+
+// Firefox
+input[type="range"]::-moz-range-track {
+  background: var(--color-surface-secondary);
+  border-radius: var(--radius-sm);
+  border: none;
+  height: 6px;
+}
+
+input[type="range"]::-moz-range-progress {
+  background: var(--color-primary);
+  border-radius: var(--radius-sm);
+  height: 6px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  cursor: pointer;
+  border: 2px solid var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-normal);
+
+  &:hover {
+    background: var(--color-primary-dark);
+    box-shadow: var(--shadow-md);
+    transform: scale(1.1);
+  }
+
+  &:active {
+    background: var(--color-primary-dark);
+    transform: scale(1);
+  }
+}
+
+// Disabled range
+input[type="range"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+
+  &::-webkit-slider-thumb,
+  &::-moz-range-thumb {
+    background: var(--color-gray-400);
+    cursor: not-allowed;
+  }
+}
+
+// ============================================================================
+// 7. VALIDATION & ERROR MESSAGING
+// ============================================================================
+
+.form-error,
+.error-message,
+.field-error {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-error-dark);
+  margin-top: var(--space-1);
+  animation: slideDown 150ms ease-out;
+}
+
+.form-success,
+.success-message {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-success-dark);
+  margin-top: var(--space-1);
+  animation: slideDown 150ms ease-out;
+}
+
+.form-hint,
+.helper-text,
+.field-hint {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-1);
+  font-weight: var(--font-weight-normal);
+}
+
+// Invalid indicator (red left border on field)
+.form-group.is-invalid {
+  input,
+  textarea,
+  select {
+    border-left: 4px solid var(--color-error);
+    padding-left: calc(var(--space-4) - 3px);
+  }
+}
+
+// Valid indicator (green checkmark or border)
+.form-group.is-valid {
+  input,
+  textarea,
+  select {
+    border-left: 4px solid var(--color-success);
+    padding-left: calc(var(--space-4) - 3px);
+  }
+}
+
+// ============================================================================
+// 8. FORM UTILITIES & HELPERS
+// ============================================================================
+
+.form-row {
+  display: flex;
+  gap: var(--space-4);
+
+  > * {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: flex-end;
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+
+.form-actions.stacked {
+  flex-direction: column;
+
+  button {
+    width: 100%;
+  }
+}
+
+// Range value display (e.g., showing slider's current value)
+.range-value {
+  display: inline-block;
+  text-align: right;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  min-width: 50px;
+}
+
+// Form container with background
+.form-container,
+.edit-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: auto;
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+}
+
+// ============================================================================
+// 9. FIELDSETS & GROUPED CONTROLS
+// ============================================================================
+
+fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  background-color: var(--color-surface-secondary);
+}
+
+fieldset legend {
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+// Radio buttons & checkboxes
+input[type="radio"],
+input[type="checkbox"] {
+  margin-right: var(--space-2);
+  cursor: pointer;
+  accent-color: var(--color-primary);
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+label.checkbox,
+label.radio {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  text-transform: none;
+  letter-spacing: normal;
+  cursor: pointer;
+  margin-bottom: var(--space-2);
+
+  input {
+    margin: 0;
+    margin-right: var(--space-1);
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// ============================================================================
+// 10. TIME PICKER / AUTOMATION SCHEDULE
+// ============================================================================
+
+.time-bar {
+  position: relative;
+  height: 28px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent,
+    transparent calc(100% / 12 - 1px),
+    var(--color-border) calc(100% / 12 - 1px),
+    var(--color-border) calc(100% / 12)
+  );
+}
+
+.time-range {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  background: var(--color-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: var(--space-2);
+  color: var(--color-text-inverse);
+  font-weight: var(--font-weight-bold);
+  user-select: none;
+  font-size: var(--font-size-xs);
+  transition: var(--transition-normal);
+
+  &:hover {
+    box-shadow: var(--shadow-md);
+    background: var(--color-primary-dark);
+  }
+
+  &:active {
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.bar-label {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.hour-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  user-select: none;
+  margin-top: var(--space-1);
+  margin-bottom: var(--space-4);
+  width: 100%;
+
+  span {
+    position: relative;
+    width: 0;
+  }
+}
+
+// ============================================================================
+// 11. DEVICE SETTINGS / OPERATIONAL RANGES
+// ============================================================================
+
+.device-setting {
+  padding: var(--space-4);
+  background: var(--color-surface-secondary);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.section-title {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.operational-range {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.remove-btn {
+  cursor: pointer;
+  color: var(--color-error);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-normal);
+
+  &:hover {
+    color: var(--color-error-dark);
+    transform: scale(1.1);
+  }
+
+  &:disabled {
+    color: var(--color-text-tertiary);
+    cursor: not-allowed;
+  }
+}
+
+// ============================================================================
+// 12. STATUS GROUPS (Device settings)
+// ============================================================================
+
+.status-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+}
+
+.status-label {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.status-value {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+// ============================================================================
+// 13. ANIMATIONS
+// ============================================================================
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+// ============================================================================
+// 14. RESPONSIVE DESIGN
+// ============================================================================
+
+@media (max-width: 640px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="time"],
+  input[type="date"],
+  textarea,
+  select {
+    font-size: 16px; // Prevents zoom on iOS
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: var(--space-4);
+
+    > * {
+      width: 100%;
+    }
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: var(--space-2);
+    justify-content: stretch;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  label {
+    font-size: var(--font-size-xs);
+  }
+
+  .form-container,
+  .edit-container {
+    padding: var(--space-4);
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1024px) {
+  .form-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+// ============================================================================
+// 15. ACCESSIBILITY & MOTION PREFERENCE
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  input,
+  textarea,
+  select,
+  .form-error,
+  .form-success,
+  .time-range {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover,
+  input[type="range"]::-moz-range-thumb:hover {
+    transform: none;
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: more) {
+  input,
+  textarea,
+  select {
+    border-width: 2px;
+  }
+
+  label {
+    font-weight: var(--font-weight-bold);
+  }
+}

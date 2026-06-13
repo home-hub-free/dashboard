@@ -1,0 +1,503 @@
+// ============================================================================
+// ANIMATION SYSTEM
+// Smooth, purposeful animations for all components
+// All animations respect prefers-reduced-motion
+// ============================================================================
+
+// ============================================================================
+// 1. ANIMATION DURATION TOKENS (Already in _variables.scss)
+// ============================================================================
+
+// --duration-fast: 150ms      (quick interactions)
+// --duration-normal: 200ms    (default transitions)
+// --duration-slow: 300ms      (complex animations)
+// --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1)  (smooth default)
+// --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1)  (playful)
+
+// ============================================================================
+// 2. FUNDAMENTAL ANIMATIONS
+// ============================================================================
+
+// Fade in / fade out
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+// Slide up / slide down
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+// Slide left / slide right
+@keyframes slideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Scale / Grow
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+// ============================================================================
+// 3. COMPONENT-SPECIFIC ANIMATIONS
+// ============================================================================
+
+// Menu item activation (bounce effect)
+@keyframes active-menu-item {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  80% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+// Toast popup (bounce entrance)
+@keyframes pop-toast {
+  0% {
+    opacity: 0;
+    transform: translateY(0) translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateY(0) translateX(-50%) scale(1.05);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0) translateX(-50%) scale(0.95);
+  }
+  100% {
+    transform: translateY(0) translateX(-50%) scale(1);
+  }
+}
+
+// ============================================================================
+// 4. STATUS INDICATOR ANIMATIONS
+// ============================================================================
+
+// Pulse (for pending/loading states)
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// Spin (for loading spinners)
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Glow (for focus states)
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+// ============================================================================
+// 5. BUTTON ANIMATIONS
+// ============================================================================
+
+// Button press animation
+@keyframes buttonPress {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.02);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+// Button lift animation (on hover)
+@keyframes buttonLift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-2px);
+  }
+}
+
+// ============================================================================
+// 6. FORM & INPUT ANIMATIONS
+// ============================================================================
+
+// Form field error shake
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+// Input focus glow
+@keyframes focusGlow {
+  0% {
+    box-shadow: 0 0 0 0 var(--color-primary-rgba-40);
+  }
+  100% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+// ============================================================================
+// 7. CARD & ELEMENT ANIMATIONS
+// ============================================================================
+
+// Card entrance (staggered)
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Card hover lift
+@keyframes cardLift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-2px);
+  }
+}
+
+// ============================================================================
+// 8. MODAL ANIMATIONS
+// ============================================================================
+
+// Modal backdrop fade in
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Modal dialog entrance (bounce)
+@keyframes modalBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(16px);
+  }
+  70% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+// Modal dialog exit
+@keyframes modalExit {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(16px);
+  }
+}
+
+// ============================================================================
+// 9. LEGACY ANIMATIONS (Maintained for compatibility)
+// ============================================================================
+
+.pop-toaster {
+  animation-name: pop-toast;
+}
+
+.hide-toaster {
+  opacity: 0;
+  transform-origin: center;
+  transform: translateY(0) translateX(-50%) scale(0.8) !important;
+  transition-property: opacity, transform;
+  transition-duration: 180ms;
+}
+
+// ============================================================================
+// 10. ANIMATION UTILITIES & HELPERS
+// ============================================================================
+
+// Fast entrance (150ms)
+.animate-fade-in-fast {
+  animation: fadeIn var(--duration-fast) var(--ease-in-out);
+}
+
+// Normal entrance (200ms)
+.animate-fade-in {
+  animation: fadeIn var(--duration-normal) var(--ease-in-out);
+}
+
+// Slow entrance (300ms)
+.animate-fade-in-slow {
+  animation: fadeIn var(--duration-slow) var(--ease-in-out);
+}
+
+// Slide up entrance
+.animate-slide-up {
+  animation: slideUp var(--duration-normal) var(--ease-in-out);
+}
+
+// Slide down exit
+.animate-slide-down {
+  animation: slideDown var(--duration-normal) var(--ease-in-out);
+}
+
+// Scale in entrance
+.animate-scale-in {
+  animation: scaleIn var(--duration-normal) var(--ease-in-out);
+}
+
+// Pulse (continuous, for pending states)
+.animate-pulse {
+  animation: pulse 2s var(--ease-in-out) infinite;
+}
+
+// Spin (continuous, for loading)
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+// ============================================================================
+// 11. TRANSITION UTILITIES
+// ============================================================================
+
+// Fast transition
+.transition-fast {
+  transition: var(--transition-fast);
+}
+
+// Normal transition
+.transition-normal {
+  transition: var(--transition-normal);
+}
+
+// Slow transition
+.transition-slow {
+  transition: var(--transition-slow);
+}
+
+// Transition all properties
+.transition-all {
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+// ============================================================================
+// 12. COMPONENT-SPECIFIC TRANSITION RULES
+// ============================================================================
+
+// Buttons: smooth color and shadow transitions
+button,
+.btn,
+.button {
+  transition: all var(--duration-fast) var(--ease-in-out);
+}
+
+// Inputs: focus glow transition
+input,
+textarea,
+select {
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+// Cards: hover effects
+.card,
+.device-button,
+.sensor-button {
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+// Status indicators: smooth color change
+.status-badge,
+.status-dot {
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+// Form elements: error/success animations
+.form-error,
+.form-success {
+  animation: slideDown var(--duration-normal) var(--ease-in-out);
+}
+
+// ============================================================================
+// 13. ACCESSIBILITY: RESPECT USER PREFERENCES
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  // Ensure opacity changes still work for required animations
+  // but at instant speed
+  button,
+  .btn,
+  .button,
+  input,
+  textarea,
+  select,
+  .card,
+  .device-button,
+  .sensor-button {
+    transition: opacity 0.01ms var(--ease-in-out) !important;
+  }
+}
+
+// ============================================================================
+// 14. HIGH PERFORMANCE TIPS
+// ============================================================================
+
+// Use transform and opacity (GPU-accelerated)
+// Avoid animating: width, height, padding, margin
+// Use will-change sparingly for heavy animations
+
+// Example: Don't do this:
+// @keyframes badAnimation {
+//   from { width: 0; }
+//   to { width: 100%; }
+// }
+
+// Do this instead:
+// @keyframes goodAnimation {
+//   from { transform: scaleX(0); }
+//   to { transform: scaleX(1); }
+// }
+
+// ============================================================================
+// 15. ANIMATION TIMING GUIDELINES
+// ============================================================================
+
+// --duration-fast: 150ms      ← Quick feedback (button clicks, hovers)
+// --duration-normal: 200ms    ← Default (state changes, modals)
+// --duration-slow: 300ms      ← Complex (page transitions, entrances)
+
+// Faster than 150ms: feels instant, no perceived animation
+// Slower than 300ms: feels sluggish, user thinks something is broken
+
+// ============================================================================
+// 16. EASING FUNCTION GUIDELINES
+// ============================================================================
+
+// --ease-in-out: smooth curve ← Default for most animations
+// --ease-bounce: playful bounce ← Special case (modals, celebratory)
+
+// In-out easing mimics natural motion (acceleration → deceleration)
+// Bounce easing adds personality but can feel unprofessional if overused
+
+// ============================================================================
+// 17. FUTURE ENHANCEMENTS
+// ============================================================================
+
+// Could add:
+// - Spring animation (physics-based)
+// - Staggered list animations (offset each item)
+// - Parallax scrolling
+// - SVG path animations
+// - Page transition animations
+// - Gesture-based animations (swipe, long-press)
+
+// Keep animations subtle and purposeful (not decorative)
+
+// ============================================================================

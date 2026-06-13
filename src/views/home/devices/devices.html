@@ -1,0 +1,97 @@
+<div
+    class="device-tile"
+    :if="this.devices && this.devices.length"
+    :foreach="device in this.devices"
+    :key="device.id"
+    :class="'cat-' + device.deviceCategory"
+    :class:wide="device.deviceCategory === 'evap-cooler' || device.deviceCategory === 'camera'"
+    :class:on="(device.deviceCategory === 'light' && device.value) || ((device.deviceCategory === 'dimmable-light' || device.deviceCategory === 'blinds') && device.value > 0) || (device.deviceCategory === 'evap-cooler' && (device.value.fan || device.value.water))"
+    :class:manual="device.manual"
+    :onclick="this.onTileClick(device)"
+    oncontextmenu="return false;"
+>
+    <!-- CAMERA: full-bleed preview with overlaid label -->
+    <div class="cam-wrap" :if="device.deviceCategory === 'camera'">
+        <img :if="device.value" :src="device.value" alt="" />
+        <div :else class="cam-placeholder"><i class="iconoir-video-camera"></i></div>
+        <div class="cam-label">
+            <i class="iconoir-video-camera"></i>
+            <span>${device.name}</span>
+        </div>
+    </div>
+
+    <!-- EVAP COOLER: wide tile with temps + fan/water quick toggles -->
+    <div class="cooler" :if="device.deviceCategory === 'evap-cooler'">
+        <div class="cooler-main">
+            <div class="tile-name">${device.name}</div>
+            <div class="cooler-temps">
+                <span class="room-temp" :class:reached="Math.round(device.value['room-temp']) <= device.value.target">
+                    ${(device.value['room-temp']).toFixed(1)}°
+                </span>
+                <span class="target-temp"><i class="iconoir-home-temperature-in"></i> ${device.value.target}°</span>
+            </div>
+        </div>
+        <div class="cooler-controls">
+            <button
+                class="chip"
+                :class:on="device.value.fan"
+                :onclick="this.onEvapToggle(event, 'fan', device)"
+            >
+                <i class="iconoir-wind" :class:spin="device.value.fan"></i> Fan
+            </button>
+            <button
+                class="chip"
+                :class:on="device.value.water"
+                :onclick="this.onEvapToggle(event, 'water', device)"
+            >
+                <i class="iconoir-droplet"></i> Water
+            </button>
+            <i class="tile-edit iconoir-more-horiz" :onclick="this.onEditClick(event, device)"></i>
+        </div>
+    </div>
+
+    <!-- LIGHT / DIMMABLE / BLINDS: square switch-style tile -->
+    <div class="tile-inner" :if="device.deviceCategory !== 'camera' && device.deviceCategory !== 'evap-cooler'">
+        <div class="tile-top">
+            <span class="tile-icon">
+                <i :if="device.deviceCategory === 'light'" :class:iconoir-light-bulb-on="device.value" :class:iconoir-light-bulb="!device.value"></i>
+                <i :if="device.deviceCategory === 'dimmable-light'" :class:iconoir-light-bulb-on="device.value > 0" :class:iconoir-light-bulb="device.value <= 0"></i>
+                <i :if="device.deviceCategory === 'blinds'" class="iconoir-windows"></i>
+            </span>
+            <i class="tile-edit iconoir-more-horiz" :onclick="this.onEditClick(event, device)"></i>
+        </div>
+
+        <div class="tile-body">
+            <div class="tile-name">${device.name}</div>
+
+            <div class="tile-status" :if="device.deviceCategory === 'light'">
+                ${device.value ? 'On' : 'Off'}
+            </div>
+
+            <div class="tile-status" :if="device.deviceCategory === 'dimmable-light'">
+                ${device.value > 0 ? 'On · ' + device.value + '%' : 'Off'}
+            </div>
+
+            <div class="tile-status" :if="device.deviceCategory === 'blinds'">
+                ${device.value > 0 ? 'Open · ' + device.value + '%' : 'Closed'}
+            </div>
+        </div>
+
+        <!-- Inline brightness slider for dimmable lights -->
+        <input
+            :if="device.deviceCategory === 'dimmable-light'"
+            class="tile-slider"
+            type="range"
+            min="0"
+            max="100"
+            :value="device.value + ''"
+            :onclick="this.stop(event)"
+            :oninput="this.onSliderInput(event, device)"
+            :onchange="this.onSliderCommit(event, device)"
+        />
+    </div>
+</div>
+<div class="empty-state" :else>
+    <i class="iconoir-home-simple-door"></i>
+    <span>No devices detected on your network</span>
+</div>

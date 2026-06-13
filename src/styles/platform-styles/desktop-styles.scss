@@ -1,6 +1,6 @@
 $nav-bar-width: 300px;
 
-@mixin dekstop {
+@mixin desktop {
     #nav-bar {
         height: 100%;
         width: $nav-bar-width;
@@ -16,7 +16,7 @@ $nav-bar-width: 300px;
             margin: 5px 10px;
             position: relative;
             &:hover {
-                background-color: rgb(236 236 236);
+                background-color: var(--color-gray-200);
             }
 
             .menu-item-desktop {
@@ -70,7 +70,7 @@ $nav-bar-width: 300px;
         .menu-tabs {
             border-bottom: 2px;
             border-bottom-style: solid;
-            border-bottom-color: gray;
+            border-bottom-color: var(--color-gray-400);
             height: 55px;
             line-height: 50px;
             font-size: 1.4em;
@@ -82,8 +82,10 @@ $nav-bar-width: 300px;
                 cursor: pointer;
                 padding: 0 20px;
                 display: inline-block;
+                color: var(--color-text-secondary);
                 &.active {
                     font-weight: bold;
+                    color: var(--color-primary-dark);
                 }
             }
             .active-indicator {
@@ -91,6 +93,7 @@ $nav-bar-width: 300px;
                 border-bottom: 5px;
                 border-bottom-style: solid;
                 position: fixed;
+                border-bottom-color: var(--color-primary-dark);
             }
         }
     }

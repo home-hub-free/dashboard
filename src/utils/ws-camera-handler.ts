@@ -1,6 +1,6 @@
 import io from "socket.io-client/dist/socket.io.js";
-import { DevicesTab } from "../main-content/menu-items/home-menu/tabs/devices/devices-tab";
-import { OverlayModal } from "../overlay-modal/overlay-modal";
+import { DeviceActions } from "../store/actions";
+import { OverlayModal } from "../components/overlay-modal/overlay-modal";
 
 const cameraWSEndpoint = "http://192.168.1.199:8082/";
 const cameraWS = io.connect(cameraWSEndpoint);
@@ -21,20 +21,15 @@ export function subscribeCameraFeed(id?: string) {
   if (!id) return;
   if (feeds.includes(id)) return;
 
-  let camera = DevicesTab.bind?.devices?.find((device) => device.id === id);
+  feeds.push(id);
 
   cameraWS.on(id, (frame) => {
-    camera = DevicesTab.bind.devices.find((device) => device.id === id);
-    if (camera) {
-      const blob = new Blob([frame], { type: "image/jpeg" });
-      const url = URL.createObjectURL(blob);
-      camera.value = url;
-      if (
-        OverlayModal.bind.template &&
-        OverlayModal.bind.data.id === camera.id
-      ) {
-        OverlayModal.bind.data.value = url;
-      }
+    const blob = new Blob([frame], { type: "image/jpeg" });
+    const url = URL.createObjectURL(blob);
+    DeviceActions.update({ id, value: url });
+
+    if (OverlayModal.mounted && OverlayModal.bind.data?.id === id) {
+      OverlayModal.bind.data.value = url;
     }
   });
 }

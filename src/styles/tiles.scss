@@ -1,0 +1,459 @@
+// ============================================================================
+// HOME DASHBOARD — glanceable tiles, sensor band, header, nav refinements
+// Loaded LAST so its #devices / #sensors rules win over legacy layout rules.
+// Design goal: device/sensor visibility + one-tap action. The whole light tile
+// is the switch; lit tiles glow warm so "what's on" reads in a glance.
+// ============================================================================
+
+// ---- Header (override legacy flex-row centering from platform mixins) --------
+#header {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+#main-content #header .header {
+  height: auto;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 18px 16px 10px;
+  text-align: left;
+
+  .header-title {
+    flex: none;
+    display: block;
+    justify-content: flex-start;
+    height: auto;
+    line-height: 1.1;
+    font-size: 2rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    letter-spacing: var(--letter-spacing-tight);
+  }
+
+  .header-subtitle {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.95rem;
+    font-weight: var(--font-weight-normal);
+    color: var(--color-text-secondary);
+  }
+}
+
+// Home dashboard must fill width and flow naturally (legacy centers + clips it).
+#main-content #tab-content { text-align: left; }
+#main-content #tab-content > #home {
+  height: auto;
+}
+#main-content #tab-content > #home > .home-dash {
+  display: block;
+  height: auto;
+  align-items: stretch;
+  width: 100%;
+  text-align: left;
+}
+
+.home-dash {
+  padding-bottom: 120px; // clear the fixed bottom nav
+}
+
+// ---- Sensor band (environment summary) --------------------------------------
+#sensors.env-band {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 6px 16px 16px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.sensor-chip {
+  flex: 0 0 auto;
+  min-width: 132px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-chip);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 200ms var(--ease-in-out), transform 120ms ease;
+
+  &:active { transform: scale(0.97); }
+  &.active { border-color: var(--color-success); }
+
+  .chip-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+
+    i { font-size: 18px; }
+
+    .chip-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 110px;
+    }
+  }
+
+  .chip-reading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.05rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--color-gray-500);
+      transition: all 200ms ease;
+
+      &.on {
+        background: var(--color-success);
+        box-shadow: 0 0 0 4px var(--color-success-rgba-10);
+      }
+    }
+
+    &.th { gap: 16px; }
+
+    .metric {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.98rem;
+
+      i { font-size: 15px; color: var(--color-text-tertiary); }
+    }
+  }
+
+  .calibrate-btn {
+    margin-top: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 999px;
+    background: var(--color-surface-secondary);
+    color: var(--color-text-secondary);
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+
+    i { font-size: 14px; }
+    &.calibrating i { animation: spin 1s linear infinite; }
+  }
+}
+
+.env-empty {
+  padding: 4px 16px 16px;
+  color: var(--color-text-tertiary);
+  font-size: 0.9rem;
+}
+
+// ---- Device grid ------------------------------------------------------------
+#devices.device-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 0 16px;
+  align-content: start;
+}
+
+.device-tile {
+  position: relative;
+  min-height: var(--tile-min-height);
+  box-sizing: border-box;
+  padding: 14px;
+  border-radius: var(--radius-tile);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 110ms ease, background 220ms var(--ease-in-out),
+    box-shadow 220ms var(--ease-in-out), border-color 220ms var(--ease-in-out);
+
+  &.wide { grid-column: span 2; }
+  &:active { transform: scale(0.97); }
+
+  // "Locked to manual" reads as a dashed edge — subtle, non-intrusive.
+  &.manual { border-style: dashed; }
+}
+
+.tile-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 94px;
+}
+
+.tile-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.tile-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-size: 22px;
+  transition: all 220ms var(--ease-in-out);
+}
+
+.tile-edit {
+  color: var(--color-text-tertiary);
+  font-size: 22px;
+  line-height: 1;
+  padding: 2px;
+  border-radius: 8px;
+}
+
+.tile-body { margin-top: auto; }
+
+.tile-name {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-size: 1.05rem;
+  line-height: 1.15;
+}
+
+.tile-status {
+  margin-top: 3px;
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+}
+
+// Brightness slider for dimmable lights
+.tile-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  margin-top: 12px;
+  border-radius: 999px;
+  background: var(--color-surface-secondary);
+  outline: none;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  }
+  &::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: #fff;
+  }
+}
+
+// ---- Lit states -------------------------------------------------------------
+// Lights & dimmables glow warm amber when on (reads like a real bulb).
+.device-tile.cat-light.on,
+.device-tile.cat-dimmable-light.on {
+  background: var(--gradient-active-warm);
+  border-color: transparent;
+  box-shadow: var(--glow-active-warm);
+}
+
+// Blinds open → calm sage accent (distinct from "a light is on").
+.device-tile.cat-blinds.on {
+  background: var(--gradient-active-cool);
+  border-color: transparent;
+  box-shadow: var(--glow-active-cool);
+}
+
+// Dark-on-light text/icon treatment for any filled tile.
+.device-tile.cat-light.on,
+.device-tile.cat-dimmable-light.on,
+.device-tile.cat-blinds.on {
+  .tile-icon { background: rgba(0, 0, 0, 0.16); color: var(--color-on-fill); }
+  .tile-name { color: var(--color-on-fill); }
+  .tile-status { color: var(--color-on-fill-muted); }
+  .tile-edit { color: var(--color-on-fill-faint); }
+  .tile-slider {
+    background: rgba(0, 0, 0, 0.22);
+    &::-webkit-slider-thumb { background: var(--color-on-fill); }
+    &::-moz-range-thumb { background: var(--color-on-fill); }
+  }
+}
+
+// ---- Evaporative cooler (wide) ----------------------------------------------
+.device-tile.cat-evap-cooler {
+  padding: 14px 16px;
+
+  .cooler {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 14px;
+    height: 100%;
+  }
+
+  .cooler-main {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cooler-temps {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+
+    .room-temp {
+      font-size: 2rem;
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      line-height: 1;
+
+      &.reached { color: var(--color-success); }
+    }
+
+    .target-temp {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.95rem;
+      color: var(--color-text-secondary);
+    }
+  }
+
+  .cooler-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+  }
+}
+
+// Scoped under #devices so the id beats buttons.scss's high-specificity
+// `button:not(...)` reset that would otherwise paint every chip with the
+// primary color regardless of its on/off state.
+#devices .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  font-weight: var(--font-weight-medium);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 180ms var(--ease-in-out);
+
+  &:hover:not(:disabled) { transform: none; box-shadow: none; }
+
+  &.on {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+  }
+}
+
+// ---- Camera (wide) ----------------------------------------------------------
+.device-tile.cat-camera {
+  padding: 0;
+  min-height: 184px;
+  background: #000;
+  border-color: transparent;
+
+  .cam-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 184px;
+
+    img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  }
+
+  .cam-placeholder {
+    width: 100%;
+    height: 184px;
+    display: grid;
+    place-items: center;
+    font-size: 46px;
+    color: var(--color-text-tertiary);
+    background: var(--color-surface-secondary);
+  }
+
+  .cam-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    color: #fff;
+    font-weight: var(--font-weight-semibold);
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent);
+
+    i { font-size: 18px; }
+  }
+}
+
+.empty-state {
+  grid-column: span 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 60px 20px;
+  color: var(--color-text-tertiary);
+
+  i { font-size: 40px; }
+}
+
+// ---- Bottom navigation refinements -----------------------------------------
+#nav-bar {
+  border-top: 1px solid var(--color-border);
+  padding-bottom: calc(0.4rem + env(safe-area-inset-bottom, 0));
+  z-index: var(--z-fixed);
+
+  .menu-item.active .menu-item-icon {
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    box-shadow: 0 8px 20px -6px var(--color-primary-rgba-60);
+  }
+}
+
+// ---- Desktop / tablet (>=640px) ---------------------------------------------
+// The desktop platform mixin lays #devices/#sensors out as a 2-col grid using a
+// 3-id selector; these matching-specificity rules keep our band + tile layout.
+@media (min-width: 640px) {
+  #main-content #tab-content #sensors.env-band {
+    display: flex;
+    grid-template-columns: none;
+  }
+  #main-content #tab-content #devices.device-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+  .home-dash { padding-bottom: 32px; }
+}

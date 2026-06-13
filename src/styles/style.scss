@@ -1,10 +1,18 @@
 @import "iconoir/css/iconoir.css";
+@import "/Fonts/Satoshi/css/satoshi.css";
+@import "./variables.scss";    // Design tokens (colors, spacing, typography)
+@import "./colors.scss";       // Legacy aliases for backwards compatibility
+@import "./animations.scss";   // Legacy animations (deprecated)
+@import "./animations-enhanced.scss";  // NEW: Complete animation system with tokens
+@import "./buttons.scss";      // Button component system
+@import "./cards.scss";        // Card component system
+@import "./forms.scss";        // Form component system
+@import "./responsive.scss";   // Responsive design system
+@import "./inputs.scss";       // Legacy form styles (deprecated)
 @import "./platform-styles/desktop-styles.scss";
 @import "./platform-styles/mobile-styles.scss";
-@import "./animations.scss";
-@import "/Fonts/Satoshi/css/satoshi.css";
-@import "./colors.scss";
-@import "./inputs.scss";
+@import "./tiles.scss";         // Home dashboard tiles (loaded last — wins layout)
+@import "./components.scss";    // Overlay / automations / assistant alignment
 
 * {
     -ms-touch-action: manipulation;
@@ -13,7 +21,7 @@
 
 body {
     font-family: "Satoshi-Variable";
-    background-color: var(--background);
+    background-color: var(--color-background);
     -webkit-touch-callout: none; /* Safari */
     -webkit-user-select: none; /* Chrome */
     -moz-user-select: none; /* Firefox */
@@ -29,8 +37,8 @@ body {
     width: 100%;
     display: flex;
     justify-content: space-around;
-    background: var(--surface);
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
     padding: 0.4rem 0;
     cursor: pointer;
     box-sizing: border-box;
@@ -40,7 +48,7 @@ body {
         text-align: center;
         padding: 0.5rem 0;
         transition: all 200ms ease;
-        color: var(--primary-dark);
+        color: var(--color-primary-dark);
 
         &:active {
             /* background-color: rgba(0, 0, 0, 0.04); */
@@ -48,14 +56,14 @@ body {
         }
 
         &.active {
-            color: var(--primary-dark);
+            color: var(--color-primary-dark);
             font-weight: 500;
 
             .menu-item-icon {
-                background-color: var(--primary);
-                color: var(--primary-contrast);
+                background-color: var(--color-primary);
+                color: var(--color-text-inverse);
                 transform: translateY(-5px) scale(1.1);
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+                box-shadow: var(--shadow-lg);
             }
         }
     }
@@ -122,16 +130,16 @@ body {
 
             .light {
                 font-size: 1.5em;
-                background: var(--background);
+                background: var(--color-background);
                 width: 60px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 padding: 4px 8px;
-                color: var(--text-secondary);
+                color: var(--color-text-secondary);
                 &.on {
-                    color: var(--background);
-                    background-color: var(--primary);
+                    color: var(--color-background);
+                    background-color: var(--color-primary);
                 }
             }
 
@@ -145,14 +153,14 @@ body {
                     font-size: 1.5em;
                 }
                 .bar-track {
-                    background-color: var(--surface-alt);
+                    background-color: var(--color-surface-secondary);
                     flex-grow: 1;
                     height: 9px;
                     border-radius: 3px;
                     position: relative;
                     .bar-value {
                         height: 100%;
-                        background: var(--primary);
+                        background: var(--color-primary);
                         border-radius: 8px;
                         transition: width 220ms
                             cubic-bezier(0.65, 0.41, 0.33, 1.21);
@@ -182,21 +190,21 @@ body {
                     gap: 8px;
                     border-radius: 8px;
                     padding: 4px 8px;
-                    background-color: var(--surface-alt);
+                    background-color: var(--color-surface-secondary);
                 }
                 .on {
-                    background-color: var(--primary);
-                    color: var(--background);
+                    background-color: var(--color-primary);
+                    color: var(--color-background);
                 }
                 .target-temp {
                     margin-left: auto;
                     font-size: 1.8em;
                 }
                 .actual-temp {
-                    color: var(--secondary);
+                    color: var(--color-secondary);
                     align-self: end;
                     &.reached {
-                        color: var(--primary);
+                        color: var(--color-primary);
                     }
                 }
             }
@@ -212,13 +220,13 @@ body {
 #popup-message-container {
     .toaster-container {
         position: absolute;
-        background-color: var(--background-secondary);
+        background-color: var(--color-surface);
         padding: 10px 25px;
         border-radius: 10px;
         left: 50%;
         width: max-content;
         transform: translateY(0) translateX(-50%) scale(1);
-        box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--shadow-md);
         z-index: 5;
 
         span,
@@ -269,10 +277,9 @@ body {
     .content {
         overflow: scroll;
         position: absolute;
-        background: white;
+        background: transparent;
         border-radius: 10px;
-        background-color: rgba(0, 0, 0, 0);
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);
+        box-shadow: var(--shadow-sm);
         * {
             opacity: 1;
             transition: opacity 100ms ease;
@@ -280,10 +287,10 @@ body {
     }
 
     .content.visible {
-        background-color: rgba(255, 255, 255, 1);
+        background-color: var(--color-surface);
     }
     .content.opening {
-        background-color: rgba(255, 255, 255, 1);
+        background-color: var(--color-surface);
         transition:
             height 150ms ease 150ms,
             width 150ms ease 150ms,
@@ -298,7 +305,7 @@ body {
         }
     }
     .content.closing {
-        background-color: rgba(0, 0, 0, 0);
+        background-color: transparent;
         transition:
             height 200ms,
             width 200ms,
@@ -314,73 +321,25 @@ body {
     }
 }
 
-.device-button,
-.sensor-button {
-    max-height: 250px;
-    max-width: 500px;
-    height: 110px;
-    min-height: 110px;
-    width: 100%;
-    border-radius: 8px;
-    background-color: var(--surface);
-    box-shadow: 0px 4px 4px var(--surface-alt);
-    color: var(--disabled-text);
-    flex-direction: column;
-    padding: 16px;
-    box-sizing: border-box;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    cursor: pointer;
+// Device and sensor cards moved to cards.scss for comprehensive card system
 
-    &.active {
-        background: var(--surface);
-        box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.05);
-        color: black;
-        animation-duration: 230ms;
-        animation-fill-mode: forwards;
-        animation-name: active-menu-item;
-    }
+// Breakpoint adjustments moved to responsive.scss
+// Using standardized 640px / 1024px breakpoints
+@media (min-width: 640px) {
+    @include desktop();
 }
 
-div.device-button.camera {
-    height: 250px;
-    div.device-header {
-        background: rgba(255, 255, 255, 0.6);
-        border-radius: 16px;
-        padding: 8px 16px;
-        display: flex;
-        align-items: center;
-        z-index: 1;
-    }
-    div.device-value {
-        height: 180px;
-        position: absolute;
-        left: 0px;
-        top: 0px;
-        width: 100%;
-
-        img {
-            scale: 0.6;
-        }
-    }
-}
-
-@media (min-width: 600px) {
-    @include dekstop();
-}
-
-@media (max-width: 600px) {
+@media (max-width: 639px) {
     @include mobile();
 }
 
+// Icon color utilities
 .iconoir-light-bulb {
-    color: var(--text-disabled);
+    color: var(--color-text-disabled);
 }
 
 .iconoir-light-bulb-on {
-    color: rgb(254 181 72);
+    color: var(--color-warning);  // Golden yellow for visual warmth
 }
 
 /* Reusable spin utility */
@@ -393,5 +352,117 @@ div.device-button.camera {
 @keyframes spin {
     to {
         transform: rotate(-360deg);
+    }
+}
+
+// Indicators moved to cards.scss for comprehensive card system
+
+// automations list
+.effect-list,
+.effects-list {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 23px);
+    row-gap: 10px;
+    padding-bottom: 10px;
+    overflow: scroll;
+}
+
+.effects-actions {
+    margin-bottom: 0.5rem;
+}
+
+.effect-container {
+    border-radius: 8px;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    padding: 15px;
+    display: flex;
+    margin-bottom: 10px;
+    flex-direction: column;
+    text-align: left;
+}
+
+// Form component styles moved to forms.scss for comprehensive form system
+// Legacy aliases maintained below for backward compatibility:
+
+.button-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--space-2);
+}
+
+.remove-btn {
+    cursor: pointer;
+    color: var(--color-error);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-normal);
+
+    &:hover {
+        color: var(--color-error-dark);
+    }
+}
+
+// .add-range-btn - Moved to buttons.scss for comprehensive button system
+
+.device-setting img {
+    max-width: 100%;
+    border-radius: 8px;
+}
+
+.automation-schedule {
+    border-radius: 6px;
+}
+
+// Time bar styles moved to forms.scss for comprehensive form system
+
+// new automation overlay
+#new-automation {
+    padding: 1rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+// assistant view
+.assistant-view {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.assistant-section {
+    background: var(--color-surface);
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.assistant-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 0.6rem;
+    font-size: 1rem;
+    border: 1px solid var(--color-primary-light);
+    border-radius: 8px;
+    background: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    outline: none;
+    resize: vertical;
+    box-sizing: border-box;
+
+    &:focus {
+        border-color: var(--color-primary-dark);
     }
 }

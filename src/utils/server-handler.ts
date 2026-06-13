@@ -1,7 +1,9 @@
-import { AutoEffect } from "../main-content/menu-items/automations-menu/automations-menu.model";
+import { AutoEffect } from "../views/automations/automations.model";
 
-export const server = "http://192.168.1.199:8080/";
-// export const server = "http://localhost:8080/";
+// Server URL. Defaults to the fixed Raspberry Pi IP on the home LAN, but can be
+// overridden for local development/verification via the VITE_SERVER_URL env var.
+export const server =
+  (import.meta as any).env?.VITE_SERVER_URL || "http://192.168.1.199:8088/";
 
 export type BlindsConfigureActions =
   | "spin"
@@ -119,4 +121,12 @@ export function updateHouseData(property: string, value: any) {
       value,
     }),
   });
+}
+
+export function calibrateSensor(id: string) {
+  return fetch(server + "sensor-calibrate", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ id }),
+  }).then((res) => res.json());
 }

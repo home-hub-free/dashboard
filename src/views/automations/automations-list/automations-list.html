@@ -1,0 +1,10 @@
+<div class="effects-list">
+    <div class="effects-actions">
+        <button class="add-range-btn" :onclick="this.newAutomation(event)">New Automation</button>
+    </div>
+
+    <div :foreach="group in this.groups" :key="group.name" class="effect-container">
+        <strong>${group.name}</strong>
+        <div :foreach="effect in group.effects" :key="effect.sentence" :innerHTML="effect.sentence"></div>
+    </div>
+</div>

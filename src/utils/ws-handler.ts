@@ -1,24 +1,36 @@
 import io from "socket.io-client/dist/socket.io.js";
-// import { WebSocketDeviceDeclare, WebSocketDeviceUpdate, WebSocketSensorDeclare, WebSocketSensorUpdate } from "../main-content/tab-content/tab-content";
 import { server } from "./server-handler";
-import { DevicesTab } from "../main-content/menu-items/home-menu/tabs/devices/devices-tab";
-import { SensorsTab } from "../main-content/menu-items/home-menu/tabs/sensors/sensors-tab";
+import { DeviceActions, SensorActions } from "../store/actions";
+import { SensorsService } from "../views/home/sensors/sensors.service";
 
 const socket = io.connect(server);
 
 export let socketId = '';
 
 export function initWebSockets() {
-
   socket.on("connect", () => {
     console.log("WS ready");
     socketId = socket.id;
   });
-  
-  DevicesTab.initializeWSHooks(socket);
-  SensorsTab.initializeWSHooks(socket);
+
+  socket.on('device-declare', (device) => {
+    DeviceActions.declare(device);
+  });
+
+  socket.on('device-update', (device) => {
+    DeviceActions.update(device);
+  });
+
+  socket.on('sensor-declare', (sensor) => {
+    SensorActions.declare(sensor);
+  });
+
+  socket.on('sensor-update', (sensor) => {
+    SensorActions.update(sensor);
+    SensorsService.formatSensorsValues([sensor]);
+  });
 }
 
 export function getSocketId() {
-  return socket.id
+  return socket.id;
 }

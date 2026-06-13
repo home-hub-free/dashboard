@@ -1,0 +1,38 @@
+<div
+    :if="this.sensors && this.sensors.length"
+    class="sensor-chip"
+    :foreach="sensor in this.sensors"
+    :key="sensor.id"
+    :class:active="sensor.value === true"
+    :class:value="sensor.type === 'value'"
+    :onmouseup="this.sensorTouchEnd(event, sensor)"
+    oncontextmenu="return false;"
+    :data-sensor-id="sensor.id"
+>
+    <div class="chip-head">
+        <i :if="sensor.sensorType === 'motion'" class="iconoir-walking"></i>
+        <i :if="sensor.sensorType === 'presence'" class="iconoir-running"></i>
+        <i :if="sensor.sensorType === 'temp/humidity'" class="iconoir-home-temperature-in"></i>
+        <span class="chip-name">${sensor.name}</span>
+    </div>
+
+    <div :if="sensor.type === 'boolean'" class="chip-reading">
+        <span class="dot" :class:on="sensor.value"></span>
+        ${sensor.value ? 'Detected' : 'Clear'}
+    </div>
+
+    <div :if="sensor.type === 'value'" class="chip-reading th">
+        <span class="metric"><i class="iconoir-temperature-high"></i> ${sensor.value.temperature}</span>
+        <span class="metric"><i class="iconoir-droplet"></i> ${sensor.value.humidity}</span>
+    </div>
+
+    <button
+        :if="sensor.sensorType === 'presence' && sensor.ip"
+        class="calibrate-btn"
+        :onmouseup="this.calibrateSensor(event, sensor)"
+        :class:calibrating="sensor.calibrating"
+    >
+        <i class="iconoir-refresh"></i> Calibrate
+    </button>
+</div>
+<div class="env-empty" :else>No sensors detected</div>

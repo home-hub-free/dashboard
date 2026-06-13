@@ -1,0 +1,453 @@
+// ============================================================================
+// BUTTON COMPONENT SYSTEM
+// Refined, sophisticated button variants with full state support
+// ============================================================================
+
+// ============================================================================
+// 1. BASE BUTTON STYLES
+// ============================================================================
+
+button,
+.btn,
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+
+  font-family: inherit;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
+
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+
+  transition: var(--transition-normal);
+
+  outline: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+
+  // Minimum touch target (WCAG AAA)
+  min-height: 44px;
+  min-width: 44px;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  &:focus-visible {
+    outline: 2px solid;
+    outline-offset: 2px;
+  }
+
+  i {
+    font-size: 1.1em;
+  }
+}
+
+// ============================================================================
+// 2. SIZE VARIANTS
+// ============================================================================
+
+.btn-sm,
+button.sm,
+.button.sm {
+  padding: var(--space-2) var(--space-4);      // 8px 16px
+  font-size: var(--font-size-sm);              // 14px
+  min-height: 36px;
+  border-radius: var(--radius-md);
+
+  i {
+    font-size: 0.95em;
+  }
+}
+
+.btn-md,
+button.md,
+.button.md,
+button:not(.sm):not(.lg),
+.button:not(.sm):not(.lg) {
+  padding: var(--space-3) var(--space-4);      // 12px 16px
+  font-size: var(--font-size-base);            // 16px
+  min-height: 40px;
+}
+
+.btn-lg,
+button.lg,
+.button.lg {
+  padding: var(--space-4) var(--space-6);      // 16px 24px
+  font-size: var(--font-size-base);            // 16px
+  min-height: 48px;
+  border-radius: var(--radius-md);
+
+  i {
+    font-size: 1.2em;
+  }
+}
+
+// ============================================================================
+// 3. PRIMARY BUTTON (Default action)
+// ============================================================================
+
+.btn-primary,
+button:not(.secondary):not(.danger):not(.ghost):not(.toggle-button):not(.add-range-btn),
+.button:not(.secondary):not(.danger):not(.ghost) {
+  background-color: var(--color-primary);      // Steel blue
+  color: var(--color-text-inverse);            // White
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-primary-dark);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--color-primary-darker);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline-color: var(--color-primary);
+    background-color: var(--color-primary-dark);
+  }
+
+  &:disabled {
+    background-color: var(--color-gray-300);
+    color: var(--color-text-tertiary);
+  }
+
+  &.is-loading {
+    pointer-events: none;
+
+    &::after {
+      content: '';
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      margin-left: 8px;
+      border: 2px solid var(--color-primary-rgba-20);
+      border-radius: 50%;
+      border-top-color: var(--color-primary);
+      animation: spin 0.8s linear infinite;
+    }
+  }
+}
+
+// ============================================================================
+// 4. SECONDARY BUTTON (Alternative action)
+// ============================================================================
+
+.btn-secondary,
+button.secondary,
+.button.secondary {
+  background-color: var(--color-surface-secondary);  // Light gray
+  color: var(--color-text-primary);                  // Dark text
+  border: 1px solid var(--color-surface-tertiary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-surface-tertiary);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--color-surface-secondary);
+    box-shadow: var(--shadow-none);
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline-color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    background-color: var(--color-gray-100);
+    color: var(--color-text-tertiary);
+    border-color: var(--color-gray-200);
+  }
+}
+
+// ============================================================================
+// 5. DANGER BUTTON (Destructive action)
+// ============================================================================
+
+.btn-danger,
+button.danger,
+.button.danger {
+  background-color: var(--color-error);        // Deep red
+  color: var(--color-text-inverse);            // White
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-error-dark);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--color-error-dark);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline-color: var(--color-error);
+  }
+
+  &:disabled {
+    background-color: var(--color-gray-300);
+    color: var(--color-text-tertiary);
+  }
+}
+
+// ============================================================================
+// 6. GHOST BUTTON (Tertiary/link-style)
+// ============================================================================
+
+.btn-ghost,
+button.ghost,
+.button.ghost {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-primary-lighter);
+    border-color: var(--color-primary-dark);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--color-primary-lighter);
+    border-color: var(--color-primary);
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline-color: var(--color-primary);
+    background-color: var(--color-primary-lighter);
+  }
+
+  &:disabled {
+    border-color: var(--color-gray-300);
+    color: var(--color-text-tertiary);
+  }
+}
+
+// ============================================================================
+// 7. TOGGLE BUTTON (Binary state: on/off)
+// ============================================================================
+
+.toggle-button {
+  background-color: var(--color-surface-secondary);
+  color: var(--color-primary);
+  border: 1px solid var(--color-surface-tertiary);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  min-height: 40px;
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-surface-tertiary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &:active {
+    transform: translateY(-1px);
+  }
+
+  // ACTIVE STATE (toggle is ON)
+  &.active {
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    border-color: var(--color-primary-dark);
+    box-shadow: var(--shadow-sm);
+
+    &:hover {
+      background-color: var(--color-primary-dark);
+      box-shadow: var(--shadow-md);
+    }
+
+    &:active {
+      background-color: var(--color-primary-darker);
+      box-shadow: var(--shadow-sm);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// ============================================================================
+// 8. ADD/ACTION BUTTON (Special case for adding items)
+// ============================================================================
+
+.add-range-btn,
+.add-button {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: none;
+  font-weight: var(--font-weight-semibold);
+  width: 100%;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  min-height: 44px;
+
+  &:hover {
+    background-color: var(--color-primary-dark);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    background-color: var(--color-primary-dark);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    background-color: var(--color-gray-300);
+    color: var(--color-text-tertiary);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+// ============================================================================
+// 9. ICON-ONLY BUTTON
+// ============================================================================
+
+.btn-icon,
+button.icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.sm {
+    width: 36px;
+    height: 36px;
+  }
+
+  &.lg {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+// ============================================================================
+// 10. BUTTON GROUP (Horizontal button alignment)
+// ============================================================================
+
+.button-group {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+
+  button,
+  .btn,
+  .button {
+    flex: 1;
+    min-width: 120px;
+  }
+}
+
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-2);
+}
+
+// ============================================================================
+// 11. LOADING STATE ANIMATION
+// ============================================================================
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// ============================================================================
+// 12. ACCESSIBILITY & MOTION PREFERENCE
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  .btn,
+  .button,
+  .toggle-button,
+  .add-range-btn,
+  .add-button {
+    transition: none !important;
+    animation: none !important;
+
+    &:hover:not(:disabled) {
+      transform: none;
+    }
+
+    &:active:not(:disabled) {
+      transform: none;
+    }
+
+    &.is-loading::after {
+      animation: none !important;
+    }
+  }
+}
+
+// ============================================================================
+// 13. RESPONSIVE ADJUSTMENTS
+// ============================================================================
+
+@media (max-width: 640px) {
+  button,
+  .btn,
+  .button {
+    width: 100%;
+    font-size: var(--font-size-base);
+    min-height: 48px;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .button-grid {
+    grid-template-columns: 1fr;
+  }
+}
