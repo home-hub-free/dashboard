@@ -16,6 +16,22 @@ export type AutoEffect = {
   sentence?: string
 };
 
+// Stage-2 normalized effect contract (mirrors server src/db/effects-normalize.ts).
+// Served read-only by GET /get-effects-normalized; the write path still posts the
+// legacy AutoEffect shape, which the server stores and re-derives from on read.
+export type EffectOp = "eq" | "gt" | "lt";
+
+export type Condition =
+  | { source: "sensor"; nodeId: string; channel: string; op: EffectOp; value: boolean | number }
+  | { source: "time"; at: string };
+
+export type NormalizedEffect = {
+  when: Condition;
+  set: { nodeId: string; channel: string; value: boolean | number };
+  enabled: boolean;
+  sentence?: string;
+};
+
 export type NewEffect = {
   device: Device;
   // For multi value devices

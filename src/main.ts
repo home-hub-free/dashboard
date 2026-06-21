@@ -14,7 +14,7 @@ async function loadInitialData() {
     const [devicesData, sensorsData, effectsData] = await Promise.all([
       getEndPointData('get-devices'),
       getEndPointData('get-sensors'),
-      getEndPointData('get-effects'),
+      getEndPointData('get-effects-normalized'),
     ]);
 
     DeviceActions.load(devicesData);

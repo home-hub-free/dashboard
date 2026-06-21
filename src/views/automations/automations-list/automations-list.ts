@@ -1,12 +1,13 @@
 import { Component } from "../../../core/component";
 import { store } from "../../../store/store";
 import template from './automations-list.html?raw';
-import { saveEffect } from "../../../utils/server-handler";
+import { getEndPointData, saveEffect } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import { closeOverlay, openOverlay } from "../../../components/overlay-modal/overlay-modal";
 import NewAutomationOverlay from "../overlay-views/new-automation-overlay.html?raw";
 import { showToaster } from "../../../components/popup-message/popup-message";
-import { AutoEffect, NewEffect } from "../automations.model";
+import { EffectActions } from "../../../store/actions";
+import { NewEffect, NormalizedEffect } from "../automations.model";
 import { AutomationsListTabService, AutomationsListTabServiceClass } from "./automations-list.service";
 import { Device } from "../../home/devices/devices.model";
 import { Sensor } from "../../home/sensors/sensors.model";
@@ -45,7 +46,7 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
   }
 
   private parseEffects() {
-    this.bind.effects.map((effect: AutoEffect) => {
+    this.bind.effects.map((effect: NormalizedEffect) => {
       effect.sentence = this.automationsListTabService.parseEffectSentense({
         devices: store.get('devices') || [],
         sensors: store.get('sensors') || [],
@@ -56,12 +57,12 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
 
   private groupEffects() {
     const groups: { [key: string]: EffectsGroup } = {};
-    this.bind.effects.forEach((effect: AutoEffect) => {
-      if (!groups[effect.set.id]) {
-        const device = store.get('devices').find((d: Device) => d.id === effect.set.id);
-        groups[effect.set.id] = { effects: [], name: device?.name || 'N/A' };
+    this.bind.effects.forEach((effect: NormalizedEffect) => {
+      if (!groups[effect.set.nodeId]) {
+        const device = store.get('devices').find((d: Device) => d.id === effect.set.nodeId);
+        groups[effect.set.nodeId] = { effects: [], name: device?.name || 'N/A' };
       }
-      groups[effect.set.id].effects.push(effect);
+      groups[effect.set.nodeId].effects.push(effect);
     });
     this.bind.groups = Object.values(groups);
   }
@@ -105,14 +106,20 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
   }
 
   private saveNewEffect(effect: NewEffect) {
-    saveEffect(new EffectBuilder(effect)).then(() => {
-      closeOverlay();
-      showToaster({
-        from: 'bottom',
-        message: 'Saved automation',
-        timer: 2000
+    // The write path still posts the legacy AutoEffect shape; we then re-pull the
+    // server-derived normalized view so the list reflects the new rule immediately
+    // (the store holds NormalizedEffect[], so we can't just push the legacy form).
+    saveEffect(new EffectBuilder(effect))
+      .then(() => getEndPointData('get-effects-normalized'))
+      .then((effects: NormalizedEffect[]) => {
+        EffectActions.load(effects || []);
+        closeOverlay();
+        showToaster({
+          from: 'bottom',
+          message: 'Saved automation',
+          timer: 2000
+        });
       });
-    });
   }
 }
 export const AutomationsList = new AutomationsListClass(AutomationsListTabService);

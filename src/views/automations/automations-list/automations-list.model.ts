@@ -1,12 +1,12 @@
-import { AutoEffect } from "../automations.model"
+import { NormalizedEffect } from "../automations.model"
 
 export type AutomationsListTabState = {
-  effects: AutoEffect[],
+  effects: NormalizedEffect[],
   groups: EffectsGroup[],
   newAutomation: (event: MouseEvent) => void,
 }
 
 export type EffectsGroup = {
-  effects: AutoEffect[],
+  effects: NormalizedEffect[],
   name: string;
 }

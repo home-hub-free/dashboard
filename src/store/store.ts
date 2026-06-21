@@ -1,11 +1,11 @@
 import { Device } from '../views/home/devices/devices.model';
 import { Sensor } from '../views/home/sensors/sensors.model';
-import { AutoEffect } from '../views/automations/automations.model';
+import { NormalizedEffect } from '../views/automations/automations.model';
 
 export type AppState = {
   devices: Device[];
   sensors: Sensor[];
-  effects: AutoEffect[];
+  effects: NormalizedEffect[];
   activeMenuId: string;
   activeTabId: string;
 };

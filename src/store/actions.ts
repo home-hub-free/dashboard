@@ -1,7 +1,7 @@
 import { store } from './store';
 import { Device } from '../views/home/devices/devices.model';
 import { Sensor } from '../views/home/sensors/sensors.model';
-import { AutoEffect } from '../views/automations/automations.model';
+import { NormalizedEffect } from '../views/automations/automations.model';
 import { storageGet, storageSet } from '../utils/utils.service';
 import { NavBarItems } from '../components/nav-bar/nav-bar.constants';
 
@@ -46,10 +46,10 @@ export const SensorActions = {
 };
 
 export const EffectActions = {
-  load(effects: AutoEffect[]) {
+  load(effects: NormalizedEffect[]) {
     store.set('effects', effects);
   },
-  add(effect: AutoEffect) {
+  add(effect: NormalizedEffect) {
     store.set('effects', [...store.get('effects'), effect]);
   },
 };
