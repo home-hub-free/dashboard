@@ -16,9 +16,10 @@ export type AutoEffect = {
   sentence?: string
 };
 
-// Stage-2 normalized effect contract (mirrors server src/db/effects-normalize.ts).
-// Served read-only by GET /get-effects-normalized; the write path still posts the
-// legacy AutoEffect shape, which the server stores and re-derives from on read.
+// Normalized effect contract (mirrors server src/db/effects-normalize.ts).
+// As of Stage 4b this is the stored shape end-to-end: served by
+// GET /get-effects-normalized and posted as-is by the write path
+// (buildNormalizedEffect → /set-effect).
 export type EffectOp = "eq" | "gt" | "lt";
 
 export type Condition =

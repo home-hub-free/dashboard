@@ -69,6 +69,9 @@ export class DevicesServiceClass {
           ...device,
           inputType,
           parsedRanges,
+          // Existing zones across the fleet — feeds the edit overlay's <datalist>
+          // so the user picks a known room instead of free-typing a variant.
+          zones: this.knownZones(),
         },
         actions: {
           saveProp: this.saveProp.bind(this),
@@ -206,6 +209,15 @@ export class DevicesServiceClass {
         value: device.value,
       }),
     }).then((res) => res.json());
+  }
+
+  /** Distinct, sorted zones already assigned across the fleet — autocomplete source
+   * for the edit overlay's zone field. */
+  knownZones(): string[] {
+    const zones = (store.get("devices") as Device[])
+      .map((d) => d.zone)
+      .filter((z): z is string => !!z);
+    return Array.from(new Set(zones)).sort();
   }
 
   saveProp(data: any, prop: string, value?: any) {

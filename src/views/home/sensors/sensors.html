@@ -25,14 +25,5 @@
         <span class="metric"><i class="iconoir-temperature-high"></i> ${sensor.value.temperature}</span>
         <span class="metric"><i class="iconoir-droplet"></i> ${sensor.value.humidity}</span>
     </div>
-
-    <button
-        :if="sensor.sensorType === 'presence' && sensor.ip"
-        class="calibrate-btn"
-        :onmouseup="this.calibrateSensor(event, sensor)"
-        :class:calibrating="sensor.calibrating"
-    >
-        <i class="iconoir-refresh"></i> Calibrate
-    </button>
 </div>
 <div class="env-empty" :else>No sensors detected</div>

@@ -5,6 +5,7 @@ import type { IMenuItem } from "./nav-bar.constants";
 import template from "./nav-bar.html?raw";
 import { storageGet, storageSet } from "../../utils/utils.service";
 import { NavActions } from "../../store/actions";
+import { refreshNow } from "../../utils/ws-handler";
 
 class NavBarClass extends Component<NavBarState> {
   private activeMenuItemId: string = '';
@@ -18,8 +19,14 @@ class NavBarClass extends Component<NavBarState> {
         activeMenuItemId: this.activeMenuItemId,
         items: NavBarItems,
         setActiveNavBarItem: (i) => this.setActiveNavBarItem(i),
+        wsState: 'connected',
+        refresh: () => refreshNow(),
       },
       ready: () => this.ready()
+    });
+
+    bus.on('ws:status', ({ state }) => {
+      this.bind.wsState = state;
     });
   }
 

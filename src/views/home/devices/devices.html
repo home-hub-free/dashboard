@@ -4,13 +4,13 @@
     :foreach="device in this.devices"
     :key="device.id"
     :class="'cat-' + device.deviceCategory"
-    :class:wide="device.deviceCategory === 'evap-cooler' || device.deviceCategory === 'camera'"
-    :class:on="(device.deviceCategory === 'light' && device.value) || ((device.deviceCategory === 'dimmable-light' || device.deviceCategory === 'blinds') && device.value > 0) || (device.deviceCategory === 'evap-cooler' && (device.value.fan || device.value.water))"
+    :class:wide="device.wide"
+    :class:on="device.isOn"
     :class:manual="device.manual"
     :onclick="this.onTileClick(device)"
     oncontextmenu="return false;"
 >
-    <!-- CAMERA: full-bleed preview with overlaid label -->
+    <!-- CAMERA: full-bleed preview with overlaid label (no scalar channels) -->
     <div class="cam-wrap" :if="device.deviceCategory === 'camera'">
         <img :if="device.value" :src="device.value" alt="" />
         <div :else class="cam-placeholder"><i class="iconoir-video-camera"></i></div>
@@ -20,75 +20,57 @@
         </div>
     </div>
 
-    <!-- EVAP COOLER: wide tile with temps + fan/water quick toggles -->
-    <div class="cooler" :if="device.deviceCategory === 'evap-cooler'">
-        <div class="cooler-main">
-            <div class="tile-name">${device.name}</div>
-            <div class="cooler-temps">
-                <span class="room-temp" :class:reached="Math.round(device.value['room-temp']) <= device.value.target">
-                    ${(device.value['room-temp']).toFixed(1)}°
-                </span>
-                <span class="target-temp"><i class="iconoir-home-temperature-in"></i> ${device.value.target}°</span>
-            </div>
-        </div>
-        <div class="cooler-controls">
-            <button
-                class="chip"
-                :class:on="device.value.fan"
-                :onclick="this.onEvapToggle(event, 'fan', device)"
-            >
-                <i class="iconoir-wind" :class:spin="device.value.fan"></i> Fan
-            </button>
-            <button
-                class="chip"
-                :class:on="device.value.water"
-                :onclick="this.onEvapToggle(event, 'water', device)"
-            >
-                <i class="iconoir-droplet"></i> Water
-            </button>
-            <i class="tile-edit iconoir-more-horiz" :onclick="this.onEditClick(event, device)"></i>
-        </div>
-    </div>
-
-    <!-- LIGHT / DIMMABLE / BLINDS: square switch-style tile -->
-    <div class="tile-inner" :if="device.deviceCategory !== 'camera' && device.deviceCategory !== 'evap-cooler'">
+    <!-- EVERY OTHER DEVICE: one generic, channel-driven tile -->
+    <div class="tile-inner" :if="device.deviceCategory !== 'camera'">
         <div class="tile-top">
-            <span class="tile-icon">
-                <i :if="device.deviceCategory === 'light'" :class:iconoir-light-bulb-on="device.value" :class:iconoir-light-bulb="!device.value"></i>
-                <i :if="device.deviceCategory === 'dimmable-light'" :class:iconoir-light-bulb-on="device.value > 0" :class:iconoir-light-bulb="device.value <= 0"></i>
-                <i :if="device.deviceCategory === 'blinds'" class="iconoir-windows"></i>
-            </span>
+            <span class="tile-icon"><i :class="device.icon"></i></span>
             <i class="tile-edit iconoir-more-horiz" :onclick="this.onEditClick(event, device)"></i>
         </div>
 
         <div class="tile-body">
             <div class="tile-name">${device.name}</div>
-
-            <div class="tile-status" :if="device.deviceCategory === 'light'">
-                ${device.value ? 'On' : 'Off'}
-            </div>
-
-            <div class="tile-status" :if="device.deviceCategory === 'dimmable-light'">
-                ${device.value > 0 ? 'On · ' + device.value + '%' : 'Off'}
-            </div>
-
-            <div class="tile-status" :if="device.deviceCategory === 'blinds'">
-                ${device.value > 0 ? 'Open · ' + device.value + '%' : 'Closed'}
-            </div>
+            <div class="tile-status" :if="device.status">${device.status}</div>
         </div>
 
-        <!-- Inline brightness slider for dimmable lights -->
-        <input
-            :if="device.deviceCategory === 'dimmable-light'"
-            class="tile-slider"
-            type="range"
-            min="0"
-            max="100"
-            :value="device.value + ''"
-            :onclick="this.stop(event)"
-            :oninput="this.onSliderInput(event, device)"
-            :onchange="this.onSliderCommit(event, device)"
-        />
+        <!-- One control per channel; the widget is chosen by channel.control. -->
+        <div class="tile-controls">
+            <div class="channel-control" :foreach="channel in device.channels" :key="channel.key">
+                <!-- boolean actuator → chip toggle (cooler fan/water) -->
+                <button
+                    class="chip"
+                    :if="channel.control === 'chip'"
+                    :class:on="channel.value"
+                    :onclick="this.onChannelSet(event, channel.deviceId, channel.key, !channel.value)"
+                >
+                    <i :class="channel.icon" :class:spin="channel.value === true && channel.key === 'fan'"></i> ${channel.label}
+                </button>
+
+                <!-- number actuator → slider (dimmable brightness) -->
+                <input
+                    :if="channel.control === 'slider'"
+                    class="tile-slider"
+                    type="range"
+                    :min="channel.min + ''"
+                    :max="channel.max + ''"
+                    :value="channel.value + ''"
+                    :onclick="this.stop(event)"
+                    :onchange="this.onChannelSlider(event, channel.deviceId, channel.key)"
+                />
+
+                <!-- number setting → stepper (cooler target) -->
+                <div class="stepper" :if="channel.control === 'stepper'">
+                    <span class="stepper-readout"><i :class="channel.icon"></i> ${channel.display}</span>
+                    <button class="step" :onclick="this.onChannelStep(event, channel.deviceId, channel.key, -1)"><i class="iconoir-minus"></i></button>
+                    <button class="step" :onclick="this.onChannelStep(event, channel.deviceId, channel.key, 1)"><i class="iconoir-plus"></i></button>
+                </div>
+
+                <!-- sensor → readout (cooler room/unit temps) -->
+                <div class="readout" :if="channel.control === 'readout'">
+                    <span class="readout-val">${channel.display}</span>
+                    <span class="readout-label">${channel.label}</span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 <div class="empty-state" :else>

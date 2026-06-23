@@ -7,6 +7,7 @@ export type Sensor = {
   type: 'boolean' | 'value'
   ip?: string;
   calibrating?: boolean;
+  calPct?: number;
   operationalRanges: string[],
   sensorType: 'motion' | 'presence' | 'temp/humidity' ;
 }
@@ -15,6 +16,8 @@ export type SensorUpdateEvent = {
   id: string,
   value?: any;
   name?: string;
+  calibrating?: boolean;
+  calPct?: number;
 }
 
 export type SensorWSEvents = {
@@ -25,5 +28,14 @@ export type SensorWSEvents = {
 export type SensorsTabState = {
   sensors: Sensor[],
   sensorTouchEnd: (event: any, sensor: Sensor) => void,
-  calibrateSensor: (event: Event, sensor: Sensor) => Promise<void>
+}
+
+// Transient calibration flags carried on the detail-overlay's data copy. They
+// are not part of the persisted sensor — only the open overlay reads them.
+export type SensorCalibrationState = {
+  calibrateArmed?: boolean;       // step 1 pressed → showing the confirm/disclaimer
+  calibrationStarting?: boolean;  // confirmed → counting down before the server call
+  calibrationCountdown?: number;  // seconds left in that pre-start delay
+  calibrating?: boolean;          // server reports a pass is running
+  calPct?: number;                // live progress 0–100
 }

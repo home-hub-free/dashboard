@@ -1,9 +1,11 @@
 import io from "socket.io-client/dist/socket.io.js";
 import { DeviceActions } from "../store/actions";
 import { OverlayModal } from "../components/overlay-modal/overlay-modal";
+import { server } from "./server-handler";
 
-const cameraWSEndpoint = "http://192.168.1.199:8082/";
-const cameraWS = io.connect(cameraWSEndpoint);
+const cameraWSEndpoint = new URL(server);
+cameraWSEndpoint.port = "8082";
+const cameraWS = io.connect(cameraWSEndpoint.toString());
 
 const feeds: string[] = [];
 

@@ -627,6 +627,78 @@ label.radio {
   letter-spacing: var(--letter-spacing-wide);
 }
 
+// ----------------------------------------------------------------------------
+// Calibration (presence-sensor detail overlay, 2-step trigger)
+// ----------------------------------------------------------------------------
+.calibrate-setting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  .calibrate-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--color-surface-secondary);
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: var(--transition-normal);
+
+    &:hover { color: var(--color-text-primary); }
+
+    &.confirm {
+      flex: 1;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+    &.cancel { color: var(--color-text-tertiary); }
+
+    i { font-size: 15px; }
+  }
+
+  .calibrate-confirm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .calibrate-disclaimer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-warning-lighter);
+    color: var(--color-warning-dark);
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+
+    i { font-size: 16px; flex-shrink: 0; }
+  }
+
+  .calibrate-actions { display: flex; gap: var(--space-2); }
+
+  .calibrate-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-secondary);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+
+    .spin { animation: spin 1s linear infinite; }
+  }
+}
+
 .operational-range {
   display: flex;
   justify-content: space-between;

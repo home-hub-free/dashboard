@@ -134,25 +134,6 @@
       i { font-size: 15px; color: var(--color-text-tertiary); }
     }
   }
-
-  .calibrate-btn {
-    margin-top: 2px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    align-self: flex-start;
-    padding: 5px 10px;
-    border: none;
-    border-radius: 999px;
-    background: var(--color-surface-secondary);
-    color: var(--color-text-secondary);
-    font-size: 0.78rem;
-    font-family: inherit;
-    cursor: pointer;
-
-    i { font-size: 14px; }
-    &.calibrating i { animation: spin 1s linear infinite; }
-  }
 }
 
 .env-empty {
@@ -268,6 +249,79 @@
   }
 }
 
+// ---- Generic channel controls (Stage 4c) -----------------------------------
+// Tiles render one control per channel (chip / slider / stepper / readout),
+// chosen by channel.control in decorateDevice. The wrapper uses display:contents
+// so each control becomes a direct flex item of .tile-controls.
+.tile-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.channel-control { display: contents; }
+
+#devices .tile-controls .tile-slider { flex: 1 1 100%; margin-top: 4px; }
+#devices .stepper .step { flex: 0 0 auto; width: 30px; }
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  .stepper-readout {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+  }
+
+  .step {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 999px;
+    background: var(--color-surface-secondary);
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    cursor: pointer;
+
+    i { font-size: 16px; }
+  }
+}
+
+.readout {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+
+  .readout-val {
+    font-size: 1.4rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+
+    &.reached { color: var(--color-success); }
+  }
+
+  .readout-label {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+  }
+}
+
+// Cooler (wide) lays its temps out prominently on the left, controls on the right.
+.device-tile.cat-evap-cooler .tile-controls {
+  gap: 14px;
+
+  .readout .readout-val { font-size: 1.6rem; }
+}
+
+.chip i.spin { animation: spin 1s linear infinite; }
+
 // ---- Lit states -------------------------------------------------------------
 // Lights & dimmables glow warm amber when on (reads like a real bulb).
 .device-tile.cat-light.on,
@@ -356,6 +410,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex: 0 0 auto;        // content-width (beats buttons.scss' global width:100%)
+  width: auto;
   padding: 8px 14px;
   border: none;
   border-radius: 999px;

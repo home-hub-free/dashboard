@@ -10,6 +10,7 @@ export type BusEvents = {
   'sensor:update': Sensor;
   'sensor:declare': Sensor;
   'camera:frame': { deviceId: string; blobUrl: string };
+  'ws:status': { state: 'connected' | 'disconnected' | 'syncing' };
 };
 
 type Handler<K extends keyof BusEvents> = (data: BusEvents[K]) => void;

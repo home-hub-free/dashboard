@@ -7,7 +7,7 @@ import { closeOverlay, openOverlay } from "../../../components/overlay-modal/ove
 import NewAutomationOverlay from "../overlay-views/new-automation-overlay.html?raw";
 import { showToaster } from "../../../components/popup-message/popup-message";
 import { EffectActions } from "../../../store/actions";
-import { NewEffect, NormalizedEffect } from "../automations.model";
+import { Condition, EffectOp, NewEffect, NormalizedEffect } from "../automations.model";
 import { AutomationsListTabService, AutomationsListTabServiceClass } from "./automations-list.service";
 import { Device } from "../../home/devices/devices.model";
 import { Sensor } from "../../home/sensors/sensors.model";
@@ -106,10 +106,10 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
   }
 
   private saveNewEffect(effect: NewEffect) {
-    // The write path still posts the legacy AutoEffect shape; we then re-pull the
-    // server-derived normalized view so the list reflects the new rule immediately
-    // (the store holds NormalizedEffect[], so we can't just push the legacy form).
-    saveEffect(new EffectBuilder(effect))
+    // Stage 4b: the write path posts the normalized contract directly (the same
+    // shape the store holds). We still re-pull the server view afterwards so the
+    // list reflects the canonical, server-assigned form.
+    saveEffect(buildNormalizedEffect(effect))
       .then(() => getEndPointData('get-effects-normalized'))
       .then((effects: NormalizedEffect[]) => {
         EffectActions.load(effects || []);
@@ -124,50 +124,75 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
 }
 export const AutomationsList = new AutomationsListClass(AutomationsListTabService);
 
-class EffectBuilder {
+// ---------------------------------------------------------------------------
+// Normalized-effect construction (Stage 4b). Mirrors the server's
+// effects-normalize.ts so the dashboard authors rules in the stored contract.
+// ---------------------------------------------------------------------------
 
-  set: { id: string, valueToSet: string, value: any };
-  when: { id: string | null, type: 'time' | 'sensor', is: any };
+/** Primary actuator channel for a single-value device category. */
+function primaryChannel(category: string | undefined): string {
+  switch (category) {
+    case 'light':
+    case 'door':
+      return 'power';
+    case 'dimmable-light':
+      return 'brightness';
+    case 'blinds':
+      return 'position';
+    case 'evap-cooler':
+      return 'fan'; // multi-channel; real cooler rules carry valueToSet
+    default:
+      return 'value';
+  }
+}
 
-  constructor(newEffect: NewEffect) {
-    this.set = {
-      id: newEffect.device.id,
-      valueToSet: newEffect.valueToSet,
-      value: newEffect.setTo,
-    }
+/** The channel a temp/humidity sensor field maps to. */
+function valueChannel(field: string | undefined): string {
+  if (field === 'temp') return 'temperature';
+  if (field === 'humidity') return 'humidity';
+  return field || 'value';
+}
 
-    if (newEffect.valueToSet) {
-      this.set.valueToSet = newEffect.valueToSet;
-    }
+function comparisonToOp(comparison: string | undefined): EffectOp {
+  return comparison === 'higher-than' ? 'gt' : comparison === 'lower-than' ? 'lt' : 'eq';
+}
 
-    let target = null;
-    switch (newEffect.trigger) {
-      case 'time':
-        target = newEffect.time;
-      case 'sensor':
-        const type = newEffect.sensor?.type;
-        if (type === 'value') {
-          if (newEffect.sensor?.sensorType === 'temp/humidity') {
-            target = this.buildTempHumidityTarget(newEffect);
-          } else {
-            target = this.buildValueTarget(newEffect);
+/** Coerce a form value (often a string) to the typed boolean | number. */
+function coerce(v: any): boolean | number {
+  if (typeof v === 'boolean' || typeof v === 'number') return v;
+  if (v === 'true') return true;
+  if (v === 'false') return false;
+  const n = Number(v);
+  return isNaN(n) ? (v as any) : n;
+}
+
+function buildNormalizedEffect(newEffect: NewEffect): NormalizedEffect {
+  const channel = newEffect.valueToSet || primaryChannel(newEffect.device.deviceCategory);
+  const set = { nodeId: newEffect.device.id, channel, value: coerce(newEffect.setTo) };
+
+  let when: Condition;
+  if (newEffect.trigger === 'time') {
+    when = { source: 'time', at: String(newEffect.time ?? '') };
+  } else {
+    const sensor = newEffect.sensor!;
+    const field = sensor.sensorType === 'temp/humidity' ? newEffect.valueToCheck : undefined;
+    when =
+      sensor.type === 'value'
+        ? {
+            source: 'sensor',
+            nodeId: sensor.id,
+            channel: valueChannel(field),
+            op: comparisonToOp(newEffect.comparassion),
+            value: coerce(newEffect.sensorState),
           }
-        } else {
-          target = newEffect.sensorState;
-        }
-    }
-    this.when = {
-      id: newEffect.sensor?.id || null,
-      type: newEffect.trigger,
-      is: target,
-    }
+        : {
+            source: 'sensor',
+            nodeId: sensor.id,
+            channel: 'presence',
+            op: 'eq',
+            value: coerce(newEffect.sensorState),
+          };
   }
 
-  private buildTempHumidityTarget(newEffect: NewEffect) {
-    return `${newEffect.valueToCheck}:${newEffect.comparassion}:${newEffect.sensorState}`;
-  }
-
-  private buildValueTarget(newEffect: NewEffect) {
-    return `${newEffect.comparassion}:${newEffect.sensorState}`;
-  }
+  return { when, set, enabled: true };
 }

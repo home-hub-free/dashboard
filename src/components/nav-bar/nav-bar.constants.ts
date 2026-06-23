@@ -4,6 +4,8 @@ export interface NavBarState {
   activeMenuItemId: string;
   items: IMenuItem[];
   setActiveNavBarItem: (menuItem: IMenuItem) => void;
+  wsState: 'connected' | 'disconnected' | 'syncing';
+  refresh: () => void;
 }
 
 export interface IMenuItem {

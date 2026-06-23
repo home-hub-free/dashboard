@@ -21,3 +21,18 @@
     </span>
   </div>
 </div>
+
+<div
+  class="menu-item nav-refresh"
+  :class:syncing="this.wsState === 'syncing'"
+  :class:offline="this.wsState === 'disconnected'"
+  :onmousedown="this.refresh()"
+>
+  <div class="item-container">
+    <span class="menu-item-icon">
+      <i class="iconoir-refresh-double"></i>
+      <span class="ws-dot"></span>
+    </span>
+    <span class="menu-item-text"> Refresh </span>
+  </div>
+</div>

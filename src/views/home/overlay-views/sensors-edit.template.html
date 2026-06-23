@@ -18,4 +18,45 @@
             :oninput="this.actions.saveProp(this.data, 'name')"
         />
     </div>
+
+    <div :if="this.data.sensorType === 'presence'" class="form-group calibrate-setting">
+        <label>Calibration</label>
+
+        <!-- Step 1: arm -->
+        <button
+            :if="!this.data.calibrateArmed && !this.data.calibrationStarting && !this.data.calibrating"
+            class="calibrate-btn"
+            :onmouseup="this.actions.armCalibration(this.data)"
+        >
+            <i class="iconoir-refresh"></i> Recalibrate sensor
+        </button>
+
+        <!-- Step 2: confirm (with disclaimer) -->
+        <div :if="this.data.calibrateArmed" class="calibrate-confirm">
+            <p class="calibrate-disclaimer">
+                <i class="iconoir-warning-triangle"></i>
+                Leave the room while calibrating — the sensor learns the empty-room baseline.
+            </p>
+            <div class="calibrate-actions">
+                <button class="calibrate-btn confirm" :onmouseup="this.actions.startCalibration(this.data)">
+                    <i class="iconoir-check"></i> Start calibration
+                </button>
+                <button class="calibrate-btn cancel" :onmouseup="this.actions.cancelCalibration(this.data)">
+                    Cancel
+                </button>
+            </div>
+        </div>
+
+        <!-- Pre-start delay: give the user time to step out -->
+        <div :if="this.data.calibrationStarting" class="calibrate-progress">
+            <i class="iconoir-walking"></i>
+            Leave the room — starting in ${this.data.calibrationCountdown}s…
+        </div>
+
+        <!-- Running -->
+        <div :if="this.data.calibrating" class="calibrate-progress">
+            <i class="iconoir-refresh spin"></i>
+            Calibrating ${this.data.calPct || 0}%
+        </div>
+    </div>
 </div>
