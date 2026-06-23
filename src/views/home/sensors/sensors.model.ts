@@ -6,6 +6,10 @@ export type Sensor = {
   value: any;
   type: 'boolean' | 'value'
   ip?: string;
+  /** Physical room/area the sensor lives in — install-time topology, user-set in
+   * the edit overlay. Drives per-zone routing on the memory/LLM side (the sensor's
+   * ingestion topic is homehub/<zone>/<id>/<channel>). */
+  zone?: string;
   calibrating?: boolean;
   calPct?: number;
   operationalRanges: string[],

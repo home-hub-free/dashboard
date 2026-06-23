@@ -67,6 +67,9 @@ class SensorsTabClass extends Component<SensorsTabState> {
       template: SensorEditView,
       data: {
         ...sensor,
+        // Existing zones across devices + sensors — feeds the <datalist> so the
+        // user picks a known room instead of free-typing a variant.
+        zones: this.knownZones(),
       },
       actions: {
         saveProp: this.sensorsService.saveProp,
@@ -77,6 +80,14 @@ class SensorsTabClass extends Component<SensorsTabState> {
       startRect: rect,
       padding: { x: 50, y: 200 }
     });
+  }
+
+  /** Distinct, sorted zones already assigned across devices + sensors —
+   * autocomplete source for the edit overlay's zone field. */
+  private knownZones(): string[] {
+    const zoned = [...store.get('sensors'), ...store.get('devices')] as Array<{ zone?: string }>;
+    const zones = zoned.map((n) => n.zone).filter((z): z is string => !!z);
+    return Array.from(new Set(zones)).sort();
   }
 
   // --- Calibration (detail overlay, 2-step) --------------------------------
