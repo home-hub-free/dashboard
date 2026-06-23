@@ -13,6 +13,11 @@ import SensorEditView from "../overlay-views/sensors-edit.template.html?raw";
 import { SensorsService, SensorsServiceClass } from "./sensors.service";
 import { showToaster } from "../../../components/popup-message/popup-message";
 import * as serverHandler from "../../../utils/server-handler";
+import {
+  addZone as svcAddZone,
+  removeZone as svcRemoveZone,
+  zoneOptions,
+} from "../../../utils/zones.service";
 
 // Seconds between confirming calibration and the actual trigger — a slight grace
 // window so the user can step out of the room before the radar reads the baseline.
@@ -67,27 +72,50 @@ class SensorsTabClass extends Component<SensorsTabState> {
       template: SensorEditView,
       data: {
         ...sensor,
-        // Existing zones across devices + sensors — feeds the <datalist> so the
-        // user picks a known room instead of free-typing a variant.
-        zones: this.knownZones(),
+        // Options for the zone <select>, current value ordered first (see
+        // zoneOptions). Picks from the shared registry instead of free-typing.
+        zoneOptions: zoneOptions(sensor.zone, store.get("zones")),
       },
       actions: {
         saveProp: this.sensorsService.saveProp,
         armCalibration: this.armCalibration.bind(this),
         cancelCalibration: this.cancelCalibration.bind(this),
         startCalibration: this.startCalibration.bind(this),
+        saveZone: this.saveZone.bind(this),
+        addZone: this.addZone.bind(this),
+        removeZone: this.removeZone.bind(this),
       },
       startRect: rect,
       padding: { x: 50, y: 200 }
     });
   }
 
-  /** Distinct, sorted zones already assigned across devices + sensors —
-   * autocomplete source for the edit overlay's zone field. */
-  private knownZones(): string[] {
-    const zoned = [...store.get('sensors'), ...store.get('devices')] as Array<{ zone?: string }>;
-    const zones = zoned.map((n) => n.zone).filter((z): z is string => !!z);
-    return Array.from(new Set(zones)).sort();
+  /** Persist the dropdown's selected zone. Re-orders zoneOptions so the chosen
+   * value stays first (= selected) across the overlay re-render. */
+  private saveZone(data: any) {
+    const el = document.getElementById(data.id + '_zone') as HTMLSelectElement | null;
+    const value = el?.value ?? '';
+    serverHandler.submitDataChange(data.id, 'sensors', 'zone', value);
+    this.patchOverlay({ zone: value, zoneOptions: zoneOptions(value, store.get('zones')) });
+  }
+
+  /** Add a new zone to the shared registry and assign it to this sensor. */
+  private async addZone(data: any) {
+    const input = document.getElementById(data.id + '_zoneNew') as HTMLInputElement | null;
+    const name = input?.value?.trim();
+    if (!name) return;
+    const zones = await svcAddZone(name);
+    if (input) input.value = '';
+    serverHandler.submitDataChange(data.id, 'sensors', 'zone', name);
+    this.patchOverlay({ zone: name, zoneOptions: zoneOptions(name, zones) });
+  }
+
+  /** Remove this sensor's current zone from the shared registry, unassigning it. */
+  private async removeZone(data: any) {
+    if (!data.zone) return;
+    const zones = await svcRemoveZone(data.zone);
+    serverHandler.submitDataChange(data.id, 'sensors', 'zone', '');
+    this.patchOverlay({ zone: '', zoneOptions: zoneOptions('', zones) });
   }
 
   // --- Calibration (detail overlay, 2-step) --------------------------------

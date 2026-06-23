@@ -6,6 +6,7 @@ export type AppState = {
   devices: Device[];
   sensors: Sensor[];
   effects: NormalizedEffect[];
+  zones: string[];
   activeMenuId: string;
   activeTabId: string;
 };
@@ -17,6 +18,7 @@ class Store {
     devices: [],
     sensors: [],
     effects: [],
+    zones: [],
     activeMenuId: '',
     activeTabId: '',
   };

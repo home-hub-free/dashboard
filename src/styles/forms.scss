@@ -455,6 +455,31 @@ input[type="range"]:disabled {
   }
 }
 
+// Zone field — dropdown plus inline add/remove management of the shared registry
+.zone-manage {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+
+  input {
+    flex: 1 1 8rem;
+    min-width: 0;
+  }
+
+  button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  button.danger {
+    color: var(--color-danger, #c0524a);
+    border-color: var(--color-danger, #c0524a);
+    background: transparent;
+  }
+}
+
 // Range value display (e.g., showing slider's current value)
 .range-value {
   display: inline-block;

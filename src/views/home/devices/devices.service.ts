@@ -12,6 +12,11 @@ import {
   toggleServerDevice,
 } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
+import {
+  addZone as svcAddZone,
+  removeZone as svcRemoveZone,
+  zoneOptions,
+} from "../../../utils/zones.service";
 import DeviceEditView from "../overlay-views/devices-edit.template.html?raw";
 import { Device } from "./devices.model";
 
@@ -69,9 +74,9 @@ export class DevicesServiceClass {
           ...device,
           inputType,
           parsedRanges,
-          // Existing zones across the fleet — feeds the edit overlay's <datalist>
-          // so the user picks a known room instead of free-typing a variant.
-          zones: this.knownZones(),
+          // Options for the zone <select>, current value ordered first (see
+          // zoneOptions). Picks from the shared registry instead of free-typing.
+          zoneOptions: zoneOptions(device.zone, store.get("zones")),
         },
         actions: {
           saveProp: this.saveProp.bind(this),
@@ -80,6 +85,9 @@ export class DevicesServiceClass {
           updateEvapCoolerTarget: this.updateEvapCoolerTarget.bind(this),
           saveOperationalRanges: this.saveOperationalRanges.bind(this),
           removeOperationalRange: this.removeOperationalRange.bind(this),
+          saveZone: this.saveZone.bind(this),
+          addZone: this.addZone.bind(this),
+          removeZone: this.removeZone.bind(this),
         },
         startRect: rect,
         padding: { x: 6, y: 50 },
@@ -211,13 +219,35 @@ export class DevicesServiceClass {
     }).then((res) => res.json());
   }
 
-  /** Distinct, sorted zones already assigned across devices + sensors — autocomplete
-   * source for the edit overlay's zone field (unified so both edit panels suggest
-   * the same room list). */
-  knownZones(): string[] {
-    const zoned = [...store.get("devices"), ...store.get("sensors")] as Array<{ zone?: string }>;
-    const zones = zoned.map((n) => n.zone).filter((z): z is string => !!z);
-    return Array.from(new Set(zones)).sort();
+  /** Persist the dropdown's selected zone. Re-orders zoneOptions so the chosen
+   * value stays first (= selected) across the overlay re-render. */
+  saveZone(data: any) {
+    const el = document.getElementById(data.id + "_zone") as HTMLSelectElement | null;
+    const value = el?.value ?? "";
+    data.zone = value;
+    submitDataChange(data.id, "devices", "zone", value);
+    updateOverlayData({ ...data, zoneOptions: zoneOptions(value, store.get("zones")) });
+  }
+
+  /** Add a new zone to the shared registry and assign it to this device. */
+  async addZone(data: any) {
+    const input = document.getElementById(data.id + "_zoneNew") as HTMLInputElement | null;
+    const name = input?.value?.trim();
+    if (!name) return;
+    const zones = await svcAddZone(name);
+    if (input) input.value = "";
+    data.zone = name;
+    submitDataChange(data.id, "devices", "zone", name);
+    updateOverlayData({ ...data, zoneOptions: zoneOptions(name, zones) });
+  }
+
+  /** Remove this device's current zone from the shared registry, unassigning it. */
+  async removeZone(data: any) {
+    if (!data.zone) return;
+    const zones = await svcRemoveZone(data.zone);
+    data.zone = "";
+    submitDataChange(data.id, "devices", "zone", "");
+    updateOverlayData({ ...data, zoneOptions: zoneOptions("", zones) });
   }
 
   saveProp(data: any, prop: string, value?: any) {

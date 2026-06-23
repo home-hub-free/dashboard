@@ -1,6 +1,7 @@
 import { getEndPointData } from "./server-handler";
 import { DeviceActions, SensorActions, EffectActions } from "../store/actions";
 import { SensorsService } from "../views/home/sensors/sensors.service";
+import { loadZones } from "./zones.service";
 
 let syncing = false;
 
@@ -25,6 +26,7 @@ export async function syncState(): Promise<boolean> {
       getEndPointData("get-devices"),
       getEndPointData("get-sensors"),
       getEndPointData("get-effects-normalized"),
+      loadZones(),
     ]);
 
     DeviceActions.load(devicesData);

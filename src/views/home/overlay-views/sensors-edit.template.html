@@ -20,20 +20,21 @@
     </div>
 
     <!-- Zone (physical room / area) -->
-    <div class="form-group device-setting">
+    <div class="form-group device-setting zone-field">
         <label :for="this.data.id + '_zone'">Zone</label>
-        <input
+        <select
+            class="dropdown"
             :id="this.data.id + '_zone'"
             :name="this.data.id + '_zone'"
-            type="text"
-            list="zone-options"
-            placeholder="e.g. kitchen"
-            :value="this.data.zone"
-            :onchange="this.actions.saveProp(this.data, 'zone')"
-        />
-        <datalist id="zone-options">
-            <option :foreach="zone in this.data.zones" :key="zone" :value="zone"></option>
-        </datalist>
+            :oninput="this.actions.saveZone(this.data)"
+        >
+            <option :foreach="zone in this.data.zoneOptions" :key="zone" :value="zone">${zone || '— Unassigned —'}</option>
+        </select>
+        <div class="zone-manage">
+            <input :id="this.data.id + '_zoneNew'" type="text" placeholder="New zone name" />
+            <button type="button" :onclick="this.actions.addZone(this.data)">Add</button>
+            <button type="button" :if="this.data.zone" class="danger" :onclick="this.actions.removeZone(this.data)">Remove “${this.data.zone}”</button>
+        </div>
     </div>
 
     <div :if="this.data.sensorType === 'presence'" class="form-group calibrate-setting">

@@ -115,6 +115,20 @@ export function saveEffects(effects: AutoEffect[]) {
   });
 }
 
+/** Canonical zones registry (the house room list). */
+export function getZones(): Promise<string[]> {
+  return getEndPointData("get-zones");
+}
+
+/** Replace the whole zones registry; the server returns the normalized list. */
+export function setZones(zones: string[]): Promise<string[]> {
+  return fetch(server + "set-zones", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ zones }),
+  }).then((res) => res.json());
+}
+
 export function requestCalendarData() {
   return fetch(server + "emma-calendar", {
     method: "GET",
