@@ -211,12 +211,12 @@ export class DevicesServiceClass {
     }).then((res) => res.json());
   }
 
-  /** Distinct, sorted zones already assigned across the fleet — autocomplete source
-   * for the edit overlay's zone field. */
+  /** Distinct, sorted zones already assigned across devices + sensors — autocomplete
+   * source for the edit overlay's zone field (unified so both edit panels suggest
+   * the same room list). */
   knownZones(): string[] {
-    const zones = (store.get("devices") as Device[])
-      .map((d) => d.zone)
-      .filter((z): z is string => !!z);
+    const zoned = [...store.get("devices"), ...store.get("sensors")] as Array<{ zone?: string }>;
+    const zones = zoned.map((n) => n.zone).filter((z): z is string => !!z);
     return Array.from(new Set(zones)).sort();
   }
 
