@@ -169,6 +169,9 @@ export class DevicesServiceClass {
         ...device,
         inputType,
         parsedRanges,
+        // Options for the zone <select>, current value ordered first (see
+        // zoneOptions). Picks from the shared registry instead of free-typing.
+        zoneOptions: zoneOptions(device.zone, store.get("zones")),
       },
       actions: {
         saveProp: this.saveProp.bind(this),
@@ -177,6 +180,9 @@ export class DevicesServiceClass {
         updateEvapCoolerTarget: this.updateEvapCoolerTarget.bind(this),
         saveOperationalRanges: this.saveOperationalRanges.bind(this),
         removeOperationalRange: this.removeOperationalRange.bind(this),
+        saveZone: this.saveZone.bind(this),
+        addZone: this.addZone.bind(this),
+        removeZone: this.removeZone.bind(this),
       },
       startRect: rect,
       padding: { x: 6, y: 50 },
