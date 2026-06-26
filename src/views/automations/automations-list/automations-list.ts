@@ -68,7 +68,7 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
       const targetId = effect.arms[0]?.set.nodeId ?? 'unknown';
       if (!groups[targetId]) {
         const device = store.get('devices').find((d: Device) => d.id === targetId);
-        groups[targetId] = { effects: [], name: device?.name || 'N/A' };
+        groups[targetId] = { effects: [], name: device?.name || 'N/A', icon: deviceIcon(device) };
       }
       groups[targetId].effects.push(effect);
     });
@@ -218,6 +218,23 @@ export const AutomationsList = new AutomationsListClass(AutomationsListTabServic
 // (context-conditioned rules) is a follow-on; the agent/Discovery already create them
 // and they now display correctly here.
 // ---------------------------------------------------------------------------
+
+/** Tile-style iconoir glyph for a rule's target device (mirrors the home tiles). */
+function deviceIcon(device: Device | undefined): string {
+  switch (device?.deviceCategory) {
+    case 'light':
+    case 'dimmable-light':
+      return 'iconoir-light-bulb';
+    case 'blinds':
+      return 'iconoir-windows';
+    case 'evap-cooler':
+      return 'iconoir-snow-flake';
+    case 'camera':
+      return 'iconoir-video-camera';
+    default:
+      return 'iconoir-flash';
+  }
+}
 
 /** Primary actuator channel for a single-value device category. */
 function primaryChannel(category: string | undefined): string {

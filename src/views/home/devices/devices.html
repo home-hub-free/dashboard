@@ -13,7 +13,10 @@
     <!-- CAMERA: full-bleed preview with overlaid label (no scalar channels) -->
     <div class="cam-wrap" :if="device.deviceCategory === 'camera'">
         <img :if="device.value" :src="device.value" alt="" />
-        <div :else class="cam-placeholder"><i class="iconoir-video-camera"></i></div>
+        <div :else class="cam-placeholder">
+            <i class="iconoir-video-camera-off"></i>
+            <span>No signal</span>
+        </div>
         <div class="cam-label">
             <i class="iconoir-video-camera"></i>
             <span>${device.name}</span>

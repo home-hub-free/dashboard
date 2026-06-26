@@ -8,9 +8,58 @@
 
 // ---- Detail overlay (device / sensor details) -------------------------------
 #overlay-modal {
+  // Floating layer: clear elevation over the resting (flat + border) surfaces.
   .content {
     border-radius: var(--radius-tile);
     background: var(--color-surface);
+    box-shadow: var(--shadow-modal);
+  }
+
+  // Zone management: dropdown, then a self-contained add row, then the remove
+  // link on its own line (no more cramming input + Add + Remove together).
+  .zone-manage {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+  .zone-add-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+
+    input { flex: 1 1 auto; min-width: 0; }
+
+    button {
+      flex: 0 0 auto;
+      min-height: var(--tap-target-min);
+      padding: 0 18px;
+      border: none;
+      border-radius: var(--radius-control);
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      font-family: inherit;
+      font-weight: var(--font-weight-semibold);
+      cursor: pointer;
+
+      &:active { transform: scale(0.97); }
+    }
+  }
+  .zone-remove {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--tap-target-min);
+    padding: 0 4px;
+    border: none;
+    background: transparent;
+    color: var(--color-error-light);
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+
+    i { font-size: 1.05em; }
+    &:active { opacity: 0.7; }
   }
 
   .edit-container {
@@ -247,33 +296,114 @@
   }
 
   .add-range-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     width: 100%;
     min-height: var(--tap-target-min);
-    border: none;
+    border: 1px solid transparent;
     border-radius: var(--radius-control);
     background: var(--color-primary);
     color: var(--color-text-inverse);
     font-family: inherit;
+    font-size: 1rem;
     font-weight: var(--font-weight-semibold);
     cursor: pointer;
+    transition: background var(--duration-fast) var(--ease-in-out),
+      border-color var(--duration-fast) var(--ease-in-out);
 
-    &:active { transform: scale(0.97); }
+    i { font-size: 1.1em; }
+    &:active { transform: scale(0.98); }
+
+    // The companion action is secondary: outlined, not a second filled primary.
+    &.secondary {
+      background: transparent;
+      color: var(--color-primary-light);
+      border-color: var(--color-border);
+
+      &:active { background: var(--color-surface-secondary); }
+    }
   }
 
+  // One card per target device; rules listed within with a live enabled dot.
   .effect-container {
     margin: 0;
-    padding: 16px;
-    gap: 8px;
+    padding: 14px 16px;
+    gap: 10px;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-chip);
     box-shadow: none;
+  }
+
+  .effect-group-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .eg-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--color-surface-secondary);
+      color: var(--color-text-secondary);
+      font-size: 18px;
+      flex-shrink: 0;
+    }
 
     strong { color: var(--color-text-primary); font-size: 1.05rem; }
+  }
+
+  .effect-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-control);
+    background: var(--color-surface-secondary);
+    border-left: 3px solid var(--color-success);
+
+    // A disabled rule reads muted with a neutral edge.
+    &.disabled {
+      border-left-color: var(--color-gray-600);
+      opacity: 0.65;
+    }
+
+    .effect-dot {
+      margin-top: 6px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--color-gray-500);
+
+      &.on {
+        background: var(--color-success);
+        box-shadow: 0 0 0 4px var(--color-success-rgba-10);
+      }
+    }
+
     // The parsed sentence (innerHTML) — readable, with bold emphasis lifted.
-    > div { color: var(--color-text-secondary); line-height: 1.45; }
-    > div b,
-    > div strong { color: var(--color-text-primary); }
+    .effect-sentence {
+      color: var(--color-text-secondary);
+      line-height: 1.45;
+
+      b, strong { color: var(--color-text-primary); }
+    }
+  }
+
+  .effects-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 60px 20px;
+    color: var(--color-text-tertiary);
+
+    i { font-size: 40px; }
   }
 }
 

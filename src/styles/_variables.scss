@@ -76,7 +76,7 @@
   // Text Colors (dark mode optimized)
   --color-text-primary: #e8e4da;      // Warm cream (main text)
   --color-text-secondary: #b5ada0;    // Light warm gray (secondary text - brighter)
-  --color-text-tertiary: #9a9188;     // Light-medium gray (tertiary - still readable)
+  --color-text-tertiary: #b0a89c;     // Light-medium gray (tertiary) — AA 4.5:1+ on raised surfaces
   --color-text-disabled: #6b6560;     // Disabled text (darker, less contrast)
   --color-text-inverse: #1a1a1a;      // Text on light backgrounds
   --color-border: #3a3a3a;            // Borders on dark backgrounds
@@ -435,9 +435,13 @@ $breakpoint-2xl: 1536px;
   --gradient-active-warm: linear-gradient(150deg, #f7cd76 0%, #eaa53f 100%);
   --glow-active-warm: 0 12px 28px -12px rgba(234, 165, 63, 0.75);
 
-  // Cool "active" accent (blinds open, selected control)
-  --gradient-active-cool: linear-gradient(150deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
-  --glow-active-cool: 0 12px 28px -12px var(--color-primary-rgba-60);
+  // Cool "active" accent (blinds open, selected control). Deliberately a teal,
+  // distinct from the brand sage (--color-primary) used for nav/buttons — so a
+  // device-state fill never reads the same as an interactive control. Three
+  // meanings stay separable: WARM amber = light on, TEAL = other device active,
+  // SAGE = interactive/brand.
+  --gradient-active-cool: linear-gradient(150deg, #86c6ac 0%, #4ea88c 100%);
+  --glow-active-cool: 0 12px 28px -12px rgba(78, 168, 140, 0.6);
 
   // Text/icon color when placed on any filled accent surface (warm or cool)
   --color-on-fill: #241a02;
