@@ -1,11 +1,31 @@
 <div class="effects-list">
     <div class="effects-actions">
-        <button class="add-range-btn" :onclick="this.newAutomation(event)">New Automation</button>
-        <button class="add-range-btn" :onclick="this.newMultiArmAutomation(event)">New Dynamic Rule</button>
+        <button class="add-range-btn" :onclick="this.newAutomation(event)">
+            <i class="iconoir-plus"></i> New Automation
+        </button>
+        <button class="add-range-btn secondary" :onclick="this.newMultiArmAutomation(event)">
+            <i class="iconoir-git-fork"></i> New Dynamic Rule
+        </button>
     </div>
 
     <div :foreach="group in this.groups" :key="group.name" class="effect-container">
-        <strong>${group.name}</strong>
-        <div :foreach="effect in group.effects" :key="effect.sentence" :innerHTML="effect.sentence"></div>
+        <div class="effect-group-head">
+            <span class="eg-icon"><i :class="group.icon"></i></span>
+            <strong>${group.name}</strong>
+        </div>
+        <div
+            :foreach="effect in group.effects"
+            :key="effect.sentence"
+            class="effect-row"
+            :class:disabled="effect.enabled === false"
+        >
+            <span class="effect-dot" :class:on="effect.enabled !== false"></span>
+            <div class="effect-sentence" :innerHTML="effect.sentence"></div>
+        </div>
+    </div>
+
+    <div class="effects-empty" :if="this.groups && !this.groups.length">
+        <i class="iconoir-timer"></i>
+        <span>No automations yet</span>
     </div>
 </div>

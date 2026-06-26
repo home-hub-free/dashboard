@@ -10,4 +10,6 @@ export type AutomationsListTabState = {
 export type EffectsGroup = {
   effects: Effect[],
   name: string;
+  /** iconoir class for the target device — mirrors the home tile icons. */
+  icon: string;
 }
