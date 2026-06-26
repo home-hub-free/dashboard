@@ -13,6 +13,68 @@ export const server =
 export const memoryServer =
   (import.meta as any).env?.VITE_MEMORY_URL || "http://192.168.1.232:8120/";
 
+// Voice-request path. These three services sit behind the same nginx as the
+// dashboard, so the defaults are SAME-ORIGIN relative paths (/gateway/, /voice/,
+// /tts/) — which also means the browser mic + fetches need no CORS and ride the
+// page's (https) secure context. Overridable per-service for local dev.
+export const gatewayServer =
+  (import.meta as any).env?.VITE_GATEWAY_URL || "/gateway/";
+export const voiceServer =
+  (import.meta as any).env?.VITE_VOICE_URL || "/voice/";
+export const ttsServer =
+  (import.meta as any).env?.VITE_TTS_URL || "/tts/";
+
+/** What the agent decided this turn (mirrors llm-gateway /route `x_action`). */
+export type AgentAction = { tool: string; args?: any } | { error: string };
+export type AgentReply = { speech: string; action?: AgentAction };
+
+/**
+ * Send recorded audio to the voice-pipeline STT head (Whisper) and return the
+ * transcript. The multipart field MUST be `audio` (the Go head + worker both read
+ * `audio`). Pass a WAV blob — the worker decodes with libsndfile, which rejects
+ * webm/opus (see audio-wav.ts; callers convert via blobToWav16k first).
+ */
+export async function transcribeAudio(blob: Blob): Promise<string> {
+  const form = new FormData();
+  form.append("audio", blob, "audio.wav");
+  const res = await fetch(voiceServer + "transcribe", { method: "POST", body: form });
+  if (!res.ok) throw new Error(`transcribe failed (${res.status})`);
+  const data = await res.json();
+  return String(data?.text ?? "").trim();
+}
+
+/**
+ * Ask the interactive agent via llm-gateway `/route` (buffered JSON path). Returns
+ * the spoken reply text plus the action the agent took, if any.
+ */
+export async function askAgent(text: string, zone?: string): Promise<AgentReply> {
+  const res = await fetch(gatewayServer + "route", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      messages: [{ role: "user", content: text }],
+      data: zone ? { zone } : undefined,
+    }),
+  });
+  if (!res.ok) throw new Error(`agent failed (${res.status})`);
+  const data = await res.json();
+  return {
+    speech: String(data?.choices?.[0]?.message?.content ?? "").trim(),
+    action: data?.x_action,
+  };
+}
+
+/** Synthesize speech (Fish TTS) and return an audio blob for in-browser playback. */
+export async function synthesizeSpeech(text: string): Promise<Blob> {
+  const res = await fetch(ttsServer + "tts", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) throw new Error(`tts failed (${res.status})`);
+  return res.blob();
+}
+
 export type BlindsConfigureActions =
   | "spin"
   | "switch-direction"
