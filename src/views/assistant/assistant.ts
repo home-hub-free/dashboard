@@ -4,15 +4,23 @@ import template from './assistant.html?raw';
 import { AssistantMenuState } from "./assistant.model";
 import { AssistantMenuService, AssistantMenuServiceClass } from "./assistant.service";
 import { VoiceAskService, VoiceAskServiceClass } from "./voice-ask.service";
+import { HouseholdService, HouseholdServiceClass } from "./household.service";
+import { currentUser } from "../../utils/auth";
 
 class VAssistantContentClass extends Component<AssistantMenuState> {
   assistantMenuService: AssistantMenuServiceClass;
   voiceAskService: VoiceAskServiceClass;
+  householdService: HouseholdServiceClass;
 
-  constructor(assistantMenuService: AssistantMenuServiceClass, voiceAskService: VoiceAskServiceClass) {
+  constructor(
+    assistantMenuService: AssistantMenuServiceClass,
+    voiceAskService: VoiceAskServiceClass,
+    householdService: HouseholdServiceClass,
+  ) {
     super();
     this.assistantMenuService = assistantMenuService;
     this.voiceAskService = voiceAskService;
+    this.householdService = householdService;
   }
 
   mount() {
@@ -32,12 +40,28 @@ class VAssistantContentClass extends Component<AssistantMenuState> {
         voiceAction: '',
         voiceStart: () => this.voiceAskService.start(),
         voiceStop: () => this.voiceAskService.stop(),
+
+        // Household roster + sign-out.
+        signedInName: currentUser()?.displayName || '',
+        meId: '',
+        households: [],
+        householdError: '',
+        newUsername: '',
+        newDisplayName: '',
+        newPassword: '',
+        newTone: '',
+        addHousehold: () => this.householdService.add(),
+        saveTone: (id: string, tone: string) => this.householdService.saveTone(id, tone),
+        removeHousehold: (id: string) => this.householdService.remove(id),
+        signOut: () => this.householdService.signOut(),
       }
     });
 
     // Push voice state onto the (now reactive) bind so capture progress re-renders.
     this.voiceAskService.attach(this.bind);
+    // Load + manage the household roster against the same reactive bind.
+    this.householdService.attach(this.bind);
   }
 }
 
-export const VAssistantContent = new VAssistantContentClass(AssistantMenuService, VoiceAskService);
+export const VAssistantContent = new VAssistantContentClass(AssistantMenuService, VoiceAskService, HouseholdService);

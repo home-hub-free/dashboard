@@ -55,4 +55,71 @@
             <i class="iconoir-megaphone"></i> Say
         </button>
     </section>
+
+    <section class="assistant-section">
+        <p class="section-title">Household</p>
+        <div class="signed-in-row">
+            <span class="signed-in-who">
+                Signed in as <span class="signed-in-name">${this.signedInName}</span>
+            </span>
+            <button class="remove-btn" :onmouseup="this.signOut()">
+                <i class="iconoir-log-out"></i> Sign out
+            </button>
+        </div>
+
+        <p class="household-error" :if="this.householdError">${this.householdError}</p>
+
+        <div class="household-list">
+            <div class="household-row" :foreach="user in this.households" :key="user.id">
+                <div class="household-name">
+                    <span class="household-display">${user.displayName}</span>
+                    <span class="household-you" :if="user.id === this.meId">you</span>
+                </div>
+                <input
+                    class="household-tone-input"
+                    type="text"
+                    placeholder="tone (e.g. casual)"
+                    :value="user.prefs.tone"
+                    :onchange="this.saveTone(user.id, event.target.value)"
+                />
+                <button
+                    class="remove-btn"
+                    :if="user.id !== this.meId"
+                    :onmouseup="this.removeHousehold(user.id)"
+                >
+                    <i class="iconoir-trash"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="household-add">
+            <input
+                type="text"
+                placeholder="username"
+                :value="this.newUsername"
+                :oninput="this.newUsername = event.target.value"
+            />
+            <input
+                type="text"
+                placeholder="display name"
+                :value="this.newDisplayName"
+                :oninput="this.newDisplayName = event.target.value"
+            />
+            <input
+                type="password"
+                placeholder="password"
+                :value="this.newPassword"
+                :oninput="this.newPassword = event.target.value"
+            />
+            <input
+                type="text"
+                placeholder="tone (optional)"
+                :value="this.newTone"
+                :oninput="this.newTone = event.target.value"
+            />
+        </div>
+        <button class="add-range-btn" :onmouseup="this.addHousehold()">
+            <i class="iconoir-user-plus"></i> Add member
+        </button>
+    </section>
 </div>

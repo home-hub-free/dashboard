@@ -1,0 +1,39 @@
+<div class="login-gate" id="login-gate-inner">
+    <form class="login-card" :onsubmit="this.submit(event)">
+        <div class="login-brand">
+            <i class="iconoir-home-simple"></i>
+            <span>Home Hub</span>
+        </div>
+        <p class="login-title">Sign in</p>
+
+        <label class="login-field">
+            <span>Username</span>
+            <input
+                type="text"
+                name="username"
+                autocomplete="username"
+                autofocus
+                :value="this.username"
+                :oninput="this.username = event.target.value"
+            />
+        </label>
+
+        <label class="login-field">
+            <span>Password</span>
+            <input
+                type="password"
+                name="password"
+                autocomplete="current-password"
+                :value="this.password"
+                :oninput="this.password = event.target.value"
+            />
+        </label>
+
+        <p class="login-error" :if="this.error">${this.error}</p>
+
+        <button class="login-submit" type="submit" :class:busy="this.busy">
+            <span :if="!this.busy">Sign in</span>
+            <span :if="this.busy">Signing in…</span>
+        </button>
+    </form>
+</div>

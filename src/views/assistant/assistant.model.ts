@@ -1,4 +1,5 @@
 import { VoiceState } from "./voice-ask.service";
+import type { SessionUser } from "./household.service";
 
 export type AssistantMenuState = {
   customSpeech: string
@@ -14,4 +15,19 @@ export type AssistantMenuState = {
   voiceAction: string
   voiceStart: () => void
   voiceStop: () => void
+
+  // Household roster, driven by HouseholdService. The agent reads each member's
+  // prefs (tone) and is told who is asking via askAgent → data.user.
+  signedInName: string
+  meId: string
+  households: SessionUser[]
+  householdError: string
+  newUsername: string
+  newDisplayName: string
+  newPassword: string
+  newTone: string
+  addHousehold: () => void
+  saveTone: (id: string, tone: string) => void
+  removeHousehold: (id: string) => void
+  signOut: () => void
 }

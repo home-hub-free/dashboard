@@ -13,6 +13,7 @@
 @import "./platform-styles/mobile-styles.scss";
 @import "./tiles.scss";         // Home dashboard tiles (loaded last — wins layout)
 @import "./components.scss";    // Overlay / automations / assistant alignment
+@import "./login.scss";         // Login gate + household management
 
 * {
     -ms-touch-action: manipulation;

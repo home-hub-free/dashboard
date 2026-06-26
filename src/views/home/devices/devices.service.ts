@@ -6,7 +6,7 @@ import { showToaster } from "../../../components/popup-message/popup-message";
 import { store } from "../../../store/store";
 import {
   BlindsConfigureActions,
-  headers,
+  authedFetch,
   server,
   setServerChannel,
   submitDataChange,
@@ -401,9 +401,8 @@ export class DevicesServiceClass {
 
   configureBlinds(device: any, action: BlindsConfigureActions) {
     return new Promise((resolve, reject) => {
-      return fetch(server + "device-blinds-configure", {
+      return authedFetch(server + "device-blinds-configure", {
         method: "POST",
-        headers,
         body: JSON.stringify({
           id: device.id,
           action,

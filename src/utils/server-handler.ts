@@ -1,5 +1,6 @@
 import { AutoEffect } from "../views/automations/automations.model";
 import { Candidate } from "../views/automations/discovery-review/discovery-review.model";
+import { authHeaders, currentUser, handleUnauthorized } from "./auth";
 
 // Server URL. Defaults to the fixed Raspberry Pi IP on the home LAN, but can be
 // overridden for local development/verification via the VITE_SERVER_URL env var.
@@ -48,12 +49,21 @@ export async function transcribeAudio(blob: Blob): Promise<string> {
  * the spoken reply text plus the action the agent took, if any.
  */
 export async function askAgent(text: string, zone?: string): Promise<AgentReply> {
+  // Carry the signed-in member's identity + prefs so the agent knows *who* is
+  // asking and can personalise (greet by name, match tone). The llm-gateway
+  // consumes `data.user` (separate repo); absent when no one is logged in.
+  const user = currentUser();
+  const payload: Record<string, any> = {};
+  if (zone) payload.zone = zone;
+  if (user) {
+    payload.user = { id: user.id, name: user.displayName, tone: user.prefs?.tone };
+  }
   const res = await fetch(gatewayServer + "route", {
     method: "POST",
     headers,
     body: JSON.stringify({
       messages: [{ role: "user", content: text }],
-      data: zone ? { zone } : undefined,
+      data: Object.keys(payload).length ? payload : undefined,
     }),
   });
   if (!res.ok) throw new Error(`agent failed (${res.status})`);
@@ -86,6 +96,20 @@ export const headers = {
   "Content-Type": "application/json",
 };
 
+/**
+ * fetch wrapper for authed (mutation) calls: injects the bearer token and, on a
+ * 401, clears the stale session and bounces back to the login gate. Use this for
+ * every hub write so identity is attached and expiry is handled in one place.
+ */
+export async function authedFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const res = await fetch(url, { ...init, headers: { ...authHeaders(), ...(init.headers || {}) } });
+  if (res.status === 401) {
+    handleUnauthorized();
+    throw new Error("unauthorized");
+  }
+  return res;
+}
+
 interface ServerResponse {
   data: any;
   success: boolean;
@@ -99,9 +123,8 @@ export function getEndPointData(endpoint: string) {
 
 export function toggleServerDevice(device: any): Promise<ServerResponse> {
   return new Promise((resolve, reject) => {
-    return fetch(server + "device-update", {
+    return authedFetch(server + "device-update", {
       method: "POST",
-      headers,
       body: JSON.stringify({
         id: device.id,
         value: device.value,
@@ -128,9 +151,8 @@ export function setServerChannel(
   channel: string,
   value: boolean | number,
 ): Promise<ServerResponse> {
-  return fetch(server + "device-update", {
+  return authedFetch(server + "device-update", {
     method: "POST",
-    headers,
     body: JSON.stringify({ id, channel, value }),
   })
     .then((res) => res.json())
@@ -143,9 +165,8 @@ export function submitDataChange(
   prop: string,
   value: any,
 ) {
-  return fetch(server + `${type}-data-set`, {
+  return authedFetch(server + `${type}-data-set`, {
     method: "POST",
-    headers,
     body: JSON.stringify({
       id,
       data: {
@@ -170,9 +191,8 @@ export function getDeviceProgrammableActions(id: string) {
 }
 
 export function saveEffect(effect: any) {
-  return fetch(server + "set-effect", {
+  return authedFetch(server + "set-effect", {
     method: "POST",
-    headers,
     body: JSON.stringify({ effect }),
   });
 }
@@ -203,9 +223,8 @@ export function declineCandidate(id: number): Promise<any> {
 }
 
 export function saveEffects(effects: AutoEffect[]) {
-  return fetch(server + "set-effects", {
+  return authedFetch(server + "set-effects", {
     method: "POST",
-    headers,
     body: JSON.stringify({ effects }),
   });
 }
@@ -217,9 +236,8 @@ export function getZones(): Promise<string[]> {
 
 /** Replace the whole zones registry; the server returns the normalized list. */
 export function setZones(zones: string[]): Promise<string[]> {
-  return fetch(server + "set-zones", {
+  return authedFetch(server + "set-zones", {
     method: "POST",
-    headers,
     body: JSON.stringify({ zones }),
   }).then((res) => res.json());
 }
@@ -238,9 +256,8 @@ export function requestWeatherData() {
 }
 
 export function updateHouseData(property: string, value: any) {
-  return fetch(server + "update-house-data", {
+  return authedFetch(server + "update-house-data", {
     method: "POST",
-    headers,
     body: JSON.stringify({
       property,
       value,
@@ -249,9 +266,8 @@ export function updateHouseData(property: string, value: any) {
 }
 
 export async function calibrateSensor(id: string) {
-  const res = await fetch(server + "sensor-calibrate", {
+  const res = await authedFetch(server + "sensor-calibrate", {
     method: "POST",
-    headers,
     body: JSON.stringify({ id }),
   });
   const data = await res.json().catch(() => ({}));

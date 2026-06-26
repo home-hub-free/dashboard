@@ -4,6 +4,8 @@ import { NavBar } from "./components/nav-bar/nav-bar";
 import { storageGet } from "./utils/utils.service";
 import { NavActions } from "./store/actions";
 import { syncState } from "./utils/sync";
+import { Login } from "./components/login/login";
+import { fetchMe } from "./utils/auth";
 
 // CSS
 import "./styles/style.scss";
@@ -14,11 +16,24 @@ async function loadInitialData() {
   NavActions.setMenu(activeMenuId);
 }
 
-async function init() {
+async function startApp() {
   await loadInitialData();
   NavBar.mount();
   MainContent.mount();
   initWebSockets();
+}
+
+async function init() {
+  // Gate the dashboard behind a household login: the hub is the single front
+  // door and identity feeds the agent (askAgent → data.user). A cached token is
+  // validated against the hub; if it's missing/expired we show the login form
+  // and only boot the app once the user signs in.
+  const user = await fetchMe();
+  if (user) {
+    await startApp();
+  } else {
+    Login.mount(() => startApp());
+  }
 }
 
 init();
