@@ -9,7 +9,16 @@ import {
   logout,
   updateUser,
 } from "../../utils/auth";
+import {
+  enrollVoiceprint,
+  forgetVoiceprint,
+  getVoiceprintSamples,
+} from "../../utils/server-handler";
+import { blobToWav16k } from "../../utils/audio-wav";
 import { AssistantMenuState } from "./assistant.model";
+
+// How long a single enrollment sample records before auto-stopping.
+const ENROLL_MS = 4000;
 
 /**
  * Household roster management for the assistant settings view: list members,
@@ -24,6 +33,12 @@ export class HouseholdServiceClass {
     this.state = state;
     this.state.meId = currentUser()?.id || "";
     this.refresh();
+    this.refreshVoiceSamples();
+  }
+
+  private async refreshVoiceSamples() {
+    const id = currentUser()?.id;
+    if (id) this.state.voiceSamples = await getVoiceprintSamples(id);
   }
 
   async refresh() {
@@ -96,6 +111,61 @@ export class HouseholdServiceClass {
       showToaster({ from: "bottom", message: "Password changed", timer: 1800 });
     } catch (err: any) {
       this.state.pwError = err?.message || "Could not change password";
+    }
+  }
+
+  // ── Voice ID (voiceprint enrollment) ──────────────────────────────────────
+  // Records a short sample and enrolls it for the signed-in member. Repeat to add
+  // samples (the service keeps a running-mean profile) — more samples = better
+  // recognition. Identity comes from the voice, so a shared satellite still tells
+  // household members apart.
+  async enrollVoice() {
+    if (this.state.enrollState !== "idle") return;
+    if (!navigator.mediaDevices?.getUserMedia) {
+      this.state.enrollMsg = "Microphone needs a secure (https) connection";
+      return;
+    }
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      this.state.enrollMsg = "Microphone access denied";
+      return;
+    }
+    const chunks: Blob[] = [];
+    const recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = (e) => {
+      if (e.data.size) chunks.push(e.data);
+    };
+    recorder.onstop = async () => {
+      stream.getTracks().forEach((t) => t.stop());
+      this.state.enrollState = "saving";
+      this.state.enrollMsg = "Saving…";
+      try {
+        const wav = await blobToWav16k(new Blob(chunks, { type: recorder.mimeType || "audio/webm" }));
+        const { samples } = await enrollVoiceprint(wav);
+        this.state.voiceSamples = samples;
+        this.state.enrollMsg = `Enrolled — ${samples} sample${samples === 1 ? "" : "s"}`;
+      } catch (err: any) {
+        this.state.enrollMsg = err?.message || "Enrollment failed";
+      }
+      this.state.enrollState = "idle";
+    };
+    this.state.enrollState = "recording";
+    this.state.enrollMsg = "Listening… speak naturally";
+    recorder.start();
+    setTimeout(() => {
+      if (recorder.state === "recording") recorder.stop();
+    }, ENROLL_MS);
+  }
+
+  async forgetVoice() {
+    try {
+      await forgetVoiceprint();
+      this.state.voiceSamples = 0;
+      this.state.enrollMsg = "Voiceprint removed";
+    } catch (err: any) {
+      this.state.enrollMsg = err?.message || "Could not remove voiceprint";
     }
   }
 

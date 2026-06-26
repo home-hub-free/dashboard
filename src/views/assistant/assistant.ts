@@ -59,6 +59,12 @@ class VAssistantContentClass extends Component<AssistantMenuState> {
         pwNew: '',
         pwError: '',
         changeOwnPassword: () => this.householdService.changeOwnPassword(),
+
+        voiceSamples: 0,
+        enrollState: 'idle',
+        enrollMsg: '',
+        enrollVoice: () => this.householdService.enrollVoice(),
+        forgetVoice: () => this.householdService.forgetVoice(),
       }
     });
 

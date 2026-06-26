@@ -88,6 +88,38 @@
             <i class="iconoir-key-alt"></i> Change my password
         </button>
 
+        <div class="voice-id">
+            <div class="voice-id-head">
+                <span class="voice-id-title"><i class="iconoir-voice"></i> Voice ID</span>
+                <span class="voice-id-count" :if="this.voiceSamples > 0">${this.voiceSamples} sample(s)</span>
+                <span class="voice-id-count" :if="this.voiceSamples === 0">not enrolled</span>
+            </div>
+            <p class="voice-id-hint">
+                Enroll your voice so the house recognises who's speaking — even when
+                several people share one speaker. Record a few samples for best results.
+            </p>
+            <div class="voice-id-actions">
+                <button
+                    class="add-range-btn"
+                    :class:busy="this.enrollState !== 'idle'"
+                    :onmouseup="this.enrollVoice()"
+                >
+                    <i class="iconoir-microphone"></i>
+                    <span :if="this.enrollState === 'idle'">Enroll my voice</span>
+                    <span :if="this.enrollState === 'recording'">Listening…</span>
+                    <span :if="this.enrollState === 'saving'">Saving…</span>
+                </button>
+                <button
+                    class="remove-btn"
+                    :if="this.voiceSamples > 0"
+                    :onmouseup="this.forgetVoice()"
+                >
+                    <i class="iconoir-trash"></i> Forget
+                </button>
+            </div>
+            <p class="voice-id-msg" :if="this.enrollMsg">${this.enrollMsg}</p>
+        </div>
+
         <p class="household-error" :if="this.householdError">${this.householdError}</p>
 
         <div class="household-list">

@@ -36,4 +36,11 @@ export type AssistantMenuState = {
   pwNew: string
   pwError: string
   changeOwnPassword: () => void
+
+  // Voice ID (voiceprint enrollment) for the signed-in member.
+  voiceSamples: number
+  enrollState: "idle" | "recording" | "saving"
+  enrollMsg: string
+  enrollVoice: () => void
+  forgetVoice: () => void
 }

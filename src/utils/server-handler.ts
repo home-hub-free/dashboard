@@ -1,6 +1,6 @@
 import { AutoEffect } from "../views/automations/automations.model";
 import { Candidate } from "../views/automations/discovery-review/discovery-review.model";
-import { authHeaders, currentUser, handleUnauthorized } from "./auth";
+import { authHeaders, currentUser, getToken, handleUnauthorized } from "./auth";
 
 // Server URL. Defaults to the fixed Raspberry Pi IP on the home LAN, but can be
 // overridden for local development/verification via the VITE_SERVER_URL env var.
@@ -24,6 +24,10 @@ export const voiceServer =
   (import.meta as any).env?.VITE_VOICE_URL || "/voice/";
 export const ttsServer =
   (import.meta as any).env?.VITE_TTS_URL || "/tts/";
+// Speaker-ID (voiceprint) service — enrollment for the Household voice-ID control.
+// Same-origin behind nginx like the other voice services; overridable for dev.
+export const speakerServer =
+  (import.meta as any).env?.VITE_SPEAKER_URL || "/speaker/";
 
 /** What the agent decided this turn (mirrors llm-gateway /route `x_action`). */
 export type AgentAction = { tool: string; args?: any } | { error: string };
@@ -67,6 +71,52 @@ export async function transcribeAudio(blob: Blob): Promise<string> {
   if (!res.ok) throw new Error(`transcribe failed (${res.status})`);
   const data = await res.json();
   return String(data?.text ?? "").trim();
+}
+
+/**
+ * Enroll a voice sample for the signed-in member. The speaker-id service validates
+ * the bearer token against the hub (`/auth/me`) and enrolls for THAT user — you can
+ * only enroll yourself. Returns the running sample count. The audio rides the page's
+ * secure context (same nginx origin), so the mic + multipart POST need no CORS.
+ */
+export async function enrollVoiceprint(wav: Blob): Promise<{ samples: number }> {
+  const token = getToken();
+  const form = new FormData();
+  form.append("audio", wav, "enroll.wav");
+  const res = await fetch(speakerServer + "enroll", {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: form,
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.detail || data?.error || `Enrollment failed (${res.status})`);
+  }
+  const data = await res.json();
+  return { samples: Number(data?.samples ?? 0) };
+}
+
+/** Delete the signed-in member's voiceprint profile. */
+export async function forgetVoiceprint(): Promise<void> {
+  const token = getToken();
+  const res = await fetch(speakerServer + "forget", {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!res.ok) throw new Error(`Could not remove voiceprint (${res.status})`);
+}
+
+/** How many voice samples the given user has enrolled (0 if none / service down). */
+export async function getVoiceprintSamples(userId: string): Promise<number> {
+  try {
+    const res = await fetch(speakerServer + "profiles");
+    if (!res.ok) return 0;
+    const data = await res.json();
+    const mine = (data?.profiles || []).find((p: any) => p.user_id === userId);
+    return mine ? Number(mine.samples) : 0;
+  } catch {
+    return 0;
+  }
 }
 
 /**
