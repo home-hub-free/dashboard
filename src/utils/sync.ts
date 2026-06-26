@@ -25,7 +25,7 @@ export async function syncState(): Promise<boolean> {
     const [devicesData, sensorsData, effectsData] = await Promise.all([
       getEndPointData("get-devices"),
       getEndPointData("get-sensors"),
-      getEndPointData("get-effects-normalized"),
+      getEndPointData("get-effects-dynamic"),
       loadZones(),
     ]);
 

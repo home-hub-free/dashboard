@@ -3,6 +3,7 @@ import { bus } from "../../core/bus";
 import { store } from "../../store/store";
 import template from './automations.html?raw';
 import { AutomationsList } from "./automations-list/automations-list";
+import { DiscoveryReview } from "./discovery-review/discovery-review";
 
 type AutomationsMenuState = {
   activeTabId: string;
@@ -32,12 +33,16 @@ class AutomationsContentClass extends Component<AutomationsMenuState> {
   unmount() {
     this.unsubscribeTabChange?.();
     this.activeView?.unmount();
+    if (DiscoveryReview.mounted) DiscoveryReview.unmount();
   }
 
   private initTabView(tabId: string) {
     this.activeView?.unmount();
+    if (DiscoveryReview.mounted) DiscoveryReview.unmount();
     switch (tabId) {
       case 'automations-list':
+        // The discovered-patterns review panel sits above the rule list (same tab).
+        DiscoveryReview.mount();
         this.activeView = AutomationsList;
         AutomationsList.mount();
         break;

@@ -1,11 +1,11 @@
 import { Device } from '../views/home/devices/devices.model';
 import { Sensor } from '../views/home/sensors/sensors.model';
-import { NormalizedEffect } from '../views/automations/automations.model';
+import { Effect } from '../views/automations/automations.model';
 
 export type AppState = {
   devices: Device[];
   sensors: Sensor[];
-  effects: NormalizedEffect[];
+  effects: Effect[];
   zones: string[];
   activeMenuId: string;
   activeTabId: string;

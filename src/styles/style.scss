@@ -409,6 +409,66 @@ body {
 
 .effects-actions {
     margin-bottom: 0.5rem;
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+// Multi-arm (dynamic rule) authoring overlay — EFFECTS_DYNAMIC §9 / DISCOVERY D4.
+#multi-arm-automation {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    text-align: left;
+
+    .ma-title {
+        margin: 0 0 var(--space-1);
+    }
+
+    .ma-section {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+
+        > label {
+            font-weight: 600;
+        }
+    }
+
+    .ma-guard {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding-left: var(--space-2);
+        border-left: 2px solid var(--color-border, rgba(0, 0, 0, 0.1));
+    }
+
+    .ma-arm-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+        padding: var(--space-2);
+        border-radius: 8px;
+        background-color: var(--color-surface);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .ma-arm-label {
+        flex: 1;
+    }
+
+    .ma-remove {
+        cursor: pointer;
+        color: var(--color-error);
+        background: none;
+        border: none;
+        font-size: 1rem;
+
+        &:hover {
+            color: var(--color-error-dark);
+        }
+    }
 }
 
 .effect-container {
@@ -420,6 +480,97 @@ body {
     margin-bottom: 10px;
     flex-direction: column;
     text-align: left;
+}
+
+// Discovered-patterns review surface — DISCOVERY.md §3/§5. Sits above the rule list; one card per
+// candidate the miner found, with accept/dismiss.
+.discovery-review {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+    text-align: left;
+
+    .discovery-header {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .discovery-sub {
+        font-size: 0.85rem;
+        opacity: 0.7;
+    }
+
+    .discovery-loading,
+    .discovery-error {
+        font-size: 0.85rem;
+        opacity: 0.7;
+    }
+
+    .discovery-card {
+        border-radius: 8px;
+        background-color: var(--color-surface);
+        box-shadow: var(--shadow-sm);
+        padding: var(--space-3);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        border-left: 3px solid var(--color-accent, #5b8def);
+    }
+
+    .discovery-line {
+        font-weight: 600;
+    }
+
+    .discovery-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1);
+    }
+
+    .discovery-badge {
+        font-size: 0.72rem;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background-color: var(--color-bg, rgba(0, 0, 0, 0.06));
+        opacity: 0.85;
+
+        &.discovery-mature {
+            background-color: var(--color-accent, #5b8def);
+            color: #fff;
+            opacity: 1;
+        }
+    }
+
+    .discovery-actions {
+        display: flex;
+        gap: var(--space-2);
+    }
+
+    .discovery-accept,
+    .discovery-dismiss {
+        cursor: pointer;
+        border: none;
+        border-radius: 8px;
+        padding: var(--space-1) var(--space-3);
+        font-weight: 600;
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+    }
+
+    .discovery-accept {
+        background-color: var(--color-accent, #5b8def);
+        color: #fff;
+    }
+
+    .discovery-dismiss {
+        background: none;
+        color: var(--color-error, #c0392b);
+    }
 }
 
 // Form component styles moved to forms.scss for comprehensive form system

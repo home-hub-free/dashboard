@@ -1,0 +1,24 @@
+<div class="discovery-review">
+  <div class="discovery-header" :if="this.rows.length || this.loading || this.error">
+    <strong>Discovered patterns</strong>
+    <span class="discovery-sub">Habits the system noticed — accept to automate, or dismiss.</span>
+  </div>
+
+  <div class="discovery-loading" :if="this.loading">Looking for patterns…</div>
+  <div class="discovery-error" :if="this.error">${this.error}</div>
+
+  <div :foreach="row in this.rows" :key="row.candidate.id" class="discovery-card">
+    <div class="discovery-line">${row.line}</div>
+    <div class="discovery-meta">
+      <span class="discovery-badge" :if="row.zone">${row.zone}</span>
+      <span class="discovery-badge">seen ${row.support}×</span>
+      <span class="discovery-badge">${row.days} day(s)</span>
+      <span class="discovery-badge">${row.confidencePct}% of the time</span>
+      <span class="discovery-badge discovery-mature" :if="row.matured">established</span>
+    </div>
+    <div class="discovery-actions">
+      <button class="discovery-accept" :disabled="row.busy" :onclick="this.accept(row)">Automate</button>
+      <button class="discovery-dismiss" :disabled="row.busy" :onclick="this.dismiss(row)">Dismiss</button>
+    </div>
+  </div>
+</div>

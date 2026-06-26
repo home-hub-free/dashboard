@@ -1,9 +1,17 @@
 import { AutoEffect } from "../views/automations/automations.model";
+import { Candidate } from "../views/automations/discovery-review/discovery-review.model";
 
 // Server URL. Defaults to the fixed Raspberry Pi IP on the home LAN, but can be
 // overridden for local development/verification via the VITE_SERVER_URL env var.
 export const server =
   (import.meta as any).env?.VITE_SERVER_URL || "http://192.168.1.232:8088/";
+
+// memory-service URL — the Pattern Discovery candidate queue lives here (port 8120), separate from
+// the hub. Overridable via VITE_MEMORY_URL; falls back to the canonical LLM box. The browser reaches
+// it cross-origin (the service sends permissive CORS), so the hub stays out of the memory path
+// (CLAUDE.md "hub never touches memory-service").
+export const memoryServer =
+  (import.meta as any).env?.VITE_MEMORY_URL || "http://192.168.1.232:8120/";
 
 export type BlindsConfigureActions =
   | "spin"
@@ -105,6 +113,31 @@ export function saveEffect(effect: any) {
     headers,
     body: JSON.stringify({ effect }),
   });
+}
+
+// ── Pattern Discovery candidate queue (memory-service, docs/DISCOVERY.md §3) ──────────────
+// The dashboard review surface (§5 "two surfaces, two gates"): list pending candidates the miner
+// found, then accept (→ create the effect on the hub) or decline (anti-fatigue). Accept/decline are
+// recorded on memory-service; effect creation stays on the hub via saveEffect.
+
+export function getCandidates(): Promise<{ ok: boolean; candidates: Candidate[] }> {
+  return fetch(memoryServer + "memory/candidates").then((r) => r.json());
+}
+
+export function acceptCandidate(id: number): Promise<any> {
+  return fetch(memoryServer + "memory/candidates/accept", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ id }),
+  }).then((r) => r.json());
+}
+
+export function declineCandidate(id: number): Promise<any> {
+  return fetch(memoryServer + "memory/candidates/decline", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ id }),
+  }).then((r) => r.json());
 }
 
 export function saveEffects(effects: AutoEffect[]) {

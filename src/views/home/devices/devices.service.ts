@@ -8,9 +8,11 @@ import {
   BlindsConfigureActions,
   headers,
   server,
+  setServerChannel,
   submitDataChange,
   toggleServerDevice,
 } from "../../../utils/server-handler";
+import { channelSchema } from "./channels";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import {
   addZone as svcAddZone,
@@ -27,6 +29,11 @@ const DeviceInputType: { [key in Device["deviceCategory"]]?: string } = {
 };
 
 const SCROLL_THRESHOLD = 5;
+
+/** Stepper origin when a cooler somehow has no numeric target yet (matches the
+ * server's Node.initialValue default). Not a display fallback — the template shows
+ * the real value; this only seeds the first ± press. */
+const DEFAULT_TARGET = 26;
 
 export class DevicesServiceClass {
   originalValue = 0;
@@ -83,6 +90,7 @@ export class DevicesServiceClass {
           updateDevice: this.updateDevice.bind(this),
           configureBlinds: this.configureBlinds.bind(this),
           updateEvapCoolerTarget: this.updateEvapCoolerTarget.bind(this),
+          setCoolerChannel: this.setCoolerChannel.bind(this),
           saveOperationalRanges: this.saveOperationalRanges.bind(this),
           removeOperationalRange: this.removeOperationalRange.bind(this),
           saveZone: this.saveZone.bind(this),
@@ -178,6 +186,7 @@ export class DevicesServiceClass {
         updateDevice: this.updateDevice.bind(this),
         configureBlinds: this.configureBlinds.bind(this),
         updateEvapCoolerTarget: this.updateEvapCoolerTarget.bind(this),
+        setCoolerChannel: this.setCoolerChannel.bind(this),
         saveOperationalRanges: this.saveOperationalRanges.bind(this),
         removeOperationalRange: this.removeOperationalRange.bind(this),
         saveZone: this.saveZone.bind(this),
@@ -211,18 +220,49 @@ export class DevicesServiceClass {
       });
   }
 
-  updateEvapCoolerTarget(device: Device, operator: -1 | 1) {
-    const current = device.value.target ?? 25;
-    const target = current + 1 * operator;
-    device.value.target = target;
-    return fetch(server + "device-value-set", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        id: device.id,
-        value: device.value,
-      }),
-    }).then((res) => res.json());
+  /** Step the cooler target ±1 °C, clamped to the schema range, via a
+   * channel-addressed write. Routing through the channel path (vs the old
+   * whole-value POST) means the hub folds just `target` into the blob and can never
+   * drop a sibling channel — and a `setting` channel doesn't latch `manual`, so the
+   * closed loop keeps tracking the new setpoint. */
+  updateEvapCoolerTarget(device: any, operator: -1 | 1) {
+    const range = channelSchema("evap-cooler")?.find((s) => s.key === "target")?.range;
+    const min = range?.min ?? 16;
+    const max = range?.max ?? 30;
+    const step = range?.step ?? 1;
+    const current = typeof device.value?.target === "number" ? device.value.target : DEFAULT_TARGET;
+    const next = Math.min(max, Math.max(min, current + step * operator));
+    if (next === current) return Promise.resolve({ success: true });
+    return this.writeOverlayChannel(device, "target", next);
+  }
+
+  /** Toggle a cooler actuator channel (fan / water) via a channel-addressed write,
+   * replacing the old "mutate device.value then POST the whole blob" path that
+   * could ship a stale/partial value and wipe `target`. */
+  setCoolerChannel(device: any, channel: string, value: boolean) {
+    return this.writeOverlayChannel(device, channel, value);
+  }
+
+  /** Channel-addressed write from the detail overlay. Optimistically folds the one
+   * channel into the overlay's value (so the UI reacts immediately), posts
+   * {id, channel, value} to /device-update, and reverts on failure. The authoritative
+   * value (and the tile/store) re-syncs from the server's device-update broadcast. */
+  private writeOverlayChannel(device: any, channel: string, value: boolean | number) {
+    const previous = device.value;
+    updateOverlayData({ ...device, value: { ...(device.value ?? {}), [channel]: value } });
+    return setServerChannel(device.id, channel, value)
+      .then((res) => {
+        if (!res.success) {
+          updateOverlayData({ ...device, value: previous });
+          showToaster({ message: "Something went wrong", from: "bottom", timer: 2000 });
+        }
+        return res;
+      })
+      .catch(() => {
+        updateOverlayData({ ...device, value: previous });
+        showToaster({ message: "Couldn't connect to device", from: "bottom", timer: 2000 });
+        return { success: false };
+      });
   }
 
   /** Persist the dropdown's selected zone. Re-orders zoneOptions so the chosen

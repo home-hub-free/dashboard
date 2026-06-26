@@ -1,0 +1,115 @@
+<div id="multi-arm-automation" :if="this.data.newEffect">
+    <h3 class="ma-title">New dynamic rule</h3>
+
+    <!-- Master trigger: the edge that wakes the rule -->
+    <div class="ma-section">
+        <label>When (trigger):</label>
+        <select class="dropdown" :oninput="this.actions.setTrigger(event.target.value, this.data.newEffect)">
+            <option value="null">Based on:</option>
+            <option value="time">Time of day</option>
+            <option value="sensor">Sensor</option>
+        </select>
+
+        <div :if="this.data.newEffect.trigger === 'time'">
+            <input type="datetime" placeholder="Time is:" :oninput="this.data.newEffect.time = event.target.value" />
+        </div>
+
+        <div :if="this.data.newEffect.trigger === 'sensor'">
+            <select class="dropdown" :oninput="this.actions.setTriggerSensor(event.target.value, this.data.newEffect)">
+                <option value="null">Select sensor:</option>
+                <option :foreach="sensor in this.data.sensors" :key="sensor.id" :value="sensor.id">
+                    ${sensor.name + ' (' + sensor.sensorType + ')'}
+                </option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Staged arms — ordered; the first whose guards all hold wins -->
+    <div class="ma-section" :if="this.data.newEffect.arms.length">
+        <label>Arms (first match wins, top to bottom):</label>
+        <div :foreach="arm in this.data.newEffect.arms" :key="arm.label" class="ma-arm-row">
+            <span class="ma-arm-label">${arm.label}</span>
+            <button class="ma-remove" :onclick="this.actions.removeArm(arm.label, this.data.newEffect)">✕</button>
+        </div>
+    </div>
+
+    <!-- Current-arm editor: pick an action, optionally guard it, then add to the list -->
+    <div class="ma-section" :if="this.data.newEffect.trigger">
+        <label>Add an arm — do:</label>
+        <select class="dropdown" :oninput="this.actions.setArmDevice(event.target.value, this.data.newEffect)">
+            <option value="null">Select device:</option>
+            <option :foreach="device in this.data.devices" :key="device.id" :value="device.id">
+                ${device.name}
+            </option>
+        </select>
+
+        <div :if="this.data.newEffect.current.device">
+            <div :if="this.data.newEffect.current.device.type === 'boolean'">
+                <select class="dropdown" :oninput="this.data.newEffect.current.setTo = event.target.value">
+                    <option value="null">Do:</option>
+                    <option value="true">Turn on</option>
+                    <option value="false">Turn off</option>
+                </select>
+            </div>
+
+            <div :if="this.data.newEffect.current.device.type === 'value'">
+                <div :if="this.data.newEffect.current.device.deviceCategory === 'evap-cooler'">
+                    <select class="dropdown" :oninput="this.actions.setArmChannel(event.target.value, this.data.newEffect)">
+                        <option value="null">Value to set:</option>
+                        <option value="fan">Fan</option>
+                        <option value="water">Water pump</option>
+                    </select>
+                    <select :if="this.data.newEffect.current.valueToSet" class="dropdown" :oninput="this.data.newEffect.current.setTo = event.target.value">
+                        <option value="null">Set to:</option>
+                        <option value="true">On</option>
+                        <option value="false">Off</option>
+                    </select>
+                </div>
+
+                <div :else>
+                    <label>Set to:</label>
+                    <input type="number" max="100" min="0" placeholder="value"
+                        :oninput="this.data.newEffect.current.setTo = event.target.value" />
+                </div>
+            </div>
+
+            <!-- Optional context guard (time-of-day / day-type); none = the else/default arm -->
+            <div class="ma-guard">
+                <label>Only when:</label>
+                <select class="dropdown" :oninput="this.actions.setGuardType(event.target.value, this.data.newEffect)">
+                    <option value="none">Always (default / else)</option>
+                    <option value="time">Time of day</option>
+                    <option value="dow">Day of week</option>
+                </select>
+
+                <div :if="this.data.newEffect.current.guardType === 'time'">
+                    <select class="dropdown" :oninput="this.actions.setTimeOp(event.target.value, this.data.newEffect)">
+                        <option value="null">When:</option>
+                        <option value="before">Before</option>
+                        <option value="after">After</option>
+                        <option value="between">Between</option>
+                    </select>
+                    <input :if="this.data.newEffect.current.timeOp" type="time" placeholder="from"
+                        :oninput="this.data.newEffect.current.timeFrom = event.target.value" />
+                    <input :if="this.data.newEffect.current.timeOp === 'between'" type="time" placeholder="to"
+                        :oninput="this.data.newEffect.current.timeTo = event.target.value" />
+                </div>
+
+                <div :if="this.data.newEffect.current.guardType === 'dow'">
+                    <select class="dropdown" :oninput="this.data.newEffect.current.dow = event.target.value">
+                        <option value="null">Which days:</option>
+                        <option value="weekday">Weekdays</option>
+                        <option value="weekend">Weekends</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="add-range-btn" :onclick="this.actions.addArm(this.data.newEffect)">Add arm</button>
+        </div>
+    </div>
+
+    <!-- Save the whole rule -->
+    <div class="ma-section" :if="this.data.newEffect.arms.length">
+        <button class="add-range-btn ma-save" :onclick="this.actions.saveRule(this.data.newEffect)">Save rule</button>
+    </div>
+</div>

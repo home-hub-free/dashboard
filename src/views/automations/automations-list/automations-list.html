@@ -1,6 +1,7 @@
 <div class="effects-list">
     <div class="effects-actions">
         <button class="add-range-btn" :onclick="this.newAutomation(event)">New Automation</button>
+        <button class="add-range-btn" :onclick="this.newMultiArmAutomation(event)">New Dynamic Rule</button>
     </div>
 
     <div :foreach="group in this.groups" :key="group.name" class="effect-container">
