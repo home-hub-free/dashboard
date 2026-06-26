@@ -54,6 +54,11 @@ class VAssistantContentClass extends Component<AssistantMenuState> {
         saveTone: (id: string, tone: string) => this.householdService.saveTone(id, tone),
         removeHousehold: (id: string) => this.householdService.remove(id),
         signOut: () => this.householdService.signOut(),
+
+        pwCurrent: '',
+        pwNew: '',
+        pwError: '',
+        changeOwnPassword: () => this.householdService.changeOwnPassword(),
       }
     });
 

@@ -1,6 +1,7 @@
 import { showToaster } from "../../components/popup-message/popup-message";
 import {
   SessionUser,
+  changePassword,
   createUser,
   currentUser,
   deleteUser,
@@ -76,6 +77,25 @@ export class HouseholdServiceClass {
       await this.refresh();
     } catch (err: any) {
       this.state.householdError = err?.message || "Could not remove member";
+    }
+  }
+
+  /** Self-service password change for the signed-in member. */
+  async changeOwnPassword() {
+    const current = this.state.pwCurrent || "";
+    const next = this.state.pwNew || "";
+    if (!current || !next) {
+      this.state.pwError = "Enter your current and new password";
+      return;
+    }
+    try {
+      await changePassword(current, next);
+      this.state.pwCurrent = "";
+      this.state.pwNew = "";
+      this.state.pwError = "";
+      showToaster({ from: "bottom", message: "Password changed", timer: 1800 });
+    } catch (err: any) {
+      this.state.pwError = err?.message || "Could not change password";
     }
   }
 

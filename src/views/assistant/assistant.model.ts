@@ -30,4 +30,10 @@ export type AssistantMenuState = {
   saveTone: (id: string, tone: string) => void
   removeHousehold: (id: string) => void
   signOut: () => void
+
+  // Self-service password change (signed-in member).
+  pwCurrent: string
+  pwNew: string
+  pwError: string
+  changeOwnPassword: () => void
 }

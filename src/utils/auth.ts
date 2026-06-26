@@ -132,6 +132,22 @@ export async function updateUser(
   return data.user;
 }
 
+/** Self-service: the signed-in member changes their own password. */
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const res = await fetch(server + "auth/change-password", {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.error || `Could not change password (${res.status})`);
+  }
+}
+
 export async function deleteUser(id: string): Promise<void> {
   const res = await fetch(server + `auth/users/${id}`, {
     method: "DELETE",

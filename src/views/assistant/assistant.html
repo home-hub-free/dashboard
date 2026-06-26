@@ -67,6 +67,27 @@
             </button>
         </div>
 
+        <div class="household-add">
+            <input
+                type="password"
+                autocomplete="current-password"
+                placeholder="current password"
+                :value="this.pwCurrent"
+                :oninput="this.pwCurrent = event.target.value"
+            />
+            <input
+                type="password"
+                autocomplete="new-password"
+                placeholder="new password"
+                :value="this.pwNew"
+                :oninput="this.pwNew = event.target.value"
+            />
+        </div>
+        <p class="household-error" :if="this.pwError">${this.pwError}</p>
+        <button class="add-range-btn" :onmouseup="this.changeOwnPassword()">
+            <i class="iconoir-key-alt"></i> Change my password
+        </button>
+
         <p class="household-error" :if="this.householdError">${this.householdError}</p>
 
         <div class="household-list">
