@@ -10,7 +10,7 @@
     "prod": "npm run build && http-server dist -p 8181",
     "re-link": "npm rm bindrjs && sudo npm link ../../bindrjs",
     "link": "npm run re-link && npm run dev",
-    "deploy": "git pull && pm2 restart dashboard"
+    "deploy": "git pull && npm run build && sudo systemctl restart homehub-dashboard.service"
   },
   "devDependencies": {
     "sass": "^1.54.9",
