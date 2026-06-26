@@ -1,4 +1,36 @@
 <div class="assistant-view">
+    <section class="assistant-section voice-ask">
+        <p class="section-title">Ask the assistant</p>
+        <button
+            class="voice-talk"
+            :class:recording="this.voiceState === 'recording'"
+            :class:busy="this.voiceState !== 'idle' && this.voiceState !== 'recording'"
+            :onpointerdown="this.voiceStart()"
+            :onpointerup="this.voiceStop()"
+            :onpointerleave="this.voiceStop()"
+            oncontextmenu="return false;"
+        >
+            <span class="voice-mic"><i class="iconoir-microphone"></i></span>
+            <span :if="this.voiceState === 'idle'">Hold to talk</span>
+            <span :if="this.voiceState === 'recording'">Listening… release to send</span>
+            <span :if="this.voiceState === 'transcribing'">Transcribing…</span>
+            <span :if="this.voiceState === 'thinking'">Thinking…</span>
+            <span :if="this.voiceState === 'speaking'">Speaking…</span>
+        </button>
+
+        <div class="voice-convo" :if="this.voiceTranscript">
+            <div class="voice-bubble you">
+                <span class="voice-who">You</span>
+                <span>${this.voiceTranscript}</span>
+            </div>
+            <div class="voice-bubble agent" :if="this.voiceReply">
+                <span class="voice-who">Assistant</span>
+                <span>${this.voiceReply}</span>
+                <span class="voice-chip" :if="this.voiceAction"><i class="iconoir-flash"></i> ${this.voiceAction}</span>
+            </div>
+        </div>
+    </section>
+
     <section class="assistant-section">
         <p class="section-title">Quick actions</p>
         <div class="toggle-group">
