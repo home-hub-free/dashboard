@@ -30,6 +30,31 @@ export type AgentAction = { tool: string; args?: any } | { error: string };
 export type AgentReply = { speech: string; action?: AgentAction };
 
 /**
+ * How an agent request learned who is asking. One identity space (the household
+ * `users` roster) across every surface — only the *evidence* differs:
+ *  - `login`     — an authenticated dashboard session (this file).
+ *  - `voiceprint`— a satellite speaker-ID match (voice-pipeline, separate repo).
+ *  - `declared`  — the speaker said who they are / a per-member name.
+ *  - `presence`  — inferred from who is in the satellite's zone (a weak prior).
+ *  - `unknown`   — unresolved; the agent should stay generic / confirm.
+ */
+export type IdentityVia = "login" | "voiceprint" | "declared" | "presence" | "unknown";
+
+/**
+ * The identity envelope sent as `data.user` on the agent request (llm-gateway
+ * `/route`). `confidence` (0..1) lets the agent gate behaviour: high → personalise
+ * silently; low/unknown → respond generically and skip preference/permission-
+ * sensitive actions (or ask "who's this?"). The voice path fills the same shape.
+ */
+export type AgentUserContext = {
+  id: string;
+  name: string;
+  tone?: string;
+  via: IdentityVia;
+  confidence: number;
+};
+
+/**
  * Send recorded audio to the voice-pipeline STT head (Whisper) and return the
  * transcript. The multipart field MUST be `audio` (the Go head + worker both read
  * `audio`). Pass a WAV blob — the worker decodes with libsndfile, which rejects
@@ -51,12 +76,21 @@ export async function transcribeAudio(blob: Blob): Promise<string> {
 export async function askAgent(text: string, zone?: string): Promise<AgentReply> {
   // Carry the signed-in member's identity + prefs so the agent knows *who* is
   // asking and can personalise (greet by name, match tone). The llm-gateway
-  // consumes `data.user` (separate repo); absent when no one is logged in.
+  // consumes `data.user` (separate repo); absent when no one is logged in. A
+  // dashboard session is authoritative, so `via:"login"` at full confidence —
+  // the satellite/voice path fills the SAME envelope from a speaker-ID match.
   const user = currentUser();
   const payload: Record<string, any> = {};
   if (zone) payload.zone = zone;
   if (user) {
-    payload.user = { id: user.id, name: user.displayName, tone: user.prefs?.tone };
+    const userCtx: AgentUserContext = {
+      id: user.id,
+      name: user.displayName,
+      tone: user.prefs?.tone,
+      via: "login",
+      confidence: 1,
+    };
+    payload.user = userCtx;
   }
   const res = await fetch(gatewayServer + "route", {
     method: "POST",
