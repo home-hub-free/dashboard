@@ -32,7 +32,12 @@
 
         <div class="tile-body">
             <div class="tile-name">${device.name}</div>
-            <div class="tile-status" :if="device.status">${device.status}</div>
+            <div class="tile-meta">
+                <span class="tile-status" :if="device.status">${device.status}</span>
+                <span class="tile-lock" :if="device.manual" title="Manual — ignores automations until you switch it back to Auto">
+                    <i class="iconoir-lock"></i> Manual
+                </span>
+            </div>
         </div>
 
         <!-- One control per channel; the widget is chosen by channel.control. -->

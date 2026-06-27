@@ -229,10 +229,43 @@
   line-height: 1.15;
 }
 
-.tile-status {
+.tile-meta {
   margin-top: 3px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tile-status {
   font-size: 0.85rem;
   color: var(--color-text-tertiary);
+}
+
+// "Manual" lock — surfaced so the resident can SEE a tile is pinned to manual and
+// ignoring automations (previously only a near-invisible dashed border said so).
+.tile-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.01em;
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  box-shadow: inset 0 0 0 1px var(--color-border-light);
+
+  i { font-size: 0.85rem; }
+}
+// On a lit (filled) tile the badge inverts to the dark-on-fill ink.
+.device-tile.cat-light.on .tile-lock,
+.device-tile.cat-dimmable-light.on .tile-lock,
+.device-tile.cat-blinds.on .tile-lock {
+  background: rgba(0, 0, 0, 0.16);
+  color: var(--color-on-fill);
+  box-shadow: none;
 }
 
 // Brightness slider for dimmable lights

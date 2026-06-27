@@ -16,7 +16,7 @@ export const devices = [
   { id: "dev-lamp", deviceCategory: "dimmable-light", name: "Reading Lamp", zone: "Living Room", value: 60, type: "value", manual: false, operationalRanges: [] },
   { id: "dev-blinds", deviceCategory: "blinds", name: "Blinds", zone: "Living Room", value: 80, type: "value", manual: false, operationalRanges: [] },
   { id: "dev-cooler", deviceCategory: "evap-cooler", name: "Evap Cooler", zone: "Living Room", value: { fan: true, water: true, target: 24, "room-temp": 26, "unit-temp": 19 }, type: "value", manual: false, operationalRanges: [] },
-  { id: "dev-kitchen", deviceCategory: "light", name: "Kitchen", zone: "Kitchen", value: false, type: "boolean", manual: false, operationalRanges: [] },
+  { id: "dev-kitchen", deviceCategory: "light", name: "Kitchen", zone: "Kitchen", value: false, type: "boolean", manual: true, operationalRanges: [] },
   { id: "dev-door", deviceCategory: "door", name: "Back Door", zone: "Kitchen", value: false, type: "boolean", manual: false, operationalRanges: [] },
   { id: "dev-bedroom", deviceCategory: "dimmable-light", name: "Bedroom", zone: "Bedroom", value: 0, type: "value", manual: false, operationalRanges: [] },
   { id: "dev-cam", deviceCategory: "camera", name: "Garage Cam", zone: "Garage", value: null, type: "value", manual: true, operationalRanges: [] },
