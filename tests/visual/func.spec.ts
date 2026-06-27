@@ -94,11 +94,20 @@ test.describe("functionality intact", () => {
     expect(body).toHaveProperty("enabled");
   });
 
-  test("opening and reading a device overlay works", async ({ page }) => {
+  test("opening a device overlay + expanding Advanced works", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+
     await page.goto("/");
     await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
     await page.locator(".device-tile .tile-edit").first().click();
     await expect(page.locator(".oh-title")).toBeVisible();
     await expect(page.locator(".edit-container")).toBeVisible();
+
+    // Advanced (installer + active-hours) is collapsed by default; expanding it
+    // must render the single 24h timeline without error.
+    await page.locator(".overlay-advanced > summary").click();
+    await expect(page.locator(".time-bar.day-bar")).toBeVisible();
+    expect(errors, "no uncaught JS errors").toEqual([]);
   });
 });

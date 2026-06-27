@@ -406,6 +406,60 @@
     padding: var(--space-4);
   }
 
+  .setting-hint {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--color-text-tertiary);
+  }
+
+  // ---- Advanced disclosure (installer / power-user controls) ----------------
+  .overlay-advanced {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-chip);
+    background: var(--color-surface-secondary);
+
+    > summary {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-4);
+      cursor: pointer;
+      list-style: none;
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-secondary);
+      user-select: none;
+
+      &::-webkit-details-marker { display: none; }
+      .adv-chevron { margin-left: auto; transition: transform 200ms var(--ease-out); }
+    }
+    &[open] > summary {
+      border-bottom: 1px solid var(--color-border);
+      .adv-chevron { transform: rotate(180deg); }
+    }
+
+    // The nested settings get their own padding under the summary.
+    > .device-setting { margin: var(--space-4); }
+  }
+
+  // ---- Single 24-hour active-hours timeline ---------------------------------
+  .time-bar.day-bar {
+    height: 30px;
+    background: var(--color-surface);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+    background-image: repeating-linear-gradient(
+      to right,
+      transparent,
+      transparent calc(100% / 24 - 1px),
+      var(--color-border) calc(100% / 24 - 1px),
+      var(--color-border) calc(100% / 24)
+    );
+    .time-range { background: var(--color-primary); color: var(--color-on-fill); }
+  }
+  .hour-ticks.day-ticks {
+    justify-content: space-between;
+    span { width: auto; }
+  }
+
   // A detail sheet reads best as a single editorial column (the desktop 2-col
   // grid left the right half empty with stray dividers).
   .edit-container {

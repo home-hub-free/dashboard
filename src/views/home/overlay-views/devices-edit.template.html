@@ -87,17 +87,6 @@
         </div>
     </div>
 
-    <!-- Blinds Configuration -->
-    <div class="device-setting" :if="this.data.deviceCategory === 'blinds'">
-        <p class="section-title">Initial Configuration</p>
-        <div class="button-grid">
-            <button :onclick="this.actions.configureBlinds(this.data, 'spin')">Spin</button>
-            <button :onclick="this.actions.configureBlinds(this.data, 'switch-direction')">Switch Direction</button>
-            <button :onclick="this.actions.configureBlinds(this.data, 'home-position')">Home Position</button>
-            <button :onclick="this.actions.configureBlinds(this.data, 'set-limit')">Set Limit</button>
-        </div>
-    </div>
-
     <!-- Evap Cooler Controls -->
     <div class="device-setting" :if="this.data.value && this.data.deviceCategory === 'evap-cooler'">
         <p class="section-title">Controls</p>
@@ -143,72 +132,84 @@
         </div>
     </div>
 
-    <!-- Operational Ranges -->
-    <div class="device-setting">
-        <p class="section-title">Automation active hours</p>
-        <div class="automation-schedule">
-            <div class="bar-label">AM (12:00 AM - 11:59 AM)</div>
-            <div class="time-bar" aria-label="Automation active hours AM">
-                <div
-                    :if="this.data.parsedRanges && this.data.parsedRanges.am && this.data.parsedRanges.am.length"
-                    :foreach="graphRange in this.data.parsedRanges.am"
-                    :key="graphRange.start.decimal + '-' + graphRange.end.decimal"
-                    :style="{
-                        left: 'calc((' + graphRange.start.decimal + ' /12 * 100%)',
-                        width: 'calc((' + (graphRange.end.decimal - graphRange.start.decimal) + ' /12 * 100%)',
-                    }"
-                    class="time-range"
-                    tabindex="0"
-                ></div>
-            </div>
-            <div class="hour-ticks" aria-hidden="true">
-                <span>12</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-                <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span></span>
-            </div>
-
-            <div class="bar-label">PM (12:00 PM - 11:59 PM)</div>
-            <div class="time-bar" aria-label="Automation active hours PM">
-                <div
-                    :if="this.data.parsedRanges && this.data.parsedRanges.pm && this.data.parsedRanges.pm.length"
-                    :foreach="graphRange in this.data.parsedRanges.pm"
-                    :key="graphRange.start.decimal + '-' + graphRange.end.decimal"
-                    :style="{
-                        left: 'calc((' + graphRange.start.decimal + ' /12 * 100%)',
-                        width: 'calc((' + (graphRange.end.decimal - graphRange.start.decimal) + ' /12 * 100%)',
-                    }"
-                    class="time-range"
-                    tabindex="0"
-                ></div>
-            </div>
-            <div class="hour-ticks" aria-hidden="true">
-                <span>12</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-                <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span></span>
-            </div>
-        </div>
-
-        <div :foreach="range in this.data.operationalRanges" :index class="operational-range">
-            <span>${range}</span>
-            <span class="remove-btn">
-                <i class="iconoir-cancel" :onmouseup="this.actions.removeOperationalRange(this.data, :index)"></i>
-            </span>
-        </div>
-        <p>Automations for this device will only run during these times. Manual control is always available</p>
-
-        <div class="form-group-inline">
-            <label>From</label>
-            <input :id="this.data.id + '_operationalRangesFrom'" type="time" />
-            <label>To</label>
-            <input :id="this.data.id + '_operationalRangesTo'" type="time" />
-        </div>
-
-        <button class="add-range-btn" :onmouseup="this.actions.saveOperationalRanges(this.data)">
-            + Add Range
-        </button>
-    </div>
-
     <!-- Camera Preview -->
     <div class="device-setting" :if="this.data.deviceCategory === 'camera'">
         <p class="section-title">Camera View</p>
         <img :src="this.data.value" alt="Camera Feed" />
     </div>
+
+    <!-- Advanced: installer / setup controls, tucked away so the overlay opens on
+         the everyday controls (name, zone, mode, device controls). -->
+    <details class="overlay-advanced">
+        <summary>
+            <i class="iconoir-settings"></i>
+            <span>Advanced</span>
+            <i class="iconoir-nav-arrow-down adv-chevron"></i>
+        </summary>
+
+        <!-- Blinds setup (one-time installer calibration) -->
+        <div class="device-setting" :if="this.data.deviceCategory === 'blinds'">
+            <p class="section-title">Blinds setup</p>
+            <div class="button-grid">
+                <button :onclick="this.actions.configureBlinds(this.data, 'spin')">Spin</button>
+                <button :onclick="this.actions.configureBlinds(this.data, 'switch-direction')">Switch Direction</button>
+                <button :onclick="this.actions.configureBlinds(this.data, 'home-position')">Home Position</button>
+                <button :onclick="this.actions.configureBlinds(this.data, 'set-limit')">Set Limit</button>
+            </div>
+        </div>
+
+        <!-- Automation active hours — a single 24-hour timeline -->
+        <div class="device-setting">
+            <p class="section-title">Automation active hours</p>
+            <p class="setting-hint">Automations for this device only run during the highlighted hours. Manual control always works.</p>
+
+            <div class="automation-schedule">
+                <div class="time-bar day-bar" aria-label="Automation active hours">
+                    <div
+                        :if="this.data.parsedRanges && this.data.parsedRanges.am && this.data.parsedRanges.am.length"
+                        :foreach="graphRange in this.data.parsedRanges.am"
+                        :key="'am' + graphRange.start.decimal + '-' + graphRange.end.decimal"
+                        :style="{
+                            left: 'calc(' + graphRange.start.decimal + ' / 24 * 100%)',
+                            width: 'calc(' + (graphRange.end.decimal - graphRange.start.decimal) + ' / 24 * 100%)',
+                        }"
+                        class="time-range"
+                        tabindex="0"
+                    ></div>
+                    <div
+                        :if="this.data.parsedRanges && this.data.parsedRanges.pm && this.data.parsedRanges.pm.length"
+                        :foreach="graphRange in this.data.parsedRanges.pm"
+                        :key="'pm' + graphRange.start.decimal + '-' + graphRange.end.decimal"
+                        :style="{
+                            left: 'calc((12 + ' + graphRange.start.decimal + ') / 24 * 100%)',
+                            width: 'calc(' + (graphRange.end.decimal - graphRange.start.decimal) + ' / 24 * 100%)',
+                        }"
+                        class="time-range"
+                        tabindex="0"
+                    ></div>
+                </div>
+                <div class="hour-ticks day-ticks" aria-hidden="true">
+                    <span>12a</span><span>6a</span><span>12p</span><span>6p</span><span>12a</span>
+                </div>
+            </div>
+
+            <div :foreach="range in this.data.operationalRanges" :index class="operational-range">
+                <span>${range}</span>
+                <span class="remove-btn">
+                    <i class="iconoir-cancel" :onmouseup="this.actions.removeOperationalRange(this.data, :index)"></i>
+                </span>
+            </div>
+
+            <div class="form-group-inline">
+                <label>From</label>
+                <input :id="this.data.id + '_operationalRangesFrom'" type="time" />
+                <label>To</label>
+                <input :id="this.data.id + '_operationalRangesTo'" type="time" />
+            </div>
+
+            <button class="add-range-btn" :onmouseup="this.actions.saveOperationalRanges(this.data)">
+                + Add Range
+            </button>
+        </div>
+    </details>
 </div>
