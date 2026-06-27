@@ -551,7 +551,7 @@
   text-transform: uppercase;
   color: var(--color-text-tertiary);
 }
-.home-main .device-grid { margin-bottom: 28px; } // breathing room before Environment
+.home-board .device-grid { margin-bottom: 8px; }
 
 // ---- House-summary HERO band -------------------------------------------------
 // A full-width banner that states the house in one line on the left and surfaces
@@ -731,19 +731,67 @@
   .home-dash { padding-bottom: 32px; }
 }
 
-// ---- Wall panel / large desktop (>=1100px) ----------------------------------
-// More board columns + a bigger hero. The summary stays a full-width header
-// (no sidebar) so the device board gets the whole canvas.
-@media (min-width: 1100px) {
-  // Six tracks → small tiles tile three-per-row; the cooler/camera bands stay
-  // full width (grid-column: 1 / -1 from the base rule).
+// ---- COMMAND-CENTER 2-pane (>=1000px) ---------------------------------------
+// The home stops being one vertical scroll. A full-width HERO band sits on top;
+// below it the device BOARD runs beside a sticky ENVIRONMENT RAIL. Laid out with
+// CSS grid areas — the three home subcomponents still mount by id, the markup
+// just regroups them into hero / board / env.
+@media (min-width: 1000px) {
+  // #tab-content already pads 32px all round; keep the dash gutters at 0 so the
+  // grid never overflows that box (which would push the env rail off-screen).
+  #main-content #tab-content > #home > .home-dash {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(260px, 21vw, 320px);
+    grid-template-areas:
+      "hero  hero"
+      "board env";
+    column-gap: var(--space-6);
+    row-gap: 4px;
+    align-items: start;
+    padding: 8px 0 40px;
+  }
+  .home-status { grid-area: hero; margin: 0 0 18px; }
+  .home-board  { grid-area: board; min-width: 0; }
+  .home-env    { grid-area: env; position: sticky; top: 12px; }
+
+  // Section headers align to the grid cell (no side gutter now).
+  .home-sectit { margin-left: 0; margin-right: 0; }
+
+  // Board shares the row with the rail → four tracks, two tiles per row, bands
+  // (cooler/camera) still full width via grid-column: 1 / -1.
+  #main-content #tab-content #devices.device-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 0;
+  }
+  #main-content #tab-content #devices .device-tile { grid-column: span 2; }
+
+  // Environment: a sticky vertical rail of full-width sensor chips (was a bottom
+  // horizontal scroll strip).
+  #main-content #tab-content #sensors.env-band {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    overflow: visible;
+    gap: 10px;
+    padding: 0 0 16px;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  #main-content #tab-content #sensors.env-band .sensor-chip {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+// ---- Wide wall panel (>=1400px) ---------------------------------------------
+// More board tracks (three tiles per row) + a bigger hero thesis.
+@media (min-width: 1400px) {
   #main-content #tab-content #devices.device-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
   #main-content #tab-content #devices .device-tile { grid-column: span 2; }
 
   .home-status {
-    padding: 30px 34px;
+    padding: 32px 36px;
     .hs-thesis { font-size: 3rem; }
     .hs-stats { flex-basis: 520px; }
     .hs-stat b { font-size: 2.3rem; }

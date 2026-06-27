@@ -413,7 +413,8 @@ body {
 // Region-level stagger on Home — animated containers are stable bind roots, so a
 // device/sensor update patches their children without replaying the entrance.
 .home-status { animation: rd-rise 440ms var(--ease-out) both; }
-.home-main .home-sectit { animation: rd-rise 440ms var(--ease-out) both; }
+.home-board .home-sectit,
+.home-env .home-sectit { animation: rd-rise 440ms var(--ease-out) both; }
 #main-content #tab-content #devices { animation: rd-rise 480ms var(--ease-out) 60ms both; }
 #main-content #tab-content #sensors.env-band { animation: rd-rise 480ms var(--ease-out) 120ms both; }
 
@@ -440,7 +441,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   #main-content #tab-content > div,
-  .home-status, .home-main .home-sectit,
+  .home-status, .home-board .home-sectit, .home-env .home-sectit,
   #main-content #tab-content #devices,
   #main-content #tab-content #sensors.env-band,
   .home-status .hs-stat, #tab-content .effect-container,
