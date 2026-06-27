@@ -45,6 +45,7 @@ export async function stubBackend(page: Page) {
 
   // specific GETs (high priority — registered last)
   await page.route("**/api/auth/me", (r) => r.fulfill(json({ user: fx.user })));
+  await page.route("**/api/auth/users", (r) => r.fulfill(json({ users: fx.households })));
   await page.route("**/api/get-devices", (r) => r.fulfill(json(fx.devices)));
   await page.route("**/api/get-sensors", (r) => r.fulfill(json(fx.sensors)));
   await page.route("**/api/get-effects-dynamic", (r) => r.fulfill(json(fx.effects)));

@@ -11,6 +11,11 @@ export const user = {
   prefs: { tone: "casual" },
 };
 
+export const households = [
+  { id: "u1", username: "david", displayName: "David", prefs: { tone: "casual" } },
+  { id: "u2", username: "sam", displayName: "Sam", prefs: { tone: "formal" } },
+];
+
 export const devices = [
   { id: "dev-ceiling", deviceCategory: "light", name: "Ceiling", zone: "Living Room", value: true, type: "boolean", manual: false, operationalRanges: [] },
   { id: "dev-lamp", deviceCategory: "dimmable-light", name: "Reading Lamp", zone: "Living Room", value: 60, type: "value", manual: false, operationalRanges: [] },

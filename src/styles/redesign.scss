@@ -333,6 +333,11 @@
   .assistant-view {
     max-width: 760px;
     gap: var(--space-4);
+    // Establish a light default for any text that doesn't set its own colour
+    // (member display names, "Signed in as …", the announce textarea). Without
+    // this they inherit the browser default — black — and vanish on the dark
+    // surfaces. Explicitly-coloured elements (buttons, labels) are unaffected.
+    color: var(--color-text-primary);
   }
 
   .assistant-section {

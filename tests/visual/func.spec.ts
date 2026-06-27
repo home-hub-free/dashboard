@@ -79,6 +79,19 @@ test.describe("functionality intact", () => {
     expect(accepts.length, "accept POST fired").toBeGreaterThan(0);
   });
 
+  test("settings member text is readable (not black on dark)", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
+    await page.locator(".menu-item", { hasText: "Settings" }).first().click();
+    await page.waitForSelector(".household-row .household-display", { timeout: 20_000 });
+
+    const color = await page
+      .locator(".household-row .household-display")
+      .first()
+      .evaluate((el) => getComputedStyle(el).color);
+    expect(color).not.toBe("rgb(0, 0, 0)");
+  });
+
   test("an automation row can be toggled off", async ({ page }) => {
     await page.goto("/");
     await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
