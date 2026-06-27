@@ -8,78 +8,84 @@
 // ============================================================================
 
 :root {
-  // Primary Colors (Main brand, actions, focus) - Warm Sage Green
-  --color-primary: #7a9e7f;        // Warm sage green (primary actions)
-  --color-primary-light: #9eb89a;  // Light sage (hover states)
-  --color-primary-lighter: #c5d9c9; // Very light sage (backgrounds)
-  --color-primary-dark: #5d7d62;   // Dark sage (pressed states)
-  --color-primary-darker: #45594a; // Darker sage (strong emphasis)
+  // ── NOCTURNE CONSOLE PALETTE ──────────────────────────────────────────────
+  // Cool blue-black night base + a vivid IRIS-VIOLET brand. The single
+  // "interactive / brand" signal, deliberately clear of the two device-state
+  // accents (GOLD = a light is on · CYAN = another device active), so the three
+  // meanings stay separable while the whole mood flips warm→cool.
 
-  // Secondary Colors (Alternative actions) - Warm Terracotta
-  --color-secondary: #a67c52;      // Warm terracotta (secondary actions)
-  --color-secondary-light: #c39968; // Light terracotta (hover states)
-  --color-secondary-lighter: #e8d5c4; // Very light terracotta (backgrounds)
-  --color-secondary-dark: #8a6643; // Dark terracotta (pressed states)
+  // Primary Colors (Main brand, actions, focus) — Iris violet
+  --color-primary: #8b7bff;        // Electric iris (primary actions / brand)
+  --color-primary-light: #ab9dff;  // Light iris (hover / active text on dark)
+  --color-primary-lighter: #cfc8ff; // Very light iris (backgrounds)
+  --color-primary-dark: #6a55f0;   // Deep iris (pressed states)
+  --color-primary-darker: #463794; // Darker iris (strong emphasis)
 
-  // Status Colors (Semantic meanings) - Warm & Muted
-  --color-success: #6b9d7a;        // Muted forest green (on/active/success)
-  --color-success-light: #8fb897;  // Light green (hover states)
-  --color-success-lighter: #bdd4c4; // Very light (backgrounds)
-  --color-success-dark: #4f7359;   // Dark green (emphasis)
+  // Secondary Colors (Alternative actions) — Azure
+  --color-secondary: #4c84e0;      // Azure (secondary actions)
+  --color-secondary-light: #6f9ff0; // Light azure (hover states)
+  --color-secondary-lighter: #b9d0f5; // Very light azure (backgrounds)
+  --color-secondary-dark: #355fb0; // Deep azure (pressed states)
 
-  --color-error: #c85a54;          // Warm terracotta red (off/error/danger)
-  --color-error-light: #d97a71;    // Light terracotta red (hover states)
-  --color-error-lighter: #e8bbb5;  // Very light (backgrounds)
-  --color-error-dark: #a63e38;     // Dark red (emphasis)
+  // Status Colors (Semantic meanings) — saturated for the night base
+  --color-success: #2fd09a;        // Mint emerald (on/active/success)
+  --color-success-light: #66e0bb;  // Light mint (hover states)
+  --color-success-lighter: #b3eddc; // Very light (backgrounds)
+  --color-success-dark: #1ea077;   // Deep mint (emphasis)
 
-  --color-warning: #d4a574;        // Warm honey/amber (caution/pending)
-  --color-warning-light: #deb88a;  // Light amber (hover states)
-  --color-warning-lighter: #e9d4bd; // Very light (backgrounds)
-  --color-warning-dark: #b88a5f;   // Dark amber (emphasis)
+  --color-error: #ff5d6c;          // Vivid coral-rose (off/error/danger)
+  --color-error-light: #ff8693;    // Light coral (hover states)
+  --color-error-lighter: #ffc2c9;  // Very light (backgrounds)
+  --color-error-dark: #d83a4a;     // Deep coral (emphasis)
 
-  --color-info: #6b8a9e;           // Soft blue-gray (information/neutral)
-  --color-info-light: #8fa4b3;     // Light blue-gray (hover states)
-  --color-info-lighter: #c0cfd8;   // Very light (backgrounds)
-  --color-info-dark: #4d6378;      // Dark blue-gray (emphasis)
+  --color-warning: #ffba3a;        // Bright gold (caution/pending · light-on family)
+  --color-warning-light: #ffd072;  // Light gold (hover states)
+  --color-warning-lighter: #ffe6b3; // Very light (backgrounds)
+  --color-warning-dark: #d9961f;   // Deep gold (emphasis)
 
-  // Neutral Colors (Dark mode: warm grays and darks)
-  --color-white: #e8e4da;          // Warm cream (not pure white)
-  --color-black: #1a1a1a;          // Warm charcoal (not pure black)
+  --color-info: #5b8bf0;           // Azure (information/neutral)
+  --color-info-light: #84a8f5;     // Light azure (hover states)
+  --color-info-lighter: #c2d5fa;   // Very light (backgrounds)
+  --color-info-dark: #3d66c0;      // Deep azure (emphasis)
+
+  // Neutral Colors (cool night)
+  --color-white: #eef1f8;          // Cool near-white (not pure white)
+  --color-black: #0b0e16;          // Blue-black (not pure black)
 
   // Light backgrounds/text (stay light for contrast)
-  --color-gray-50: #e8e4da;        // Lightest - warm cream (light backgrounds)
-  --color-gray-100: #d4cfc7;       // Very light (light text)
+  --color-gray-50: #eef1f8;        // Lightest - cool near-white
+  --color-gray-100: #d4dae8;       // Very light (light text)
 
   // Dark backgrounds/surfaces
-  --color-gray-200: #242424;       // Light gray (borders)
-  --color-gray-300: #1f1f1f;       // Medium-light gray (disabled text)
-  --color-gray-400: #a19c92;       // Medium gray (muted text)
-  --color-gray-500: #8b8680;       // Medium-dark gray (secondary text)
-  --color-gray-600: #6b6560;       // Dark gray
-  --color-gray-700: #4f4a44;       // Very dark gray
-  --color-gray-800: #2d2d2d;       // Almost black
-  --color-gray-900: #1a1a1a;       // Darkest (dark background)
+  --color-gray-200: #252c3d;       // Borders
+  --color-gray-300: #1a2030;       // Disabled-dark
+  --color-gray-400: #8c96af;       // Muted text
+  --color-gray-500: #737e96;       // Secondary-muted text
+  --color-gray-600: #525c72;       // Dark slate
+  --color-gray-700: #39425a;       // Very dark slate
+  --color-gray-800: #161b28;       // Almost black
+  --color-gray-900: #0b0e16;       // Darkest (page background)
 
   // Additional light variants for contrast on dark
-  --color-gray-light-50: #e8e4da;  // Warm cream (lightest)
-  --color-gray-light-100: #d4cfc7; // Very light
-  --color-gray-light-200: #c5bfb5; // Light
+  --color-gray-light-50: #eef1f8;  // Cool near-white (lightest)
+  --color-gray-light-100: #d4dae8; // Very light
+  --color-gray-light-200: #b4bdd2; // Light
 
-  // Semantic aliases (dark mode optimized)
-  --color-surface: #3a3a3a;        // Card/panel backgrounds (dark)
-  --color-surface-secondary: #303030;
-  --color-surface-tertiary: #262626;
-  --color-background: #1a1a1a;     // Page background (warm charcoal)
-  --color-background-alt: #242424; // Alternative background
-  --color-border-light: #4a4a4a;   // Light borders for subtle separation
+  // Semantic aliases (night)
+  --color-surface: #171d2c;        // Card/panel backgrounds
+  --color-surface-secondary: #121724;
+  --color-surface-tertiary: #1f2638; // Recessed insets
+  --color-background: #0b0e16;     // Page background (blue-black)
+  --color-background-alt: #10141f; // Alternative background
+  --color-border-light: #313a52;   // Light borders for subtle separation
 
-  // Text Colors (dark mode optimized)
-  --color-text-primary: #e8e4da;      // Warm cream (main text)
-  --color-text-secondary: #b5ada0;    // Light warm gray (secondary text - brighter)
-  --color-text-tertiary: #b0a89c;     // Light-medium gray (tertiary) — AA 4.5:1+ on raised surfaces
-  --color-text-disabled: #6b6560;     // Disabled text (darker, less contrast)
-  --color-text-inverse: #1a1a1a;      // Text on light backgrounds
-  --color-border: #3a3a3a;            // Borders on dark backgrounds
+  // Text Colors (night)
+  --color-text-primary: #eef1f8;      // Cool near-white (main text)
+  --color-text-secondary: #b7c0d6;    // Cool light gray (secondary text)
+  --color-text-tertiary: #8c96af;     // Cool medium gray (tertiary) — AA 4.5:1+ on raised surfaces
+  --color-text-disabled: #5a6478;     // Disabled text (darker, less contrast)
+  --color-text-inverse: #0b0e16;      // Text on light / accent fills
+  --color-border: #232a3b;            // Borders on dark backgrounds
 }
 
 // ============================================================================
@@ -388,37 +394,37 @@ $breakpoint-2xl: 1536px;
 // ============================================================================
 
 :root {
-  // Primary sage green RGBA variants
-  --color-primary-rgba-10: rgba(122, 158, 127, 0.1);
-  --color-primary-rgba-20: rgba(122, 158, 127, 0.2);
-  --color-primary-rgba-40: rgba(122, 158, 127, 0.4);
-  --color-primary-rgba-60: rgba(122, 158, 127, 0.6);
+  // Primary iris RGBA variants
+  --color-primary-rgba-10: rgba(139, 123, 255, 0.1);
+  --color-primary-rgba-20: rgba(139, 123, 255, 0.2);
+  --color-primary-rgba-40: rgba(139, 123, 255, 0.4);
+  --color-primary-rgba-60: rgba(139, 123, 255, 0.6);
 
   // Primary light RGBA variants
-  --color-primary-light-rgba-40: rgba(158, 184, 154, 0.4);
+  --color-primary-light-rgba-40: rgba(171, 157, 255, 0.4);
 
   // Primary lighter RGBA variants
-  --color-primary-lighter-rgba-20: rgba(197, 217, 201, 0.2);
+  --color-primary-lighter-rgba-20: rgba(207, 200, 255, 0.2);
 
-  // Error terracotta RGBA variants
-  --color-error-rgba-10: rgba(200, 90, 84, 0.1);
-  --color-error-rgba-40: rgba(200, 90, 84, 0.4);
+  // Error coral RGBA variants
+  --color-error-rgba-10: rgba(255, 93, 108, 0.1);
+  --color-error-rgba-40: rgba(255, 93, 108, 0.4);
 
-  // Success green RGBA variants
-  --color-success-rgba-10: rgba(107, 157, 122, 0.1);
-  --color-success-rgba-40: rgba(107, 157, 122, 0.4);
+  // Success mint RGBA variants
+  --color-success-rgba-10: rgba(47, 208, 154, 0.1);
+  --color-success-rgba-40: rgba(47, 208, 154, 0.4);
 
-  // Warning honey RGBA variants
-  --color-warning-rgba-10: rgba(212, 165, 116, 0.1);
-  --color-warning-rgba-40: rgba(212, 165, 116, 0.4);
+  // Warning gold RGBA variants
+  --color-warning-rgba-10: rgba(255, 186, 58, 0.1);
+  --color-warning-rgba-40: rgba(255, 186, 58, 0.4);
 
-  // Info blue-gray RGBA variants
-  --color-info-rgba-10: rgba(107, 138, 158, 0.1);
-  --color-info-rgba-40: rgba(107, 138, 158, 0.4);
+  // Info azure RGBA variants
+  --color-info-rgba-10: rgba(91, 139, 240, 0.1);
+  --color-info-rgba-40: rgba(91, 139, 240, 0.4);
 
   // Gray RGBA variants
-  --color-gray-500-rgba-20: rgba(139, 134, 128, 0.2);
-  --color-gray-500-rgba-50: rgba(139, 134, 128, 0.5);
+  --color-gray-500-rgba-20: rgba(115, 126, 150, 0.2);
+  --color-gray-500-rgba-50: rgba(115, 126, 150, 0.5);
 }
 
 // ============================================================================
@@ -429,24 +435,25 @@ $breakpoint-2xl: 1536px;
 // ============================================================================
 
 :root {
-  // Warm "lit" accent (a light is ON)
-  --color-active-warm: #eaa53f;
-  --color-active-warm-light: #f7cd76;
-  --gradient-active-warm: linear-gradient(150deg, #f7cd76 0%, #eaa53f 100%);
-  --glow-active-warm: 0 12px 28px -12px rgba(234, 165, 63, 0.75);
+  // Warm "lit" accent (a light is ON) — bright gold, glows like a real bulb
+  --color-active-warm: #ffbb3c;
+  --color-active-warm-light: #ffd479;
+  --gradient-active-warm: linear-gradient(150deg, #ffd479 0%, #ff9d2e 100%);
+  --glow-active-warm: 0 14px 32px -12px rgba(255, 170, 55, 0.7);
 
-  // Cool "active" accent (blinds open, selected control). Deliberately a teal,
-  // distinct from the brand sage (--color-primary) used for nav/buttons — so a
-  // device-state fill never reads the same as an interactive control. Three
-  // meanings stay separable: WARM amber = light on, TEAL = other device active,
-  // SAGE = interactive/brand.
-  --gradient-active-cool: linear-gradient(150deg, #86c6ac 0%, #4ea88c 100%);
-  --glow-active-cool: 0 12px 28px -12px rgba(78, 168, 140, 0.6);
+  // Cool "active" accent (blinds open, selected control). Deliberately an
+  // ELECTRIC CYAN, distinct from the brand iris (--color-primary) used for
+  // nav/buttons — so a device-state fill never reads the same as an interactive
+  // control. Three meanings stay separable: GOLD = light on, CYAN = other device
+  // active, IRIS = interactive/brand.
+  --gradient-active-cool: linear-gradient(150deg, #5fe3f2 0%, #1eb4da 100%);
+  --glow-active-cool: 0 14px 32px -12px rgba(34, 196, 230, 0.55);
 
-  // Text/icon color when placed on any filled accent surface (warm or cool)
-  --color-on-fill: #241a02;
-  --color-on-fill-muted: rgba(37, 26, 2, 0.72);
-  --color-on-fill-faint: rgba(37, 26, 2, 0.5);
+  // Text/icon color when placed on any filled accent surface (gold or cyan) —
+  // very dark ink reads cleanly on both.
+  --color-on-fill: #0a1018;
+  --color-on-fill-muted: rgba(10, 16, 24, 0.74);
+  --color-on-fill-faint: rgba(10, 16, 24, 0.52);
 
   // Tile / control geometry — keep all surfaces on this rhythm
   --radius-tile: 22px;     // device tiles, overlay sheet

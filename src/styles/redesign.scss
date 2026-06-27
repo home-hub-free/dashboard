@@ -68,24 +68,28 @@
 // ============================================================================
 @media (min-width: 640px) {
   #nav-bar {
-    background: var(--color-surface-secondary);
+    background:
+      radial-gradient(120% 40% at 0% 0%, var(--color-primary-rgba-10), transparent 60%),
+      var(--color-surface-secondary);
     border-right: 1px solid var(--color-border);
     box-shadow: none;
     padding-top: 8px;
 
-    // Brand wordmark at the top of the rail.
+    // Brand lockup: a glowing iris mark + wordmark at the top of the rail.
     &::before {
-      content: "Home Hub";
+      content: "◆ Home Hub";
       display: block;
-      padding: 22px 22px 14px;
-      font-size: 0.95rem;
+      padding: 26px 22px 18px;
+      font-size: 1.02rem;
       font-weight: var(--font-weight-extrabold);
-      letter-spacing: 0.02em;
+      letter-spacing: -0.01em;
       color: var(--color-text-primary);
+      text-shadow: 0 0 18px var(--color-primary-rgba-40);
     }
 
     .menu-item {
-      margin: 3px 12px;
+      position: relative;
+      margin: 4px 14px;
       border-radius: var(--radius-control);
       color: var(--color-text-secondary);
       transition: background var(--duration-fast) var(--ease-in-out),
@@ -95,26 +99,41 @@
 
       .menu-item-icon {
         background: transparent;
-        font-size: 1.35em;
+        font-size: 1.4em;
         color: inherit;
         box-shadow: none;
         transform: none;
       }
       .menu-item-text {
-        font-weight: var(--font-weight-semibold);
-        font-size: 0.95rem;
+        font-weight: var(--font-weight-bold);
+        font-size: 0.97rem;
       }
 
+      // Bold active state: a solid iris pill with dark text + a left accent bar.
       &.active {
-        background: var(--color-primary-rgba-20);
-        color: var(--color-primary-light);
+        background: var(--gradient-active-cool, var(--color-primary));
+        background: linear-gradient(100deg, var(--color-primary), var(--color-primary-dark));
+        color: var(--color-on-fill);
+        box-shadow: 0 12px 26px -12px var(--color-primary-rgba-60);
+
+        &::before {
+          content: "";
+          position: absolute;
+          left: -6px;
+          top: 9px;
+          bottom: 9px;
+          width: 4px;
+          border-radius: 4px;
+          background: var(--color-active-warm);
+        }
 
         .menu-item-icon {
           background: transparent;
-          color: var(--color-primary-light);
+          color: var(--color-on-fill);
           box-shadow: none;
           transform: none;
         }
+        .menu-item-text { color: var(--color-on-fill); }
       }
     }
 
@@ -364,9 +383,9 @@
 // ============================================================================
 body {
   background:
-    radial-gradient(135% 90% at 88% -12%, rgba(244, 176, 80, 0.07), transparent 52%),
-    radial-gradient(110% 80% at -10% 112%, rgba(78, 168, 140, 0.06), transparent 55%),
-    #161617;
+    radial-gradient(130% 90% at 86% -14%, rgba(139, 123, 255, 0.12), transparent 52%),
+    radial-gradient(120% 85% at -10% 112%, rgba(34, 196, 230, 0.09), transparent 55%),
+    #080a12;
   background-attachment: fixed;
 }
 
@@ -579,9 +598,7 @@ body {
 }
 
 // ============================================================================
-// 10. HOME HERO — a touch more presence
+// 10. HOME HERO — sizing now lives in tiles.scss (.home-status is a full-width
+// banner with responsive thesis sizing). Intentionally left empty so this layer
+// no longer fights it.
 // ============================================================================
-.home-status .hs-thesis { font-size: 2.4rem; }
-@media (min-width: 1024px) {
-  .home-status .hs-thesis { font-size: 2.7rem; }
-}
