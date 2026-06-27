@@ -16,7 +16,7 @@
             :onpointerleave="this.voiceStop()"
             oncontextmenu="return false;"
         >
-            <span class="voice-mic"><i class="iconoir-microphone"></i></span>
+            <span class="voice-mic"><i class="iconoir-mic"></i></span>
             <span :if="this.voiceState === 'idle'">Hold to talk</span>
             <span :if="this.voiceState === 'recording'">Listening… release to send</span>
             <span :if="this.voiceState === 'transcribing'">Transcribing…</span>
@@ -110,7 +110,7 @@
                     :class:busy="this.enrollState !== 'idle'"
                     :onmouseup="this.enrollVoice()"
                 >
-                    <i class="iconoir-microphone"></i>
+                    <i class="iconoir-mic"></i>
                     <span :if="this.enrollState === 'idle'">Enroll my voice</span>
                     <span :if="this.enrollState === 'recording'">Listening…</span>
                     <span :if="this.enrollState === 'saving'">Saving…</span>
@@ -178,7 +178,7 @@
             />
         </div>
         <button class="add-range-btn" :onmouseup="this.addHousehold()">
-            <i class="iconoir-user-plus"></i> Add member
+            <i class="iconoir-add-user"></i> Add member
         </button>
     </section>
 </div>

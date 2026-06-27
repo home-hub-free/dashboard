@@ -9,7 +9,7 @@
 
   <div :foreach="row in this.rows" :key="row.candidate.id" class="discovery-card">
     <div class="discovery-card-top">
-      <span class="discovery-spark"><i class="iconoir-sparks"></i></span>
+      <span class="discovery-spark"><i class="iconoir-flare"></i></span>
       <div class="discovery-line">${row.line}</div>
     </div>
 
@@ -20,7 +20,7 @@
 
     <div class="discovery-meta">
       <span class="discovery-badge" :if="row.zone"><i class="iconoir-position"></i> ${row.zone}</span>
-      <span class="discovery-badge"><i class="iconoir-eye"></i> seen ${row.support}×</span>
+      <span class="discovery-badge"><i class="iconoir-eye-alt"></i> seen ${row.support}×</span>
       <span class="discovery-badge"><i class="iconoir-calendar"></i> ${row.days} day(s)</span>
       <span class="discovery-badge discovery-mature" :if="row.matured">established</span>
     </div>
