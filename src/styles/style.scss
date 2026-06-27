@@ -14,6 +14,7 @@
 @import "./tiles.scss";         // Home dashboard tiles (loaded last — wins layout)
 @import "./components.scss";    // Overlay / automations / assistant alignment
 @import "./login.scss";         // Login gate + household management
+@import "./redesign.scss";      // Command/Editorial redesign layer (loads last — wins)
 
 * {
     -ms-touch-action: manipulation;

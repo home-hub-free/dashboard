@@ -1,0 +1,19 @@
+<div class="hs-kicker">${this.clock}</div>
+<div class="hs-thesis">Good <em>${this.timeOfDay}</em>.</div>
+<p class="hs-lede">Your home, at a glance.</p>
+
+<div class="hs-stat">
+    <b>${this.lightsOn}</b>
+    <span>lights on</span>
+    <i class="hs-dot hs-dot-amber" :if="this.lightsOn > 0"></i>
+</div>
+<div class="hs-stat">
+    <b>${this.activeCount}</b>
+    <span>devices active</span>
+    <i class="hs-dot hs-dot-teal" :if="this.activeCount > 0"></i>
+</div>
+<div class="hs-stat">
+    <b>${this.warmestTemp}</b>
+    <span :if="this.hasWarmest">warmest · ${this.warmestWhere}</span>
+    <span :else>no climate sensors</span>
+</div>

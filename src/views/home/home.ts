@@ -2,6 +2,7 @@ import { Component } from "../../core/component";
 import template from './home.html?raw';
 import { DevicesTab } from "./devices/devices";
 import { SensorsTab } from "./sensors/sensors";
+import { HomeStatus } from "./status/status";
 import { HomeMenuState } from "./home.model";
 
 /**
@@ -16,6 +17,7 @@ class HomeContentClass extends Component<HomeMenuState> {
       template,
       bind: {},
       ready: () => {
+        HomeStatus.mount();
         SensorsTab.mount();
         DevicesTab.mount();
       }
@@ -23,6 +25,7 @@ class HomeContentClass extends Component<HomeMenuState> {
   }
 
   unmount() {
+    HomeStatus.unmount();
     SensorsTab.unmount();
     DevicesTab.unmount();
   }

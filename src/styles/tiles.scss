@@ -535,6 +535,107 @@
   }
 }
 
+// ============================================================================
+// EDITORIAL "COMMAND" PORT (Home redesign — direction 3)
+// An additive layer over the tile system: a left "now" status column, section
+// headers, and a left state-accent bar on tiles. Mobile stays single-column
+// (status stacks on top); the two-column wall/desktop layout kicks in >=1024px.
+// ============================================================================
+
+// ---- Section headers (Devices / Environment) --------------------------------
+.home-sectit {
+  margin: 0 16px 12px;
+  font-size: 0.72rem;
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+.home-main .device-grid { margin-bottom: 28px; } // breathing room before Environment
+
+// ---- "Now" status column ----------------------------------------------------
+.home-status {
+  display: block;
+  padding: 8px 16px 16px;
+
+  .hs-kicker {
+    font-size: 0.82rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-tertiary);
+    letter-spacing: -0.01em;
+  }
+
+  .hs-thesis {
+    margin: 10px 0 6px;
+    font-size: 2.1rem;
+    font-weight: var(--font-weight-extrabold);
+    line-height: 1.02;
+    letter-spacing: var(--letter-spacing-tight);
+    color: var(--color-text-primary);
+
+    em { font-style: normal; color: var(--color-primary-light); }
+  }
+
+  .hs-lede {
+    margin: 0 0 16px;
+    font-size: 0.9rem;
+    color: var(--color-text-tertiary);
+  }
+
+  .hs-stat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid var(--color-border);
+
+    &:last-child { border-bottom: 1px solid var(--color-border); }
+
+    b {
+      min-width: 46px;
+      font-size: 1.5rem;
+      font-weight: var(--font-weight-extrabold);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: var(--letter-spacing-tight);
+      color: var(--color-text-primary);
+    }
+    span { font-size: 0.85rem; color: var(--color-text-tertiary); }
+
+    .hs-dot {
+      width: 8px;
+      height: 8px;
+      margin-left: auto;
+      border-radius: 50%;
+
+      &.hs-dot-amber { background: var(--color-active-warm); box-shadow: 0 0 8px rgba(234, 165, 63, 0.5); }
+      &.hs-dot-teal { background: #4ea88c; box-shadow: 0 0 8px rgba(78, 168, 140, 0.5); }
+    }
+  }
+}
+
+// ---- Tile state-accent bar (the editorial signature) ------------------------
+// A 3px left bar that encodes state: muted when off, dark-on-fill when lit.
+// Camera is excluded (its image is full-bleed).
+.device-tile:not(.cat-camera)::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 16px;
+  bottom: 16px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-text-tertiary);
+  opacity: 0.3;
+  transition: background 220ms var(--ease-in-out), opacity 220ms var(--ease-in-out);
+  z-index: 1;
+}
+.device-tile.cat-light.on::before,
+.device-tile.cat-dimmable-light.on::before,
+.device-tile.cat-blinds.on::before {
+  background: var(--color-on-fill);
+  opacity: 0.42;
+}
+
 // ---- Desktop / tablet (>=640px) ---------------------------------------------
 // The desktop platform mixin lays #devices/#sensors out as a 2-col grid using a
 // 3-id selector; these matching-specificity rules keep our band + tile layout.
@@ -548,4 +649,25 @@
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
   .home-dash { padding-bottom: 32px; }
+}
+
+// ---- Wall panel / desktop two-column (>=1024px) -----------------------------
+// Promote the status column to a sticky left rail beside the device board.
+// Matches the base `.home-dash { display:block }` selector specificity and comes
+// later in the file, so it wins when the query matches (DESIGN.md §6).
+@media (min-width: 1024px) {
+  #main-content #tab-content > #home > .home-dash {
+    display: grid;
+    // minmax(0,1fr) is load-bearing: without it the device grid's intrinsic min
+    // width overflows the track and clips tiles on the right.
+    grid-template-columns: clamp(240px, 22vw, 320px) minmax(0, 1fr);
+    gap: var(--space-8);
+    align-items: start;
+  }
+  .home-status {
+    position: sticky;
+    top: 12px;
+    padding-top: 12px;
+  }
+  .home-main .home-sectit:first-child { margin-top: 6px; }
 }
