@@ -79,6 +79,21 @@ test.describe("functionality intact", () => {
     expect(accepts.length, "accept POST fired").toBeGreaterThan(0);
   });
 
+  test("an automation row can be toggled off", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
+    await page.locator(".menu-item", { hasText: "Automations" }).first().click();
+    await page.waitForSelector(".effect-row .effect-switch", { timeout: 20_000 });
+
+    const [req] = await Promise.all([
+      page.waitForRequest((r) => r.url().includes("/api/set-effect-enabled") && r.method() === "POST"),
+      page.locator(".effect-row .effect-switch").first().click(),
+    ]);
+    const body = req.postDataJSON();
+    expect(body).toHaveProperty("id");
+    expect(body).toHaveProperty("enabled");
+  });
+
   test("opening and reading a device overlay works", async ({ page }) => {
     await page.goto("/");
     await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });

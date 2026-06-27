@@ -220,11 +220,87 @@
       }
     }
     .effect-sentence {
+      flex: 1;
       font-size: 0.92rem;
       line-height: 1.45;
       color: var(--color-text-secondary);
       strong { color: var(--color-text-primary); font-weight: var(--font-weight-bold); }
     }
+
+    // Per-rule management: an on/off switch + a delete-with-confirm. Scoped under
+    // the ids so buttons.scss' global button reset (primary fill, width:100%) loses.
+    .effect-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex: none;
+    }
+    .effect-switch {
+      position: relative;
+      width: 42px;
+      height: 24px;
+      padding: 0;
+      border: none;
+      border-radius: 999px;
+      background: var(--color-surface-secondary);
+      box-shadow: inset 0 0 0 1px var(--color-border-light);
+      cursor: pointer;
+      flex: none;
+      transition: background 180ms var(--ease-in-out);
+
+      .knob {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--color-text-tertiary);
+        transition: transform 180ms var(--ease-out), background 180ms var(--ease-in-out);
+      }
+      &.on {
+        background: var(--color-success);
+        box-shadow: none;
+        .knob { transform: translateX(18px); background: var(--color-on-fill); }
+      }
+    }
+    .effect-del {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: none;
+      border-radius: var(--radius-control);
+      background: transparent;
+      color: var(--color-text-tertiary);
+      cursor: pointer;
+      flex: none;
+      transition: color 160ms, background 160ms;
+      i { font-size: 1.05rem; }
+      &:hover { color: var(--color-error); background: var(--color-error-rgba-10); }
+    }
+
+    .effect-confirm {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex: none;
+      .effect-confirm-q { font-size: 0.82rem; color: var(--color-text-secondary); }
+    }
+    .effect-confirm-yes,
+    .effect-confirm-no {
+      width: auto;
+      padding: 6px 12px;
+      border-radius: var(--radius-control);
+      font-size: 0.82rem;
+      font-weight: var(--font-weight-bold);
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .effect-confirm-yes { background: var(--color-error); color: #fff; border-color: transparent; }
+    .effect-confirm-no { background: transparent; color: var(--color-text-tertiary); border-color: var(--color-border-light); }
   }
 }
 

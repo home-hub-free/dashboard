@@ -1,7 +1,7 @@
 import { Component } from "../../../core/component";
 import { store } from "../../../store/store";
 import template from './automations-list.html?raw';
-import { getEndPointData, saveEffect } from "../../../utils/server-handler";
+import { deleteEffect, getEndPointData, saveEffect, setEffectEnabled } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import { closeOverlay, openOverlay } from "../../../components/overlay-modal/overlay-modal";
 import NewAutomationOverlay from "../overlay-views/new-automation-overlay.html?raw";
@@ -33,8 +33,13 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
       bind: {
         effects: store.get('effects'),
         groups: [],
+        pendingDeleteId: null,
         newAutomation: this.newAutomation.bind(this),
         newMultiArmAutomation: this.newMultiArmAutomation.bind(this),
+        toggleEffect: this.toggleEffect.bind(this),
+        requestDelete: this.requestDelete.bind(this),
+        cancelDelete: this.cancelDelete.bind(this),
+        confirmDelete: this.confirmDelete.bind(this),
       },
     });
 
@@ -73,6 +78,43 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
       groups[targetId].effects.push(effect);
     });
     this.bind.groups = Object.values(groups);
+  }
+
+  // ── Manage existing rules (EFFECTS_DYNAMIC: /set-effect-enabled, /delete-effect) ─────
+  // Each rule carries its stable row `id` (get-effects-dynamic → summaries), so a row can
+  // be disabled (reversible) or deleted by id, then the list re-pulls the canonical view.
+
+  private reloadEffects() {
+    return getEndPointData('get-effects-dynamic').then((effects: Effect[]) => {
+      EffectActions.load(effects || []);
+    });
+  }
+
+  /** Reversibly flip a rule on/off. */
+  private toggleEffect(effect: Effect) {
+    if (effect.id == null) return; // a just-created rule with no id yet — a resync will fix it
+    const next = effect.enabled === false; // currently off → turn on, and vice-versa
+    setEffectEnabled(effect.id, next)
+      .then(() => this.reloadEffects())
+      .then(() => showToaster({ from: 'bottom', message: next ? 'Automation on' : 'Automation off', timer: 1600 }));
+  }
+
+  /** First tap on the trash — arm an inline "Delete?" confirm (avoids one-tap data loss). */
+  private requestDelete(effect: Effect) {
+    this.bind.pendingDeleteId = effect.id ?? null;
+  }
+
+  private cancelDelete() {
+    this.bind.pendingDeleteId = null;
+  }
+
+  /** Second tap — actually remove the rule. */
+  private confirmDelete(effect: Effect) {
+    this.bind.pendingDeleteId = null;
+    if (effect.id == null) return;
+    deleteEffect(effect.id)
+      .then(() => this.reloadEffects())
+      .then(() => showToaster({ from: 'bottom', message: 'Automation deleted', timer: 1800 }));
   }
 
   private newAutomation(event: MouseEvent) {

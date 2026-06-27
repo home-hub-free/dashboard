@@ -304,6 +304,22 @@ export function saveEffect(effect: any) {
   });
 }
 
+/** Reversibly enable/disable one rule by its row id (hub /set-effect-enabled). */
+export function setEffectEnabled(id: number, enabled: boolean) {
+  return authedFetch(server + "set-effect-enabled", {
+    method: "POST",
+    body: JSON.stringify({ id, enabled }),
+  }).then((res) => res.json());
+}
+
+/** Delete one rule by its row id (hub /delete-effect). */
+export function deleteEffect(id: number) {
+  return authedFetch(server + "delete-effect", {
+    method: "POST",
+    body: JSON.stringify({ id }),
+  }).then((res) => res.json());
+}
+
 // ── Pattern Discovery candidate queue (memory-service, docs/DISCOVERY.md §3) ──────────────
 // The dashboard review surface (§5 "two surfaces, two gates"): list pending candidates the miner
 // found, then accept (→ create the effect on the hub) or decline (anti-fatigue). Accept/decline are

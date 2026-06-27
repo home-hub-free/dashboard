@@ -21,6 +21,24 @@
         >
             <span class="effect-dot" :class:on="effect.enabled !== false"></span>
             <div class="effect-sentence" :innerHTML="effect.sentence"></div>
+
+            <div class="effect-actions" :if="effect.id !== this.pendingDeleteId">
+                <button
+                    class="effect-switch"
+                    :class:on="effect.enabled !== false"
+                    :onclick="this.toggleEffect(effect)"
+                    aria-label="Toggle automation"
+                ><span class="knob"></span></button>
+                <button class="effect-del" :onclick="this.requestDelete(effect)" aria-label="Delete automation">
+                    <i class="iconoir-trash"></i>
+                </button>
+            </div>
+
+            <div class="effect-confirm" :if="effect.id === this.pendingDeleteId">
+                <span class="effect-confirm-q">Delete this rule?</span>
+                <button class="effect-confirm-yes" :onclick="this.confirmDelete(effect)">Delete</button>
+                <button class="effect-confirm-no" :onclick="this.cancelDelete()">Cancel</button>
+            </div>
         </div>
     </div>
 

@@ -53,6 +53,9 @@ export type ArmCondition =
 export type Arm = { when: ArmCondition[]; set: SetAction };
 
 export type Effect = {
+  // Stable row id — present when loaded from /get-effects-summaries (the management
+  // view), enabling per-rule disable/delete. Absent on the id-less runtime view.
+  id?: number;
   trigger: Trigger;
   arms: Arm[];
   enabled: boolean;

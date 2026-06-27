@@ -31,10 +31,10 @@ export const sensors = [
 ];
 
 export const effects = [
-  { trigger: { source: "sensor", nodeId: "sen-motion", channel: "presence" }, arms: [{ when: [{ kind: "sensor", nodeId: "sen-motion", channel: "presence", op: "eq", value: true }], set: { nodeId: "dev-ceiling", channel: "power", value: true } }], enabled: true },
-  { trigger: { source: "sensor", nodeId: "sen-th2", channel: "temperature" }, arms: [{ when: [{ kind: "sensor", nodeId: "sen-th2", channel: "temperature", op: "gt", value: 25 }], set: { nodeId: "dev-cooler", channel: "fan", value: true } }], enabled: true },
-  { trigger: { source: "time", at: "23:00" }, arms: [{ when: [], set: { nodeId: "dev-bedroom", channel: "brightness", value: 20 } }], enabled: false },
-  { trigger: { source: "time", at: "sunset" }, arms: [{ when: [], set: { nodeId: "dev-blinds", channel: "position", value: 0 } }], enabled: true },
+  { id: 1, trigger: { source: "sensor", nodeId: "sen-motion", channel: "presence" }, arms: [{ when: [{ kind: "sensor", nodeId: "sen-motion", channel: "presence", op: "eq", value: true }], set: { nodeId: "dev-ceiling", channel: "power", value: true } }], enabled: true },
+  { id: 2, trigger: { source: "sensor", nodeId: "sen-th2", channel: "temperature" }, arms: [{ when: [{ kind: "sensor", nodeId: "sen-th2", channel: "temperature", op: "gt", value: 25 }], set: { nodeId: "dev-cooler", channel: "fan", value: true } }], enabled: true },
+  { id: 3, trigger: { source: "time", at: "23:00" }, arms: [{ when: [], set: { nodeId: "dev-bedroom", channel: "brightness", value: 20 } }], enabled: false },
+  { id: 4, trigger: { source: "time", at: "sunset" }, arms: [{ when: [], set: { nodeId: "dev-blinds", channel: "position", value: 0 } }], enabled: true },
 ];
 
 export const zones = ["Living Room", "Kitchen", "Bedroom", "Hallway", "Garage", "Outdoor"];
