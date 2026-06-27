@@ -13,6 +13,7 @@ import {
   enrollVoiceprint,
   forgetVoiceprint,
   getVoiceprintSamples,
+  speakerAvailable,
 } from "../../utils/server-handler";
 import { blobToWav16k } from "../../utils/audio-wav";
 import { AssistantMenuState } from "./assistant.model";
@@ -37,8 +38,13 @@ export class HouseholdServiceClass {
   }
 
   private async refreshVoiceSamples() {
+    // The Voice ID control only appears when the speaker-id service is up (the
+    // feature's on/off switch); skip the sample lookup entirely when it's off.
+    this.state.voiceIdEnabled = await speakerAvailable();
     const id = currentUser()?.id;
-    if (id) this.state.voiceSamples = await getVoiceprintSamples(id);
+    if (this.state.voiceIdEnabled && id) {
+      this.state.voiceSamples = await getVoiceprintSamples(id);
+    }
   }
 
   async refresh() {

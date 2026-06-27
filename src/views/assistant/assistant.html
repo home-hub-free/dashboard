@@ -88,7 +88,7 @@
             <i class="iconoir-key-alt"></i> Change my password
         </button>
 
-        <div class="voice-id">
+        <div class="voice-id" :if="this.voiceIdEnabled">
             <div class="voice-id-head">
                 <span class="voice-id-title"><i class="iconoir-voice"></i> Voice ID</span>
                 <span class="voice-id-count" :if="this.voiceSamples > 0">${this.voiceSamples} sample(s)</span>

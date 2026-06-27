@@ -106,6 +106,24 @@ export async function forgetVoiceprint(): Promise<void> {
   if (!res.ok) throw new Error(`Could not remove voiceprint (${res.status})`);
 }
 
+/**
+ * Whether the voiceprint feature is available — i.e. the speaker-id service is
+ * running + routed. The dashboard shows the "Enroll my voice" control only when
+ * this is true, so toggling the service (or `SPEAKER_ID_ENABLED`) flips the UI with
+ * no rebuild. A build-time `VITE_SPEAKER_ENABLED=false` hard-disables it.
+ */
+export async function speakerAvailable(): Promise<boolean> {
+  if ((import.meta as any).env?.VITE_SPEAKER_ENABLED === "false") return false;
+  try {
+    const res = await fetch(speakerServer + "health");
+    if (!res.ok) return false;
+    const data = await res.json().catch(() => ({}));
+    return !!data?.ok;
+  } catch {
+    return false;
+  }
+}
+
 /** How many voice samples the given user has enrolled (0 if none / service down). */
 export async function getVoiceprintSamples(userId: string): Promise<number> {
   try {

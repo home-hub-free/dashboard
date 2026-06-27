@@ -38,6 +38,7 @@ export type AssistantMenuState = {
   changeOwnPassword: () => void
 
   // Voice ID (voiceprint enrollment) for the signed-in member.
+  voiceIdEnabled: boolean
   voiceSamples: number
   enrollState: "idle" | "recording" | "saving"
   enrollMsg: string
