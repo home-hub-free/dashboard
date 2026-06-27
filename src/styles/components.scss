@@ -31,6 +31,11 @@
 
     button {
       flex: 0 0 auto;
+      // The global button reset (buttons.scss) sets width:100% on classless
+      // buttons; without overriding it here the Add button takes the whole row,
+      // squeezes the input to nothing, and overflows the overlay on narrow
+      // widths. Size it to its content instead.
+      width: auto;
       min-height: var(--tap-target-min);
       padding: 0 18px;
       border: none;

@@ -124,3 +124,31 @@ test.describe("functionality intact", () => {
     expect(errors, "no uncaught JS errors").toEqual([]);
   });
 });
+
+// The detail overlay must not overflow horizontally on a narrow (phone) panel —
+// a stray full-width element (e.g. the zone "Add" button hit by the global button
+// reset) made it scroll sideways and clip content.
+test.describe("overlay fits narrow viewports", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test.beforeEach(async ({ context, page }) => {
+    await seedSession(context, true);
+    await stubBackend(page);
+  });
+
+  test("device overlay does not overflow horizontally", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
+    // The cooler is the content-heaviest overlay; expand Advanced too.
+    await page.locator(".device-tile.cat-evap-cooler .tile-edit").first().click();
+    await page.waitForSelector(".edit-container", { timeout: 20_000 });
+    await page.locator(".overlay-advanced > summary").click().catch(() => {});
+    await page.waitForTimeout(300);
+
+    const overflow = await page.evaluate(() => {
+      const c = document.querySelector(".overlay-modal-content .content") as HTMLElement;
+      return c.scrollWidth - c.clientWidth;
+    });
+    expect(overflow, "no horizontal overflow in the overlay").toBeLessThanOrEqual(1);
+  });
+});
