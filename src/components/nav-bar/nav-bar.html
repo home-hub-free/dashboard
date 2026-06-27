@@ -33,6 +33,10 @@
       <i class="iconoir-refresh-double"></i>
       <span class="ws-dot"></span>
     </span>
-    <span class="menu-item-text"> Refresh </span>
+    <span class="menu-item-text">
+      <span :if="this.wsState === 'connected'">Connected</span>
+      <span :if="this.wsState === 'syncing'">Syncing…</span>
+      <span :if="this.wsState === 'disconnected'">Reconnect</span>
+    </span>
   </div>
 </div>

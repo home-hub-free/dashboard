@@ -137,8 +137,30 @@
       }
     }
 
-    // Separate Refresh from the primary destinations.
-    .nav-refresh { margin-top: var(--space-4); }
+    // Refresh is NOT a destination — it's a connection-status affordance. Pin it
+    // to the bottom of the rail and de-emphasise it so it never reads as a peer of
+    // Home/Automations/Assistant/Settings.
+    .nav-refresh {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 12px;
+      margin: 0 14px;
+      padding: 8px 6px;
+
+      .menu-item-icon { font-size: 1.05em; color: var(--color-text-tertiary); }
+      .menu-item-text { font-weight: var(--font-weight-semibold); font-size: 0.82rem; color: var(--color-text-tertiary); }
+      &:hover { background: rgba(255, 255, 255, 0.04); }
+    }
+  }
+}
+
+// Mobile bottom-nav: the four destinations carry equal weight; Refresh shrinks to
+// a compact status chip at the end so it doesn't read as a fifth tab.
+@media (max-width: 639px) {
+  #nav-bar .nav-refresh {
+    flex: 0 0 auto;
+    .menu-item-text { font-size: 0.66rem; color: var(--color-text-tertiary); }
   }
 }
 
