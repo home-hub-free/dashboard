@@ -5,7 +5,14 @@ import { SensorsService } from "../views/home/sensors/sensors.service";
 import { syncState } from "./sync";
 import { bus } from "../core/bus";
 
-const socket = io.connect(server);
+// `server` is a same-origin path prefix ("/api/") behind nginx (and via the Vite dev
+// proxy), or an absolute URL when VITE_SERVER_URL is set for direct dev. Socket.IO reads
+// its URL arg as a *namespace*, so for the relative case we pass the engine `path`
+// explicitly (`/api/socket.io/` → nginx strips `/api` → the hub's default `/socket.io/`);
+// for an absolute origin we connect to it with the default path.
+const socket = /^https?:\/\//.test(server)
+  ? io.connect(server, { path: "/socket.io/" })
+  : io.connect({ path: `${server}socket.io/` });
 
 export let socketId = '';
 

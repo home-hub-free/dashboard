@@ -2,17 +2,22 @@ import { AutoEffect } from "../views/automations/automations.model";
 import { Candidate } from "../views/automations/discovery-review/discovery-review.model";
 import { authHeaders, currentUser, getToken, handleUnauthorized } from "./auth";
 
-// Server URL. Defaults to the fixed Raspberry Pi IP on the home LAN, but can be
-// overridden for local development/verification via the VITE_SERVER_URL env var.
+// Hub (Express) base URL. SAME-ORIGIN relative path behind nginx (`/api/` → :8088)
+// so dashboard↔hub fetches AND the Socket.IO stream ride the page's (https) secure
+// context — no CORS, no mixed content. That secure context is the prerequisite for the
+// browser mic (getUserMedia). Overridable via VITE_SERVER_URL to talk to a hub directly;
+// the `npm run dev` Vite proxy maps `/api` → the box, so the relative default also works
+// in dev (see vite.config.js).
 export const server =
-  (import.meta as any).env?.VITE_SERVER_URL || "http://192.168.1.232:8088/";
+  (import.meta as any).env?.VITE_SERVER_URL || "/api/";
 
-// memory-service URL — the Pattern Discovery candidate queue lives here (port 8120), separate from
-// the hub. Overridable via VITE_MEMORY_URL; falls back to the canonical LLM box. The browser reaches
-// it cross-origin (the service sends permissive CORS), so the hub stays out of the memory path
-// (CLAUDE.md "hub never touches memory-service").
+// memory-service base URL — the Pattern Discovery candidate queue lives here (:8120),
+// separate from the hub. Same-origin behind nginx (`/memory/` → :8120), so it rides the
+// page's secure context too (no mixed content). nginx — not the hub — does the routing,
+// so the hub still never touches the memory path (CLAUDE.md "hub never touches
+// memory-service"). Overridable via VITE_MEMORY_URL.
 export const memoryServer =
-  (import.meta as any).env?.VITE_MEMORY_URL || "http://192.168.1.232:8120/";
+  (import.meta as any).env?.VITE_MEMORY_URL || "/memory/";
 
 // Voice-request path. These three services sit behind the same nginx as the
 // dashboard, so the defaults are SAME-ORIGIN relative paths (/gateway/, /voice/,
