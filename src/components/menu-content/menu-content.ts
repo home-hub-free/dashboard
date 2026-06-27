@@ -4,13 +4,14 @@ import { VAssistantContent } from "../../views/assistant/assistant";
 import { NavBar } from "../nav-bar/nav-bar";
 import { AutomationsContent } from "../../views/automations/automations";
 import { HomeContent } from "../../views/home/home";
+import { SettingsContent } from "../../views/settings/settings";
 import { MenuContentState } from "./menu-content.model";
 
 
 class TabContentClass {
 
   bind!: MenuContentState;
-  private activeView?: typeof HomeContent | typeof AutomationsContent | typeof VAssistantContent;
+  private activeView?: typeof HomeContent | typeof AutomationsContent | typeof VAssistantContent | typeof SettingsContent;
 
   constructor() {}
 
@@ -52,6 +53,8 @@ class TabContentClass {
         return AutomationsContent;
       case 'assistant':
         return VAssistantContent;
+      case 'settings':
+        return SettingsContent;
     }
 
     return null;

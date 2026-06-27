@@ -2,7 +2,7 @@
     <header class="page-head">
         <div class="ph-kicker">Assistant</div>
         <h1 class="ph-title">Talk to your <em>home.</em></h1>
-        <p class="ph-lede">Ask out loud, trigger a quick action, or manage who the house listens to.</p>
+        <p class="ph-lede">Hold to ask anything — lights, climate, the forecast, your day — or make an announcement out loud.</p>
     </header>
 
     <section class="assistant-section voice-ask">
@@ -38,147 +38,17 @@
     </section>
 
     <section class="assistant-section">
-        <p class="section-title">Quick actions</p>
-        <div class="toggle-group">
-            <button class="toggle-button" :onmouseup="this.readForecast()">
-                <i class="iconoir-sun-light"></i> Forecast
-            </button>
-            <button class="toggle-button" :onmouseup="this.readCalendar()">
-                <i class="iconoir-calendar"></i> Calendars
-            </button>
-        </div>
-    </section>
-
-    <section class="assistant-section">
-        <p class="section-title">Custom speech</p>
+        <p class="section-title">Make an announcement</p>
+        <p class="section-hint">Type a message and the house will say it out loud on the speakers.</p>
         <textarea
             class="assistant-textarea"
-            name="custom-speech"
-            id="custom-speech"
-            :oninput="this.customSpeech = event.target.value"
-        >${this.customSpeech}</textarea>
-        <button class="add-range-btn" :onmouseup="this.assistantSay(this.customSpeech)">
-            <i class="iconoir-megaphone"></i> Say
-        </button>
-    </section>
-
-    <section class="assistant-section">
-        <p class="section-title">Household</p>
-        <div class="signed-in-row">
-            <span class="signed-in-who">
-                Signed in as <span class="signed-in-name">${this.signedInName}</span>
-            </span>
-            <button class="remove-btn" :onmouseup="this.signOut()">
-                <i class="iconoir-log-out"></i> Sign out
-            </button>
-        </div>
-
-        <div class="household-add">
-            <input
-                type="password"
-                autocomplete="current-password"
-                placeholder="current password"
-                :value="this.pwCurrent"
-                :oninput="this.pwCurrent = event.target.value"
-            />
-            <input
-                type="password"
-                autocomplete="new-password"
-                placeholder="new password"
-                :value="this.pwNew"
-                :oninput="this.pwNew = event.target.value"
-            />
-        </div>
-        <p class="household-error" :if="this.pwError">${this.pwError}</p>
-        <button class="add-range-btn" :onmouseup="this.changeOwnPassword()">
-            <i class="iconoir-key-alt"></i> Change my password
-        </button>
-
-        <div class="voice-id" :if="this.voiceIdEnabled">
-            <div class="voice-id-head">
-                <span class="voice-id-title"><i class="iconoir-voice"></i> Voice ID</span>
-                <span class="voice-id-count" :if="this.voiceSamples > 0">${this.voiceSamples} sample(s)</span>
-                <span class="voice-id-count" :if="this.voiceSamples === 0">not enrolled</span>
-            </div>
-            <p class="voice-id-hint">
-                Enroll your voice so the house recognises who's speaking — even when
-                several people share one speaker. Record a few samples for best results.
-            </p>
-            <div class="voice-id-actions">
-                <button
-                    class="add-range-btn"
-                    :class:busy="this.enrollState !== 'idle'"
-                    :onmouseup="this.enrollVoice()"
-                >
-                    <i class="iconoir-mic"></i>
-                    <span :if="this.enrollState === 'idle'">Enroll my voice</span>
-                    <span :if="this.enrollState === 'recording'">Listening…</span>
-                    <span :if="this.enrollState === 'saving'">Saving…</span>
-                </button>
-                <button
-                    class="remove-btn"
-                    :if="this.voiceSamples > 0"
-                    :onmouseup="this.forgetVoice()"
-                >
-                    <i class="iconoir-trash"></i> Forget
-                </button>
-            </div>
-            <p class="voice-id-msg" :if="this.enrollMsg">${this.enrollMsg}</p>
-        </div>
-
-        <p class="household-error" :if="this.householdError">${this.householdError}</p>
-
-        <div class="household-list">
-            <div class="household-row" :foreach="user in this.households" :key="user.id">
-                <div class="household-name">
-                    <span class="household-display">${user.displayName}</span>
-                    <span class="household-you" :if="user.id === this.meId">you</span>
-                </div>
-                <input
-                    class="household-tone-input"
-                    type="text"
-                    placeholder="tone (e.g. casual)"
-                    :value="user.prefs.tone"
-                    :onchange="this.saveTone(user.id, event.target.value)"
-                />
-                <button
-                    class="remove-btn"
-                    :if="user.id !== this.meId"
-                    :onmouseup="this.removeHousehold(user.id)"
-                >
-                    <i class="iconoir-trash"></i>
-                </button>
-            </div>
-        </div>
-
-        <div class="household-add">
-            <input
-                type="text"
-                placeholder="username"
-                :value="this.newUsername"
-                :oninput="this.newUsername = event.target.value"
-            />
-            <input
-                type="text"
-                placeholder="display name"
-                :value="this.newDisplayName"
-                :oninput="this.newDisplayName = event.target.value"
-            />
-            <input
-                type="password"
-                placeholder="password"
-                :value="this.newPassword"
-                :oninput="this.newPassword = event.target.value"
-            />
-            <input
-                type="text"
-                placeholder="tone (optional)"
-                :value="this.newTone"
-                :oninput="this.newTone = event.target.value"
-            />
-        </div>
-        <button class="add-range-btn" :onmouseup="this.addHousehold()">
-            <i class="iconoir-add-user"></i> Add member
+            name="announce"
+            id="announce"
+            placeholder="e.g. Dinner's ready"
+            :oninput="this.announceText = event.target.value"
+        >${this.announceText}</textarea>
+        <button class="add-range-btn" :onmouseup="this.assistantSay(this.announceText)">
+            <i class="iconoir-megaphone"></i> Announce
         </button>
     </section>
 </div>

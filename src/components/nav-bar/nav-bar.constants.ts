@@ -17,10 +17,13 @@ export interface IMenuItem {
   activeTabIndex: number;
 }
 
+// Top-level destinations. Each is a single glanceable view — no sub-tabs (the
+// old per-item `tabs`/`endpoint` config was vestigial and is dropped). Order is
+// the daily-use priority: control → automate → converse → administer.
 export const NavBarItems: IMenuItem[] = [
   {
     // Home is a single glanceable dashboard — devices and sensors live together,
-    // no sub-tabs, so the most common action (a light toggle) is one tap away.
+    // so the most common action (a light toggle) is one tap away.
     id: "home",
     icon: "home-simple-door",
     name: "Home",
@@ -28,21 +31,13 @@ export const NavBarItems: IMenuItem[] = [
     activeTabIndex: -1,
     tabs: [],
   },
-
   {
     id: "automations",
     icon: "timer",
     name: "Automations",
     expanded: false,
     activeTabIndex: -1,
-    tabs: [
-      {
-        id: "automations-list",
-        name: "All",
-        icon: "",
-        endpoint: "get-effects",
-      },
-    ],
+    tabs: [],
   },
   {
     id: "assistant",
@@ -50,13 +45,15 @@ export const NavBarItems: IMenuItem[] = [
     name: "Assistant",
     expanded: false,
     activeTabIndex: -1,
-    tabs: [
-      {
-        id: "info",
-        name: "Info",
-        icon: "",
-        endpoint: "emma",
-      },
-    ],
+    tabs: [],
+  },
+  {
+    // Account + household administration (relocated out of Assistant).
+    id: "settings",
+    icon: "settings",
+    name: "Settings",
+    expanded: false,
+    activeTabIndex: -1,
+    tabs: [],
   },
 ];

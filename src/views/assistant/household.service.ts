@@ -16,7 +16,7 @@ import {
   speakerAvailable,
 } from "../../utils/server-handler";
 import { blobToWav16k } from "../../utils/audio-wav";
-import { AssistantMenuState } from "./assistant.model";
+import type { SettingsState } from "../settings/settings.model";
 
 // How long a single enrollment sample records before auto-stopping.
 const ENROLL_MS = 4000;
@@ -28,9 +28,9 @@ const ENROLL_MS = 4000;
  * bindrjs re-renders; arrays are reassigned (not mutated) so the proxy notices.
  */
 export class HouseholdServiceClass {
-  private state!: AssistantMenuState;
+  private state!: SettingsState;
 
-  attach(state: AssistantMenuState) {
+  attach(state: SettingsState) {
     this.state = state;
     this.state.meId = currentUser()?.id || "";
     this.refresh();

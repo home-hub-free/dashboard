@@ -58,6 +58,14 @@ for (const vp of VIEWPORTS) {
       await shot(page, "assistant", vp.tag);
     });
 
+    test("settings", async ({ page }) => {
+      await gotoHome(page);
+      await clickMenu(page, "Settings");
+      await page.waitForSelector(".settings-view", { timeout: 20_000 }).catch(() => {});
+      await page.waitForTimeout(600);
+      await shot(page, "settings", vp.tag);
+    });
+
     test("device-overlay", async ({ page }) => {
       await gotoHome(page);
       await page.locator(".device-tile .tile-edit").first().click().catch(() => {});

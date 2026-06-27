@@ -29,7 +29,7 @@ test.describe("functionality intact", () => {
     expect(errors, "no uncaught JS errors").toEqual([]);
   });
 
-  test("all three menus mount their views without errors", async ({ page }) => {
+  test("all menus mount their views without errors", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
 
@@ -43,6 +43,11 @@ test.describe("functionality intact", () => {
     await page.locator(".menu-item", { hasText: "Assistant" }).first().click();
     await expect(page.locator(".assistant-view")).toBeVisible();
     await expect(page.locator(".voice-talk")).toBeVisible();
+
+    // Settings (household/account) is now its own destination, split out of Assistant.
+    await page.locator(".menu-item", { hasText: "Settings" }).first().click();
+    await expect(page.locator(".settings-view")).toBeVisible();
+    await expect(page.locator(".settings-view .signed-in-row")).toBeVisible();
 
     await page.locator(".menu-item", { hasText: "Home" }).first().click();
     await expect(page.locator("#home-status .hs-thesis")).toBeVisible();

@@ -245,6 +245,12 @@
     padding: var(--space-5);
   }
 
+  .section-hint {
+    margin: -4px 0 var(--space-3);
+    font-size: 0.86rem;
+    color: var(--color-text-tertiary);
+  }
+
   // The hold-to-talk affordance becomes the hero of the screen.
   .voice-talk {
     width: 100%;
