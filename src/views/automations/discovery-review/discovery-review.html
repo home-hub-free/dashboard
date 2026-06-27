@@ -8,17 +8,29 @@
   <div class="discovery-error" :if="this.error">${this.error}</div>
 
   <div :foreach="row in this.rows" :key="row.candidate.id" class="discovery-card">
-    <div class="discovery-line">${row.line}</div>
+    <div class="discovery-card-top">
+      <span class="discovery-spark"><i class="iconoir-sparks"></i></span>
+      <div class="discovery-line">${row.line}</div>
+    </div>
+
+    <div class="discovery-conf">
+      <div class="conf-track"><div class="conf-fill" :style="{ width: row.confidencePct + '%' }"></div></div>
+      <span class="conf-label"><strong>${row.confidencePct}%</strong> of the time</span>
+    </div>
+
     <div class="discovery-meta">
-      <span class="discovery-badge" :if="row.zone">${row.zone}</span>
-      <span class="discovery-badge">seen ${row.support}×</span>
-      <span class="discovery-badge">${row.days} day(s)</span>
-      <span class="discovery-badge">${row.confidencePct}% of the time</span>
+      <span class="discovery-badge" :if="row.zone"><i class="iconoir-position"></i> ${row.zone}</span>
+      <span class="discovery-badge"><i class="iconoir-eye"></i> seen ${row.support}×</span>
+      <span class="discovery-badge"><i class="iconoir-calendar"></i> ${row.days} day(s)</span>
       <span class="discovery-badge discovery-mature" :if="row.matured">established</span>
     </div>
+
     <div class="discovery-actions">
-      <button class="discovery-accept" :disabled="row.busy" :onclick="this.accept(row)">Automate</button>
-      <button class="discovery-dismiss" :disabled="row.busy" :onclick="this.dismiss(row)">Dismiss</button>
+      <!-- :class:busy (not :disabled): bindrjs emits a bare boolean attribute even
+           for a falsy value (see DESIGN.md §7), which left these buttons permanently
+           disabled. The accept()/dismiss() handlers already guard on row.busy. -->
+      <button class="discovery-accept" :class:busy="row.busy" :onclick="this.accept(row)"><i class="iconoir-check"></i> Automate</button>
+      <button class="discovery-dismiss" :class:busy="row.busy" :onclick="this.dismiss(row)">Dismiss</button>
     </div>
   </div>
 </div>

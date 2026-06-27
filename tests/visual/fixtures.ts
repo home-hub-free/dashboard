@@ -40,3 +40,26 @@ export const effects = [
 export const zones = ["Living Room", "Kitchen", "Bedroom", "Hallway", "Garage", "Outdoor"];
 
 export const profiles = { profiles: [{ user_id: "u1", samples: 3 }] };
+
+// Pattern-discovery candidates (memory-service) — the "Suggested for you" cards.
+export const candidates = {
+  ok: true,
+  candidates: [
+    {
+      id: 1, fingerprint: "fp1", status: "pending",
+      trigger: { source: "sensor", nodeId: "sen-motion", channel: "presence", value: true },
+      arms: [{ when: [], set: { nodeId: "dev-ceiling", channel: "power", value: true } }],
+      evidence: { support: 14, confidence: 0.86, distinctDays: 9, recencyScore: 0.92, firstSeen: "", lastSeen: "" },
+      zone: "Living Room", timeBand: "evening",
+      line: "Turn on the Ceiling light when motion is detected in the Living Room", matured: true,
+    },
+    {
+      id: 2, fingerprint: "fp2", status: "pending",
+      trigger: { source: "sensor", nodeId: "sen-th2", channel: "temperature", value: 25 },
+      arms: [{ when: [], set: { nodeId: "dev-cooler", channel: "fan", value: true } }],
+      evidence: { support: 6, confidence: 0.61, distinctDays: 4, recencyScore: 0.7, firstSeen: "", lastSeen: "" },
+      zone: "Living Room", timeBand: "afternoon",
+      line: "Start the cooler fan when the Living Room climbs above 25°", matured: false,
+    },
+  ],
+};

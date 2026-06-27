@@ -15,6 +15,9 @@ export default defineConfig({
     baseURL: "http://localhost:8081",
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
+    // Capture settled final states (the redesign's entrance animations honour
+    // reduced-motion), so screenshots are deterministic.
+    reducedMotion: "reduce",
   },
   webServer: {
     command: "npx vite --config vite.config.js --port 8081",

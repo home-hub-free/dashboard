@@ -51,6 +51,29 @@ test.describe("functionality intact", () => {
     expect(errors, "no uncaught JS errors").toEqual([]);
   });
 
+  test("discovery cards are readable and the Automate action fires", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
+    await page.locator(".menu-item", { hasText: "Automations" }).first().click();
+    await page.waitForSelector(".discovery-card", { timeout: 20_000 });
+
+    // Guard the reported bug: card text must not render black-on-dark.
+    const color = await page
+      .locator(".discovery-line")
+      .first()
+      .evaluate((el) => getComputedStyle(el).color);
+    expect(color).not.toBe("rgb(0, 0, 0)");
+
+    // Accepting a suggestion still records it on memory-service.
+    const accepts: string[] = [];
+    page.on("request", (r) => {
+      if (r.url().includes("candidates/accept")) accepts.push(r.url());
+    });
+    await page.locator(".discovery-accept").first().click();
+    await page.waitForTimeout(1000);
+    expect(accepts.length, "accept POST fired").toBeGreaterThan(0);
+  });
+
   test("opening and reading a device overlay works", async ({ page }) => {
     await page.goto("/");
     await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });

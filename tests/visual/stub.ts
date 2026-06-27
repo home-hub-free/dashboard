@@ -52,4 +52,5 @@ export async function stubBackend(page: Page) {
   await page.route("**/api/get-zones", (r) => r.fulfill(json(fx.zones)));
   await page.route("**/speaker/health", (r) => r.fulfill(json({ ok: true })));
   await page.route("**/speaker/profiles", (r) => r.fulfill(json(fx.profiles)));
+  await page.route("**/memory/candidates", (r) => r.fulfill(json(fx.candidates)));
 }

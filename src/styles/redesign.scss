@@ -358,3 +358,230 @@
   border-radius: var(--radius-control);
   box-shadow: var(--shadow-lg);
 }
+
+// ============================================================================
+// 7. AMBIENT DEPTH — deeper, warmer base + lifted surfaces
+// ============================================================================
+body {
+  background:
+    radial-gradient(135% 90% at 88% -12%, rgba(244, 176, 80, 0.07), transparent 52%),
+    radial-gradient(110% 80% at -10% 112%, rgba(78, 168, 140, 0.06), transparent 55%),
+    #161617;
+  background-attachment: fixed;
+}
+
+// Lift resting cards/tiles with a hairline top highlight + soft shadow — depth,
+// not flat. Lit tiles keep their warm/teal glow (tiles.scss).
+#main-content #tab-content {
+  .device-tile,
+  .effect-container,
+  .assistant-section {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 14px 30px -22px rgba(0, 0, 0, 0.9);
+  }
+}
+
+// ============================================================================
+// 8. MOTION — entrance + micro-interactions (reduced-motion respected)
+// ============================================================================
+@keyframes rd-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes rd-fade { from { opacity: 0; } to { opacity: 1; } }
+
+// The whole view eases in on tab switch (these roots mount per navigation, so it
+// never replays on a live data tick).
+#main-content #tab-content > div { animation: rd-fade 280ms var(--ease-out) both; }
+
+// Region-level stagger on Home — animated containers are stable bind roots, so a
+// device/sensor update patches their children without replaying the entrance.
+.home-status { animation: rd-rise 440ms var(--ease-out) both; }
+.home-main .home-sectit { animation: rd-rise 440ms var(--ease-out) both; }
+#main-content #tab-content #devices { animation: rd-rise 480ms var(--ease-out) 60ms both; }
+#main-content #tab-content #sensors.env-band { animation: rd-rise 480ms var(--ease-out) 120ms both; }
+
+.home-status .hs-stat { animation: rd-rise 460ms var(--ease-out) both; }
+.home-status .hs-stat:nth-of-type(1) { animation-delay: 90ms; }
+.home-status .hs-stat:nth-of-type(2) { animation-delay: 150ms; }
+.home-status .hs-stat:nth-of-type(3) { animation-delay: 210ms; }
+
+#tab-content .effect-container,
+#tab-content .assistant-section,
+#tab-content .discovery-card { animation: rd-rise 420ms var(--ease-out) both; }
+#tab-content .effect-container:nth-of-type(2) { animation-delay: 60ms; }
+#tab-content .effect-container:nth-of-type(3) { animation-delay: 120ms; }
+#tab-content .effect-container:nth-of-type(4) { animation-delay: 180ms; }
+
+// Snappier tile feedback.
+#main-content #tab-content .device-tile {
+  transition: transform 180ms var(--ease-out), box-shadow 240ms var(--ease-in-out),
+    background 240ms var(--ease-in-out), border-color 240ms var(--ease-in-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  #main-content #tab-content .device-tile:not(.cat-camera):hover { transform: translateY(-2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #main-content #tab-content > div,
+  .home-status, .home-main .home-sectit,
+  #main-content #tab-content #devices,
+  #main-content #tab-content #sensors.env-band,
+  .home-status .hs-stat, #tab-content .effect-container,
+  #tab-content .assistant-section, #tab-content .discovery-card { animation: none !important; }
+}
+
+// ============================================================================
+// 9. SUGGESTED FOR YOU — pattern-discovery cards
+//    Fixes the black-on-dark text + the off-palette blue accent, and turns each
+//    card into a glanceable "your home noticed this" suggestion with a confidence
+//    meter and a clear primary action.
+// ============================================================================
+#main-content #tab-content .discovery-review {
+  max-width: 920px;
+  margin: 0 0 var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  .discovery-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: var(--space-1);
+
+    strong {
+      font-size: 1rem;
+      font-weight: var(--font-weight-extrabold);
+      letter-spacing: -0.01em;
+      color: var(--color-text-primary);
+    }
+    .discovery-sub { font-size: 0.85rem; color: var(--color-text-tertiary); opacity: 1; }
+  }
+  .discovery-loading,
+  .discovery-error { color: var(--color-text-tertiary); font-size: 0.88rem; }
+
+  .discovery-card {
+    background:
+      radial-gradient(130% 150% at 0% 0%, var(--color-primary-rgba-10), transparent 58%),
+      linear-gradient(180deg, var(--color-surface), var(--color-surface-secondary));
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-tile);
+    box-shadow: 0 14px 30px -22px rgba(0, 0, 0, 0.9);
+    padding: var(--space-4) var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    color: var(--color-text-primary); // ← the fix: readable text on the dark card
+  }
+
+  .discovery-card-top { display: flex; align-items: flex-start; gap: var(--space-3); }
+  .discovery-spark {
+    flex: none;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--color-primary-rgba-20);
+    color: var(--color-primary-light);
+    font-size: 1.05rem;
+  }
+  .discovery-line {
+    font-size: 1.02rem;
+    font-weight: var(--font-weight-bold);
+    line-height: 1.35;
+    color: var(--color-text-primary);
+  }
+
+  .discovery-conf { display: flex; align-items: center; gap: var(--space-3); }
+  .conf-track {
+    flex: 1;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--color-surface-tertiary);
+    overflow: hidden;
+  }
+  .conf-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+    transition: width 600ms var(--ease-out);
+  }
+  .conf-label {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    strong { color: var(--color-text-primary); font-weight: var(--font-weight-bold); }
+  }
+
+  .discovery-meta { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .discovery-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.74rem;
+    font-weight: var(--font-weight-semibold);
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--color-surface-tertiary);
+    color: var(--color-text-secondary);
+    opacity: 1;
+
+    i { font-size: 0.9rem; opacity: 0.8; }
+
+    &.discovery-mature {
+      background: var(--color-success-rgba-10);
+      color: var(--color-success-light);
+    }
+  }
+
+  .discovery-actions { display: flex; gap: var(--space-2); margin-top: var(--space-1); }
+  .discovery-accept {
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+    background: var(--color-primary);
+    color: var(--color-on-fill);
+    border: none;
+    border-radius: var(--radius-control);
+    font-weight: var(--font-weight-bold);
+    min-height: 44px;
+    transition: transform 140ms var(--ease-out), background 160ms var(--ease-in-out);
+
+    &:hover:not(.busy) { background: var(--color-primary-light); transform: translateY(-1px); }
+    &:active:not(.busy) { transform: scale(0.98); }
+  }
+  .discovery-dismiss {
+    background: transparent;
+    color: var(--color-text-tertiary);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-control);
+    font-weight: var(--font-weight-semibold);
+    min-height: 44px;
+    padding: 0 var(--space-5);
+    transition: color 160ms, border-color 160ms;
+
+    &:hover:not(.busy) { color: var(--color-text-primary); border-color: var(--color-text-tertiary); }
+  }
+
+  // In-flight state (replaces the broken :disabled attribute binding).
+  .discovery-accept.busy,
+  .discovery-dismiss.busy { opacity: 0.6; pointer-events: none; }
+}
+
+// On narrow screens the global `button { width: 100% }` mobile rule fights the
+// side-by-side actions and clips the labels — stack them instead.
+@media (max-width: 640px) {
+  #main-content #tab-content .discovery-review .discovery-actions {
+    flex-direction: column;
+  }
+  #main-content #tab-content .discovery-review .discovery-accept,
+  #main-content #tab-content .discovery-review .discovery-dismiss {
+    width: 100%;
+    padding: 0;
+  }
+}
+
+// ============================================================================
+// 10. HOME HERO — a touch more presence
+// ============================================================================
+.home-status .hs-thesis { font-size: 2.4rem; }
+@media (min-width: 1024px) {
+  .home-status .hs-thesis { font-size: 2.7rem; }
+}
