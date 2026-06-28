@@ -2,7 +2,7 @@ import { Component } from "../../../core/component";
 import { bus } from "../../../core/bus";
 import { store } from "../../../store/store";
 import { showToaster } from "../../../components/popup-message/popup-message";
-import { setServerChannel, visionStreamUrl, ZoneOccupant } from "../../../utils/server-handler";
+import { setServerChannel, visionStreamUrl, ZoneOccupant, VisionCameraStatus } from "../../../utils/server-handler";
 import template from "./devices.html?raw";
 import { Device, DevicesTabState } from "./devices.model";
 import { Channel, deviceChannels, withChannelValue } from "./channels";
@@ -88,13 +88,38 @@ function summariseOccupants(occ: ZoneOccupant[] | undefined): string {
   return parts.join(" + ") || `${occ.length} present`;
 }
 
+/** Camera tile health badge — answers the two questions at a glance: is the camera
+ * making frames (blobs), and is the box actually detecting on them? Traffic-light:
+ *   green  "live · detecting/ID on" — frames fresh AND a real perception backend
+ *   amber  "live · no detection"    — frames fresh but detector is the null stub
+ *   amber  "stalled"                — worker present but frames went stale
+ *   red    "offline" / "no worker"  — no frames / vision-service has no worker
+ * The tooltip carries the raw counters (frames_seen, frame age, backend names). */
+function summariseCamHealth(
+  st: VisionCameraStatus | undefined,
+): { text: string; state: "ok" | "warn" | "down"; title: string } {
+  if (!st) {
+    return { text: "no worker", state: "down", title: "vision-service has no worker for this camera (not on roster / no stream URL)" };
+  }
+  const title =
+    `frames: ${st.frames_seen} · last frame: ${st.last_frame_age_s ?? "—"}s ago · ` +
+    `detector: ${st.detector} · face: ${st.face} · rec: ${st.rec_mode}`;
+  const fresh = st.connected && st.last_frame_age_s !== null && st.last_frame_age_s < 5;
+  if (!st.connected || st.last_frame_age_s === null) return { text: "offline", state: "down", title };
+  if (!fresh) return { text: "stalled", state: "warn", title };
+  if (st.detector === "null") return { text: "live · no detection", state: "warn", title };
+  return { text: st.face === "null" ? "live · detecting" : "live · ID on", state: "ok", title };
+}
+
 class DevicesTabClass extends Component<DevicesTabState> {
   devicesService: DevicesServiceClass;
   private unsubscribeDeclare?: () => void;
   private unsubscribeUpdate?: () => void;
   private unsubscribeOccupancy?: () => void;
+  private unsubscribeCameras?: () => void;
   private unsubscribeDevices?: () => void;
   private zoneOccupants: Record<string, ZoneOccupant[]> = {};
+  private camStatus: Record<string, VisionCameraStatus> = {};
 
   constructor(devicesService: DevicesServiceClass) {
     super();
@@ -183,6 +208,12 @@ class DevicesTabClass extends Component<DevicesTabState> {
       this.zoneOccupants = zones || {};
       this.applyOccupancy();
     });
+    // Per-camera worker health (same poll) — drives the tile's stream/detection badge.
+    this.unsubscribeCameras = bus.on("vision:cameras", (cameras) => {
+      this.camStatus = {};
+      (cameras || []).forEach((c) => (this.camStatus[c.id] = c));
+      this.applyOccupancy();
+    });
     startVisionOccupancy();
   }
 
@@ -191,14 +222,19 @@ class DevicesTabClass extends Component<DevicesTabState> {
     this.unsubscribeDeclare?.();
     this.unsubscribeUpdate?.();
     this.unsubscribeOccupancy?.();
+    this.unsubscribeCameras?.();
     stopVisionOccupancy();
   }
 
-  /** Push the latest per-zone occupancy onto each camera tile's `who` headline. */
+  /** Push the latest per-zone occupancy + worker health onto each camera tile. */
   private applyOccupancy() {
     (this.bind.devices || []).forEach((device) => {
       if (device.deviceCategory !== "camera") return;
       device.who = summariseOccupants(this.zoneOccupants[device.zone || "_"]);
+      const health = summariseCamHealth(this.camStatus[device.id]);
+      device.camHealth = health.text;
+      device.camHealthClass = `cam-health cam-health--${health.state}`;
+      device.camHealthTitle = health.title;
     });
   }
 

@@ -560,6 +560,38 @@
 
     i { font-size: 18px; opacity: 0.9; }
   }
+
+  // Stream/detection health pill — top-right, above the name label. A traffic-light
+  // dot answers the two questions at a glance: are frames flowing (blobs), and is the
+  // box actually detecting on them, or running the null stub? Tooltip has raw counters.
+  .cam-health {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+
+    .cam-health-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-secondary, #9ca3af);
+      box-shadow: 0 0 6px currentColor;
+    }
+
+    &.cam-health--ok .cam-health-dot { background: var(--color-success); box-shadow: 0 0 7px var(--color-success); }
+    &.cam-health--warn .cam-health-dot { background: var(--color-warning); box-shadow: 0 0 7px var(--color-warning); }
+    &.cam-health--down .cam-health-dot { background: var(--color-error); box-shadow: 0 0 7px var(--color-error); }
+  }
 }
 
 .empty-state {

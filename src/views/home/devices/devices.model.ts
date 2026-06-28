@@ -35,6 +35,14 @@ export type Device = {
   /** Camera only: "who is here" headline from the occupancy world-model
    * ("David + 1 guest", "Empty") — the high-value surface, not the picture (§6). */
   who?: string;
+  /** Camera only: vision-worker health badge text ("live · detecting", "live · no
+   * detection", "offline") — answers "is the cam making frames AND is detection on?". */
+  camHealth?: string;
+  /** Camera only: full badge class incl. state modifier for colour
+   * ("cam-health cam-health--ok|warn|down"). Bound directly to `:class`. */
+  camHealthClass?: string;
+  /** Camera only: badge tooltip — raw worker counters (frames, frame age, backends). */
+  camHealthTitle?: string;
 };
 
 export type DeviceWSEvents = {

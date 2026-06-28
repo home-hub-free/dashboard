@@ -1,7 +1,7 @@
 import type { Tab } from '../components/tabs/tabs.model';
 import type { Device } from '../views/home/devices/devices.model';
 import type { Sensor } from '../views/home/sensors/sensors.model';
-import type { ZoneOccupant } from '../utils/server-handler';
+import type { ZoneOccupant, VisionCameraStatus } from '../utils/server-handler';
 
 export type BusEvents = {
   'menu:change': { menuId: string; menuName: string; tabs: Tab[] };
@@ -13,6 +13,9 @@ export type BusEvents = {
   // Per-zone occupancy/identity from the vision-service (replaces the old per-frame
   // camera blob feed) — drives the camera tile's "who is here" headline (§6).
   'vision:occupancy': Record<string, ZoneOccupant[]>;
+  // Per-camera worker health from the same poll — drives the tile's stream/detection
+  // status badge (frames flowing? backend detecting, or null stub?).
+  'vision:cameras': VisionCameraStatus[];
   'ws:status': { state: 'connected' | 'disconnected' | 'syncing' };
 };
 

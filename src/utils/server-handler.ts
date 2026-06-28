@@ -210,14 +210,30 @@ export function visionStreamUrl(camId: string): string {
 
 /** Per-zone occupancy/identity snapshot — "who is in which room" (§7 pull surface). */
 export type ZoneOccupant = { track: string; id: string | null; name: string | null; class: string; confidence: number; since: number };
-export async function fetchOccupancy(): Promise<Record<string, ZoneOccupant[]>> {
+
+/** Per-camera worker health from the vision-service (`/occupancy.cameras[]`). Answers
+ * "is the cam making frames vs detecting presence": `frames_seen`/`connected` = blobs
+ * flowing; `detector`/`face` === "null" = the no-ML stub (relay/record only, no
+ * detection). The same snapshot also carries the zone occupancy, so one poll feeds both
+ * the "who is here" headline and the tile health badge. */
+export type VisionCameraStatus = {
+  id: string; zone: string; ip: string; connected: boolean;
+  frames_seen: number; last_frame_age_s: number | null;
+  detector: string; face: string; rec_mode: string;
+};
+
+/** One pull of the vision world-model: zone occupancy + per-camera worker health. */
+export async function fetchVisionState(): Promise<{
+  zones: Record<string, ZoneOccupant[]>;
+  cameras: VisionCameraStatus[];
+}> {
   try {
     const res = await fetch(visionServer + "occupancy");
-    if (!res.ok) return {};
+    if (!res.ok) return { zones: {}, cameras: [] };
     const data = await res.json();
-    return data?.zones || {};
+    return { zones: data?.zones || {}, cameras: data?.cameras || [] };
   } catch {
-    return {};
+    return { zones: {}, cameras: [] };
   }
 }
 

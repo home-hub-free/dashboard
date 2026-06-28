@@ -23,6 +23,11 @@
             <i class="iconoir-group"></i>
             <span>${device.who}</span>
         </div>
+        <!-- Stream/detection health: frames flowing? backend detecting or null stub? -->
+        <div :class="device.camHealthClass" :title="device.camHealthTitle" :if="device.camHealth">
+            <span class="cam-health-dot"></span>
+            <span>${device.camHealth}</span>
+        </div>
         <div class="cam-label">
             <i class="iconoir-video-camera"></i>
             <span>${device.name}</span>
