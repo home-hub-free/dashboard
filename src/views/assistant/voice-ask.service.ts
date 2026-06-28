@@ -3,10 +3,20 @@ import { blobToWav16k } from "../../utils/audio-wav";
 import {
   AgentAction,
   askAgent,
+  reportVoiceTurn,
   synthesizeSpeech,
   transcribeAudio,
+  VoiceTurnStages,
 } from "../../utils/server-handler";
 import { AssistantMenuState } from "./assistant.model";
+
+/** Monotonic clock for stage timings (immune to wall-clock jumps); ms. */
+const now = () =>
+  typeof performance !== "undefined" ? performance.now() : Date.now();
+const newTurnId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : String(Date.now()) + Math.random().toString(16).slice(2);
 
 export type VoiceState =
   | "idle"
@@ -30,6 +40,10 @@ export class VoiceAskServiceClass {
   private stream?: MediaStream;
   private chunks: Blob[] = [];
   private audio = new Audio();
+  // Per-turn E2E timing: id minted at record start; capture stamps bracket the recording.
+  private turnId = "";
+  private tRecStart = 0;
+  private tRecStop = 0;
 
   /** Wire the service to the assistant bind so UI updates are reactive. */
   attach(state: AssistantMenuState) {
@@ -48,12 +62,14 @@ export class VoiceAskServiceClass {
       return this.fail("Microphone access denied");
     }
     this.chunks = [];
+    this.turnId = newTurnId();
     this.recorder = new MediaRecorder(this.stream);
     this.recorder.ondataavailable = (e) => {
       if (e.data.size) this.chunks.push(e.data);
     };
     this.recorder.onstop = () => this.process();
     this.recorder.start();
+    this.tRecStart = now();
     this.state.voiceTranscript = "";
     this.state.voiceReply = "";
     this.state.voiceAction = "";
@@ -62,7 +78,10 @@ export class VoiceAskServiceClass {
 
   /** pointer-up / leave on the talk button. */
   stop() {
-    if (this.recorder?.state === "recording") this.recorder.stop();
+    if (this.recorder?.state === "recording") {
+      this.tRecStop = now();
+      this.recorder.stop();
+    }
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = undefined;
   }
@@ -75,27 +94,71 @@ export class VoiceAskServiceClass {
       this.state.voiceState = "idle";
       return;
     }
+
+    // E2E latency stitch: time each stage (capture → STT → agent → TTS → playback) and beacon the
+    // assembled turn to ops (via the gateway) in `finally`, so even a failed turn reports how far it
+    // got and where the time went. See OBSERVABILITY_PLAN.md P0-3.
+    const stages: VoiceTurnStages = {};
+    if (this.tRecStop > this.tRecStart) {
+      stages.capture = Math.round(this.tRecStop - this.tRecStart);
+    }
+    const turnStart = now();
+    let ok = false;
+    let errMsg: string | undefined;
+    let transcript = "";
+    let reply = "";
+    let tool: string | undefined;
+
     try {
       this.state.voiceState = "transcribing";
       // Worker reads via libsndfile (no webm) — re-encode to 16 kHz mono WAV first.
       const wav = await blobToWav16k(blob);
-      const text = await transcribeAudio(wav);
-      if (!text) return this.fail("Didn't catch that — try again");
-      this.state.voiceTranscript = text;
+      let t = now();
+      const stt = await transcribeAudio(wav);
+      stages.stt = Math.round(now() - t);
+      if (stt.inferSec != null) stages.sttCompute = Math.round(stt.inferSec * 1000);
+      if (!stt.text) {
+        errMsg = "empty transcript";
+        return this.fail("Didn't catch that — try again");
+      }
+      transcript = stt.text;
+      this.state.voiceTranscript = stt.text;
 
       this.state.voiceState = "thinking";
-      const reply = await askAgent(text);
-      this.state.voiceReply = reply.speech;
-      this.state.voiceAction = actionLabel(reply.action);
+      t = now();
+      const r = await askAgent(stt.text);
+      stages.agent = Math.round(now() - t);
+      reply = r.speech;
+      tool = r.action && "tool" in r.action ? r.action.tool : undefined;
+      this.state.voiceReply = r.speech;
+      this.state.voiceAction = actionLabel(r.action);
 
-      if (reply.speech) {
+      if (r.speech) {
         this.state.voiceState = "speaking";
-        const audioBlob = await synthesizeSpeech(reply.speech);
+        t = now();
+        const audioBlob = await synthesizeSpeech(r.speech);
+        stages.tts = Math.round(now() - t);
+        t = now();
         await this.play(audioBlob);
+        stages.playback = Math.round(now() - t);
       }
+      ok = true;
       this.state.voiceState = "idle";
     } catch (err: any) {
-      this.fail(err?.message || "Voice request failed");
+      const msg: string = err?.message || "Voice request failed";
+      errMsg = msg;
+      this.fail(msg);
+    } finally {
+      reportVoiceTurn({
+        id: this.turnId,
+        transcript,
+        reply,
+        tool,
+        ok,
+        error: ok ? undefined : errMsg,
+        stages,
+        totalMs: Math.round(now() - turnStart) + (stages.capture ?? 0),
+      });
     }
   }
 

@@ -33,6 +33,12 @@ export const ttsServer =
 // Same-origin behind nginx like the other voice services; overridable for dev.
 export const speakerServer =
   (import.meta as any).env?.VITE_SPEAKER_URL || "/speaker/";
+// vision-service (camera perception) — the camera live view + occupancy world-model +
+// Face-ID enrollment all come from here (NOT the hub, NOT the camera directly — the
+// vision-service is the single consumer of each cam stream, CAMERA_VISION_PLAN §3.2).
+// Same-origin behind nginx (`/vision/` → :8130); overridable for dev.
+export const visionServer =
+  (import.meta as any).env?.VITE_VISION_URL || "/vision/";
 
 /** What the agent decided this turn (mirrors llm-gateway /route `x_action`). */
 export type AgentAction = { tool: string; args?: any } | { error: string };
@@ -69,13 +75,65 @@ export type AgentUserContext = {
  * `audio`). Pass a WAV blob — the worker decodes with libsndfile, which rejects
  * webm/opus (see audio-wav.ts; callers convert via blobToWav16k first).
  */
-export async function transcribeAudio(blob: Blob): Promise<string> {
+export async function transcribeAudio(
+  blob: Blob,
+): Promise<{ text: string; inferSec?: number }> {
   const form = new FormData();
   form.append("audio", blob, "audio.wav");
   const res = await fetch(voiceServer + "transcribe", { method: "POST", body: form });
   if (!res.ok) throw new Error(`transcribe failed (${res.status})`);
   const data = await res.json();
-  return String(data?.text ?? "").trim();
+  // `infer_sec` is the worker's pure inference time (additive — older voice-pipeline omits it),
+  // letting the voice-turn waterfall split STT compute from upload/VAD/queue overhead.
+  return {
+    text: String(data?.text ?? "").trim(),
+    inferSec: typeof data?.infer_sec === "number" ? data.infer_sec : undefined,
+  };
+}
+
+/** Per-stage timings (ms) the dashboard measures for one push-to-talk round-trip. */
+export interface VoiceTurnStages {
+  capture?: number;
+  stt?: number;
+  sttCompute?: number;
+  agent?: number;
+  tts?: number;
+  playback?: number;
+}
+
+/**
+ * Fire-and-forget E2E voice-turn beacon → llm-gateway (`/gateway/voice/turn`, same https origin so
+ * no mixed-content). The gateway rings + SSEs it for the ops-dashboard's voice-turn waterfall. Never
+ * throws into the voice flow — observability must not break the feature. Identity is attached the
+ * same way as askAgent so a turn shows *who* spoke.
+ */
+export function reportVoiceTurn(rec: {
+  id: string;
+  path?: string;
+  transcript?: string;
+  reply?: string;
+  tool?: string;
+  ok: boolean;
+  error?: string;
+  stages: VoiceTurnStages;
+  totalMs: number;
+}): void {
+  try {
+    const user = currentUser();
+    const body = {
+      ...rec,
+      path: rec.path ?? "dashboard",
+      user: user ? { id: user.id, name: user.displayName } : undefined,
+    };
+    void fetch(gatewayServer + "voice/turn", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      keepalive: true, // let it complete even if the page/tab is navigating away
+    }).catch(() => {});
+  } catch {
+    /* never let telemetry break the voice path */
+  }
 }
 
 /**
@@ -140,6 +198,150 @@ export async function getVoiceprintSamples(userId: string): Promise<number> {
   } catch {
     return 0;
   }
+}
+
+// ── vision-service (camera live view + occupancy + Face ID + guests) ──────────
+
+/** The annotated MJPEG live-view URL for a camera (boxes + names when a perception
+ * backend is on). The dashboard `<img>`/`<video>` points HERE, never at the cam. */
+export function visionStreamUrl(camId: string): string {
+  return `${visionServer}stream/${encodeURIComponent(camId)}`;
+}
+
+/** Per-zone occupancy/identity snapshot — "who is in which room" (§7 pull surface). */
+export type ZoneOccupant = { track: string; id: string | null; name: string | null; class: string; confidence: number; since: number };
+export async function fetchOccupancy(): Promise<Record<string, ZoneOccupant[]>> {
+  try {
+    const res = await fetch(visionServer + "occupancy");
+    if (!res.ok) return {};
+    const data = await res.json();
+    return data?.zones || {};
+  } catch {
+    return {};
+  }
+}
+
+/** Whether the vision-service is up + routed (gates the Face-ID control + WHO overlay,
+ * exactly like speakerAvailable gates Voice ID). VITE_VISION_ENABLED=false hard-disables. */
+export async function visionAvailable(): Promise<boolean> {
+  if ((import.meta as any).env?.VITE_VISION_ENABLED === "false") return false;
+  try {
+    const res = await fetch(visionServer + "health");
+    if (!res.ok) return false;
+    const data = await res.json().catch(() => ({}));
+    return !!data?.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Enroll a face image for the signed-in member. The vision-service validates the
+ * bearer token against the hub (`/auth/me`) and enrolls for THAT user — biometrics
+ * stay on the box, the hub never holds them (§5.3). Returns the running sample count. */
+export async function enrollFace(jpeg: Blob): Promise<{ samples: number }> {
+  const token = getToken();
+  const form = new FormData();
+  form.append("image", jpeg, "face.jpg");
+  const res = await fetch(visionServer + "faces/enroll", {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: form,
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.detail || data?.error || `Face enrollment failed (${res.status})`);
+  }
+  const data = await res.json();
+  return { samples: Number(data?.samples ?? 0) };
+}
+
+/** Delete the signed-in member's face profile. */
+export async function forgetFace(): Promise<void> {
+  const token = getToken();
+  const res = await fetch(visionServer + "faces/forget", {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!res.ok) throw new Error(`Could not remove face profile (${res.status})`);
+}
+
+/** How many face samples the given user has enrolled (0 if none / service down). */
+export async function getFaceSamples(userId: string): Promise<number> {
+  try {
+    const res = await fetch(visionServer + "faces/profiles");
+    if (!res.ok) return 0;
+    const data = await res.json();
+    const mine = (data?.profiles || []).find((p: any) => p.user_id === userId);
+    return mine ? Number(mine.samples) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Recurring unknown guests surfaced for review/naming (§4.3 / §6). */
+export type Guest = { guest_id: string; name: string | null; sightings: number; last_seen: string; recurring: boolean; promoted_user_id: string | null };
+export async function listGuests(recurringOnly = true): Promise<Guest[]> {
+  try {
+    const res = await fetch(visionServer + `guests?recurring=${recurringOnly ? 1 : 0}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data?.guests || [];
+  } catch {
+    return [];
+  }
+}
+
+/** The served face image for a label (`users.id` member or `guest:N` cluster). */
+export function faceThumbUrl(labelId: string): string {
+  return visionServer + "faces/thumb/" + encodeURIComponent(labelId);
+}
+
+/** Every labelled person the cameras have seen — household + each default-id'd guest
+ * cluster — with their face, so the admin can put names to faces (§6). `thumbUrl` is
+ * null until a face has been captured for that label. */
+export type Person = {
+  id: string;
+  label: string;
+  name: string | null;
+  class: "household" | "guest";
+  sightings?: number;
+  recurring?: boolean;
+  named: boolean;
+  has_thumb: boolean;
+  thumbUrl: string | null;
+};
+export async function listPeople(): Promise<Person[]> {
+  try {
+    const res = await fetch(visionServer + "people");
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data?.people || []).map((p: any) => ({
+      ...p,
+      thumbUrl: p.has_thumb ? faceThumbUrl(p.id) : null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/** Name a recurring guest without promoting them to a household member. */
+export async function nameGuest(guestId: string, name: string): Promise<void> {
+  const res = await fetch(visionServer + `guests/${encodeURIComponent(guestId)}/name`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) throw new Error(`Could not name guest (${res.status})`);
+}
+
+/** Promote a recurring guest into a named household member's face gallery. */
+export async function promoteGuest(guestId: string, userId: string, name?: string): Promise<void> {
+  const res = await fetch(visionServer + `guests/${encodeURIComponent(guestId)}/promote`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ user_id: userId, name }),
+  });
+  if (!res.ok) throw new Error(`Could not promote guest (${res.status})`);
 }
 
 /**

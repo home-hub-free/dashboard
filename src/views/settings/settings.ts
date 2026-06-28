@@ -46,6 +46,19 @@ class SettingsContentClass extends Component<SettingsState> {
         enrollMsg: "",
         enrollVoice: () => this.householdService.enrollVoice(),
         forgetVoice: () => this.householdService.forgetVoice(),
+
+        faceIdEnabled: false,
+        faceSamples: 0,
+        faceEnrollState: "idle",
+        faceEnrollMsg: "",
+        enrollFace: () => this.householdService.enrollFace(),
+        forgetFace: () => this.householdService.forgetFace(),
+
+        peopleEnabled: false,
+        people: [],
+        peopleMsg: "",
+        namePerson: (id: string, name: string) => this.householdService.namePerson(id, name),
+        promotePerson: (id: string, userId: string) => this.householdService.promotePerson(id, userId),
       },
     });
 

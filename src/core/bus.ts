@@ -1,6 +1,7 @@
 import type { Tab } from '../components/tabs/tabs.model';
 import type { Device } from '../views/home/devices/devices.model';
 import type { Sensor } from '../views/home/sensors/sensors.model';
+import type { ZoneOccupant } from '../utils/server-handler';
 
 export type BusEvents = {
   'menu:change': { menuId: string; menuName: string; tabs: Tab[] };
@@ -9,7 +10,9 @@ export type BusEvents = {
   'device:declare': Device;
   'sensor:update': Sensor;
   'sensor:declare': Sensor;
-  'camera:frame': { deviceId: string; blobUrl: string };
+  // Per-zone occupancy/identity from the vision-service (replaces the old per-frame
+  // camera blob feed) — drives the camera tile's "who is here" headline (§6).
+  'vision:occupancy': Record<string, ZoneOccupant[]>;
   'ws:status': { state: 'connected' | 'disconnected' | 'syncing' };
 };
 

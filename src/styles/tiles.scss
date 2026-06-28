@@ -541,6 +541,25 @@
 
     i { font-size: 18px; }
   }
+
+  // "Who is here" headline — the high-value surface (§6). Bottom-anchored so it
+  // reads under the live view without fighting the camera-name label up top.
+  .cam-who {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: var(--font-weight-semibold);
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.66), transparent);
+
+    i { font-size: 18px; opacity: 0.9; }
+  }
 }
 
 .empty-state {

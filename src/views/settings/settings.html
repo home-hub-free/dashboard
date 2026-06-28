@@ -68,6 +68,74 @@
             </div>
             <p class="voice-id-msg" :if="this.enrollMsg">${this.enrollMsg}</p>
         </div>
+
+        <div class="voice-id" :if="this.faceIdEnabled">
+            <div class="voice-id-head">
+                <span class="voice-id-title"><i class="iconoir-face-id"></i> Face ID</span>
+                <span class="voice-id-count" :if="this.faceSamples > 0">${this.faceSamples} sample(s)</span>
+                <span class="voice-id-count" :if="this.faceSamples === 0">not enrolled</span>
+            </div>
+            <p class="voice-id-hint">
+                Enroll your face so the house recognises who's in which room — and greets
+                people by name. The image never leaves the box. Add a few samples for best
+                results.
+            </p>
+            <div class="voice-id-actions">
+                <button
+                    class="add-range-btn"
+                    :class:busy="this.faceEnrollState !== 'idle'"
+                    :onmouseup="this.enrollFace()"
+                >
+                    <i class="iconoir-camera"></i>
+                    <span :if="this.faceEnrollState === 'idle'">Enroll my face</span>
+                    <span :if="this.faceEnrollState === 'capturing'">Look at the camera…</span>
+                    <span :if="this.faceEnrollState === 'saving'">Saving…</span>
+                </button>
+                <button
+                    class="remove-btn"
+                    :if="this.faceSamples > 0"
+                    :onmouseup="this.forgetFace()"
+                >
+                    <i class="iconoir-trash"></i> Forget
+                </button>
+            </div>
+            <p class="voice-id-msg" :if="this.faceEnrollMsg">${this.faceEnrollMsg}</p>
+        </div>
+    </section>
+
+    <section class="assistant-section" :if="this.peopleEnabled">
+        <p class="section-title">People the cameras have seen</p>
+        <p class="voice-id-hint">
+            Every detected person gets a face and a default label. Put a name to a face,
+            or link them to a household member.
+        </p>
+        <div class="people-list">
+            <div class="person-row" :foreach="person in this.people" :key="person.id">
+                <div class="person-face">
+                    <img :if="person.thumbUrl" :src="person.thumbUrl" alt="" />
+                    <div :else class="person-face-empty"><i class="iconoir-user"></i></div>
+                </div>
+                <div class="person-info">
+                    <span class="person-label">${person.label}</span>
+                    <span class="person-tag" :if="person.class === 'household'">household</span>
+                    <span class="person-tag" :if="person.class === 'guest'">guest · seen ${person.sightings}×</span>
+                </div>
+                <div class="person-actions" :if="person.class === 'guest'">
+                    <input
+                        class="household-tone-input"
+                        type="text"
+                        placeholder="name this person"
+                        :onchange="this.namePerson(person.id, event.target.value)"
+                    />
+                    <select class="person-promote" :onchange="this.promotePerson(person.id, event.target.value)">
+                        <option value="">Link to member…</option>
+                        <option :foreach="m in this.households" :key="m.id" :value="m.id">${m.displayName}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <p class="person-empty" :if="!this.people.length">No people seen yet.</p>
+        <p class="voice-id-msg" :if="this.peopleMsg">${this.peopleMsg}</p>
     </section>
 
     <section class="assistant-section">

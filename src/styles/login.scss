@@ -235,3 +235,60 @@
         color: var(--color-text-secondary);
     }
 }
+
+// People the cameras have seen — face + default label + admin labeling (§6).
+.people-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+.person-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    flex-wrap: wrap;
+}
+.person-face {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex: 0 0 auto;
+    background: var(--color-surface-secondary, rgba(0, 0, 0, 0.08));
+
+    img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .person-face-empty {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        color: var(--color-text-tertiary);
+    }
+}
+.person-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 6rem;
+
+    .person-label { font-weight: 600; }
+    .person-tag { font-size: 0.78rem; color: var(--color-text-secondary); }
+}
+.person-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-left: auto;
+    flex-wrap: wrap;
+}
+.person-promote {
+    padding: 0.35rem 0.5rem;
+    border-radius: var(--radius-sm, 6px);
+    border: 1px solid var(--color-border, rgba(0, 0, 0, 0.15));
+    background: var(--color-surface, #fff);
+    color: var(--color-text-primary);
+}
+.person-empty {
+    margin: 0.25rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-text-tertiary);
+}

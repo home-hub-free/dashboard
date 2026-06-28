@@ -2,12 +2,12 @@ import { Component } from "../../../core/component";
 import { bus } from "../../../core/bus";
 import { store } from "../../../store/store";
 import { showToaster } from "../../../components/popup-message/popup-message";
-import { setServerChannel } from "../../../utils/server-handler";
+import { setServerChannel, visionStreamUrl, ZoneOccupant } from "../../../utils/server-handler";
 import template from "./devices.html?raw";
 import { Device, DevicesTabState } from "./devices.model";
 import { Channel, deviceChannels, withChannelValue } from "./channels";
 import { DevicesService, DevicesServiceClass } from "./devices.service";
-import { subscribeCameraFeed } from "../../../utils/ws-camera-handler";
+import { startVisionOccupancy, stopVisionOccupancy } from "../../../utils/vision-handler";
 
 const TILE_ICON_ON: { [cat: string]: string } = {
   light: "iconoir-light-bulb-on",
@@ -41,6 +41,9 @@ function decorateDevice(device: Device): Device {
 
   device.channels = channels;
   device.wide = device.deviceCategory === "evap-cooler" || device.deviceCategory === "camera";
+  // Camera live view comes from the vision-service (annotated MJPEG), never the cam
+  // directly nor a relayed blob (§3.2/§6). `who` is filled by the occupancy poller.
+  if (device.deviceCategory === "camera") device.streamUrl = visionStreamUrl(device.id);
   device.isOn = actuators.some((c) =>
     c.kind === "boolean" ? c.value === true : (c.value as number) > 0,
   );
@@ -69,21 +72,35 @@ function computeStatus(device: Device, actuators: Channel[]): string {
   }
 }
 
+/** The camera tile's "who is here" headline (§6) — the high-value surface. Names the
+ * household members present, counts guests, falls back to a neutral count for unknown
+ * people, and "Empty" when no one's there. */
+function summariseOccupants(occ: ZoneOccupant[] | undefined): string {
+  if (!occ || occ.length === 0) return "Empty";
+  const names = occ.filter((o) => o.class === "household" && o.name).map((o) => o.name as string);
+  const guests = occ.filter((o) => o.class === "guest").length;
+  const unknown = occ.filter((o) => o.class === "unknown").length;
+  const parts: string[] = [];
+  if (names.length) parts.push(names.join(", "));
+  if (guests) parts.push(`${guests} guest${guests === 1 ? "" : "s"}`);
+  if (unknown && !names.length && !guests) parts.push(`${unknown} ${unknown === 1 ? "person" : "people"}`);
+  else if (unknown) parts.push(`${unknown} more`);
+  return parts.join(" + ") || `${occ.length} present`;
+}
+
 class DevicesTabClass extends Component<DevicesTabState> {
   devicesService: DevicesServiceClass;
   private unsubscribeDeclare?: () => void;
   private unsubscribeUpdate?: () => void;
-  private unsubscribeCameraFrame?: () => void;
+  private unsubscribeOccupancy?: () => void;
   private unsubscribeDevices?: () => void;
+  private zoneOccupants: Record<string, ZoneOccupant[]> = {};
 
   constructor(devicesService: DevicesServiceClass) {
     super();
     this.devicesService = devicesService;
     const devices = store.get("devices");
-    devices.forEach((device) => {
-      decorateDevice(device);
-      if (device.deviceCategory === "camera") subscribeCameraFeed(device.id);
-    });
+    devices.forEach((device) => decorateDevice(device));
   }
 
   mount() {
@@ -150,6 +167,7 @@ class DevicesTabClass extends Component<DevicesTabState> {
 
     this.unsubscribeDevices = store.subscribe("devices", (devices) => {
       this.bind.devices = devices.map(decorateDevice);
+      this.applyOccupancy();
     });
 
     this.unsubscribeDeclare = bus.on("device:declare", (declaredDevice) => {
@@ -160,16 +178,28 @@ class DevicesTabClass extends Component<DevicesTabState> {
       this.onDeviceUpdate(updatedDevice);
     });
 
-    this.unsubscribeCameraFrame = bus.on("camera:frame", ({ deviceId, blobUrl }) => {
-      this.onCameraFrame(deviceId, blobUrl);
+    // Camera "who is here" headline — fed by the vision-service occupancy poller.
+    this.unsubscribeOccupancy = bus.on("vision:occupancy", (zones) => {
+      this.zoneOccupants = zones || {};
+      this.applyOccupancy();
     });
+    startVisionOccupancy();
   }
 
   unmount() {
     this.unsubscribeDevices?.();
     this.unsubscribeDeclare?.();
     this.unsubscribeUpdate?.();
-    this.unsubscribeCameraFrame?.();
+    this.unsubscribeOccupancy?.();
+    stopVisionOccupancy();
+  }
+
+  /** Push the latest per-zone occupancy onto each camera tile's `who` headline. */
+  private applyOccupancy() {
+    (this.bind.devices || []).forEach((device) => {
+      if (device.deviceCategory !== "camera") return;
+      device.who = summariseOccupants(this.zoneOccupants[device.zone || "_"]);
+    });
   }
 
   /** Resolve a (deviceId, channelKey) pair to the live bound device + channel. */
@@ -213,9 +243,8 @@ class DevicesTabClass extends Component<DevicesTabState> {
     if (!device) {
       this.bind.devices.push(decorateDevice(declaredDevice));
     }
-    if (declaredDevice.deviceCategory === "camera") {
-      subscribeCameraFeed(declaredDevice.id);
-    }
+    // A newly-declared camera picks up its live view (visionStreamUrl in decorate)
+    // + its "who" headline (next occupancy poll) automatically — no per-cam subscribe.
   }
 
   private onDeviceUpdate(updatedDevice: Device) {
@@ -224,15 +253,10 @@ class DevicesTabClass extends Component<DevicesTabState> {
       device.value = updatedDevice.value;
       device.manual = updatedDevice.manual;
       device.name = updatedDevice.name;
+      device.zone = updatedDevice.zone ?? device.zone;
       device.operationalRanges = updatedDevice.operationalRanges;
       decorateDevice(device);
-    }
-  }
-
-  private onCameraFrame(deviceId: string, blobUrl: string) {
-    const device = this.bind.devices.find((d) => d.id === deviceId);
-    if (device) {
-      device.value = blobUrl;
+      if (device.deviceCategory === "camera") this.applyOccupancy();
     }
   }
 }

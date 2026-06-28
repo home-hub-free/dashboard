@@ -30,6 +30,11 @@ export type Device = {
   isOn?: boolean;
   /** One-line tile body status ("On", "On · 80%", "Open · 40%"). */
   status?: string;
+  /** Camera only: the vision-service annotated MJPEG live-view URL (§6). */
+  streamUrl?: string;
+  /** Camera only: "who is here" headline from the occupancy world-model
+   * ("David + 1 guest", "Empty") — the high-value surface, not the picture (§6). */
+  who?: string;
 };
 
 export type DeviceWSEvents = {

@@ -10,12 +10,18 @@
     :onclick="this.onTileClick(device)"
     oncontextmenu="return false;"
 >
-    <!-- CAMERA: full-bleed preview with overlaid label (no scalar channels) -->
+    <!-- CAMERA: full-bleed annotated live view (from the vision-service, not the cam)
+         with the high-value "who is here" headline overlaid (§6). -->
     <div class="cam-wrap" :if="device.deviceCategory === 'camera'">
-        <img :if="device.value" :src="device.value" alt="" />
+        <img :if="device.streamUrl" :src="device.streamUrl" alt="" />
         <div :else class="cam-placeholder">
             <i class="iconoir-video-camera-off"></i>
             <span>No signal</span>
+        </div>
+        <!-- WHO is here — the headline, not the picture. -->
+        <div class="cam-who" :if="device.who">
+            <i class="iconoir-group"></i>
+            <span>${device.who}</span>
         </div>
         <div class="cam-label">
             <i class="iconoir-video-camera"></i>

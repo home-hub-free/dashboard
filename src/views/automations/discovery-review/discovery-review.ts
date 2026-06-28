@@ -82,8 +82,12 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
     if (row.busy) return;
     row.busy = true;
     this.bind.rows = [...this.bind.rows]; // reassign → re-render disabled state
-    saveEffect(this.toEffect(row.candidate))
-      .then(() => acceptCandidate(row.candidate.id))
+    // Record the acceptance on memory-service FIRST, then create the durable hub effect.
+    // memory-service is the flakier of the two; gating on it means a hiccup aborts cleanly
+    // (no effect created, candidate stays pending → retryable) instead of leaving the effect
+    // on the hub while the candidate keeps resurfacing and re-creates a duplicate on retry.
+    acceptCandidate(row.candidate.id)
+      .then(() => saveEffect(this.toEffect(row.candidate)))
       .then(() => getEndPointData("get-effects-dynamic"))
       .then((effects: Effect[]) => {
         EffectActions.load(effects || []);

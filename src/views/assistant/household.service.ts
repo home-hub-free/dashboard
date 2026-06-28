@@ -14,6 +14,13 @@ import {
   forgetVoiceprint,
   getVoiceprintSamples,
   speakerAvailable,
+  enrollFace,
+  forgetFace,
+  getFaceSamples,
+  visionAvailable,
+  listPeople,
+  nameGuest,
+  promoteGuest,
 } from "../../utils/server-handler";
 import { blobToWav16k } from "../../utils/audio-wav";
 import type { SettingsState } from "../settings/settings.model";
@@ -35,6 +42,7 @@ export class HouseholdServiceClass {
     this.state.meId = currentUser()?.id || "";
     this.refresh();
     this.refreshVoiceSamples();
+    this.refreshFaceSamples();
   }
 
   private async refreshVoiceSamples() {
@@ -44,6 +52,51 @@ export class HouseholdServiceClass {
     const id = currentUser()?.id;
     if (this.state.voiceIdEnabled && id) {
       this.state.voiceSamples = await getVoiceprintSamples(id);
+    }
+  }
+
+  private async refreshFaceSamples() {
+    // The Face ID control + the People roster only appear when the vision-service is
+    // up + routed — same on/off pattern as Voice ID.
+    this.state.faceIdEnabled = await visionAvailable();
+    this.state.peopleEnabled = this.state.faceIdEnabled;
+    const id = currentUser()?.id;
+    if (this.state.faceIdEnabled && id) {
+      this.state.faceSamples = await getFaceSamples(id);
+    }
+    if (this.state.peopleEnabled) this.refreshPeople();
+  }
+
+  // ── People roster (label everyone by default id; admin puts names to faces) ──
+  async refreshPeople() {
+    this.state.people = await listPeople();
+  }
+
+  /** Name a default-labelled person (a `guest:N` cluster) — keeps them a recurring
+   * guest, just with a real name. Admin-gated server-side (auth token). */
+  async namePerson(id: string, name: string) {
+    const trimmed = (name || "").trim();
+    if (!trimmed) return;
+    try {
+      await nameGuest(id, trimmed);
+      this.state.peopleMsg = `Named ${trimmed}`;
+      await this.refreshPeople();
+    } catch (err: any) {
+      this.state.peopleMsg = err?.message || "Could not name person";
+    }
+  }
+
+  /** Promote a default-labelled person into an existing household member's face
+   * gallery (merges their face into that member). Admin-gated server-side. */
+  async promotePerson(id: string, userId: string) {
+    if (!userId) return;
+    const member = this.state.households.find((u) => u.id === userId);
+    try {
+      await promoteGuest(id, userId, member?.displayName);
+      this.state.peopleMsg = `Linked to ${member?.displayName || userId}`;
+      await this.refreshPeople();
+    } catch (err: any) {
+      this.state.peopleMsg = err?.message || "Could not promote person";
     }
   }
 
@@ -172,6 +225,72 @@ export class HouseholdServiceClass {
       this.state.enrollMsg = "Voiceprint removed";
     } catch (err: any) {
       this.state.enrollMsg = err?.message || "Could not remove voiceprint";
+    }
+  }
+
+  // ── Face ID (face enrollment) ─────────────────────────────────────────────
+  // Captures a single webcam frame and enrolls it for the signed-in member. The
+  // vision-service stores the embedding keyed to the user's id (biometrics stay on
+  // the box). Repeat to add samples (running-mean profile) — same UX as Voice ID.
+  async enrollFace() {
+    if (this.state.faceEnrollState !== "idle") return;
+    if (!navigator.mediaDevices?.getUserMedia) {
+      this.state.faceEnrollMsg = "Camera needs a secure (https) connection";
+      return;
+    }
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+    } catch {
+      this.state.faceEnrollMsg = "Camera access denied";
+      return;
+    }
+    this.state.faceEnrollState = "capturing";
+    this.state.faceEnrollMsg = "Look at the camera…";
+    try {
+      const jpeg = await this.captureFrame(stream);
+      this.state.faceEnrollState = "saving";
+      this.state.faceEnrollMsg = "Saving…";
+      const { samples } = await enrollFace(jpeg);
+      this.state.faceSamples = samples;
+      this.state.faceEnrollMsg = `Enrolled — ${samples} sample${samples === 1 ? "" : "s"}`;
+    } catch (err: any) {
+      this.state.faceEnrollMsg = err?.message || "Face enrollment failed";
+    } finally {
+      stream.getTracks().forEach((t) => t.stop());
+      this.state.faceEnrollState = "idle";
+    }
+  }
+
+  /** Grab one JPEG frame from a live camera stream via a hidden <video> + <canvas>. */
+  private async captureFrame(stream: MediaStream): Promise<Blob> {
+    const video = document.createElement("video");
+    video.srcObject = stream;
+    video.muted = true;
+    await video.play();
+    // let the sensor settle / auto-expose before the snapshot.
+    await new Promise((r) => setTimeout(r, 600));
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    canvas.getContext("2d")!.drawImage(video, 0, 0, canvas.width, canvas.height);
+    video.pause();
+    return new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob(
+        (b) => (b ? resolve(b) : reject(new Error("capture failed"))),
+        "image/jpeg",
+        0.9,
+      ),
+    );
+  }
+
+  async forgetFace() {
+    try {
+      await forgetFace();
+      this.state.faceSamples = 0;
+      this.state.faceEnrollMsg = "Face profile removed";
+    } catch (err: any) {
+      this.state.faceEnrollMsg = err?.message || "Could not remove face profile";
     }
   }
 
