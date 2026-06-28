@@ -43,29 +43,64 @@
                 <span class="voice-id-count" :if="this.voiceSamples > 0">${this.voiceSamples} sample(s)</span>
                 <span class="voice-id-count" :if="this.voiceSamples === 0">not enrolled</span>
             </div>
-            <p class="voice-id-hint">
+
+            <!-- Idle: explain + start the guided session -->
+            <p class="voice-id-hint" :if="!this.enrollActive">
                 Enroll your voice so the house recognises who's speaking — even when
-                several people share one speaker. Record a few samples for best results.
+                several people share one speaker. It's a quick chat: read a few requests
+                to Aura and she'll answer back. More lines, better recognition.
             </p>
-            <div class="voice-id-actions">
-                <button
-                    class="add-range-btn"
-                    :class:busy="this.enrollState !== 'idle'"
-                    :onmouseup="this.enrollVoice()"
-                >
-                    <i class="iconoir-mic"></i>
-                    <span :if="this.enrollState === 'idle'">Enroll my voice</span>
-                    <span :if="this.enrollState === 'recording'">Listening…</span>
-                    <span :if="this.enrollState === 'saving'">Saving…</span>
+            <div class="voice-id-actions" :if="!this.enrollActive">
+                <button class="add-range-btn" :onmouseup="this.startVoiceEnroll()">
+                    <i class="iconoir-mic"></i> <span>Enroll my voice</span>
                 </button>
-                <button
-                    class="remove-btn"
-                    :if="this.voiceSamples > 0"
-                    :onmouseup="this.forgetVoice()"
-                >
+                <button class="remove-btn" :if="this.voiceSamples > 0" :onmouseup="this.forgetVoice()">
                     <i class="iconoir-trash"></i> Forget
                 </button>
             </div>
+
+            <!-- Active: guided conversation. Rendered once when enrollActive flips true,
+                 so the <canvas> survives the per-phase text/class updates around it. -->
+            <div class="enroll-card" :if="this.enrollActive">
+                <div class="enroll-progress">
+                    <span class="enroll-step">Step ${this.enrollStep} of ${this.enrollTotal}</span>
+                </div>
+
+                <div class="enroll-bubble you">
+                    <span class="enroll-bubble-who">Say this to Aura</span>
+                    <p class="enroll-say">“${this.enrollAsk}”</p>
+                </div>
+
+                <canvas id="voice-wave" class="wave-canvas" :class:live="this.enrollPhase === 'recording'"></canvas>
+                <p class="enroll-hint" :if="this.enrollHint">${this.enrollHint}</p>
+
+                <div class="enroll-bubble aura" :if="this.enrollReply">
+                    <span class="enroll-bubble-who"><i class="iconoir-sound-high"></i> Aura</span>
+                    <p class="enroll-said">“${this.enrollReply}”</p>
+                </div>
+
+                <div class="enroll-controls">
+                    <button class="add-range-btn" :if="this.enrollPhase === 'ready'" :onmouseup="this.recordVoiceLine()">
+                        <i class="iconoir-mic"></i> <span>Record this line</span>
+                    </button>
+                    <button class="add-range-btn busy" :if="this.enrollPhase === 'recording'">
+                        <i class="iconoir-mic"></i> <span>Listening…</span>
+                    </button>
+                    <button class="add-range-btn busy" :if="this.enrollPhase === 'saving'">
+                        <span>Saving…</span>
+                    </button>
+                    <button class="add-range-btn busy" :if="this.enrollPhase === 'aura'">
+                        <i class="iconoir-sound-high"></i> <span>Aura is replying…</span>
+                    </button>
+                    <button class="add-range-btn" :if="this.enrollPhase === 'done'" :onmouseup="this.cancelVoiceEnroll()">
+                        <i class="iconoir-check"></i> <span>Done</span>
+                    </button>
+                    <button class="remove-btn" :if="this.enrollPhase !== 'done'" :onmouseup="this.cancelVoiceEnroll()">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+
             <p class="voice-id-msg" :if="this.enrollMsg">${this.enrollMsg}</p>
         </div>
 
@@ -75,31 +110,62 @@
                 <span class="voice-id-count" :if="this.faceSamples > 0">${this.faceSamples} sample(s)</span>
                 <span class="voice-id-count" :if="this.faceSamples === 0">not enrolled</span>
             </div>
-            <p class="voice-id-hint">
+
+            <!-- Idle: explain + start -->
+            <p class="voice-id-hint" :if="!this.faceActive">
                 Enroll your face so the house recognises who's in which room — and greets
-                people by name. The image never leaves the box. Add a few samples for best
-                results.
+                people by name. You'll see a live preview and a few quick poses for the
+                best capture. The image never leaves the box.
             </p>
-            <div class="voice-id-actions">
-                <button
-                    class="add-range-btn"
-                    :class:busy="this.faceEnrollState !== 'idle'"
-                    :onmouseup="this.enrollFace()"
-                >
-                    <i class="iconoir-camera"></i>
-                    <span :if="this.faceEnrollState === 'idle'">Enroll my face</span>
-                    <span :if="this.faceEnrollState === 'capturing'">Look at the camera…</span>
-                    <span :if="this.faceEnrollState === 'saving'">Saving…</span>
+            <div class="voice-id-actions" :if="!this.faceActive">
+                <button class="add-range-btn" :onmouseup="this.startFaceEnroll()">
+                    <i class="iconoir-camera"></i> <span>Enroll my face</span>
                 </button>
-                <button
-                    class="remove-btn"
-                    :if="this.faceSamples > 0"
-                    :onmouseup="this.forgetFace()"
-                >
+                <button class="remove-btn" :if="this.faceSamples > 0" :onmouseup="this.forgetFace()">
                     <i class="iconoir-trash"></i> Forget
                 </button>
             </div>
-            <p class="voice-id-msg" :if="this.faceEnrollMsg">${this.faceEnrollMsg}</p>
+
+            <!-- Active: live preview + pose guidance. The <video> persists across the
+                 per-pose text/class updates (same rendering rule as the waveform). -->
+            <div class="enroll-card" :if="this.faceActive">
+                <div class="enroll-progress">
+                    <span class="enroll-step">Pose ${this.faceStep} of ${this.faceTotal}</span>
+                </div>
+
+                <div class="face-stage" :class:ready="this.faceReady">
+                    <video id="face-cam" class="face-cam" autoplay playsinline muted></video>
+                    <div class="face-oval"></div>
+                    <div class="face-count" :if="this.faceCount > 0">${this.faceCount}</div>
+                    <div class="face-ok" :if="this.faceReady"><i class="iconoir-check"></i></div>
+                </div>
+
+                <div class="face-pose">
+                    <p class="face-pose-label">${this.facePose}</p>
+                    <p class="face-pose-hint">${this.facePoseHint}</p>
+                </div>
+                <p class="enroll-hint warn" :if="this.faceHint">${this.faceHint}</p>
+
+                <div class="enroll-controls">
+                    <span class="face-auto-note" :if="this.faceAuto">
+                        <i class="iconoir-sound-high"></i> Captures automatically when your face is framed
+                    </span>
+                    <button class="add-range-btn" :if="!this.faceAuto && this.facePhase === 'preview'" :onmouseup="this.captureFacePose()">
+                        <i class="iconoir-camera"></i> <span>Capture this pose</span>
+                    </button>
+                    <button class="add-range-btn busy" :if="this.facePhase === 'saving'">
+                        <span>Saving…</span>
+                    </button>
+                    <button class="add-range-btn" :if="this.facePhase === 'done'" :onmouseup="this.cancelFaceEnroll()">
+                        <i class="iconoir-check"></i> <span>Done</span>
+                    </button>
+                    <button class="remove-btn" :if="this.facePhase !== 'done'" :onmouseup="this.cancelFaceEnroll()">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+
+            <p class="voice-id-msg" :if="this.faceMsg">${this.faceMsg}</p>
         </div>
     </section>
 

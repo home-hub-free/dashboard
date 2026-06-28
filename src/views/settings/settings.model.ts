@@ -27,21 +27,44 @@ export type SettingsState = {
   pwError: string
   changeOwnPassword: () => void
 
-  // Voice ID (voiceprint enrollment) for the signed-in member.
+  // Voice ID (voiceprint enrollment) for the signed-in member. Enrollment is a guided
+  // mini-conversation: the user reads a request to Aura, a live waveform shows the mic
+  // is hearing them, the sample is enrolled, and Aura answers back in her real voice.
   voiceIdEnabled: boolean
   voiceSamples: number
-  enrollState: "idle" | "recording" | "saving"
-  enrollMsg: string
-  enrollVoice: () => void
+  enrollActive: boolean // a guided session is open (gates the waveform/conversation card)
+  enrollPhase: "ready" | "recording" | "saving" | "aura" | "done"
+  enrollStep: number // 1-based index of the current line
+  enrollTotal: number // number of lines in the script
+  enrollAsk: string // the sentence to say to Aura right now
+  enrollReply: string // Aura's spoken reply to the last line (shown after recording)
+  enrollHint: string // live coaching ("Te escucho…", "Habla un poco más fuerte")
+  enrollMsg: string // status / errors
+  startVoiceEnroll: () => void
+  recordVoiceLine: () => void
+  cancelVoiceEnroll: () => void
   forgetVoice: () => void
 
-  // Face ID (face enrollment) for the signed-in member — mirrors Voice ID, but the
-  // sample is a webcam snapshot sent to the vision-service (CAMERA_VISION_PLAN §6).
+  // Face ID (face enrollment) for the signed-in member — mirrors Voice ID, but guided
+  // by a live camera preview: the user sees themselves in an oval guide, gets pose
+  // directions, and each pose is captured as one sample to the vision-service
+  // (CAMERA_VISION_PLAN §6). Auto-captures when a face is detected; manual otherwise.
   faceIdEnabled: boolean
   faceSamples: number
-  faceEnrollState: "idle" | "capturing" | "saving"
-  faceEnrollMsg: string
-  enrollFace: () => void
+  faceActive: boolean // a guided session is open (gates the live preview)
+  facePhase: "preview" | "counting" | "saving" | "done"
+  faceStep: number // 1-based index of the current pose
+  faceTotal: number // number of poses
+  facePose: string // the current pose instruction ("Mira al frente")
+  facePoseHint: string // the pose's helper line
+  faceHint: string // live coaching (brightness / face-in-frame)
+  faceReady: boolean // face detected + framed → the guide ring goes green
+  faceCount: number // countdown before capture (3,2,1; 0 = none)
+  faceAuto: boolean // browser can detect faces → hands-free auto-capture
+  faceMsg: string // status / errors
+  startFaceEnroll: () => void
+  captureFacePose: () => void
+  cancelFaceEnroll: () => void
   forgetFace: () => void
 
   // People the cameras have seen — every person gets a default label + a captured
