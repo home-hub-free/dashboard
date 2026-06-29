@@ -50,8 +50,36 @@ export type DeviceWSEvents = {
   "device-update": (device: Device) => void;
 };
 
+/**
+ * One collapsible section on the device wall. The wall is grouped by `zone` so it
+ * stays glanceable as the fleet grows (a flat grid of 20+ tiles is unreadable);
+ * cameras get their own group (kind: "cameras") so their live streams don't dominate
+ * the layout and only run when that group is expanded. `devices` holds the SAME object
+ * references as the flat `devices` array, so a per-device WS patch updates a tile in
+ * place without rebuilding the groups.
+ */
+export type DeviceGroup = {
+  /** Stable key for :key + collapse persistence (zone name, "_unassigned", "_cameras"). */
+  key: string;
+  /** Header label shown to the user. */
+  label: string;
+  kind: "zone" | "cameras";
+  devices: Device[];
+  /** Right-aligned header summary ("2 on", "4 cameras"). */
+  summary: string;
+  collapsed: boolean;
+};
+
 export type DevicesTabState = {
   devices: Device[];
+  /** Zone-grouped view of `devices` (derived; what the template actually renders). */
+  groups: DeviceGroup[];
+  /** Whether any device exists at all (empty-state gate). */
+  hasDevices: boolean;
+  /** Toggle a group's collapsed state (persisted). */
+  toggleGroup: (key: string) => void;
+  /** Filter tiles by name/zone substring (uncontrolled input → recompute groups). */
+  onFilter: (event: Event) => void;
   onTileClick: (device: Device) => void;
   // One channel-addressed write path (Stage 4c). Handlers take primitives
   // (deviceId, channelKey) rather than the loop's `device`/`channel` objects,

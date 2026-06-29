@@ -1,23 +1,13 @@
-<div class="hs-lead">
-    <div class="hs-kicker">${this.clock}</div>
-    <div class="hs-thesis">Good <em>${this.timeOfDay}</em>.</div>
-    <p class="hs-lede">Your home, at a glance.</p>
+<div class="hs-greet">
+    <div class="hs-hello">Good <em>${this.timeOfDay}</em></div>
+    <div class="hs-date">${this.date}</div>
 </div>
 
-<div class="hs-stats">
-    <div class="hs-stat">
-        <b>${this.lightsOn}</b>
-        <span>lights on</span>
-        <i class="hs-dot hs-dot-amber" :if="this.lightsOn > 0"></i>
-    </div>
-    <div class="hs-stat">
-        <b>${this.activeCount}</b>
-        <span>devices active</span>
-        <i class="hs-dot hs-dot-teal" :if="this.activeCount > 0"></i>
-    </div>
-    <div class="hs-stat">
-        <b>${this.warmestTemp}</b>
-        <span :if="this.hasWarmest">warmest · ${this.warmestWhere}</span>
-        <span :else>no climate sensors</span>
+<div class="hs-weather" :if="this.hasWeather">
+    <i class="hs-wx-icon" :class="this.weatherIcon"></i>
+    <div class="hs-wx-read">
+        <b>${this.temp}</b>
+        <span class="hs-wx-cond">${this.conditions}</span>
+        <span class="hs-wx-range">${this.range}</span>
     </div>
 </div>

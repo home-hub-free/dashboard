@@ -148,12 +148,103 @@
   font-size: 0.9rem;
 }
 
-// ---- Device grid ------------------------------------------------------------
-#devices.device-grid {
+// ---- Device board: a vertical stack of collapsible zone sections ------------
+// The wall used to be one flat grid (`#devices` itself). It now stacks per-zone
+// sections so it stays glanceable as the fleet grows; each section holds its own
+// `.device-grid`. 3-id selector beats the legacy `#tab-content #devices` grid rules.
+#main-content #tab-content #devices.device-board {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 16px;
+  align-content: start;
+}
+
+.device-filter {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+
+  > i {
+    position: absolute;
+    left: 12px;
+    font-size: 1rem;
+    color: var(--color-text-tertiary);
+    pointer-events: none;
+  }
+  .device-filter-input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 40px;
+    padding: 0 14px 0 34px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: 0.9rem;
+
+    &::placeholder { color: var(--color-text-tertiary); }
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary);
+    }
+  }
+}
+
+// Collapsible zone section: a full-width sticky-ish header that toggles its grid.
+.zone-section { min-width: 0; }
+
+// Scoped under #devices (3 ids) so it beats buttons.scss's global `button:not(...)`
+// reset (which would otherwise paint the header solid primary + width:100%).
+#main-content #tab-content #devices .zone-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 10px 6px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  box-shadow: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--color-text-secondary);
+  transition: background 160ms var(--ease-in-out);
+
+  &:hover { background: var(--color-surface); }
+
+  .zone-caret {
+    font-size: 1rem;
+    color: var(--color-text-tertiary);
+    transition: transform 180ms var(--ease-in-out);
+  }
+  .zone-name {
+    font-size: 0.92rem;
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.01em;
+    color: var(--color-text-primary);
+  }
+  .zone-summary {
+    margin-left: auto;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-tertiary);
+  }
+}
+// Collapsed: caret points right (the body is removed from the DOM via :if).
+.zone-section.collapsed .zone-head .zone-caret { transform: rotate(-90deg); }
+
+// The per-section grid (was `#devices.device-grid`). Mobile base: two columns.
+#main-content #tab-content #devices .device-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  padding: 0 16px;
+  padding: 8px 0 4px;
   align-content: start;
 }
 
@@ -637,54 +728,43 @@
 }
 .home-board .device-grid { margin-bottom: 8px; }
 
-// ---- House-summary HERO band -------------------------------------------------
-// A full-width banner that states the house in one line on the left and surfaces
-// the three glanceable counts as stat-cards on the right. Replaces the old narrow
-// sidebar "now" column — the home now opens with a wide editorial header.
+// ---- Compact home hero -------------------------------------------------------
+// A slim greeting bar: "Good evening" + the date on the left, a live weather chip on
+// the right. Replaces the old tall editorial band + its lights-on/devices-active/
+// warmest stat-cards (redundant against the device wall, and costly on vertical space).
 .home-status {
   display: flex;
-  flex-direction: column;
-  gap: 22px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
   position: relative;
   overflow: hidden;
-  margin: 8px 16px 26px;
-  padding: 26px 26px 24px 30px;
-  border-radius: var(--radius-tile);
+  margin: 8px 16px 18px;
+  padding: 14px 18px 14px 22px;
+  border-radius: var(--radius-chip);
   border: 1px solid var(--color-border);
-  background:
-    radial-gradient(120% 150% at 0% 0%, var(--color-primary-rgba-20), transparent 52%),
-    radial-gradient(120% 150% at 100% 120%, rgba(34, 196, 230, 0.10), transparent 55%),
-    linear-gradient(170deg, var(--color-surface), var(--color-surface-secondary));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 22px 50px -34px rgba(0, 0, 0, 0.95);
+  background: linear-gradient(170deg, var(--color-surface), var(--color-surface-secondary));
 
-  // Brand signature: an iris→gold edge bar down the left of the hero.
+  // Brand signature: a slim iris→gold edge bar down the left.
   &::before {
     content: "";
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
-    width: 5px;
+    width: 4px;
     background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-active-warm) 100%);
   }
 
-  .hs-lead { min-width: 0; }
+  .hs-greet { min-width: 0; }
 
-  .hs-kicker {
-    font-size: 0.8rem;
-    font-weight: var(--font-weight-bold);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--color-text-tertiary);
-  }
-
-  .hs-thesis {
-    margin: 10px 0 6px;
-    font-size: 2.5rem;
+  .hs-hello {
+    font-size: 1.35rem;
     font-weight: var(--font-weight-extrabold);
-    line-height: 1.0;
-    letter-spacing: -0.03em;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
     color: var(--color-text-primary);
 
     em {
@@ -696,56 +776,55 @@
     }
   }
 
-  .hs-lede {
-    margin: 0;
-    font-size: 0.92rem;
+  .hs-date {
+    margin-top: 2px;
+    font-size: 0.82rem;
     color: var(--color-text-tertiary);
   }
 
-  // Stat-cards row
-  .hs-stats {
+  // Live weather chip
+  .hs-weather {
     display: flex;
+    align-items: center;
     gap: 12px;
-  }
-
-  .hs-stat {
-    position: relative;
-    flex: 1 1 0;
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 14px 16px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-chip);
-    background: var(--color-surface-tertiary);
 
-    b {
-      font-size: 2rem;
-      font-weight: var(--font-weight-extrabold);
-      font-variant-numeric: tabular-nums;
-      letter-spacing: -0.02em;
-      line-height: 1;
-      color: var(--color-text-primary);
+    .hs-wx-icon {
+      font-size: 1.9rem;
+      color: var(--color-active-warm-light);
     }
-    span {
-      font-size: 0.82rem;
-      color: var(--color-text-tertiary);
+
+    .hs-wx-read {
+      display: grid;
+      grid-template-columns: auto auto;
+      align-items: baseline;
+      column-gap: 8px;
+      row-gap: 1px;
+      min-width: 0;
+
+      b {
+        grid-row: 1 / span 2;
+        align-self: center;
+        font-size: 1.7rem;
+        font-weight: var(--font-weight-extrabold);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+        line-height: 1;
+        color: var(--color-text-primary);
+      }
+    }
+
+    .hs-wx-cond {
+      font-size: 0.84rem;
+      color: var(--color-text-secondary);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-
-    .hs-dot {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-
-      &.hs-dot-amber { background: var(--color-active-warm); box-shadow: 0 0 10px rgba(255, 170, 55, 0.65); }
-      &.hs-dot-teal { background: #29cfe6; box-shadow: 0 0 10px rgba(34, 196, 230, 0.6); }
+    .hs-wx-range {
+      font-size: 0.78rem;
+      color: var(--color-text-tertiary);
+      font-variant-numeric: tabular-nums;
     }
   }
 }
@@ -785,7 +864,7 @@
   // BENTO device board: small device tiles tile uniformly, while the two content-
   // heavy devices (the cooler and the camera) become full-width FEATURE BANDS —
   // an intentional editorial rhythm of tidy tile rows punctuated by wide strips.
-  #main-content #tab-content #devices.device-grid {
+  #main-content #tab-content #devices .device-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     grid-auto-rows: minmax(132px, auto);
@@ -801,16 +880,9 @@
   #main-content #tab-content #devices .device-tile.cat-camera .cam-wrap img,
   #main-content #tab-content #devices .device-tile.cat-camera .cam-placeholder { height: 100%; }
 
-  // Hero band lays out horizontally: house thesis left, stat-cards right.
-  .home-status {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 32px;
-
-    .hs-lead { flex: 1 1 auto; }
-    .hs-stats { flex: 0 1 460px; }
-  }
+  // The compact hero is already a row at every width (greeting left, weather right);
+  // give it a touch more breathing room on wider viewports.
+  .home-status { gap: 16px 32px; }
 
   .home-dash { padding-bottom: 32px; }
 }
@@ -838,14 +910,15 @@
   .home-board  { grid-area: board; min-width: 0; }
   .home-env    { grid-area: env; position: sticky; top: 12px; }
 
-  // Section headers align to the grid cell (no side gutter now).
+  // Section headers + board align to the grid cell (no side gutter now).
   .home-sectit { margin-left: 0; margin-right: 0; }
+  #main-content #tab-content #devices.device-board { padding: 0; }
 
   // Board shares the row with the rail → four tracks, two tiles per row, bands
   // (cooler/camera) still full width via grid-column: 1 / -1.
-  #main-content #tab-content #devices.device-grid {
+  #main-content #tab-content #devices .device-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    padding: 0;
+    padding: 8px 0 4px;
   }
   #main-content #tab-content #devices .device-tile { grid-column: span 2; }
 
@@ -867,17 +940,17 @@
 }
 
 // ---- Wide wall panel (>=1400px) ---------------------------------------------
-// More board tracks (three tiles per row) + a bigger hero thesis.
+// More board tracks (three tiles per row); the hero scales up a little.
 @media (min-width: 1400px) {
-  #main-content #tab-content #devices.device-grid {
+  #main-content #tab-content #devices .device-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
   #main-content #tab-content #devices .device-tile { grid-column: span 2; }
 
   .home-status {
-    padding: 32px 36px;
-    .hs-thesis { font-size: 3rem; }
-    .hs-stats { flex-basis: 520px; }
-    .hs-stat b { font-size: 2.3rem; }
+    padding: 18px 28px 18px 30px;
+    .hs-hello { font-size: 1.55rem; }
+    .hs-weather .hs-wx-icon { font-size: 2.1rem; }
+    .hs-weather .hs-wx-read b { font-size: 1.9rem; }
   }
 }

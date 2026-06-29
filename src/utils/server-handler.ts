@@ -596,6 +596,30 @@ export function requestWeatherData() {
   }).then((res) => res.json());
 }
 
+/** Compact forecast for the home hero (hub `GET /weather`). `code` is the raw WMO
+ * weather code (the client maps it to an icon); `updatedAt` is null until Open-Meteo
+ * has been reached at least once — gate the UI on it rather than trusting a 0° reading. */
+export type Weather = {
+  currentTemp: number;
+  minTemp: number;
+  maxTemp: number;
+  code: number | null;
+  description: string;
+  isRising: boolean | null;
+  updatedAt: string | null;
+};
+
+export async function getWeather(): Promise<Weather | null> {
+  try {
+    const res = await fetch(server + "weather", { method: "GET" });
+    if (!res.ok) return null;
+    const data = (await res.json()) as Weather;
+    return data?.updatedAt ? data : null;
+  } catch {
+    return null;
+  }
+}
+
 export function updateHouseData(property: string, value: any) {
   return authedFetch(server + "update-house-data", {
     method: "POST",

@@ -581,11 +581,6 @@ body {
 #main-content #tab-content #devices { animation: rd-rise 480ms var(--ease-out) 60ms both; }
 #main-content #tab-content #sensors.env-band { animation: rd-rise 480ms var(--ease-out) 120ms both; }
 
-.home-status .hs-stat { animation: rd-rise 460ms var(--ease-out) both; }
-.home-status .hs-stat:nth-of-type(1) { animation-delay: 90ms; }
-.home-status .hs-stat:nth-of-type(2) { animation-delay: 150ms; }
-.home-status .hs-stat:nth-of-type(3) { animation-delay: 210ms; }
-
 #tab-content .effect-container,
 #tab-content .assistant-section,
 #tab-content .discovery-card { animation: rd-rise 420ms var(--ease-out) both; }
@@ -607,7 +602,7 @@ body {
   .home-status, .home-board .home-sectit, .home-env .home-sectit,
   #main-content #tab-content #devices,
   #main-content #tab-content #sensors.env-band,
-  .home-status .hs-stat, #tab-content .effect-container,
+  #tab-content .effect-container,
   #tab-content .assistant-section, #tab-content .discovery-card { animation: none !important; }
 }
 

@@ -1,98 +1,126 @@
-<div
-    class="device-tile"
-    :if="this.devices && this.devices.length"
-    :foreach="device in this.devices"
-    :key="device.id"
-    :class="'cat-' + device.deviceCategory"
-    :class:wide="device.wide"
-    :class:on="device.isOn"
-    :class:manual="device.manual"
-    :onclick="this.onTileClick(device)"
-    oncontextmenu="return false;"
->
-    <!-- CAMERA: full-bleed annotated live view (from the vision-service, not the cam)
-         with the high-value "who is here" headline overlaid (§6). -->
-    <div class="cam-wrap" :if="device.deviceCategory === 'camera'">
-        <img :if="device.streamUrl" :src="device.streamUrl" alt="" />
-        <div :else class="cam-placeholder">
-            <i class="iconoir-video-camera-off"></i>
-            <span>No signal</span>
-        </div>
-        <!-- WHO is here — the headline, not the picture. -->
-        <div class="cam-who" :if="device.who">
-            <i class="iconoir-group"></i>
-            <span>${device.who}</span>
-        </div>
-        <!-- Stream/detection health: frames flowing? backend detecting or null stub? -->
-        <div :class="device.camHealthClass" :title="device.camHealthTitle" :if="device.camHealth">
-            <span class="cam-health-dot"></span>
-            <span>${device.camHealth}</span>
-        </div>
-        <div class="cam-label">
-            <i class="iconoir-video-camera"></i>
-            <span>${device.name}</span>
-        </div>
-    </div>
-
-    <!-- EVERY OTHER DEVICE: one generic, channel-driven tile -->
-    <div class="tile-inner" :if="device.deviceCategory !== 'camera'">
-        <div class="tile-top">
-            <span class="tile-icon"><i :class="device.icon"></i></span>
-            <i class="tile-edit iconoir-more-horiz" :onclick="this.onEditClick(event, device)"></i>
-        </div>
-
-        <div class="tile-body">
-            <div class="tile-name">${device.name}</div>
-            <div class="tile-meta">
-                <span class="tile-status" :if="device.status">${device.status}</span>
-                <span class="tile-lock" :if="device.manual" title="Manual — ignores automations until you switch it back to Auto">
-                    <i class="iconoir-lock"></i> Manual
-                </span>
-            </div>
-        </div>
-
-        <!-- One control per channel; the widget is chosen by channel.control. -->
-        <div class="tile-controls">
-            <div class="channel-control" :foreach="channel in device.channels" :key="channel.key">
-                <!-- boolean actuator → chip toggle (cooler fan/water) -->
-                <button
-                    class="chip"
-                    :if="channel.control === 'chip'"
-                    :class:on="channel.value"
-                    :onclick="this.onChannelSet(event, channel.deviceId, channel.key, !channel.value)"
-                >
-                    <i :class="channel.icon" :class:spin="channel.value === true && channel.key === 'fan'"></i> ${channel.label}
-                </button>
-
-                <!-- number actuator → slider (dimmable brightness) -->
-                <input
-                    :if="channel.control === 'slider'"
-                    class="tile-slider"
-                    type="range"
-                    :min="channel.min + ''"
-                    :max="channel.max + ''"
-                    :value="channel.value + ''"
-                    :onclick="this.stop(event)"
-                    :onchange="this.onChannelSlider(event, channel.deviceId, channel.key)"
-                />
-
-                <!-- number setting → stepper (cooler target) -->
-                <div class="stepper" :if="channel.control === 'stepper'">
-                    <span class="stepper-readout"><i :class="channel.icon"></i> ${channel.display}</span>
-                    <button class="step" :onclick="this.onChannelStep(event, channel.deviceId, channel.key, -1)"><i class="iconoir-minus"></i></button>
-                    <button class="step" :onclick="this.onChannelStep(event, channel.deviceId, channel.key, 1)"><i class="iconoir-plus"></i></button>
-                </div>
-
-                <!-- sensor → readout (cooler room/unit temps) -->
-                <div class="readout" :if="channel.control === 'readout'">
-                    <span class="readout-val">${channel.display}</span>
-                    <span class="readout-label">${channel.label}</span>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="device-filter" :if="this.hasDevices">
+    <i class="iconoir-search"></i>
+    <input class="device-filter-input" type="text" placeholder="Filter by name or room…" :oninput="this.onFilter(event)" />
 </div>
-<div class="empty-state" :else>
+
+<!-- One collapsible section per zone (cameras get their own group). Collapsing a
+     section removes its tiles from the DOM via :if — which also stops camera streams. -->
+<div
+    class="zone-section"
+    :foreach="group in this.groups"
+    :key="group.key"
+    :class="'zsec-' + group.kind"
+    :class:collapsed="group.collapsed"
+>
+    <button class="zone-head" :onclick="this.toggleGroup(group.key)">
+        <i class="zone-caret iconoir-nav-arrow-down"></i>
+        <span class="zone-name">${group.label}</span>
+        <span class="zone-summary">${group.summary}</span>
+    </button>
+
+    <section class="device-grid zone-body" :if="!group.collapsed">
+        <div
+            class="device-tile"
+            :foreach="device in group.devices"
+            :key="device.id"
+            :id="'tile-' + device.id"
+            :class="'cat-' + device.deviceCategory"
+            :class:wide="device.wide"
+            :class:on="device.isOn"
+            :class:manual="device.manual"
+            :onclick="this.onTileClick(device)"
+            oncontextmenu="return false;"
+        >
+            <!-- CAMERA: full-bleed annotated live view (from the vision-service, not the cam)
+                 with the high-value "who is here" headline overlaid (§6). -->
+            <div class="cam-wrap" :if="device.deviceCategory === 'camera'">
+                <img :if="device.streamUrl" :src="device.streamUrl" alt="" />
+                <div :else class="cam-placeholder">
+                    <i class="iconoir-video-camera-off"></i>
+                    <span>No signal</span>
+                </div>
+                <!-- WHO is here — the headline, not the picture. -->
+                <div class="cam-who" :if="device.who">
+                    <i class="iconoir-group"></i>
+                    <span>${device.who}</span>
+                </div>
+                <!-- Stream/detection health: frames flowing? backend detecting or null stub? -->
+                <div :class="device.camHealthClass" :title="device.camHealthTitle" :if="device.camHealth">
+                    <span class="cam-health-dot"></span>
+                    <span>${device.camHealth}</span>
+                </div>
+                <div class="cam-label">
+                    <i class="iconoir-video-camera"></i>
+                    <span>${device.name}</span>
+                </div>
+            </div>
+
+            <!-- EVERY OTHER DEVICE: one generic, channel-driven tile -->
+            <div class="tile-inner" :if="device.deviceCategory !== 'camera'">
+                <div class="tile-top">
+                    <span class="tile-icon"><i :class="device.icon"></i></span>
+                    <i class="tile-edit iconoir-more-horiz" :onclick="this.onEditClick(event, device)"></i>
+                </div>
+
+                <div class="tile-body">
+                    <div class="tile-name">${device.name}</div>
+                    <div class="tile-meta">
+                        <span class="tile-status" :if="device.status">${device.status}</span>
+                        <span class="tile-lock" :if="device.manual" title="Manual — ignores automations until you switch it back to Auto">
+                            <i class="iconoir-lock"></i> Manual
+                        </span>
+                    </div>
+                </div>
+
+                <!-- One control per channel; the widget is chosen by channel.control. -->
+                <div class="tile-controls">
+                    <div class="channel-control" :foreach="channel in device.channels" :key="channel.key">
+                        <!-- boolean actuator → chip toggle (cooler fan/water) -->
+                        <button
+                            class="chip"
+                            :if="channel.control === 'chip'"
+                            :class:on="channel.value"
+                            :onclick="this.onChannelSet(event, channel.deviceId, channel.key, !channel.value)"
+                        >
+                            <i :class="channel.icon" :class:spin="channel.value === true && channel.key === 'fan'"></i> ${channel.label}
+                        </button>
+
+                        <!-- number actuator → slider (dimmable brightness) -->
+                        <input
+                            :if="channel.control === 'slider'"
+                            class="tile-slider"
+                            type="range"
+                            :min="channel.min + ''"
+                            :max="channel.max + ''"
+                            :value="channel.value + ''"
+                            :onclick="this.stop(event)"
+                            :onchange="this.onChannelSlider(event, channel.deviceId, channel.key)"
+                        />
+
+                        <!-- number setting → stepper (cooler target) -->
+                        <div class="stepper" :if="channel.control === 'stepper'">
+                            <span class="stepper-readout"><i :class="channel.icon"></i> ${channel.display}</span>
+                            <button class="step" :onclick="this.onChannelStep(event, channel.deviceId, channel.key, -1)"><i class="iconoir-minus"></i></button>
+                            <button class="step" :onclick="this.onChannelStep(event, channel.deviceId, channel.key, 1)"><i class="iconoir-plus"></i></button>
+                        </div>
+
+                        <!-- sensor → readout (cooler room/unit temps) -->
+                        <div class="readout" :if="channel.control === 'readout'">
+                            <span class="readout-val">${channel.display}</span>
+                            <span class="readout-label">${channel.label}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="empty-state" :if="!this.hasDevices">
     <i class="iconoir-home-simple-door"></i>
     <span>No devices detected on your network</span>
+</div>
+<div class="empty-state empty-nomatch" :if="this.hasDevices && !this.groups.length">
+    <i class="iconoir-search"></i>
+    <span>No devices match your filter</span>
 </div>

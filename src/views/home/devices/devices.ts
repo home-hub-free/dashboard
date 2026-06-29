@@ -4,10 +4,18 @@ import { store } from "../../../store/store";
 import { showToaster } from "../../../components/popup-message/popup-message";
 import { setServerChannel, visionStreamUrl, ZoneOccupant, VisionCameraStatus } from "../../../utils/server-handler";
 import template from "./devices.html?raw";
-import { Device, DevicesTabState } from "./devices.model";
+import { Device, DeviceGroup, DevicesTabState } from "./devices.model";
 import { Channel, deviceChannels, withChannelValue } from "./channels";
 import { DevicesService, DevicesServiceClass } from "./devices.service";
 import { startVisionOccupancy, stopVisionOccupancy } from "../../../utils/vision-handler";
+
+// Tiles with no zone set fall under this bucket; cameras get their own group.
+const UNASSIGNED = "_unassigned";
+const CAMERAS = "_cameras";
+// Which groups start collapsed when the user has no saved preference. Cameras default
+// to collapsed so Home opens without N live MJPEG streams running (perf + scroll).
+const DEFAULT_COLLAPSED = new Set<string>([CAMERAS]);
+const COLLAPSE_KEY = "homeDeviceGroupCollapse";
 
 const TILE_ICON_ON: { [cat: string]: string } = {
   light: "iconoir-light-bulb-on",
@@ -111,6 +119,97 @@ function summariseCamHealth(
   return { text: st.face === "null" ? "live · detecting" : "live · ID on", state: "ok", title };
 }
 
+/** Persisted collapse state — a Set of group keys the user has collapsed. Survives
+ * reloads so a wall-mounted hub keeps the rooms you fold. Falls back to the defaults
+ * (cameras collapsed) on first run / unreadable storage. */
+function loadCollapse(): Set<string> {
+  try {
+    const raw = localStorage.getItem(COLLAPSE_KEY);
+    if (raw) return new Set<string>(JSON.parse(raw));
+  } catch {
+    /* ignore */
+  }
+  return new Set<string>(DEFAULT_COLLAPSED);
+}
+
+function saveCollapse(set: Set<string>) {
+  try {
+    localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...set]));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Right-aligned header summary: "2 on" for a room, "4 cameras" for the camera group. */
+function groupSummary(kind: DeviceGroup["kind"], devices: Device[]): string {
+  if (kind === "cameras") {
+    return `${devices.length} camera${devices.length === 1 ? "" : "s"}`;
+  }
+  const on = devices.filter((d) => d.isOn).length;
+  return `${on} on`;
+}
+
+/**
+ * Split the flat device list into the rendered, zone-grouped, optionally-filtered
+ * groups. Cameras are pulled into their own group; everything else groups by `zone`
+ * (registry order first, then any extra zones, then Unassigned). A non-empty filter
+ * matches device name or zone and force-expands every surviving group (you want to see
+ * what you searched for); empty groups drop out.
+ */
+function buildGroups(
+  devices: Device[],
+  zoneOrder: string[],
+  collapsed: Set<string>,
+  filter: string,
+): DeviceGroup[] {
+  const f = filter.trim().toLowerCase();
+  const match = (d: Device) =>
+    !f || d.name.toLowerCase().includes(f) || (d.zone || "").toLowerCase().includes(f);
+
+  const cams: Device[] = [];
+  const byZone = new Map<string, Device[]>();
+  for (const d of devices) {
+    if (!match(d)) continue;
+    if (d.deviceCategory === "camera") {
+      cams.push(d);
+      continue;
+    }
+    const zone = d.zone && d.zone.trim() ? d.zone : UNASSIGNED;
+    (byZone.get(zone) ?? byZone.set(zone, []).get(zone)!).push(d);
+  }
+
+  // Registry order first, then any zones present on devices but not in the registry,
+  // then the Unassigned bucket — so the wall reads in the house's configured order.
+  const ordered: string[] = [];
+  for (const z of zoneOrder) if (byZone.has(z) && z !== UNASSIGNED) ordered.push(z);
+  for (const z of byZone.keys()) if (!ordered.includes(z) && z !== UNASSIGNED) ordered.push(z);
+  if (byZone.has(UNASSIGNED)) ordered.push(UNASSIGNED);
+
+  const groups: DeviceGroup[] = ordered.map((zone) => {
+    const list = byZone.get(zone)!;
+    return {
+      key: zone,
+      label: zone === UNASSIGNED ? "Unassigned" : zone,
+      kind: "zone",
+      devices: list,
+      summary: groupSummary("zone", list),
+      collapsed: !f && collapsed.has(zone),
+    };
+  });
+
+  if (cams.length) {
+    groups.push({
+      key: CAMERAS,
+      label: "Cameras",
+      kind: "cameras",
+      devices: cams,
+      summary: groupSummary("cameras", cams),
+      collapsed: !f && collapsed.has(CAMERAS),
+    });
+  }
+  return groups;
+}
+
 class DevicesTabClass extends Component<DevicesTabState> {
   devicesService: DevicesServiceClass;
   private unsubscribeDeclare?: () => void;
@@ -120,6 +219,8 @@ class DevicesTabClass extends Component<DevicesTabState> {
   private unsubscribeDevices?: () => void;
   private zoneOccupants: Record<string, ZoneOccupant[]> = {};
   private camStatus: Record<string, VisionCameraStatus> = {};
+  private collapsed = loadCollapse();
+  private filterText = "";
 
   constructor(devicesService: DevicesServiceClass) {
     super();
@@ -128,12 +229,41 @@ class DevicesTabClass extends Component<DevicesTabState> {
     devices.forEach((device) => decorateDevice(device));
   }
 
+  /** Rebuild the zone-grouped view from the flat `devices` array. Cheap + derived, so
+   * we recompute (and reassign, to re-render the gated sections) on any structural
+   * change: store sync, declare, zone edit, collapse toggle, filter. */
+  private groups(): DeviceGroup[] {
+    return buildGroups(this.bind.devices || [], store.get("zones") || [], this.collapsed, this.filterText);
+  }
+
   mount() {
     this.createBind({
       id: "devices",
       template,
       bind: {
         devices: store.get("devices").map(decorateDevice),
+        groups: buildGroups(
+          store.get("devices").map(decorateDevice),
+          store.get("zones") || [],
+          this.collapsed,
+          "",
+        ),
+        hasDevices: (store.get("devices") || []).length > 0,
+
+        // Collapse/expand a zone (or the camera group) — persisted across reloads.
+        toggleGroup: (key: string) => {
+          if (this.collapsed.has(key)) this.collapsed.delete(key);
+          else this.collapsed.add(key);
+          saveCollapse(this.collapsed);
+          this.bind.groups = this.groups();
+        },
+
+        // Uncontrolled filter input (no :value binding) so typing never loses the
+        // caret to a re-render; just read it and rebuild the groups.
+        onFilter: (event: Event) => {
+          this.filterText = (event.target as HTMLInputElement).value || "";
+          this.bind.groups = this.groups();
+        },
 
         // The whole tile is the switch for single-actuator devices.
         onTileClick: (device: Device) => {
@@ -192,6 +322,8 @@ class DevicesTabClass extends Component<DevicesTabState> {
 
     this.unsubscribeDevices = store.subscribe("devices", (devices) => {
       this.bind.devices = devices.map(decorateDevice);
+      this.bind.hasDevices = this.bind.devices.length > 0;
+      this.bind.groups = this.groups();
       this.applyOccupancy();
     });
 
@@ -226,6 +358,17 @@ class DevicesTabClass extends Component<DevicesTabState> {
     stopVisionOccupancy();
   }
 
+  /** Recompute each group's header summary in place (leaf mutation → just the header
+   * text repaints) so "2 on" tracks live toggles without rebuilding/re-rendering every
+   * tile. group.devices share refs with bind.devices, so isOn is already fresh. */
+  private refreshSummaries() {
+    (this.bind.groups || []).forEach((g) => {
+      g.summary = g.kind === "cameras"
+        ? `${g.devices.length} camera${g.devices.length === 1 ? "" : "s"}`
+        : `${g.devices.filter((d) => d.isOn).length} on`;
+    });
+  }
+
   /** Push the latest per-zone occupancy + worker health onto each camera tile. */
   private applyOccupancy() {
     (this.bind.devices || []).forEach((device) => {
@@ -251,6 +394,7 @@ class DevicesTabClass extends Component<DevicesTabState> {
     const previous = device.value;
     device.value = withChannelValue(device.deviceCategory, device.value, channel.key, value);
     decorateDevice(device);
+    this.refreshSummaries();
 
     setServerChannel(device.id, channel.key, value)
       .then(({ success }) => {
@@ -262,14 +406,16 @@ class DevicesTabClass extends Component<DevicesTabState> {
   private revertChannel(device: Device, previous: any, message: string) {
     device.value = previous;
     decorateDevice(device);
+    this.refreshSummaries();
     showToaster({ message, from: "bottom", timer: 2000 });
   }
 
   // Anchor element used to position the detail overlay for tiles without a
-  // dedicated edit affordance (blinds / camera open it on tap).
+  // dedicated edit affordance (blinds / camera open it on tap). Tiles now live inside
+  // collapsible zone sections (DOM order ≠ flat `devices` order), so we locate by the
+  // tile's own id rather than indexing the flat array.
   private tileEl(deviceId: string): HTMLElement {
-    const index = this.bind.devices.findIndex((d) => d.id === deviceId);
-    return (document.querySelectorAll("#devices .device-tile")[index] as HTMLElement)
+    return (document.getElementById(`tile-${deviceId}`) as HTMLElement)
       || (document.getElementById("devices") as HTMLElement);
   }
 
@@ -278,6 +424,8 @@ class DevicesTabClass extends Component<DevicesTabState> {
     const device = this.bind.devices.find((d) => d.id === declaredDevice.id);
     if (!device) {
       this.bind.devices.push(decorateDevice(declaredDevice));
+      this.bind.hasDevices = true;
+      this.bind.groups = this.groups(); // structural — a new tile/zone may appear
     }
     // A newly-declared camera picks up its live view (visionStreamUrl in decorate)
     // + its "who" headline (next occupancy poll) automatically — no per-cam subscribe.
@@ -286,12 +434,18 @@ class DevicesTabClass extends Component<DevicesTabState> {
   private onDeviceUpdate(updatedDevice: Device) {
     const device = this.bind.devices.find((d) => d.id === updatedDevice.id);
     if (device) {
+      const zoneChanged = updatedDevice.zone != null && updatedDevice.zone !== device.zone;
       device.value = updatedDevice.value;
       device.manual = updatedDevice.manual;
       device.name = updatedDevice.name;
       device.zone = updatedDevice.zone ?? device.zone;
       device.operationalRanges = updatedDevice.operationalRanges;
       decorateDevice(device);
+      // A zone/name change reshuffles which section the tile belongs to → rebuild;
+      // otherwise the in-place leaf patch above already repainted the tile, so just
+      // refresh the header counts.
+      if (zoneChanged) this.bind.groups = this.groups();
+      else this.refreshSummaries();
       if (device.deviceCategory === "camera") this.applyOccupancy();
     }
   }

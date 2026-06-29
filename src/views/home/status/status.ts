@@ -1,39 +1,7 @@
 import { Component } from "../../../core/component";
-import { store } from "../../../store/store";
+import { getWeather, Weather } from "../../../utils/server-handler";
 import template from "./status.html?raw";
 import { HomeStatusState } from "./status.model";
-import { Device } from "../devices/devices.model";
-import { Sensor } from "../sensors/sensors.model";
-import { deviceChannels } from "../devices/channels";
-
-// Categories that count as "lights" in the lights-on tally.
-const LIGHT_CATS = ["light", "dimmable-light"];
-
-/** A device is "on" when any of its actuator channels is on (boolean true, or a
- * number > 0). Reuses the same channel projection the tiles render from, so this
- * stays in lockstep with decorateDevice's isOn. */
-function isOn(device: Device): boolean {
-  return deviceChannels(device)
-    .filter((c) => c.role === "actuator")
-    .some((c) => (c.kind === "boolean" ? c.value === true : (c.value as number) > 0));
-}
-
-/** Pull a temperature number out of a temp/humidity sensor, tolerating both the
- * raw "temp:humidity" string and the post-format `{ temperature: "23 °C" }` shape
- * (SensorsService.formatTempHumiditySensor mutates value in place). */
-function tempOf(sensor: Sensor): number | null {
-  const v: any = sensor.value;
-  if (v == null) return null;
-  if (typeof v === "string") {
-    const t = parseFloat(v.split(":")[0]);
-    return Number.isFinite(t) ? t : null;
-  }
-  if (typeof v === "object" && v.temperature != null) {
-    const t = parseFloat(String(v.temperature));
-    return Number.isFinite(t) ? t : null;
-  }
-  return null;
-}
 
 function timeOfDay(d = new Date()): string {
   const h = d.getHours();
@@ -43,89 +11,88 @@ function timeOfDay(d = new Date()): string {
   return "evening";
 }
 
-function clockLabel(d = new Date()): string {
-  const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const date = d.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
-  return `${time} · ${date}`;
+/** Date only — no clock time (the OS already shows the time; it was redundant here). */
+function dateLabel(d = new Date()): string {
+  return d.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
+}
+
+/** Map a WMO weather-interpretation code to an iconoir glyph (the set we ship). Broad
+ * buckets — clear / cloud / fog / rain / heavy-rain / snow / storm — are all the
+ * glanceability target needs. Falls back to a neutral cloud for unmapped codes. */
+function weatherIcon(code: number | null): string {
+  if (code == null) return "iconoir-cloud";
+  if (code <= 1) return "iconoir-sun-light"; // clear / mainly clear
+  if (code === 2) return "iconoir-cloud-sunny"; // partly cloudy
+  if (code === 3) return "iconoir-cloud"; // overcast
+  if (code === 45 || code === 48) return "iconoir-fog";
+  if (code === 65 || code === 67 || code === 82) return "iconoir-heavy-rain";
+  if (code === 95 || code === 96 || code === 99) return "iconoir-thunderstorm";
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "iconoir-snow";
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return "iconoir-rain";
+  return "iconoir-cloud";
 }
 
 /**
- * The editorial "now" column: states the house in one line and surfaces a few
- * glanceable counts (lights on, devices active, warmest room), all derived from
- * the live device + sensor stores and kept fresh via store subscriptions + a
- * one-minute clock tick.
+ * The compact home hero: a slim greeting + date on the left and a live weather chip
+ * on the right. Deliberately lightweight — the old wide editorial band and its
+ * lights-on/devices-active/warmest stat-cards were dropped (redundant against the
+ * device wall itself), so this no longer subscribes to the device/sensor stores. It
+ * only ticks the date/greeting and polls the hub forecast.
  */
 class HomeStatusClass extends Component<HomeStatusState> {
-  private unsubDevices?: () => void;
-  private unsubSensors?: () => void;
-  private clockTimer?: number;
+  private dayTimer?: number;
+  private weatherTimer?: number;
 
   mount() {
     this.createBind({
       id: "home-status",
       template,
-      bind: this.snapshot(),
+      bind: this.baseState(),
     });
 
-    this.unsubDevices = store.subscribe("devices", () => this.refresh());
-    this.unsubSensors = store.subscribe("sensors", () => this.refresh());
-    this.clockTimer = window.setInterval(() => {
-      this.bind.clock = clockLabel();
+    // Date + greeting only change slowly; a 5-min tick is plenty to roll past midnight
+    // and from afternoon into evening without a per-second clock.
+    this.dayTimer = window.setInterval(() => {
+      this.bind.date = dateLabel();
       this.bind.timeOfDay = timeOfDay();
-    }, 30000);
+    }, 5 * 60 * 1000);
+
+    this.refreshWeather();
+    // Open-Meteo updates hourly at best; 15 min keeps the chip fresh without churn.
+    this.weatherTimer = window.setInterval(() => this.refreshWeather(), 15 * 60 * 1000);
   }
 
   unmount() {
-    this.unsubDevices?.();
-    this.unsubSensors?.();
-    if (this.clockTimer) window.clearInterval(this.clockTimer);
+    if (this.dayTimer) window.clearInterval(this.dayTimer);
+    if (this.weatherTimer) window.clearInterval(this.weatherTimer);
   }
 
-  /** Recompute and push each derived field onto the bind (scalar reassignment —
-   * leaf interpolations + :if gates re-render on assignment). */
-  private refresh() {
-    if (!this.mounted) return;
-    const s = this.snapshot();
-    this.bind.clock = s.clock;
-    this.bind.timeOfDay = s.timeOfDay;
-    this.bind.lightsOn = s.lightsOn;
-    this.bind.activeCount = s.activeCount;
-    this.bind.warmestTemp = s.warmestTemp;
-    this.bind.warmestWhere = s.warmestWhere;
-    this.bind.hasWarmest = s.hasWarmest;
-  }
-
-  private snapshot(): HomeStatusState {
-    const devices = store.get("devices") || [];
-    const sensors = store.get("sensors") || [];
-
-    const lightsOn = devices.filter(
-      (d) => LIGHT_CATS.includes(d.deviceCategory) && isOn(d),
-    ).length;
-    const activeCount = devices.filter((d) => isOn(d)).length;
-
-    let warmestTemp = -Infinity;
-    let warmestWhere = "";
-    sensors
-      .filter((s) => s.sensorType === "temp/humidity")
-      .forEach((s) => {
-        const t = tempOf(s);
-        if (t != null && t > warmestTemp) {
-          warmestTemp = t;
-          warmestWhere = s.zone || s.name;
-        }
-      });
-    const hasWarmest = warmestTemp !== -Infinity;
-
+  private baseState(): HomeStatusState {
     return {
-      clock: clockLabel(),
+      date: dateLabel(),
       timeOfDay: timeOfDay(),
-      lightsOn,
-      activeCount,
-      warmestTemp: hasWarmest ? `${Math.round(warmestTemp)}°` : "—",
-      warmestWhere,
-      hasWarmest,
+      hasWeather: false,
+      weatherIcon: "iconoir-cloud",
+      temp: "—",
+      conditions: "",
+      range: "",
     };
+  }
+
+  private async refreshWeather() {
+    const w = await getWeather();
+    if (!this.mounted || !w) return;
+    this.applyWeather(w);
+  }
+
+  /** Push the forecast onto the bind (scalar reassignment — leaf interpolations +
+   * the :if gate re-render on assignment). */
+  private applyWeather(w: Weather) {
+    this.bind.weatherIcon = weatherIcon(w.code);
+    this.bind.temp = `${w.currentTemp}°`;
+    this.bind.conditions = w.description;
+    this.bind.range = `H${w.maxTemp}° L${w.minTemp}°`;
+    this.bind.hasWeather = true;
   }
 }
 
