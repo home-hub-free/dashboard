@@ -75,4 +75,16 @@ export type SettingsState = {
   peopleMsg: string
   namePerson: (id: string, name: string) => void
   promotePerson: (id: string, userId: string) => void
+
+  // Face lightbox — tapping a gallery photo opens the captured crop full-size so the
+  // admin can tell which face a row is about even when the crop holds more than one
+  // person. Primitive fields (never a possibly-null object) keep the gated branch
+  // safe to evaluate; `openFace` reassigns them so the lightbox region re-renders.
+  zoomOpen: boolean
+  zoomUrl: string
+  zoomLabel: string
+  zoomSub: string
+  openFace: (person: Person) => void
+  closeFace: () => void
+  stopZoom: (event: Event) => void
 }

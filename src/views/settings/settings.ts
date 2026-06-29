@@ -3,6 +3,7 @@ import template from "./settings.html?raw";
 import { SettingsState } from "./settings.model";
 import { HouseholdService, HouseholdServiceClass } from "../assistant/household.service";
 import { currentUser } from "../../utils/auth";
+import type { Person } from "../../utils/server-handler";
 
 /**
  * Settings — household + account administration, relocated out of the Assistant
@@ -78,6 +79,29 @@ class SettingsContentClass extends Component<SettingsState> {
         peopleMsg: "",
         namePerson: (id: string, name: string) => this.householdService.namePerson(id, name),
         promotePerson: (id: string, userId: string) => this.householdService.promotePerson(id, userId),
+
+        // Face lightbox — pure view state (no service). Tapping a gallery face opens
+        // its captured crop full-size; primitives only, reassigned so the :if region
+        // re-renders. The backdrop / close button call closeFace; stopZoom keeps a
+        // click on the image itself from bubbling up to the backdrop and closing it.
+        zoomOpen: false,
+        zoomUrl: "",
+        zoomLabel: "",
+        zoomSub: "",
+        openFace: (person: Person) => {
+          if (!person?.thumbUrl) return; // nothing captured yet → no-op
+          this.bind.zoomUrl = person.thumbUrl;
+          this.bind.zoomLabel = person.name || person.label;
+          this.bind.zoomSub =
+            person.class === "guest"
+              ? `Guest · seen ${person.sightings ?? 0}×`
+              : "Household member";
+          this.bind.zoomOpen = true;
+        },
+        closeFace: () => {
+          this.bind.zoomOpen = false;
+        },
+        stopZoom: (event: Event) => event.stopPropagation(),
       },
     });
 

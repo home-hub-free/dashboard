@@ -177,7 +177,7 @@
         </p>
         <div class="people-list">
             <div class="person-row" :foreach="person in this.people" :key="person.id">
-                <div class="person-face">
+                <div class="person-face" :class:tappable="person.thumbUrl" :onclick="this.openFace(person)">
                     <img :if="person.thumbUrl" :src="person.thumbUrl" alt="" />
                     <div :else class="person-face-empty"><i class="iconoir-user"></i></div>
                 </div>
@@ -261,4 +261,19 @@
             <i class="iconoir-add-user"></i> Add member
         </button>
     </section>
+
+    <!-- Face lightbox: the tapped gallery crop, full-size. Backdrop closes; the card
+         swallows the click (stopZoom) so only outside / the ✕ dismisses it. -->
+    <div class="face-zoom" :if="this.zoomOpen" :onclick="this.closeFace()">
+        <div class="face-zoom-card" :onclick="this.stopZoom(event)">
+            <button class="face-zoom-close" :onclick="this.closeFace()" aria-label="Close">
+                <i class="iconoir-xmark"></i>
+            </button>
+            <img class="face-zoom-img" :src="this.zoomUrl" alt="" />
+            <div class="face-zoom-meta">
+                <span class="face-zoom-label">${this.zoomLabel}</span>
+                <span class="face-zoom-sub" :if="this.zoomSub">${this.zoomSub}</span>
+            </div>
+        </div>
+    </div>
 </div>
