@@ -8,6 +8,7 @@ import {
   saveEffect,
 } from "../../../utils/server-handler";
 import { showToaster } from "../../../components/popup-message/popup-message";
+import { store } from "../../../store/store";
 import { EffectActions } from "../../../store/actions";
 import { Arm, ArmCondition, Effect, Trigger } from "../automations.model";
 import { Candidate, CandidateRow, DiscoveryReviewState } from "./discovery-review.model";
@@ -62,6 +63,8 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
     return {
       candidate,
       line: candidate.line || this.fallbackLine(candidate),
+      actionDevice: this.deviceIdentity(candidate.arms[0]?.set?.nodeId),
+      triggerDevice: this.deviceIdentity(candidate.trigger?.nodeId),
       zone: candidate.zone || "",
       support: ev?.support ?? 0,
       confidencePct: Math.round((ev?.confidence ?? 0) * 100),
@@ -69,6 +72,24 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
       matured: !!candidate.matured,
       busy: false,
     };
+  }
+
+  /** Resolve a node id to a concrete handle "name category · #id" using the live device/sensor store,
+   *  falling back to just "#id" when the node isn't loaded. The #id is always shown so the user can pin
+   *  the exact device — the fleet names units after their room, so names repeat and can't disambiguate. */
+  private deviceIdentity(nodeId?: string): string {
+    if (!nodeId) return "";
+    const short = `#${nodeId}`;
+    const dev = store.get("devices").find((d) => d.id === nodeId);
+    if (dev) return this.identityLabel(dev.name, dev.deviceCategory, short);
+    const sen = store.get("sensors").find((s) => s.id === nodeId);
+    if (sen) return this.identityLabel(sen.name, sen.deviceCategory, short);
+    return short;
+  }
+
+  private identityLabel(name: string, category: string, short: string): string {
+    const label = [name, category].filter(Boolean).join(" ").trim();
+    return label ? `${label} · ${short}` : short;
   }
 
   /** Minimal human line if memory-service didn't ship one (it normally does). */

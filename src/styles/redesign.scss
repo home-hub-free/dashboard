@@ -719,6 +719,34 @@ body {
     color: var(--color-text-primary);
   }
 
+  // Concrete device identity (trigger → action) so the user can pin the exact unit a suggestion drives.
+  .discovery-devices {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-left: calc(34px + var(--space-3)); // align under the line, past the spark bubble
+  }
+  .discovery-dev {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.74rem;
+    font-weight: var(--font-weight-semibold);
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--color-surface-tertiary);
+    color: var(--color-text-secondary);
+
+    i { font-size: 0.9rem; opacity: 0.8; }
+    &.discovery-dev-action { color: var(--color-text-primary); }
+  }
+  .discovery-dev-sep {
+    color: var(--color-text-secondary);
+    opacity: 0.7;
+    i { font-size: 0.95rem; }
+  }
+
   .discovery-conf { display: flex; align-items: center; gap: var(--space-3); }
   .conf-track {
     flex: 1;

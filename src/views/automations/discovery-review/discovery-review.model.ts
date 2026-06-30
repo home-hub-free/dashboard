@@ -44,6 +44,12 @@ export type Candidate = {
 export type CandidateRow = {
   candidate: Candidate;
   line: string;
+  /** Concrete device identity for the decision, resolved from the device/sensor store as "name
+   *  category · #id". Always carries the #id: the fleet names devices after their room, so the prose
+   *  alone ("the light") can't pin the exact unit. actionDevice = what the rule drives; triggerDevice =
+   *  the sensor that fires it. */
+  actionDevice: string;
+  triggerDevice: string;
   zone: string;
   support: number;
   confidencePct: number;

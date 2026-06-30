@@ -27,6 +27,15 @@
         <div class="discovery-line">${row.line}</div>
       </div>
 
+      <!-- Concrete device identity so the user can pin exactly which unit a suggestion drives — the
+           prose's "the light" can't disambiguate when devices are named after their room. Reads
+           trigger → action, matching the sentence order. -->
+      <div class="discovery-devices" :if="row.actionDevice">
+        <span class="discovery-dev discovery-dev-trigger" :if="row.triggerDevice"><i class="iconoir-antenna"></i> ${row.triggerDevice}</span>
+        <span class="discovery-dev-sep" :if="row.triggerDevice"><i class="iconoir-arrow-right"></i></span>
+        <span class="discovery-dev discovery-dev-action"><i class="iconoir-flash"></i> ${row.actionDevice}</span>
+      </div>
+
       <div class="discovery-conf">
         <div class="conf-track"><div class="conf-fill" :style="{ width: row.confidencePct + '%' }"></div></div>
         <span class="conf-label"><strong>${row.confidencePct}%</strong> of the time</span>
