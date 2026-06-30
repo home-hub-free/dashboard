@@ -175,44 +175,40 @@
                 <span class="voice-id-count" :if="!this.calendarMineLinked">not connected</span>
             </div>
 
-            <!-- Service-account mode: share a calendar with the SA email, then link it by id -->
+            <!-- Service-account mode: share calendars with the SA email, then pick them here (no ids) -->
             <div :if="this.calendarAuth === 'service_account'">
                 <p class="voice-id-hint">
-                    Aura reaches calendars that are shared with its service account. In Google
-                    Calendar, share a calendar with <strong>${this.calendarSaEmail}</strong>
-                    (grant “Make changes to events”), then link it here. Most appointments land
-                    on the shared family calendar; link your own for personal events.
+                    Aura sees any calendar you share with <strong>${this.calendarSaEmail}</strong>
+                    in Google Calendar (“Make changes to events”, or read-only). Share one, then
+                    pick the family calendar and tick which are yours below — no ids to copy.
                 </p>
 
-                <div class="voice-id-actions">
-                    <span class="cal-row-label"><i class="iconoir-home"></i> Family calendar</span>
-                    <span class="voice-id-count">${this.calendarFamilyId}</span>
-                    <button class="add-range-btn" :onmouseup="this.testFamilyCalendar()">
-                        <i class="iconoir-refresh-double"></i> <span>Test access</span>
-                    </button>
-                </div>
-                <p class="voice-id-msg" :if="this.calendarFamilyMsg">${this.calendarFamilyMsg}</p>
+                <p class="voice-id-hint" :if="!this.calDiscovered.length">
+                    Nothing shared with Aura yet. In Google Calendar → a calendar’s Settings →
+                    Share with specific people → add the address above.
+                </p>
 
-                <div class="voice-id-actions">
-                    <span class="cal-row-label"><i class="iconoir-user"></i> My calendar</span>
-                    <span class="voice-id-count" :if="this.calendarMineLinked"><i class="iconoir-check"></i> connected</span>
+                <div class="voice-id-actions" :if="this.calDiscovered.length">
+                    <span class="cal-row-label"><i class="iconoir-home"></i> Family calendar</span>
+                    <select class="person-promote" :onchange="this.setFamilyCal(event.target.value)">
+                        <option value="">— pick —</option>
+                        <option :foreach="c in this.calDiscovered" :key="c.id" :value="c.id" :selected="c.id === this.calendarFamilyId">${c.summary}</option>
+                    </select>
                 </div>
-                <div class="household-add" :if="!this.calendarMineLinked">
-                    <input
-                        type="text"
-                        placeholder="your calendar id (usually your Gmail address)"
-                        :value="this.calendarMyCalId"
-                        :oninput="this.calendarMyCalId = event.target.value"
-                    />
-                </div>
-                <div class="voice-id-actions">
-                    <button class="add-range-btn" :if="!this.calendarMineLinked && !this.calendarBusy" :onmouseup="this.linkMyCalendar()">
-                        <i class="iconoir-link"></i> <span>Link my calendar</span>
-                    </button>
-                    <button class="add-range-btn busy" :if="this.calendarBusy"><span>Linking…</span></button>
-                    <button class="remove-btn" :if="this.calendarMineLinked" :onmouseup="this.disconnectMyCalendar()">
-                        <i class="iconoir-trash"></i> Disconnect
-                    </button>
+
+                <p class="voice-id-hint" :if="this.calDiscovered.length"><i class="iconoir-user"></i> My calendars</p>
+                <div class="cal-list" :if="this.calDiscovered.length">
+                    <div class="voice-id-actions" :foreach="c in this.calDiscovered" :key="c.id">
+                        <span class="cal-row-label">${c.summary}</span>
+                        <span class="voice-id-count" :if="!c.writable">read-only</span>
+                        <span class="voice-id-count" :if="c.mine && c.writable"><i class="iconoir-check"></i> mine</span>
+                        <button class="add-range-btn" :if="!c.mine" :onmouseup="this.toggleMine(c.id)">
+                            <i class="iconoir-plus"></i> <span>Add to mine</span>
+                        </button>
+                        <button class="remove-btn" :if="c.mine" :onmouseup="this.toggleMine(c.id)">
+                            <i class="iconoir-minus"></i> Remove
+                        </button>
+                    </div>
                 </div>
             </div>
 

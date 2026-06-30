@@ -24,8 +24,9 @@ import {
   calendarStatus,
   calendarEnrollStart,
   calendarRevoke,
-  calendarLink,
-  calendarVerify,
+  calendarCalendars,
+  calendarSetFamily,
+  calendarAssign,
 } from "../../utils/server-handler";
 import { blobToWav16k } from "../../utils/audio-wav";
 import {
@@ -71,43 +72,64 @@ export class HouseholdServiceClass {
     this.state.calendarEnabled = st.ok && !!st.auth;
     this.state.calendarAuth = st.auth;
     this.state.calendarSaEmail = st.saEmail;
-    this.state.calendarFamilyId = st.familyId;
     this.state.calendarHouseLinked = st.houseLinked;
-    this.state.calendarMineLinked = !!this.state.meId && st.enrolled.includes(this.state.meId);
+    if (st.auth === "service_account") {
+      await this.refreshCalendarDiscovery();
+    } else {
+      this.state.calendarMineLinked = !!this.state.meId && st.enrolled.includes(this.state.meId);
+    }
   }
 
-  // ── Service-account mode: link by calendar id + test the family calendar ──
-  /** Link the signed-in member's calendar (which they've shared with the SA) by its id. */
-  async linkMyCalendar() {
-    const id = (this.state.calendarMyCalId || "").trim();
-    if (!this.state.meId) return;
-    if (!id) {
-      this.state.calendarMsg = "Enter your calendar id (usually your Gmail address).";
-      return;
-    }
+  // ── Service-account mode: auto-discovery (share in Google, pick here — no calendar ids) ──
+  /** Pull every calendar shared with the SA + the current family/member assignment, and project it
+   *  onto the picker state (which is mine, which is read-only). */
+  private async refreshCalendarDiscovery() {
+    const v = await calendarCalendars();
+    this.state.calendarSaEmail = v.saEmail || this.state.calendarSaEmail;
+    this.state.calendarFamilyId = v.family;
+    const mine = v.members[this.state.meId]?.calendars || [];
+    this.state.calDiscovered = v.calendars.map((c) => ({
+      id: c.id,
+      summary: c.summary || c.id,
+      writable: c.writable,
+      mine: mine.includes(c.id),
+    }));
+    this.state.calendarMineLinked = mine.length > 0;
+    this.state.calendarMsg = v.error ? `Couldn't reach Google: ${v.error}` : "";
+  }
+
+  /** Pick which shared calendar is the household's family calendar. */
+  async setFamilyCal(id: string) {
+    if (!id || id === this.state.calendarFamilyId) return;
     this.state.calendarBusy = true;
     this.state.calendarMsg = "";
     try {
-      await calendarLink(this.state.meId, id);
+      await calendarSetFamily(id);
       await this.refreshCalendar();
-      this.state.calendarMyCalId = "";
-      showToaster({ from: "bottom", message: "Calendar linked", timer: 1800 });
+      showToaster({ from: "bottom", message: "Family calendar set", timer: 1600 });
     } catch (err: any) {
-      this.state.calendarMsg = err?.message || "Could not link that calendar";
+      this.state.calendarMsg = err?.message || "Could not set the family calendar";
     } finally {
       this.state.calendarBusy = false;
     }
   }
 
-  /** Check whether the service account can reach the configured family calendar (i.e. it's shared). */
-  async testFamilyCalendar() {
-    const id = this.state.calendarFamilyId;
-    if (!id) return;
-    this.state.calendarFamilyMsg = "Checking…";
-    const { reachable, reason } = await calendarVerify(id);
-    this.state.calendarFamilyMsg = reachable
-      ? "Reachable ✓ — the family calendar is shared with the service account."
-      : reason || "Not reachable yet — share it with the service account.";
+  /** Add/remove a shared calendar from the signed-in member's set (writes go to the writable one). */
+  async toggleMine(id: string) {
+    if (!this.state.meId || this.state.calendarBusy) return;
+    const cur = this.state.calDiscovered.find((c) => c.id === id);
+    const want = !cur?.mine;
+    const ids = this.state.calDiscovered.filter((c) => (c.id === id ? want : c.mine)).map((c) => c.id);
+    this.state.calendarBusy = true;
+    this.state.calendarMsg = "";
+    try {
+      await calendarAssign(this.state.meId, ids);
+      await this.refreshCalendar();
+    } catch (err: any) {
+      this.state.calendarMsg = err?.message || "Could not update your calendars";
+    } finally {
+      this.state.calendarBusy = false;
+    }
   }
 
   /** Link the signed-in member's personal Google calendar. */

@@ -74,19 +74,20 @@ export type SettingsState = {
   calendarEnabled: boolean
   calendarAuth: "" | "oauth" | "service_account"
   calendarSaEmail: string // the service-account address members share their calendars with (SA mode)
-  calendarFamilyId: string // the configured family calendar id (SA mode)
-  calendarMyCalId: string // input: the signed-in member's calendar id to link (SA mode)
-  calendarFamilyMsg: string // result of the family "Test access" check (SA mode)
+  calendarFamilyId: string // the currently-designated family calendar id (SA mode)
+  // Every calendar shared with the SA (auto-discovered). `mine` = assigned to the signed-in member;
+  // `writable` false = shared read-only (read but never written).
+  calDiscovered: { id: string; summary: string; writable: boolean; mine: boolean }[]
   calendarHouseLinked: boolean // OAuth mode: the shared family/house account is linked
-  calendarMineLinked: boolean // the signed-in member's personal calendar is linked
-  calendarBusy: boolean // a link/consent action is in flight
+  calendarMineLinked: boolean // the signed-in member has at least one calendar linked
+  calendarBusy: boolean // a link/consent/assignment action is in flight
   calendarMsg: string // status / errors
   connectHouseCalendar: () => void // OAuth mode
   connectMyCalendar: () => void // OAuth mode
   disconnectHouseCalendar: () => void
   disconnectMyCalendar: () => void
-  linkMyCalendar: () => void // SA mode
-  testFamilyCalendar: () => void // SA mode
+  setFamilyCal: (id: string) => void // SA mode: designate the family calendar
+  toggleMine: (id: string) => void // SA mode: add/remove a calendar from my set
 
   // People the cameras have seen — every person gets a default label + a captured
   // face; the admin puts names to faces here (CAMERA_VISION_PLAN §6). Visible only

@@ -350,6 +350,61 @@ export async function calendarLink(userId: string, calendarId: string): Promise<
   if (!res.ok || !d?.ok) throw new Error(d?.error || `Could not link that calendar (${res.status})`);
 }
 
+/** A calendar the service account can see (shared with it). `writable` false = shared read-only. */
+export type DiscoveredCalendar = { id: string; summary: string; accessRole: string; writable: boolean; primary: boolean };
+
+/** Service-account auto-discovery: every calendar shared with the SA, plus the current family
+ * designation and per-member assignments. `error` is set (non-fatal) if Google couldn't be reached. */
+export type CalendarsView = {
+  ok: boolean;
+  saEmail: string;
+  family: string;
+  calendars: DiscoveredCalendar[];
+  members: Record<string, { calendars: string[]; write?: string }>;
+  error?: string;
+};
+
+export async function calendarCalendars(): Promise<CalendarsView> {
+  const off: CalendarsView = { ok: false, saEmail: "", family: "", calendars: [], members: {} };
+  try {
+    const res = await fetch(calendarServer + "calendars");
+    if (!res.ok) return off;
+    const d = await res.json().catch(() => ({}));
+    return {
+      ok: !!d?.ok,
+      saEmail: String(d?.sa_email || ""),
+      family: String(d?.family || ""),
+      calendars: Array.isArray(d?.calendars) ? d.calendars : [],
+      members: d?.members && typeof d.members === "object" ? d.members : {},
+      error: d?.error ? String(d.error) : undefined,
+    };
+  } catch {
+    return off;
+  }
+}
+
+/** Designate which discovered calendar is the shared family one. */
+export async function calendarSetFamily(calendarId: string): Promise<void> {
+  const res = await fetch(calendarServer + "calendars/family", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ calendar_id: calendarId }),
+  });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok || !d?.ok) throw new Error(d?.error || `Could not set the family calendar (${res.status})`);
+}
+
+/** Assign the set of calendars a member can use (empty list unlinks them). */
+export async function calendarAssign(userId: string, calendarIds: string[]): Promise<void> {
+  const res = await fetch(calendarServer + "calendars/assign", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ user_id: userId, calendar_ids: calendarIds }),
+  });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok || !d?.ok) throw new Error(d?.error || `Could not update calendars (${res.status})`);
+}
+
 /** Service-account mode: check whether the SA can reach a calendar id yet (used to test the family
  * calendar / confirm a share). Returns {reachable, reason?}. */
 export async function calendarVerify(calendarId: string): Promise<{ reachable: boolean; reason?: string }> {
@@ -612,6 +667,15 @@ export function saveEffect(effect: any) {
     method: "POST",
     body: JSON.stringify({ effect }),
   });
+}
+
+/** Replace one rule in place by its row id (hub /update-effect). Keeps the rule's id +
+ *  list position; used by the single-arm edit flow. */
+export function updateEffect(id: number, effect: any) {
+  return authedFetch(server + "update-effect", {
+    method: "POST",
+    body: JSON.stringify({ id, effect }),
+  }).then((res) => res.json());
 }
 
 /** Reversibly enable/disable one rule by its row id (hub /set-effect-enabled). */

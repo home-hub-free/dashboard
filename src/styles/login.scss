@@ -238,6 +238,12 @@
         font-size: 0.9rem;
         font-weight: 600;
     }
+    // The discovered-calendars list (service-account mode): one .voice-id-actions row per calendar.
+    .cal-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
     .voice-id-msg {
         margin: 0;
         font-size: 0.85rem;
