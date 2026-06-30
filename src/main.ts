@@ -37,3 +37,13 @@ async function init() {
 }
 
 init();
+
+// Register the service worker after first paint (off the critical path). It runtime-
+// caches the immutable /assets/ bundle so repeat visits and the home-screen (standalone
+// PWA) launch are instant instead of re-downloading everything. No-op on insecure
+// origins (e.g. the http dev server) — the rejection is swallowed.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}

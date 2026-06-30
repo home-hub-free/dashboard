@@ -1,4 +1,4 @@
-@import "iconoir/css/iconoir.css";
+@import "./icons-subset.css"; // trimmed to icons in use — see scripts/gen-icon-subset.mjs
 @import "/Fonts/Satoshi/css/satoshi.css";
 @import "./variables.scss";    // Design tokens (colors, spacing, typography)
 @import "./colors.scss";       // Legacy aliases for backwards compatibility
