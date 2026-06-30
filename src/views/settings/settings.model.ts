@@ -67,18 +67,26 @@ export type SettingsState = {
   cancelFaceEnroll: () => void
   forgetFace: () => void
 
-  // Google Calendar linking (CALENDAR_PLAN §6). Only shown once calendar-service is running the
-  // REAL backend (backend == "google"); the null simulation backend has nothing to connect. The
-  // family (house) grant is the shared default; each member can also link their personal calendar.
+  // Google Calendar linking (CALENDAR_PLAN §2/§6). Only shown once calendar-service runs a REAL
+  // backend. Two auth modes: "service_account" (members share a calendar with the SA email, then
+  // link it by id) and "oauth" (per-account consent). The null simulation backend has nothing to
+  // connect.
   calendarEnabled: boolean
-  calendarHouseLinked: boolean // the shared family/house Google account is linked
+  calendarAuth: "" | "oauth" | "service_account"
+  calendarSaEmail: string // the service-account address members share their calendars with (SA mode)
+  calendarFamilyId: string // the configured family calendar id (SA mode)
+  calendarMyCalId: string // input: the signed-in member's calendar id to link (SA mode)
+  calendarFamilyMsg: string // result of the family "Test access" check (SA mode)
+  calendarHouseLinked: boolean // OAuth mode: the shared family/house account is linked
   calendarMineLinked: boolean // the signed-in member's personal calendar is linked
-  calendarBusy: boolean // a consent tab is open + we're polling for completion
+  calendarBusy: boolean // a link/consent action is in flight
   calendarMsg: string // status / errors
-  connectHouseCalendar: () => void
-  connectMyCalendar: () => void
+  connectHouseCalendar: () => void // OAuth mode
+  connectMyCalendar: () => void // OAuth mode
   disconnectHouseCalendar: () => void
   disconnectMyCalendar: () => void
+  linkMyCalendar: () => void // SA mode
+  testFamilyCalendar: () => void // SA mode
 
   // People the cameras have seen — every person gets a default label + a captured
   // face; the admin puts names to faces here (CAMERA_VISION_PLAN §6). Visible only

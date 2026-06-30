@@ -24,6 +24,8 @@ import {
   calendarStatus,
   calendarEnrollStart,
   calendarRevoke,
+  calendarLink,
+  calendarVerify,
 } from "../../utils/server-handler";
 import { blobToWav16k } from "../../utils/audio-wav";
 import {
@@ -59,15 +61,53 @@ export class HouseholdServiceClass {
     this.refreshCalendar();
   }
 
-  // ── Google Calendar (per-member + family/house OAuth link) ────────────────
-  // calendar-service owns the tokens; this just kicks off the consent flow and reflects
-  // connected state. The control only appears once the REAL backend is live (backend ==
-  // "google") — on the null simulation backend there's nothing to connect (CALENDAR_PLAN §6).
+  // ── Google Calendar (per-member + family link) ────────────────────────────
+  // calendar-service owns the credentials; this reflects connected state + drives linking. Two
+  // real auth modes (CALENDAR_PLAN §2/§6): "service_account" (members share a calendar with the SA
+  // email, then link it by id) and "oauth" (per-account consent). The control only appears once a
+  // real backend is live; the null simulation backend has nothing to connect.
   async refreshCalendar() {
     const st = await calendarStatus();
-    this.state.calendarEnabled = st.ok && st.backend === "google";
+    this.state.calendarEnabled = st.ok && !!st.auth;
+    this.state.calendarAuth = st.auth;
+    this.state.calendarSaEmail = st.saEmail;
+    this.state.calendarFamilyId = st.familyId;
     this.state.calendarHouseLinked = st.houseLinked;
     this.state.calendarMineLinked = !!this.state.meId && st.enrolled.includes(this.state.meId);
+  }
+
+  // ── Service-account mode: link by calendar id + test the family calendar ──
+  /** Link the signed-in member's calendar (which they've shared with the SA) by its id. */
+  async linkMyCalendar() {
+    const id = (this.state.calendarMyCalId || "").trim();
+    if (!this.state.meId) return;
+    if (!id) {
+      this.state.calendarMsg = "Enter your calendar id (usually your Gmail address).";
+      return;
+    }
+    this.state.calendarBusy = true;
+    this.state.calendarMsg = "";
+    try {
+      await calendarLink(this.state.meId, id);
+      await this.refreshCalendar();
+      this.state.calendarMyCalId = "";
+      showToaster({ from: "bottom", message: "Calendar linked", timer: 1800 });
+    } catch (err: any) {
+      this.state.calendarMsg = err?.message || "Could not link that calendar";
+    } finally {
+      this.state.calendarBusy = false;
+    }
+  }
+
+  /** Check whether the service account can reach the configured family calendar (i.e. it's shared). */
+  async testFamilyCalendar() {
+    const id = this.state.calendarFamilyId;
+    if (!id) return;
+    this.state.calendarFamilyMsg = "Checking…";
+    const { reachable, reason } = await calendarVerify(id);
+    this.state.calendarFamilyMsg = reachable
+      ? "Reachable ✓ — the family calendar is shared with the service account."
+      : reason || "Not reachable yet — share it with the service account.";
   }
 
   /** Link the signed-in member's personal Google calendar. */

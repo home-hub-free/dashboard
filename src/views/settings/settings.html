@@ -175,37 +175,80 @@
                 <span class="voice-id-count" :if="!this.calendarMineLinked">not connected</span>
             </div>
 
-            <p class="voice-id-hint">
-                Let Aura read and manage appointments. Most land on the shared family
-                calendar; connect your own Google to keep personal events ("ponlo en
-                mi calendario") on your calendar. You link your account once with Google.
-            </p>
+            <!-- Service-account mode: share a calendar with the SA email, then link it by id -->
+            <div :if="this.calendarAuth === 'service_account'">
+                <p class="voice-id-hint">
+                    Aura reaches calendars that are shared with its service account. In Google
+                    Calendar, share a calendar with <strong>${this.calendarSaEmail}</strong>
+                    (grant “Make changes to events”), then link it here. Most appointments land
+                    on the shared family calendar; link your own for personal events.
+                </p>
 
-            <!-- Family (house) calendar — the shared, always-available default target -->
-            <div class="voice-id-actions">
-                <span class="cal-row-label"><i class="iconoir-home"></i> Family calendar</span>
-                <span class="voice-id-count" :if="this.calendarHouseLinked"><i class="iconoir-check"></i> connected</span>
-                <button class="add-range-btn" :if="!this.calendarHouseLinked" :onmouseup="this.connectHouseCalendar()">
-                    <i class="iconoir-link"></i> <span>Connect family calendar</span>
-                </button>
-                <button class="remove-btn" :if="this.calendarHouseLinked" :onmouseup="this.disconnectHouseCalendar()">
-                    <i class="iconoir-trash"></i> Disconnect
-                </button>
+                <div class="voice-id-actions">
+                    <span class="cal-row-label"><i class="iconoir-home"></i> Family calendar</span>
+                    <span class="voice-id-count">${this.calendarFamilyId}</span>
+                    <button class="add-range-btn" :onmouseup="this.testFamilyCalendar()">
+                        <i class="iconoir-refresh-double"></i> <span>Test access</span>
+                    </button>
+                </div>
+                <p class="voice-id-msg" :if="this.calendarFamilyMsg">${this.calendarFamilyMsg}</p>
+
+                <div class="voice-id-actions">
+                    <span class="cal-row-label"><i class="iconoir-user"></i> My calendar</span>
+                    <span class="voice-id-count" :if="this.calendarMineLinked"><i class="iconoir-check"></i> connected</span>
+                </div>
+                <div class="household-add" :if="!this.calendarMineLinked">
+                    <input
+                        type="text"
+                        placeholder="your calendar id (usually your Gmail address)"
+                        :value="this.calendarMyCalId"
+                        :oninput="this.calendarMyCalId = event.target.value"
+                    />
+                </div>
+                <div class="voice-id-actions">
+                    <button class="add-range-btn" :if="!this.calendarMineLinked && !this.calendarBusy" :onmouseup="this.linkMyCalendar()">
+                        <i class="iconoir-link"></i> <span>Link my calendar</span>
+                    </button>
+                    <button class="add-range-btn busy" :if="this.calendarBusy"><span>Linking…</span></button>
+                    <button class="remove-btn" :if="this.calendarMineLinked" :onmouseup="this.disconnectMyCalendar()">
+                        <i class="iconoir-trash"></i> Disconnect
+                    </button>
+                </div>
             </div>
 
-            <!-- Personal calendar — the signed-in member -->
-            <div class="voice-id-actions">
-                <span class="cal-row-label"><i class="iconoir-user"></i> My calendar</span>
-                <span class="voice-id-count" :if="this.calendarMineLinked"><i class="iconoir-check"></i> connected</span>
-                <button class="add-range-btn" :if="!this.calendarMineLinked" :onmouseup="this.connectMyCalendar()">
-                    <i class="iconoir-link"></i> <span>Connect my calendar</span>
-                </button>
-                <button class="remove-btn" :if="this.calendarMineLinked" :onmouseup="this.disconnectMyCalendar()">
-                    <i class="iconoir-trash"></i> Disconnect
-                </button>
+            <!-- OAuth mode: per-account consent (Connect opens Google in a new tab) -->
+            <div :if="this.calendarAuth === 'oauth'">
+                <p class="voice-id-hint">
+                    Let Aura read and manage appointments. Most land on the shared family
+                    calendar; connect your own Google to keep personal events ("ponlo en
+                    mi calendario") on your calendar. You link your account once with Google.
+                </p>
+
+                <div class="voice-id-actions">
+                    <span class="cal-row-label"><i class="iconoir-home"></i> Family calendar</span>
+                    <span class="voice-id-count" :if="this.calendarHouseLinked"><i class="iconoir-check"></i> connected</span>
+                    <button class="add-range-btn" :if="!this.calendarHouseLinked" :onmouseup="this.connectHouseCalendar()">
+                        <i class="iconoir-link"></i> <span>Connect family calendar</span>
+                    </button>
+                    <button class="remove-btn" :if="this.calendarHouseLinked" :onmouseup="this.disconnectHouseCalendar()">
+                        <i class="iconoir-trash"></i> Disconnect
+                    </button>
+                </div>
+
+                <div class="voice-id-actions">
+                    <span class="cal-row-label"><i class="iconoir-user"></i> My calendar</span>
+                    <span class="voice-id-count" :if="this.calendarMineLinked"><i class="iconoir-check"></i> connected</span>
+                    <button class="add-range-btn" :if="!this.calendarMineLinked" :onmouseup="this.connectMyCalendar()">
+                        <i class="iconoir-link"></i> <span>Connect my calendar</span>
+                    </button>
+                    <button class="remove-btn" :if="this.calendarMineLinked" :onmouseup="this.disconnectMyCalendar()">
+                        <i class="iconoir-trash"></i> Disconnect
+                    </button>
+                </div>
+
+                <p class="enroll-hint" :if="this.calendarBusy">Waiting for the Google sign-in to finish in the new tab…</p>
             </div>
 
-            <p class="enroll-hint" :if="this.calendarBusy">Waiting for the Google sign-in to finish in the new tab…</p>
             <p class="voice-id-msg" :if="this.calendarMsg">${this.calendarMsg}</p>
         </div>
     </section>

@@ -75,6 +75,11 @@ class SettingsContentClass extends Component<SettingsState> {
         forgetFace: () => this.householdService.forgetFace(),
 
         calendarEnabled: false,
+        calendarAuth: "",
+        calendarSaEmail: "",
+        calendarFamilyId: "",
+        calendarMyCalId: "",
+        calendarFamilyMsg: "",
         calendarHouseLinked: false,
         calendarMineLinked: false,
         calendarBusy: false,
@@ -83,6 +88,8 @@ class SettingsContentClass extends Component<SettingsState> {
         connectMyCalendar: () => this.householdService.connectMyCalendar(),
         disconnectHouseCalendar: () => this.householdService.disconnectHouseCalendar(),
         disconnectMyCalendar: () => this.householdService.disconnectMyCalendar(),
+        linkMyCalendar: () => this.householdService.linkMyCalendar(),
+        testFamilyCalendar: () => this.householdService.testFamilyCalendar(),
 
         peopleEnabled: false,
         people: [],

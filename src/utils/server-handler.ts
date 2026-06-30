@@ -303,12 +303,22 @@ export async function getFaceSamples(userId: string): Promise<number> {
 // calendar-service owns the OAuth tokens; the dashboard only kicks off the consent flow and
 // reflects connected state. The family (house) grant + per-member personal grants both link here.
 
-/** calendar-service status: which backend is live (null = simulation, google = real), whether the
- * shared family/house account is linked, and which member ids have linked a personal calendar. */
-export type CalendarStatus = { ok: boolean; backend: string; houseLinked: boolean; enrolled: string[] };
+/** calendar-service status. `auth` is the real-backend auth mode: "service_account" (the SA shares
+ * calendars, links by id) or "oauth" (per-account consent). `familyId`/`saEmail` drive the SA UI
+ * (which calendar is the family one; which address members must share with). `enrolled` is the set
+ * of member ids with a linked personal calendar. */
+export type CalendarStatus = {
+  ok: boolean;
+  backend: string;
+  auth: "" | "oauth" | "service_account";
+  houseLinked: boolean;
+  enrolled: string[];
+  familyId: string;
+  saEmail: string;
+};
 
 export async function calendarStatus(): Promise<CalendarStatus> {
-  const off: CalendarStatus = { ok: false, backend: "", houseLinked: false, enrolled: [] };
+  const off: CalendarStatus = { ok: false, backend: "", auth: "", houseLinked: false, enrolled: [], familyId: "", saEmail: "" };
   if ((import.meta as any).env?.VITE_CALENDAR_ENABLED === "false") return off;
   try {
     const res = await fetch(calendarServer + "status");
@@ -317,11 +327,42 @@ export async function calendarStatus(): Promise<CalendarStatus> {
     return {
       ok: !!d?.ok,
       backend: String(d?.backend || ""),
+      auth: d?.auth === "service_account" || d?.auth === "oauth" ? d.auth : "",
       houseLinked: !!d?.house_linked,
       enrolled: Array.isArray(d?.enrolled) ? d.enrolled.map(String) : [],
+      familyId: String(d?.family_calendar || ""),
+      saEmail: String(d?.sa_email || ""),
     };
   } catch {
     return off;
+  }
+}
+
+/** Service-account mode: link a calendar id (the member has shared it with the SA email) to a
+ * member. The service verifies the SA can reach it first. Throws with a helpful message otherwise. */
+export async function calendarLink(userId: string, calendarId: string): Promise<void> {
+  const res = await fetch(calendarServer + "enroll/link", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ user_id: userId, calendar_id: calendarId }),
+  });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok || !d?.ok) throw new Error(d?.error || `Could not link that calendar (${res.status})`);
+}
+
+/** Service-account mode: check whether the SA can reach a calendar id yet (used to test the family
+ * calendar / confirm a share). Returns {reachable, reason?}. */
+export async function calendarVerify(calendarId: string): Promise<{ reachable: boolean; reason?: string }> {
+  try {
+    const res = await fetch(calendarServer + "enroll/verify", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ calendar_id: calendarId }),
+    });
+    const d = await res.json().catch(() => ({}));
+    return { reachable: !!d?.reachable, reason: d?.reason };
+  } catch {
+    return { reachable: false, reason: "calendar-service unreachable" };
   }
 }
 
