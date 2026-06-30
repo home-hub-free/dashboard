@@ -223,11 +223,19 @@
         margin: 0;
         font-size: 0.82rem;
         color: var(--color-text-secondary);
+        // The SA email (rendered <strong> inside the hint) is a long unbreakable
+        // token — let it wrap mid-string so it never forces the card wider than
+        // the viewport on narrow screens.
+        overflow-wrap: anywhere;
     }
     .voice-id-actions {
         display: flex;
+        flex-wrap: wrap;
         gap: 0.5rem;
         align-items: center;
+        // A flex container defaults to min-width:auto, refusing to shrink below
+        // its content; 0 lets the row (and the card) narrow to the viewport.
+        min-width: 0;
     }
     // Calendar link rows reuse .voice-id-actions; the leading label (Family / My calendar)
     // names the target, then the connect button or a "connected" badge follows.
@@ -237,6 +245,10 @@
         gap: 0.4rem;
         font-size: 0.9rem;
         font-weight: 600;
+        // Calendar summaries are often emails (e.g. david.munoz@sonatafy.com) —
+        // allow them to shrink + break instead of forcing horizontal overflow.
+        min-width: 0;
+        overflow-wrap: anywhere;
     }
     // The discovered-calendars list (service-account mode): one .voice-id-actions row per calendar.
     .cal-list {
@@ -492,6 +504,11 @@
     border: 1px solid var(--color-border, rgba(0, 0, 0, 0.15));
     background: var(--color-surface, #fff);
     color: var(--color-text-primary);
+    // A <select> sizes to its widest option (calendar names/emails), and as a
+    // flex item it won't shrink below that — cap it to the row so a long option
+    // truncates rather than stretching the card past the viewport.
+    min-width: 0;
+    max-width: 100%;
 }
 .person-empty {
     margin: 0.25rem 0 0;
