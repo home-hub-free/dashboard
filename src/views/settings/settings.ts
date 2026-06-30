@@ -91,6 +91,8 @@ class SettingsContentClass extends Component<SettingsState> {
         setFamilyCal: (id: string) => this.householdService.setFamilyCal(id),
         toggleMine: (id: string) => this.householdService.toggleMine(id),
         addCalendarById: () => this.householdService.addCalendarById(),
+        recheckCalendars: () => this.householdService.recheckCalendars(),
+        removeCalendar: (id: string) => this.householdService.removeCalendar(id),
 
         peopleEnabled: false,
         people: [],

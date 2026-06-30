@@ -187,18 +187,22 @@
                 <div class="household-add">
                     <input
                         type="text"
-                        placeholder="calendar to add (e.g. you@gmail.com)"
+                        placeholder="add a calendar/account (e.g. you@gmail.com)"
                         :value="this.calAddId"
                         :oninput="this.calAddId = event.target.value"
                     />
                     <button class="add-range-btn" :if="!this.calendarBusy" :onmouseup="this.addCalendarById()">
                         <i class="iconoir-plus"></i> <span>Add</span>
                     </button>
+                    <button class="add-range-btn" :if="!this.calendarBusy && this.calDiscovered.length" :onmouseup="this.recheckCalendars()">
+                        <i class="iconoir-refresh-double"></i> <span>Recheck</span>
+                    </button>
                     <button class="add-range-btn busy" :if="this.calendarBusy"><span>Working…</span></button>
                 </div>
 
                 <p class="voice-id-hint" :if="!this.calDiscovered.length">
-                    No calendars added yet — share one with the address above, then add it here.
+                    Add your account emails above — you can add them first and share each with the
+                    service account in Google whenever; then hit Recheck and they’ll connect.
                 </p>
 
                 <div class="voice-id-actions" :if="this.calDiscovered.length">
@@ -209,17 +213,21 @@
                     </select>
                 </div>
 
-                <p class="voice-id-hint" :if="this.calDiscovered.length"><i class="iconoir-user"></i> My calendars</p>
+                <p class="voice-id-hint" :if="this.calDiscovered.length"><i class="iconoir-user"></i> Calendars</p>
                 <div class="cal-list" :if="this.calDiscovered.length">
                     <div class="voice-id-actions" :foreach="c in this.calDiscovered" :key="c.id">
                         <span class="cal-row-label">${c.summary}</span>
-                        <span class="voice-id-count" :if="!c.writable">read-only</span>
-                        <span class="voice-id-count" :if="c.mine && c.writable"><i class="iconoir-check"></i> mine</span>
-                        <button class="add-range-btn" :if="!c.mine" :onmouseup="this.toggleMine(c.id)">
+                        <span class="voice-id-count pending" :if="!c.reachable">share with the SA, then Recheck</span>
+                        <span class="voice-id-count" :if="c.reachable && !c.writable">read-only</span>
+                        <span class="voice-id-count" :if="c.reachable && c.mine"><i class="iconoir-check"></i> mine</span>
+                        <button class="add-range-btn" :if="c.reachable && !c.mine" :onmouseup="this.toggleMine(c.id)">
                             <i class="iconoir-plus"></i> <span>Add to mine</span>
                         </button>
-                        <button class="remove-btn" :if="c.mine" :onmouseup="this.toggleMine(c.id)">
-                            <i class="iconoir-minus"></i> Remove
+                        <button class="remove-btn" :if="c.reachable && c.mine" :onmouseup="this.toggleMine(c.id)">
+                            <i class="iconoir-minus"></i> Unassign
+                        </button>
+                        <button class="remove-btn" :onmouseup="this.removeCalendar(c.id)" title="Forget this calendar">
+                            <i class="iconoir-trash"></i>
                         </button>
                     </div>
                 </div>

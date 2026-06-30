@@ -26,8 +26,11 @@ import {
   calendarRevoke,
   calendarCalendars,
   calendarAddCalendar,
+  calendarRecheck,
+  calendarRemove,
   calendarSetFamily,
   calendarAssign,
+  type CalendarsView,
 } from "../../utils/server-handler";
 import { blobToWav16k } from "../../utils/audio-wav";
 import {
@@ -85,7 +88,11 @@ export class HouseholdServiceClass {
   /** Pull every calendar shared with the SA + the current family/member assignment, and project it
    *  onto the picker state (which is mine, which is read-only). */
   private async refreshCalendarDiscovery() {
-    const v = await calendarCalendars();
+    this.projectCalendars(await calendarCalendars());
+  }
+
+  /** Project a /calendars view onto the picker state (which is mine, read-only, pending). */
+  private projectCalendars(v: CalendarsView) {
     this.state.calendarSaEmail = v.saEmail || this.state.calendarSaEmail;
     this.state.calendarFamilyId = v.family;
     const mine = v.members[this.state.meId]?.calendars || [];
@@ -93,10 +100,40 @@ export class HouseholdServiceClass {
       id: c.id,
       summary: c.summary || c.id,
       writable: c.writable,
+      reachable: c.reachable,
       mine: mine.includes(c.id),
     }));
     this.state.calendarMineLinked = mine.length > 0;
     this.state.calendarMsg = v.error ? `Couldn't reach Google: ${v.error}` : "";
+  }
+
+  /** Re-probe added calendars — pending ones flip to connected once you've shared them with the SA. */
+  async recheckCalendars() {
+    if (this.state.calendarBusy) return;
+    this.state.calendarBusy = true;
+    this.state.calendarMsg = "";
+    try {
+      this.projectCalendars(await calendarRecheck());
+    } catch (err: any) {
+      this.state.calendarMsg = err?.message || "Could not recheck";
+    } finally {
+      this.state.calendarBusy = false;
+    }
+  }
+
+  /** Forget a calendar (wrong address / no longer wanted). */
+  async removeCalendar(id: string) {
+    if (!id || this.state.calendarBusy) return;
+    this.state.calendarBusy = true;
+    this.state.calendarMsg = "";
+    try {
+      await calendarRemove(id);
+      await this.refreshCalendar();
+    } catch (err: any) {
+      this.state.calendarMsg = err?.message || "Could not remove that calendar";
+    } finally {
+      this.state.calendarBusy = false;
+    }
   }
 
   /** Add a calendar the SA can't auto-see (shared with it but not in its list) by its address —

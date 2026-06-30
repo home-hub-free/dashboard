@@ -75,10 +75,11 @@ export type SettingsState = {
   calendarAuth: "" | "oauth" | "service_account"
   calendarSaEmail: string // the service-account address members share their calendars with (SA mode)
   calendarFamilyId: string // the currently-designated family calendar id (SA mode)
-  // Every calendar shared with the SA (auto-discovered). `mine` = assigned to the signed-in member;
-  // `writable` false = shared read-only (read but never written).
-  calDiscovered: { id: string; summary: string; writable: boolean; mine: boolean }[]
-  calAddId: string // input: a calendar address to register (SA can't auto-see ACL-shared calendars)
+  // Calendars added to the SA. `reachable` false = added but not shared with the SA yet (pending —
+  // share it in Google, then Recheck). `mine` = assigned to the signed-in member; `writable` false =
+  // shared read-only (read but never written).
+  calDiscovered: { id: string; summary: string; writable: boolean; reachable: boolean; mine: boolean }[]
+  calAddId: string // input: a calendar address to register (add first, share in Google, then recheck)
   calendarHouseLinked: boolean // OAuth mode: the shared family/house account is linked
   calendarMineLinked: boolean // the signed-in member has at least one calendar linked
   calendarBusy: boolean // a link/consent/assignment action is in flight
@@ -89,7 +90,9 @@ export type SettingsState = {
   disconnectMyCalendar: () => void
   setFamilyCal: (id: string) => void // SA mode: designate the family calendar
   toggleMine: (id: string) => void // SA mode: add/remove a calendar from my set
-  addCalendarById: () => void // SA mode: register an ACL-shared calendar by its address
+  addCalendarById: () => void // SA mode: register a calendar by its address (add first)
+  recheckCalendars: () => void // SA mode: re-probe pending calendars after sharing them
+  removeCalendar: (id: string) => void // SA mode: forget a calendar
 
   // People the cameras have seen — every person gets a default label + a captured
   // face; the admin puts names to faces here (CAMERA_VISION_PLAN §6). Visible only

@@ -350,8 +350,9 @@ export async function calendarLink(userId: string, calendarId: string): Promise<
   if (!res.ok || !d?.ok) throw new Error(d?.error || `Could not link that calendar (${res.status})`);
 }
 
-/** A calendar the service account can see (shared with it). `writable` false = shared read-only. */
-export type DiscoveredCalendar = { id: string; summary: string; accessRole: string; writable: boolean; primary: boolean };
+/** A calendar the service account knows about. `reachable` false = added but not shared with the SA
+ * yet (pending). `writable` false = shared read-only. */
+export type DiscoveredCalendar = { id: string; summary: string; accessRole: string; writable: boolean; reachable: boolean; primary: boolean };
 
 /** Service-account auto-discovery: every calendar shared with the SA, plus the current family
  * designation and per-member assignments. `error` is set (non-fatal) if Google couldn't be reached. */
@@ -383,9 +384,9 @@ export async function calendarCalendars(): Promise<CalendarsView> {
   }
 }
 
-/** Make an ACL-shared calendar discoverable (a calendar shared with the service account isn't
- * auto-listed). `calendarId` is the calendar's address — for a primary calendar, the account email.
- * Verifies the SA can reach it, then adds it to the list so it shows up + becomes assignable. */
+/** Register a calendar by its address (for a primary calendar, the account email) so the SA can use
+ * it. Doesn't require the share to exist yet — an un-shared calendar is stored "pending" until you
+ * share it with the SA and Recheck. */
 export async function calendarAddCalendar(calendarId: string): Promise<void> {
   const res = await fetch(calendarServer + "calendars/add", {
     method: "POST",
@@ -394,6 +395,38 @@ export async function calendarAddCalendar(calendarId: string): Promise<void> {
   });
   const d = await res.json().catch(() => ({}));
   if (!res.ok || !d?.ok) throw new Error(d?.error || `Could not add that calendar (${res.status})`);
+}
+
+/** Re-probe every added calendar — pending ones flip to reachable once they're shared with the SA.
+ * Returns the refreshed view (same shape as calendarCalendars). */
+export async function calendarRecheck(): Promise<CalendarsView> {
+  const off: CalendarsView = { ok: false, saEmail: "", family: "", calendars: [], members: {} };
+  try {
+    const res = await fetch(calendarServer + "calendars/recheck", { method: "POST" });
+    if (!res.ok) return off;
+    const d = await res.json().catch(() => ({}));
+    return {
+      ok: !!d?.ok,
+      saEmail: String(d?.sa_email || ""),
+      family: String(d?.family || ""),
+      calendars: Array.isArray(d?.calendars) ? d.calendars : [],
+      members: d?.members && typeof d.members === "object" ? d.members : {},
+      error: d?.error ? String(d.error) : undefined,
+    };
+  } catch {
+    return off;
+  }
+}
+
+/** Forget a calendar added by id (typo / no longer wanted). */
+export async function calendarRemove(calendarId: string): Promise<void> {
+  const res = await fetch(calendarServer + "calendars/remove", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ calendar_id: calendarId }),
+  });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok || !d?.ok) throw new Error(d?.error || `Could not remove that calendar (${res.status})`);
 }
 
 /** Designate which discovered calendar is the shared family one. */

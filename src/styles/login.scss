@@ -244,6 +244,11 @@
         flex-direction: column;
         gap: 0.35rem;
     }
+    // A calendar added but not shared with the SA yet (pending) — amber prompt to share + recheck.
+    .voice-id-count.pending {
+        color: var(--color-warning, #d9a23a);
+        font-style: italic;
+    }
     .voice-id-msg {
         margin: 0;
         font-size: 0.85rem;
