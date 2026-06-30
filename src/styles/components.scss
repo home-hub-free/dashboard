@@ -564,4 +564,42 @@
 
     i { font-size: 0.9em; }
   }
+
+  // ---- Type a request (text alternative to push-to-talk) -------------------
+  // A labelled rule separates the typed path from the voice button; both share
+  // the conversation bubbles below.
+  .ask-type-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin: var(--space-3) 0 var(--space-1);
+    color: var(--color-text-tertiary);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+
+    &::before,
+    &::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--color-border);
+    }
+  }
+
+  .ask-type {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+
+    .assistant-textarea { min-height: 84px; }
+
+    // The send button is disabled in spirit while a turn is in flight — the
+    // handler no-ops, so just dim it to match the voice button's busy state.
+    .add-range-btn.busy {
+      background: var(--color-surface-secondary);
+      color: var(--color-text-secondary);
+      cursor: default;
+    }
+  }
 }

@@ -2,7 +2,7 @@
     <header class="page-head">
         <div class="ph-kicker">Assistant</div>
         <h1 class="ph-title">Talk to your <em>home.</em></h1>
-        <p class="ph-lede">Hold to ask anything — lights, climate, the forecast, your day — or make an announcement out loud.</p>
+        <p class="ph-lede">Hold to ask out loud — or type your request when you can't speak. Lights, climate, the forecast, your day.</p>
     </header>
 
     <section class="assistant-section voice-ask">
@@ -24,6 +24,26 @@
             <span :if="this.voiceState === 'speaking'">Speaking…</span>
         </button>
 
+        <div class="ask-type-divider"><span>or type your request</span></div>
+
+        <div class="ask-type">
+            <textarea
+                class="assistant-textarea"
+                name="prompt"
+                id="prompt"
+                placeholder="e.g. Turn off the kitchen lights"
+                :onkeydown="this.promptKey(event)"
+                :oninput="this.promptText = event.target.value"
+            >${this.promptText}</textarea>
+            <button
+                class="add-range-btn"
+                :class:busy="this.voiceState !== 'idle'"
+                :onmouseup="this.promptSend()"
+            >
+                <i class="iconoir-send-diagonal"></i> Send as you
+            </button>
+        </div>
+
         <div class="voice-convo" :if="this.voiceTranscript">
             <div class="voice-bubble you">
                 <span class="voice-who">You</span>
@@ -35,20 +55,5 @@
                 <span class="voice-chip" :if="this.voiceAction"><i class="iconoir-flash"></i> ${this.voiceAction}</span>
             </div>
         </div>
-    </section>
-
-    <section class="assistant-section">
-        <p class="section-title">Make an announcement</p>
-        <p class="section-hint">Type a message and the house will say it out loud on the speakers.</p>
-        <textarea
-            class="assistant-textarea"
-            name="announce"
-            id="announce"
-            placeholder="e.g. Dinner's ready"
-            :oninput="this.announceText = event.target.value"
-        >${this.announceText}</textarea>
-        <button class="add-range-btn" :onmouseup="this.assistantSay(this.announceText)">
-            <i class="iconoir-megaphone"></i> Announce
-        </button>
     </section>
 </div>

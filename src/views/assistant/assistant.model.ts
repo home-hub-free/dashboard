@@ -1,13 +1,15 @@
 import { VoiceState } from "./voice-ask.service";
 
 /**
- * The Assistant tab is now just that — talking to the house. Account/household
- * administration moved to the Settings view (see settings.model.ts).
+ * The Assistant tab is just that — talking to the house, by voice or by text.
+ * Account/household administration moved to the Settings view (settings.model.ts).
  */
 export type AssistantMenuState = {
-  // "Make an announcement" — speak arbitrary text through the house (emma-say).
-  announceText: string
-  assistantSay: (text: string) => void
+  // "Type a request" — send typed text to the agent as the signed-in member
+  // (same path as voice, for when the user can't speak). Handled by VoiceAskService.
+  promptText: string
+  promptSend: () => void
+  promptKey: (event: KeyboardEvent) => void
 
   // Voice-request (push-to-talk) state, driven by VoiceAskService.
   voiceState: VoiceState

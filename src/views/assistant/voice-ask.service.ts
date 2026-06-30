@@ -86,6 +86,71 @@ export class VoiceAskServiceClass {
     this.stream = undefined;
   }
 
+  /**
+   * Typed-request path: send text straight to the agent — no mic, no STT — for
+   * when the user can't (or doesn't want to) speak. Mirrors the tail of
+   * `process()`: same conversation bubbles, same spoken reply, same turn beacon.
+   * Identity rides `askAgent`, so it acts as the signed-in member, exactly like
+   * the dashboard's manual controls.
+   */
+  async ask(text: string) {
+    const msg = (text || "").trim();
+    if (!this.state || !msg) return;
+    if (this.state.voiceState !== "idle") return; // a turn is already in flight
+
+    const turnId = newTurnId();
+    const stages: VoiceTurnStages = {};
+    const turnStart = now();
+    let ok = false;
+    let errMsg: string | undefined;
+    let reply = "";
+    let tool: string | undefined;
+
+    // Echo the typed request into the shared conversation surface.
+    this.state.voiceTranscript = msg;
+    this.state.voiceReply = "";
+    this.state.voiceAction = "";
+
+    try {
+      this.state.voiceState = "thinking";
+      let t = now();
+      const r = await askAgent(msg);
+      stages.agent = Math.round(now() - t);
+      reply = r.speech;
+      tool = r.action && "tool" in r.action ? r.action.tool : undefined;
+      this.state.voiceReply = r.speech;
+      this.state.voiceAction = actionLabel(r.action);
+
+      if (r.speech) {
+        this.state.voiceState = "speaking";
+        t = now();
+        const audioBlob = await synthesizeSpeech(r.speech);
+        stages.tts = Math.round(now() - t);
+        t = now();
+        await this.play(audioBlob);
+        stages.playback = Math.round(now() - t);
+      }
+      ok = true;
+      this.state.voiceState = "idle";
+    } catch (err: any) {
+      const m: string = err?.message || "Request failed";
+      errMsg = m;
+      this.fail(m);
+    } finally {
+      reportVoiceTurn({
+        id: turnId,
+        path: "dashboard-text",
+        transcript: msg,
+        reply,
+        tool,
+        ok,
+        error: ok ? undefined : errMsg,
+        stages,
+        totalMs: Math.round(now() - turnStart),
+      });
+    }
+  }
+
   /** Full round-trip once recording stops. */
   private async process() {
     const type = this.recorder?.mimeType || "audio/webm";
