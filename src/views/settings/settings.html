@@ -178,14 +178,27 @@
             <!-- Service-account mode: share calendars with the SA email, then pick them here (no ids) -->
             <div :if="this.calendarAuth === 'service_account'">
                 <p class="voice-id-hint">
-                    Aura sees any calendar you share with <strong>${this.calendarSaEmail}</strong>
-                    in Google Calendar (“Make changes to events”, or read-only). Share one, then
-                    pick the family calendar and tick which are yours below — no ids to copy.
+                    Share a calendar with <strong>${this.calendarSaEmail}</strong> in Google
+                    Calendar (“Make changes to events”, or read-only), then add it here by its
+                    address — for your own calendar that’s just your Gmail. Added calendars appear
+                    below to pick the family one and tick which are yours.
                 </p>
 
+                <div class="household-add">
+                    <input
+                        type="text"
+                        placeholder="calendar to add (e.g. you@gmail.com)"
+                        :value="this.calAddId"
+                        :oninput="this.calAddId = event.target.value"
+                    />
+                    <button class="add-range-btn" :if="!this.calendarBusy" :onmouseup="this.addCalendarById()">
+                        <i class="iconoir-plus"></i> <span>Add</span>
+                    </button>
+                    <button class="add-range-btn busy" :if="this.calendarBusy"><span>Working…</span></button>
+                </div>
+
                 <p class="voice-id-hint" :if="!this.calDiscovered.length">
-                    Nothing shared with Aura yet. In Google Calendar → a calendar’s Settings →
-                    Share with specific people → add the address above.
+                    No calendars added yet — share one with the address above, then add it here.
                 </p>
 
                 <div class="voice-id-actions" :if="this.calDiscovered.length">

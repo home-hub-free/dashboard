@@ -25,6 +25,7 @@ import {
   calendarEnrollStart,
   calendarRevoke,
   calendarCalendars,
+  calendarAddCalendar,
   calendarSetFamily,
   calendarAssign,
 } from "../../utils/server-handler";
@@ -96,6 +97,28 @@ export class HouseholdServiceClass {
     }));
     this.state.calendarMineLinked = mine.length > 0;
     this.state.calendarMsg = v.error ? `Couldn't reach Google: ${v.error}` : "";
+  }
+
+  /** Add a calendar the SA can't auto-see (shared with it but not in its list) by its address —
+   *  for a primary calendar, the account's email. Verifies + registers it, then it appears below. */
+  async addCalendarById() {
+    const id = (this.state.calAddId || "").trim();
+    if (!id || this.state.calendarBusy) {
+      if (!id) this.state.calendarMsg = "Enter the calendar's email/id.";
+      return;
+    }
+    this.state.calendarBusy = true;
+    this.state.calendarMsg = "";
+    try {
+      await calendarAddCalendar(id);
+      this.state.calAddId = "";
+      await this.refreshCalendar();
+      showToaster({ from: "bottom", message: "Calendar added", timer: 1600 });
+    } catch (err: any) {
+      this.state.calendarMsg = err?.message || "Could not add that calendar";
+    } finally {
+      this.state.calendarBusy = false;
+    }
   }
 
   /** Pick which shared calendar is the household's family calendar. */

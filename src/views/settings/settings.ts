@@ -79,6 +79,7 @@ class SettingsContentClass extends Component<SettingsState> {
         calendarSaEmail: "",
         calendarFamilyId: "",
         calDiscovered: [],
+        calAddId: "",
         calendarHouseLinked: false,
         calendarMineLinked: false,
         calendarBusy: false,
@@ -89,6 +90,7 @@ class SettingsContentClass extends Component<SettingsState> {
         disconnectMyCalendar: () => this.householdService.disconnectMyCalendar(),
         setFamilyCal: (id: string) => this.householdService.setFamilyCal(id),
         toggleMine: (id: string) => this.householdService.toggleMine(id),
+        addCalendarById: () => this.householdService.addCalendarById(),
 
         peopleEnabled: false,
         people: [],

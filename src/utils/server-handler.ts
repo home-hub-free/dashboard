@@ -383,6 +383,19 @@ export async function calendarCalendars(): Promise<CalendarsView> {
   }
 }
 
+/** Make an ACL-shared calendar discoverable (a calendar shared with the service account isn't
+ * auto-listed). `calendarId` is the calendar's address — for a primary calendar, the account email.
+ * Verifies the SA can reach it, then adds it to the list so it shows up + becomes assignable. */
+export async function calendarAddCalendar(calendarId: string): Promise<void> {
+  const res = await fetch(calendarServer + "calendars/add", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ calendar_id: calendarId }),
+  });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok || !d?.ok) throw new Error(d?.error || `Could not add that calendar (${res.status})`);
+}
+
 /** Designate which discovered calendar is the shared family one. */
 export async function calendarSetFamily(calendarId: string): Promise<void> {
   const res = await fetch(calendarServer + "calendars/family", {
