@@ -170,7 +170,16 @@
 #main-content #tab-content {
   .effects-list { max-width: 920px; gap: var(--space-3); }
 
+  // The "New …" CTAs moved up to the page header (above the suggestions banner + rule list) so they
+  // are never buried. As a direct grandchild of #tab-content the block would otherwise inherit the
+  // legacy platform `> div > div` flex/height rules — pin the layout here (this 2-id selector wins)
+  // so the buttons render exactly as they did inside the list.
   .effects-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    height: auto;
+    max-width: 920px;
     gap: var(--space-3);
     margin-bottom: var(--space-5);
   }
@@ -286,6 +295,7 @@
         .knob { transform: translateX(18px); background: var(--color-on-fill); }
       }
     }
+    .effect-edit,
     .effect-del {
       display: grid;
       place-items: center;
@@ -300,8 +310,10 @@
       flex: none;
       transition: color 160ms, background 160ms;
       i { font-size: 1.05rem; }
-      &:hover { color: var(--color-error); background: var(--color-error-rgba-10); }
     }
+    // Edit is a benign action → brand accent on hover; delete stays destructive red.
+    .effect-edit:hover { color: var(--color-primary-light); background: var(--color-primary-rgba-10); }
+    .effect-del:hover { color: var(--color-error); background: var(--color-error-rgba-10); }
 
     .effect-confirm {
       display: flex;
@@ -619,19 +631,58 @@ body {
   flex-direction: column;
   gap: var(--space-3);
 
-  .discovery-header {
+  // Collapsed entry point: a single tappable row showing the count. Scoped under the .discovery-review
+  // id chain so it beats the global primary-fill button reset (DESIGN.md §6).
+  .discovery-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: var(--tap-target-min);
+    text-align: left;
+    padding: var(--space-3) var(--space-4);
+    background: linear-gradient(180deg, var(--color-surface), var(--color-surface-secondary));
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-tile);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: border-color 160ms var(--ease-in-out), background 160ms var(--ease-in-out);
+
+    &:hover { border-color: var(--color-text-tertiary); }
+
+    .discovery-banner-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      min-width: 0;
+
+      strong {
+        font-size: 0.98rem;
+        font-weight: var(--font-weight-extrabold);
+        letter-spacing: -0.01em;
+        color: var(--color-text-primary);
+      }
+    }
+    .discovery-banner-toggle {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.85rem;
+      font-weight: var(--font-weight-bold);
+      color: var(--color-primary-light);
+      i { font-size: 1rem; }
+    }
+  }
+  .discovery-sub { font-size: 0.85rem; color: var(--color-text-tertiary); opacity: 1; }
+
+  // The expanded review cards.
+  .discovery-cards {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    margin-bottom: var(--space-1);
-
-    strong {
-      font-size: 1rem;
-      font-weight: var(--font-weight-extrabold);
-      letter-spacing: -0.01em;
-      color: var(--color-text-primary);
-    }
-    .discovery-sub { font-size: 0.85rem; color: var(--color-text-tertiary); opacity: 1; }
+    gap: var(--space-3);
   }
   .discovery-loading,
   .discovery-error { color: var(--color-text-tertiary); font-size: 0.88rem; }
@@ -761,3 +812,121 @@ body {
 // banner with responsive thesis sizing). Intentionally left empty so this layer
 // no longer fights it.
 // ============================================================================
+
+// ============================================================================
+// 11. EDIT AUTOMATION — focused single-arm edit overlay (the per-row ✎)
+//     Device/sensor identity is fixed (shown in the header sentence); only the
+//     action value + trigger predicate are editable, via segmented buttons and
+//     number/time inputs (never a pre-selected <select> — bindrjs §7). All button
+//     rules are scoped under the #edit-automation id so the global primary-fill
+//     button reset loses (DESIGN.md §6).
+// ============================================================================
+#edit-automation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  text-align: left;
+
+  .edit-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  .edit-kicker {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-tertiary);
+  }
+  .edit-sentence {
+    font-size: 1.05rem;
+    line-height: 1.4;
+    color: var(--color-text-secondary);
+    strong { color: var(--color-text-primary); font-weight: var(--font-weight-bold); }
+  }
+
+  .edit-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .edit-label {
+    font-size: 0.88rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+  }
+
+  // Segmented control — content-width pills, the current value filled in brand.
+  .edit-seg {
+    display: inline-flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+  .edit-seg-btn {
+    width: auto;
+    min-height: var(--tap-target-min);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-border-light);
+    background: var(--color-surface-tertiary);
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: background 160ms var(--ease-in-out), color 160ms, border-color 160ms;
+
+    &:hover { color: var(--color-text-primary); border-color: var(--color-text-tertiary); }
+    &.active {
+      background: var(--color-primary);
+      color: var(--color-on-fill);
+      border-color: transparent;
+    }
+  }
+
+  .edit-num-row { display: flex; align-items: center; gap: var(--space-2); }
+  .edit-num,
+  .edit-time {
+    min-height: var(--tap-target-min);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-border-light);
+    background: var(--color-surface-tertiary);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+  }
+  .edit-num { width: 7rem; }
+  .edit-unit { color: var(--color-text-secondary); font-weight: var(--font-weight-semibold); }
+
+  .edit-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+  .edit-save,
+  .edit-cancel {
+    width: 100%;
+    min-height: var(--tap-target-min);
+    border-radius: var(--radius-control);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    transition: background 160ms var(--ease-in-out), color 160ms, border-color 160ms;
+  }
+  .edit-save {
+    background: var(--color-primary);
+    color: var(--color-on-fill);
+    border: 1px solid transparent;
+    &:hover { background: var(--color-primary-light); }
+  }
+  .edit-cancel {
+    background: transparent;
+    color: var(--color-text-tertiary);
+    border: 1px solid var(--color-border-light);
+    &:hover { color: var(--color-text-primary); border-color: var(--color-text-tertiary); }
+  }
+}

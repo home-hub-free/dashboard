@@ -1,15 +1,16 @@
 import { Component } from "../../../core/component";
 import { store } from "../../../store/store";
 import template from './automations-list.html?raw';
-import { deleteEffect, getEndPointData, saveEffect, setEffectEnabled } from "../../../utils/server-handler";
+import { deleteEffect, getEndPointData, saveEffect, setEffectEnabled, updateEffect } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import { closeOverlay, openOverlay } from "../../../components/overlay-modal/overlay-modal";
 import NewAutomationOverlay from "../overlay-views/new-automation-overlay.html?raw";
 import MultiArmOverlay from "../overlay-views/multi-arm-overlay.html?raw";
+import EditAutomationOverlay from "../overlay-views/edit-automation-overlay.html?raw";
 import { showToaster } from "../../../components/popup-message/popup-message";
 import { EffectActions } from "../../../store/actions";
 import {
-  Arm, ArmCondition, CurrentArm, Effect, EffectOp, NewArmGuard, NewEffect,
+  Arm, ArmCondition, CurrentArm, EditEffect, Effect, EffectOp, NewArmGuard, NewEffect,
   NewMultiArmEffect, SetAction, StagedArm, Trigger,
 } from "../automations.model";
 import { AutomationsListTabService, AutomationsListTabServiceClass } from "./automations-list.service";
@@ -34,9 +35,8 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
         effects: store.get('effects'),
         groups: [],
         pendingDeleteId: null,
-        newAutomation: this.newAutomation.bind(this),
-        newMultiArmAutomation: this.newMultiArmAutomation.bind(this),
         toggleEffect: this.toggleEffect.bind(this),
+        editEffect: this.editEffect.bind(this),
         requestDelete: this.requestDelete.bind(this),
         cancelDelete: this.cancelDelete.bind(this),
         confirmDelete: this.confirmDelete.bind(this),
@@ -61,6 +61,9 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
         devices: store.get('devices') || [],
         sensors: store.get('sensors') || [],
       }, effect);
+      // Gate the per-row ✎: only simple single-arm rules round-trip through the focused
+      // edit overlay (multi-arm / conditioned rules are authored, not edited here).
+      effect.editable = isSimpleEditable(effect);
     });
     this.groupEffects();
   }
@@ -117,7 +120,55 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
       .then(() => showToaster({ from: 'bottom', message: 'Automation deleted', timer: 1800 }));
   }
 
-  private newAutomation(event: MouseEvent) {
+  // ── Edit a simple single-arm rule (the per-row ✎) ────────────────────────────────────
+  // Opens a FOCUSED overlay (not the cascading new-automation form): device + sensor identity
+  // are fixed, only the action value + trigger predicate are editable. Built from the rule's
+  // current state and saved in place via /update-effect (the id + list position survive).
+
+  // `event` first so the loop var `effect` ends the template call — a loop var followed by a
+  // comma silently fails to substitute in bindrjs (DESIGN.md §7).
+  private editEffect(event: MouseEvent, effect: Effect) {
+    if (effect.id == null || !effect.editable) return;
+    const edit = buildEditState(effect, store.get('devices') || [], store.get('sensors') || []);
+    if (!edit) {
+      showToaster({ from: 'bottom', message: "Can't edit this rule", timer: 2000 });
+      return;
+    }
+    const rect = getGlobalPosition(event.target as HTMLElement);
+    openOverlay({
+      template: EditAutomationOverlay,
+      data: edit,
+      actions: {
+        setActionBool: (v: boolean, e: EditEffect) => { e.setTo = v; },
+        setSensorState: (v: boolean, e: EditEffect) => { e.sensorState = v; },
+        setOp: (v: 'gt' | 'lt', e: EditEffect) => { e.op = v; },
+        saveEdit: (e: EditEffect) => this.saveEditedEffect(e),
+        cancelEdit: () => closeOverlay(),
+      },
+      startRect: rect,
+      padding: { x: 10, y: 140 },
+    });
+    event.stopImmediatePropagation();
+    event.preventDefault();
+  }
+
+  private saveEditedEffect(e: EditEffect) {
+    updateEffect(e.id, buildEditedEffect(e))
+      .then(() => getEndPointData('get-effects-dynamic'))
+      .then((effects: Effect[]) => {
+        EffectActions.load(effects || []);
+        closeOverlay();
+        showToaster({ from: 'bottom', message: 'Automation updated', timer: 2000 });
+      })
+      .catch((err) => {
+        showToaster({ from: 'bottom', message: "Couldn't update the automation", timer: 2500 });
+        console.warn('automations-list: edit failed', err);
+      });
+  }
+
+  // Public: the "New Automation" / "New Dynamic Rule" CTAs live in the parent view header
+  // (so they sit above the rule list, not buried under it) and delegate here.
+  newAutomation(event: MouseEvent) {
     const rect = getGlobalPosition(event.target as HTMLElement);
 
     openOverlay({
@@ -178,7 +229,7 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
   // (`newEffect.current` / `newEffect.arms`) so bindrjs re-renders — leaf inputs that gate
   // nothing (timeFrom/timeTo/setTo/dow) mutate in place and are read at add-arm time.
 
-  private newMultiArmAutomation(event: MouseEvent) {
+  newMultiArmAutomation(event: MouseEvent) {
     const rect = getGlobalPosition(event.target as HTMLElement);
     openOverlay({
       template: MultiArmOverlay,
@@ -328,7 +379,7 @@ export function buildDynamicEffect(newEffect: NewEffect): Effect {
   const sensor = newEffect.sensor!;
   const field = sensor.sensorType === 'temp/humidity' ? newEffect.valueToCheck : undefined;
   const sensorChannel = sensor.type === 'value' ? valueChannel(field) : 'presence';
-  const op: EffectOp = sensor.type === 'value' ? comparisonToOp(newEffect.comparassion) : 'eq';
+  const op: EffectOp = sensor.type === 'value' ? comparisonToOp(newEffect.comparison) : 'eq';
 
   const trigger: Trigger = { source: 'sensor', nodeId: sensor.id, channel: sensorChannel };
   // The sensor edge wakes the rule; the value predicate becomes the arm's guard.
@@ -408,4 +459,95 @@ function guardPhrase(g: NewArmGuard): string {
     return g.days.length === 2 && g.days.includes(0) && g.days.includes(6) ? 'on weekends' : 'on weekdays';
   }
   return g.op === 'between' ? `between ${g.from} and ${g.to ?? '?'}` : `${g.op} ${g.from}`;
+}
+
+// ---------------------------------------------------------------------------
+// Focused single-arm edit (the per-row ✎). Editable = one arm whose trigger/guard is the simple
+// new-automation shape; the overlay edits only the action value + trigger predicate and saves the
+// rebuilt rule in place via /update-effect.
+// ---------------------------------------------------------------------------
+
+/** True for a rule the focused edit overlay can round-trip: one arm, and either a time trigger with
+ *  no guard or a sensor trigger whose sole guard restates that sensor edge. Multi-arm / conditioned
+ *  rules (time-of-day, day-of-week, state guards) are authored via "New Dynamic Rule", not edited here. */
+function isSimpleEditable(effect: Effect): boolean {
+  if (effect.arms.length !== 1) return false;
+  const arm = effect.arms[0];
+  const t = effect.trigger;
+  if (t.source === 'time') return arm.when.length === 0;
+  if (arm.when.length !== 1) return false;
+  const c = arm.when[0];
+  return c.kind === 'sensor' && c.nodeId === t.nodeId && c.channel === t.channel;
+}
+
+/** Human label for a cooler's actuator sub-channel (shown fixed in the edit header). */
+function coolerChannelLabel(channel: string): string {
+  if (channel === 'fan') return 'Fan';
+  if (channel === 'water') return 'Water pump';
+  if (channel === 'target') return 'Target temperature';
+  return channel;
+}
+
+/** Project a simple single-arm Effect into the focused edit overlay's working state. Returns null
+ *  if the rule's target device is unknown (nothing to render the action editor against). */
+function buildEditState(effect: Effect, devices: Device[], sensors: Sensor[]): EditEffect | null {
+  const arm = effect.arms[0];
+  const set = arm.set;
+  const device = devices.find((d) => d.id === set.nodeId);
+  if (!device) return null;
+
+  const isCooler = device.deviceCategory === 'evap-cooler';
+  const base: EditEffect = {
+    id: effect.id!,
+    sentence: effect.sentence || '',
+    device,
+    deviceType: device.type,
+    category: device.deviceCategory,
+    channel: set.channel,
+    channelLabel: isCooler ? coolerChannelLabel(set.channel) : undefined,
+    setTo: set.value,
+    triggerKind: 'time',
+    enabled: effect.enabled !== false,
+  };
+
+  const trigger = effect.trigger; // local const so TS keeps the discriminated narrowing below
+  if (trigger.source === 'time') {
+    base.triggerKind = 'time';
+    base.time = trigger.at;
+    return base;
+  }
+
+  const sensor = sensors.find((s) => s.id === trigger.nodeId);
+  const cond = arm.when[0] as Extract<ArmCondition, { kind: 'sensor' }>;
+  base.sensor = sensor;
+  base.sensorChannel = trigger.channel;
+  base.sensorName = sensor?.name ?? 'the sensor';
+  if (typeof cond.value === 'boolean') {
+    base.triggerKind = 'sensorBool';
+    base.sensorState = cond.value;
+  } else {
+    base.triggerKind = 'sensorValue';
+    base.op = cond.op === 'lt' ? 'lt' : 'gt';
+    base.threshold = Number(cond.value);
+  }
+  return base;
+}
+
+/** Inverse of buildEditState: reassemble the dynamic `trigger + arms` rule from the edited state.
+ *  Mirrors buildDynamicEffect's single-arm shape, so an edited rule is indistinguishable from a
+ *  freshly authored one (only the values changed). `enabled` is carried through unchanged. */
+export function buildEditedEffect(e: EditEffect): Effect {
+  const set: SetAction = { nodeId: e.device.id, channel: e.channel, value: coerce(e.setTo) };
+
+  if (e.triggerKind === 'time') {
+    return { trigger: { source: 'time', at: String(e.time ?? '') }, arms: [{ when: [], set }], enabled: e.enabled };
+  }
+
+  const nodeId = e.sensor!.id;
+  const channel = e.sensorChannel || 'presence';
+  const condition: ArmCondition =
+    e.triggerKind === 'sensorBool'
+      ? { kind: 'sensor', nodeId, channel, op: 'eq', value: !!e.sensorState }
+      : { kind: 'sensor', nodeId, channel, op: e.op || 'gt', value: coerce(e.threshold) };
+  return { trigger: { source: 'sensor', nodeId, channel }, arms: [{ when: [condition], set }], enabled: e.enabled };
 }

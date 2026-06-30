@@ -56,7 +56,11 @@ export type DiscoveryReviewState = {
   rows: CandidateRow[];
   loading: boolean;
   error: string;
+  /** Suggestions collapse into a one-row count banner by default so they never bury the rule list
+   *  + CTA below them; tapping the banner expands the full cards. */
+  collapsed: boolean;
   accept: (row: CandidateRow) => void;
   dismiss: (row: CandidateRow) => void;
   refresh: () => void;
+  toggleCollapsed: () => void;
 };

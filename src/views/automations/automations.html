@@ -3,5 +3,13 @@
     <h1 class="ph-title">What the house <em>does on its own.</em></h1>
     <p class="ph-lede">Automations link a sensor or a time to a device action. Add one, or let the hub suggest patterns it notices.</p>
 </header>
+<div class="effects-actions">
+    <button class="add-range-btn" :onclick="this.newAutomation(event)">
+        <i class="iconoir-plus"></i> New Automation
+    </button>
+    <button class="add-range-btn secondary" :onclick="this.newMultiArmAutomation(event)">
+        <i class="iconoir-git-fork"></i> New Dynamic Rule
+    </button>
+</div>
 <div id="discovery-review"></div>
 <div id="automations-list"></div>

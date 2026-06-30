@@ -29,9 +29,11 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
         rows: [],
         loading: true,
         error: "",
+        collapsed: true,
         accept: this.accept.bind(this),
         dismiss: this.dismiss.bind(this),
         refresh: this.refresh.bind(this),
+        toggleCollapsed: () => { this.bind.collapsed = !this.bind.collapsed; },
       },
     });
     this.refresh();

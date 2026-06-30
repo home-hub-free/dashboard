@@ -50,7 +50,8 @@ test.describe("functionality intact", () => {
     await expect(page.locator(".settings-view .signed-in-row")).toBeVisible();
 
     await page.locator(".menu-item", { hasText: "Home" }).first().click();
-    await expect(page.locator("#home-status .hs-thesis")).toBeVisible();
+    // The home hero's greeting block (.hs-greet is unconditional; .hs-weather is gated on data).
+    await expect(page.locator("#home-status .hs-greet")).toBeVisible();
     await expect(page.locator("#devices .device-tile").first()).toBeVisible();
 
     expect(errors, "no uncaught JS errors").toEqual([]);
@@ -60,6 +61,8 @@ test.describe("functionality intact", () => {
     await page.goto("/");
     await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
     await page.locator(".menu-item", { hasText: "Automations" }).first().click();
+    // Suggestions now collapse into a one-row count banner by default — expand it to reveal the cards.
+    await page.locator(".discovery-banner").click();
     await page.waitForSelector(".discovery-card", { timeout: 20_000 });
 
     // Guard the reported bug: card text must not render black-on-dark.
@@ -105,6 +108,52 @@ test.describe("functionality intact", () => {
     const body = req.postDataJSON();
     expect(body).toHaveProperty("id");
     expect(body).toHaveProperty("enabled");
+  });
+
+  test("a value-sensor rule authored with 'lower than' posts op 'lt' (comparison regression)", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
+    await page.locator(".menu-item", { hasText: "Automations" }).first().click();
+    await page.locator(".effects-actions .add-range-btn", { hasText: "New Automation" }).click();
+    await page.waitForSelector("#new-automation", { timeout: 10_000 });
+
+    // Walk the cascading form: dimmable target → numeric value → a temp/humidity sensor → LOWER than.
+    await page.locator("#new-automation select").first().selectOption("dev-bedroom");
+    await page.locator('#new-automation input[type="number"][max="100"]').fill("40");
+    await page.locator("#new-automation select", { hasText: "Time of day" }).selectOption("sensor");
+    await page.locator("#new-automation select", { hasText: "Select sensor:" }).selectOption("sen-th2");
+    await page.locator("#new-automation #check-value").selectOption("temp");
+    await page.locator("#new-automation #comparison").selectOption("lower-than");
+    await page.locator('#new-automation input[name="temp/humidity-input"]').fill("22");
+
+    const [req] = await Promise.all([
+      page.waitForRequest((r) => r.url().includes("/api/set-effect") && r.method() === "POST"),
+      page.locator("#new-automation .add-range-btn", { hasText: "Save Automation" }).click(),
+    ]);
+    // The chosen comparison must reach the stored rule — the bug wrote it to a field the
+    // builder never read, so every value-sensor rule defaulted to op 'eq'.
+    const cond = req.postDataJSON().effect.arms[0].when[0];
+    expect(cond.op).toBe("lt");
+  });
+
+  test("a simple rule opens the focused edit overlay and saves in place", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
+    await page.locator(".menu-item", { hasText: "Automations" }).first().click();
+    await page.waitForSelector(".effect-row .effect-edit", { timeout: 20_000 });
+
+    // The ✎ on a simple single-arm rule opens the focused edit surface (not the cascading form).
+    await page.locator(".effect-row .effect-edit").first().click();
+    await expect(page.locator("#edit-automation")).toBeVisible();
+
+    // Saving posts the rebuilt rule to /update-effect (id preserved → in-place replace).
+    const [req] = await Promise.all([
+      page.waitForRequest((r) => r.url().includes("/api/update-effect") && r.method() === "POST"),
+      page.locator("#edit-automation .edit-save").click(),
+    ]);
+    const body = req.postDataJSON();
+    expect(body).toHaveProperty("id");
+    expect(body).toHaveProperty("effect");
   });
 
   test("opening a device overlay + expanding Advanced works", async ({ page }) => {

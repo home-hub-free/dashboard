@@ -5,9 +5,9 @@ export type AutomationsListTabState = {
   groups: EffectsGroup[],
   /** Row id armed for delete-confirm (null = none). */
   pendingDeleteId: number | null,
-  newAutomation: (event: MouseEvent) => void,
-  newMultiArmAutomation: (event: MouseEvent) => void,
   toggleEffect: (effect: Effect) => void,
+  /** Open the focused edit overlay for a simple single-arm rule. (event first — bindrjs loop-var quirk.) */
+  editEffect: (event: MouseEvent, effect: Effect) => void,
   requestDelete: (effect: Effect) => void,
   cancelDelete: () => void,
   confirmDelete: (effect: Effect) => void,

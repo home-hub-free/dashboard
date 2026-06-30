@@ -1,0 +1,67 @@
+<div id="edit-automation" :if="this.data.device">
+    <div class="edit-head">
+        <span class="edit-kicker">Editing automation</span>
+        <div class="edit-sentence" :innerHTML="this.data.sentence"></div>
+    </div>
+
+    <!-- ACTION — what the device does. Device identity is fixed; only the value is editable. -->
+    <div class="edit-section">
+        <div class="edit-label">
+            ${this.data.device.name}<span :if="this.data.channelLabel"> · ${this.data.channelLabel}</span>
+        </div>
+
+        <!-- boolean target (light / door) or a cooler sub-channel (fan / water) -->
+        <div class="edit-seg" :if="this.data.deviceType === 'boolean' || this.data.category === 'evap-cooler'">
+            <button class="edit-seg-btn" :class:active="this.data.setTo === true" :onclick="this.actions.setActionBool(true, this.data)">On</button>
+            <button class="edit-seg-btn" :class:active="this.data.setTo === false" :onclick="this.actions.setActionBool(false, this.data)">Off</button>
+        </div>
+
+        <!-- numeric target (dimmable light / blinds): 0–100 -->
+        <div class="edit-num-row" :if="this.data.deviceType === 'value' && this.data.category !== 'evap-cooler'">
+            <input
+                class="edit-num"
+                type="number"
+                min="0"
+                max="100"
+                :value="this.data.setTo"
+                :oninput="this.data.setTo = event.target.value"
+            />
+            <span class="edit-unit">%</span>
+        </div>
+    </div>
+
+    <!-- TRIGGER — when it fires. Sensor identity is fixed; only the predicate is editable. -->
+    <div class="edit-section">
+        <div class="edit-section" :if="this.data.triggerKind === 'time'">
+            <div class="edit-label">At time</div>
+            <input class="edit-time" type="time" :value="this.data.time" :oninput="this.data.time = event.target.value" />
+        </div>
+
+        <div :if="this.data.triggerKind === 'sensorBool'">
+            <div class="edit-label">When ${this.data.sensorName} is</div>
+            <div class="edit-seg">
+                <button class="edit-seg-btn" :class:active="this.data.sensorState === true" :onclick="this.actions.setSensorState(true, this.data)">Active</button>
+                <button class="edit-seg-btn" :class:active="this.data.sensorState === false" :onclick="this.actions.setSensorState(false, this.data)">Inactive</button>
+            </div>
+        </div>
+
+        <div :if="this.data.triggerKind === 'sensorValue'">
+            <div class="edit-label">When ${this.data.sensorName} (${this.data.sensorChannel}) is</div>
+            <div class="edit-seg">
+                <button class="edit-seg-btn" :class:active="this.data.op === 'gt'" :onclick="this.actions.setOp('gt', this.data)">Higher than</button>
+                <button class="edit-seg-btn" :class:active="this.data.op === 'lt'" :onclick="this.actions.setOp('lt', this.data)">Lower than</button>
+            </div>
+            <input
+                class="edit-num"
+                type="number"
+                :value="this.data.threshold"
+                :oninput="this.data.threshold = event.target.value"
+            />
+        </div>
+    </div>
+
+    <div class="edit-actions">
+        <button class="edit-save" :onclick="this.actions.saveEdit(this.data)">Save changes</button>
+        <button class="edit-cancel" :onclick="this.actions.cancelEdit()">Cancel</button>
+    </div>
+</div>

@@ -7,6 +7,8 @@ import { DiscoveryReview } from "./discovery-review/discovery-review";
 
 type AutomationsMenuState = {
   activeTabId: string;
+  newAutomation: (event: MouseEvent) => void;
+  newMultiArmAutomation: (event: MouseEvent) => void;
 };
 
 class AutomationsContentClass extends Component<AutomationsMenuState> {
@@ -20,6 +22,10 @@ class AutomationsContentClass extends Component<AutomationsMenuState> {
       template,
       bind: {
         activeTabId: activeTabId,
+        // The "New …" CTAs live in the page header (above the suggestions + rule list) so they're
+        // never buried; they delegate to the list view that owns the authoring overlays.
+        newAutomation: (event: MouseEvent) => { if (AutomationsList.mounted) AutomationsList.newAutomation(event); },
+        newMultiArmAutomation: (event: MouseEvent) => { if (AutomationsList.mounted) AutomationsList.newMultiArmAutomation(event); },
       },
       ready: () => this.initTabView(activeTabId),
     });

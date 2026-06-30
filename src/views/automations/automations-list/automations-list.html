@@ -1,13 +1,4 @@
 <div class="effects-list">
-    <div class="effects-actions">
-        <button class="add-range-btn" :onclick="this.newAutomation(event)">
-            <i class="iconoir-plus"></i> New Automation
-        </button>
-        <button class="add-range-btn secondary" :onclick="this.newMultiArmAutomation(event)">
-            <i class="iconoir-git-fork"></i> New Dynamic Rule
-        </button>
-    </div>
-
     <div :foreach="group in this.groups" :key="group.name" class="effect-container">
         <div class="effect-group-head">
             <span class="eg-icon"><i :class="group.icon"></i></span>
@@ -29,6 +20,9 @@
                     :onclick="this.toggleEffect(effect)"
                     aria-label="Toggle automation"
                 ><span class="knob"></span></button>
+                <button class="effect-edit" :if="effect.editable" :onclick="this.editEffect(event, effect)" aria-label="Edit automation">
+                    <i class="iconoir-edit-pencil"></i>
+                </button>
                 <button class="effect-del" :onclick="this.requestDelete(effect)" aria-label="Delete automation">
                     <i class="iconoir-trash"></i>
                 </button>
