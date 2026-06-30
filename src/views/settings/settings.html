@@ -167,6 +167,47 @@
 
             <p class="voice-id-msg" :if="this.faceMsg">${this.faceMsg}</p>
         </div>
+
+        <div class="voice-id" :if="this.calendarEnabled">
+            <div class="voice-id-head">
+                <span class="voice-id-title"><i class="iconoir-calendar"></i> Google Calendar</span>
+                <span class="voice-id-count" :if="this.calendarMineLinked">connected</span>
+                <span class="voice-id-count" :if="!this.calendarMineLinked">not connected</span>
+            </div>
+
+            <p class="voice-id-hint">
+                Let Aura read and manage appointments. Most land on the shared family
+                calendar; connect your own Google to keep personal events ("ponlo en
+                mi calendario") on your calendar. You link your account once with Google.
+            </p>
+
+            <!-- Family (house) calendar — the shared, always-available default target -->
+            <div class="voice-id-actions">
+                <span class="cal-row-label"><i class="iconoir-home"></i> Family calendar</span>
+                <span class="voice-id-count" :if="this.calendarHouseLinked"><i class="iconoir-check"></i> connected</span>
+                <button class="add-range-btn" :if="!this.calendarHouseLinked" :onmouseup="this.connectHouseCalendar()">
+                    <i class="iconoir-link"></i> <span>Connect family calendar</span>
+                </button>
+                <button class="remove-btn" :if="this.calendarHouseLinked" :onmouseup="this.disconnectHouseCalendar()">
+                    <i class="iconoir-trash"></i> Disconnect
+                </button>
+            </div>
+
+            <!-- Personal calendar — the signed-in member -->
+            <div class="voice-id-actions">
+                <span class="cal-row-label"><i class="iconoir-user"></i> My calendar</span>
+                <span class="voice-id-count" :if="this.calendarMineLinked"><i class="iconoir-check"></i> connected</span>
+                <button class="add-range-btn" :if="!this.calendarMineLinked" :onmouseup="this.connectMyCalendar()">
+                    <i class="iconoir-link"></i> <span>Connect my calendar</span>
+                </button>
+                <button class="remove-btn" :if="this.calendarMineLinked" :onmouseup="this.disconnectMyCalendar()">
+                    <i class="iconoir-trash"></i> Disconnect
+                </button>
+            </div>
+
+            <p class="enroll-hint" :if="this.calendarBusy">Waiting for the Google sign-in to finish in the new tab…</p>
+            <p class="voice-id-msg" :if="this.calendarMsg">${this.calendarMsg}</p>
+        </div>
     </section>
 
     <section class="assistant-section" :if="this.peopleEnabled">
@@ -267,7 +308,7 @@
     <div class="face-zoom" :if="this.zoomOpen" :onclick="this.closeFace()">
         <div class="face-zoom-card" :onclick="this.stopZoom(event)">
             <button class="face-zoom-close" :onclick="this.closeFace()" aria-label="Close">
-                <i class="iconoir-xmark"></i>
+                <i class="iconoir-cancel"></i>
             </button>
             <img class="face-zoom-img" :src="this.zoomUrl" alt="" />
             <div class="face-zoom-meta">

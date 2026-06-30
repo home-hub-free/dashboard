@@ -74,6 +74,16 @@ class SettingsContentClass extends Component<SettingsState> {
         cancelFaceEnroll: () => this.householdService.cancelFaceEnroll(),
         forgetFace: () => this.householdService.forgetFace(),
 
+        calendarEnabled: false,
+        calendarHouseLinked: false,
+        calendarMineLinked: false,
+        calendarBusy: false,
+        calendarMsg: "",
+        connectHouseCalendar: () => this.householdService.connectHouseCalendar(),
+        connectMyCalendar: () => this.householdService.connectMyCalendar(),
+        disconnectHouseCalendar: () => this.householdService.disconnectHouseCalendar(),
+        disconnectMyCalendar: () => this.householdService.disconnectMyCalendar(),
+
         peopleEnabled: false,
         people: [],
         peopleMsg: "",

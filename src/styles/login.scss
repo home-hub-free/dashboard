@@ -229,6 +229,15 @@
         gap: 0.5rem;
         align-items: center;
     }
+    // Calendar link rows reuse .voice-id-actions; the leading label (Family / My calendar)
+    // names the target, then the connect button or a "connected" badge follows.
+    .cal-row-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
     .voice-id-msg {
         margin: 0;
         font-size: 0.85rem;

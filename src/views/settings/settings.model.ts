@@ -67,6 +67,19 @@ export type SettingsState = {
   cancelFaceEnroll: () => void
   forgetFace: () => void
 
+  // Google Calendar linking (CALENDAR_PLAN §6). Only shown once calendar-service is running the
+  // REAL backend (backend == "google"); the null simulation backend has nothing to connect. The
+  // family (house) grant is the shared default; each member can also link their personal calendar.
+  calendarEnabled: boolean
+  calendarHouseLinked: boolean // the shared family/house Google account is linked
+  calendarMineLinked: boolean // the signed-in member's personal calendar is linked
+  calendarBusy: boolean // a consent tab is open + we're polling for completion
+  calendarMsg: string // status / errors
+  connectHouseCalendar: () => void
+  connectMyCalendar: () => void
+  disconnectHouseCalendar: () => void
+  disconnectMyCalendar: () => void
+
   // People the cameras have seen — every person gets a default label + a captured
   // face; the admin puts names to faces here (CAMERA_VISION_PLAN §6). Visible only
   // when the vision-service is up (same gate as Face ID).

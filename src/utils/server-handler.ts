@@ -39,6 +39,11 @@ export const speakerServer =
 // Same-origin behind nginx (`/vision/` → :8130); overridable for dev.
 export const visionServer =
   (import.meta as any).env?.VITE_VISION_URL || "/vision/";
+// calendar-service (Google Calendar) — the Settings → Household "Connect Google Calendar"
+// enrollment opens this service's OAuth flow in the browser. Same-origin behind nginx
+// (`/calendar/` → :8150); overridable for dev (CALENDAR_PLAN §6).
+export const calendarServer =
+  (import.meta as any).env?.VITE_CALENDAR_URL || "/calendar/";
 
 /** What the agent decided this turn (mirrors llm-gateway /route `x_action`). */
 export type AgentAction = { tool: string; args?: any } | { error: string };
@@ -292,6 +297,52 @@ export async function getFaceSamples(userId: string): Promise<number> {
   } catch {
     return 0;
   }
+}
+
+// ── Google Calendar enrollment (CALENDAR_PLAN §6) ───────────────────────────────────────────
+// calendar-service owns the OAuth tokens; the dashboard only kicks off the consent flow and
+// reflects connected state. The family (house) grant + per-member personal grants both link here.
+
+/** calendar-service status: which backend is live (null = simulation, google = real), whether the
+ * shared family/house account is linked, and which member ids have linked a personal calendar. */
+export type CalendarStatus = { ok: boolean; backend: string; houseLinked: boolean; enrolled: string[] };
+
+export async function calendarStatus(): Promise<CalendarStatus> {
+  const off: CalendarStatus = { ok: false, backend: "", houseLinked: false, enrolled: [] };
+  if ((import.meta as any).env?.VITE_CALENDAR_ENABLED === "false") return off;
+  try {
+    const res = await fetch(calendarServer + "status");
+    if (!res.ok) return off;
+    const d = await res.json().catch(() => ({}));
+    return {
+      ok: !!d?.ok,
+      backend: String(d?.backend || ""),
+      houseLinked: !!d?.house_linked,
+      enrolled: Array.isArray(d?.enrolled) ? d.enrolled.map(String) : [],
+    };
+  } catch {
+    return off;
+  }
+}
+
+/** Begin linking a Google account for `userId` ("house" for the family calendar). Returns the
+ * consent URL to open in a new tab. On the null backend this is a simulated link that already
+ * marked the user enrolled, signalled by a "null://" URL. */
+export async function calendarEnrollStart(userId: string): Promise<string> {
+  const res = await fetch(calendarServer + "enroll/start?user_id=" + encodeURIComponent(userId));
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok || !d?.ok) throw new Error(d?.error || `Could not start calendar link (${res.status})`);
+  return String(d.authUrl || "");
+}
+
+/** Disconnect a linked Google account ("house" or a member id). */
+export async function calendarRevoke(userId: string): Promise<void> {
+  const res = await fetch(calendarServer + "enroll/revoke", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ user_id: userId }),
+  });
+  if (!res.ok) throw new Error(`Could not disconnect calendar (${res.status})`);
 }
 
 /** Recurring unknown guests surfaced for review/naming (§4.3 / §6). */

@@ -21,6 +21,9 @@ import {
   listPeople,
   nameGuest,
   promoteGuest,
+  calendarStatus,
+  calendarEnrollStart,
+  calendarRevoke,
 } from "../../utils/server-handler";
 import { blobToWav16k } from "../../utils/audio-wav";
 import {
@@ -53,6 +56,80 @@ export class HouseholdServiceClass {
     this.refresh();
     this.refreshVoiceSamples();
     this.refreshFaceSamples();
+    this.refreshCalendar();
+  }
+
+  // ── Google Calendar (per-member + family/house OAuth link) ────────────────
+  // calendar-service owns the tokens; this just kicks off the consent flow and reflects
+  // connected state. The control only appears once the REAL backend is live (backend ==
+  // "google") — on the null simulation backend there's nothing to connect (CALENDAR_PLAN §6).
+  async refreshCalendar() {
+    const st = await calendarStatus();
+    this.state.calendarEnabled = st.ok && st.backend === "google";
+    this.state.calendarHouseLinked = st.houseLinked;
+    this.state.calendarMineLinked = !!this.state.meId && st.enrolled.includes(this.state.meId);
+  }
+
+  /** Link the signed-in member's personal Google calendar. */
+  async connectMyCalendar() {
+    await this.connectCalendar(this.state.meId, () => this.state.calendarMineLinked);
+  }
+
+  /** Link the shared family (house) Google calendar — the always-available default target. */
+  async connectHouseCalendar() {
+    await this.connectCalendar("house", () => this.state.calendarHouseLinked);
+  }
+
+  /** Start a Google OAuth link for `userId`, open the consent tab, then poll until it lands. */
+  private async connectCalendar(userId: string, linked: () => boolean) {
+    if (!userId || this.state.calendarBusy) return;
+    this.state.calendarMsg = "";
+    let authUrl: string;
+    try {
+      authUrl = await calendarEnrollStart(userId);
+    } catch (err: any) {
+      this.state.calendarMsg = err?.message || "Could not start linking";
+      return;
+    }
+    if (authUrl.startsWith("null://")) {
+      // Simulated link (null backend already enrolled the user on /enroll/start).
+      await this.refreshCalendar();
+      showToaster({ from: "bottom", message: "Calendar linked (simulated)", timer: 1800 });
+      return;
+    }
+    // Real Google: consent happens in a new tab; calendar-service stores the token on the
+    // redirect. We can't see that tab, so poll /status until the link shows up.
+    window.open(authUrl, "_blank", "noopener");
+    this.state.calendarBusy = true;
+    this.state.calendarMsg = "Finish the Google sign-in in the new tab…";
+    let ok = false;
+    for (let i = 0; i < 16 && !ok; i++) {
+      await new Promise((r) => setTimeout(r, 2500));
+      await this.refreshCalendar();
+      ok = linked();
+    }
+    this.state.calendarBusy = false;
+    this.state.calendarMsg = ok ? "" : "Not linked yet — finish the Google sign-in, then reopen Settings.";
+    if (ok) showToaster({ from: "bottom", message: "Calendar connected", timer: 1800 });
+  }
+
+  async disconnectMyCalendar() {
+    await this.revokeCalendar(this.state.meId);
+  }
+
+  async disconnectHouseCalendar() {
+    await this.revokeCalendar("house");
+  }
+
+  private async revokeCalendar(userId: string) {
+    if (!userId) return;
+    try {
+      await calendarRevoke(userId);
+      await this.refreshCalendar();
+      showToaster({ from: "bottom", message: "Calendar disconnected", timer: 1600 });
+    } catch (err: any) {
+      this.state.calendarMsg = err?.message || "Could not disconnect calendar";
+    }
   }
 
   private async refreshVoiceSamples() {
