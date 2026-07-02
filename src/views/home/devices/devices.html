@@ -111,6 +111,14 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Satellite only: what the device's LED ring colors mean (matches the firmware states). -->
+                <div class="led-legend" :if="device.deviceCategory === 'voice-satellite'">
+                    <span class="led-key" title="A reply is on its way — Aura is about to speak"><i class="led-dot amber"></i>about to speak</span>
+                    <span class="led-key" title="Aura is talking through this speaker"><i class="led-dot orange"></i>speaking</span>
+                    <span class="led-key" title="Mic open for your answer — no need to say “Aura”"><i class="led-dot cyan"></i>listening</span>
+                    <span class="led-key" title="Sending your reply to the assistant"><i class="led-dot violet"></i>sending</span>
+                </div>
             </div>
         </div>
     </section>

@@ -27,6 +27,7 @@ const TILE_ICON_OFF: { [cat: string]: string } = {
   blinds: "iconoir-windows",
   "evap-cooler": "iconoir-snow-flake",
   camera: "iconoir-video-camera",
+  "voice-satellite": "iconoir-sound-high",
 };
 
 /**
@@ -46,6 +47,15 @@ function decorateDevice(device: Device): Device {
     else if (c.kind === "boolean") c.control = soleActuator ? "none" : "chip";
     else c.control = c.precision ? "none" : "slider"; // number actuator
   });
+  // Satellite settings read better as direct controls than steppers: volume is a
+  // slider, the mic toggle a chip (both are `setting`-role so neither latches the
+  // manual lock — see server decideWritePolicy).
+  if (device.deviceCategory === "voice-satellite") {
+    channels.forEach((c) => {
+      if (c.key === "volume") c.control = "slider";
+      if (c.key === "mic") c.control = "chip";
+    });
+  }
 
   device.channels = channels;
   device.wide = device.deviceCategory === "evap-cooler" || device.deviceCategory === "camera";
@@ -74,6 +84,11 @@ function computeStatus(device: Device, actuators: Channel[]): string {
     case "blinds": {
       const v = actuators[0]?.value as number;
       return v > 0 ? `Open · ${Math.round(v)}%` : "Closed";
+    }
+    case "voice-satellite": {
+      const vol = device.channels?.find((c) => c.key === "volume")?.value as number;
+      const mic = device.channels?.find((c) => c.key === "mic")?.value === true;
+      return `Vol ${Math.round(vol ?? 0)}% · Mic ${mic ? "on" : "off"}`;
     }
     default:
       return "";

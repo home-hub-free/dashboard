@@ -444,3 +444,40 @@
     }
   }
 }
+
+// ── Voice-satellite tile: LED-ring legend ───────────────────────────────────
+// Explains the device's physical ring colors (firmware states in
+// devices/voice-satellite/src/main.cpp — keep the two in lockstep):
+// amber = clip incoming (about to speak) · orange = speaking ·
+// cyan = mic open for the answer (no wake name) · violet = uploading the reply.
+#main-content #tab-content > #home .led-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+
+  .led-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+    cursor: default;
+  }
+
+  .led-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: none;
+
+    // Match the firmware ring colors (ledIncoming/ledSpeaking/ledListening/ledUploading).
+    &.amber  { background: #cc8400; box-shadow: 0 0 5px rgba(204, 132, 0, 0.55); }
+    &.orange { background: #e08a28; box-shadow: 0 0 5px rgba(224, 138, 40, 0.55); }
+    &.cyan   { background: #00a5e0; box-shadow: 0 0 5px rgba(0, 165, 224, 0.55); }
+    &.violet { background: #9b1fd6; box-shadow: 0 0 5px rgba(155, 31, 214, 0.55); }
+  }
+}

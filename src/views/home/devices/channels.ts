@@ -68,6 +68,13 @@ export function channelSchema(category: string | undefined): ChannelSpec[] | nul
         { key: "room-temp", role: "sensor", kind: "number", unit: "C", writable: false },
         { key: "unit-temp", role: "sensor", kind: "number", unit: "C", writable: false },
       ];
+    // Aura's room speaker/mic — both `setting`s (never latch the manual lock), the
+    // device owns the values (NVS-persisted; keep in lockstep with server channels.ts).
+    case "voice-satellite":
+      return [
+        { key: "volume", role: "setting", kind: "number", unit: "%", range: PCT, writable: true, precision: true },
+        { key: "mic", role: "setting", kind: "boolean", writable: true, precision: true },
+      ];
     default:
       return null;
   }
@@ -82,6 +89,8 @@ const LABELS: { [key: string]: string } = {
   target: "Target",
   "room-temp": "Room",
   "unit-temp": "Unit",
+  volume: "Volume",
+  mic: "Mic",
   value: "Value",
 };
 
@@ -94,6 +103,8 @@ const ICONS: { [key: string]: string } = {
   target: "iconoir-home-temperature-in",
   "room-temp": "iconoir-temperature-high",
   "unit-temp": "iconoir-temperature-high",
+  volume: "iconoir-sound-high",
+  mic: "iconoir-mic",
   value: "iconoir-circle",
 };
 
@@ -108,7 +119,7 @@ function toNumber(v: any): number {
 /** Read one channel's live value out of a device's legacy value blob. */
 function readChannelValue(category: string | undefined, spec: ChannelSpec, value: any): boolean | number {
   let raw: any;
-  if (category === "evap-cooler") {
+  if (category === "evap-cooler" || category === "voice-satellite") {
     raw = (value ?? {})[spec.key];
   } else {
     raw = value;

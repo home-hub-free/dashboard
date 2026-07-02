@@ -8,7 +8,8 @@ export type Device = {
     | "dimmable-light"
     | "blinds"
     | "camera"
-    | "presence-relay";
+    | "presence-relay"
+    | "voice-satellite";
   manual: boolean;
   name: string;
   value: any;
