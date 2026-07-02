@@ -6,13 +6,31 @@
 // read-only. Everything is id-scoped under #assistant.
 // ============================================================================
 
+// The chat panel is already a bordered card, so the .assistant-view's own 1rem
+// gutter on top of the shell's page padding was pure lost space. Drop it and
+// complete the height chain (#tab-content → #assistant → .assistant-view) so
+// the panel can flex to the space that actually remains; on desktop the chain
+// has no definite height (the body scrolls), so the panel keeps a dvh height.
+#main-content #tab-content > #assistant {
+  height: 100%;
+
+  > .assistant-view {
+    height: 100%;
+    box-sizing: border-box;
+    padding: 0;
+    align-items: stretch;
+  }
+}
+
 #assistant {
   .chat-panel {
     display: grid;
     grid-template-columns: 264px minmax(0, 1fr);
     gap: var(--space-3);
-    height: clamp(420px, calc(100vh - 230px), 820px); // fallback
-    height: clamp(420px, calc(100dvh - 230px), 820px);
+    width: 100%;
+    box-sizing: border-box;
+    height: clamp(420px, calc(100vh - 240px), 980px); // fallback
+    height: clamp(420px, calc(100dvh - 240px), 980px);
     min-height: 0;
   }
 
@@ -467,10 +485,12 @@
 
     .chat-panel {
       grid-template-columns: 1fr;
-      // Fit between the top chrome and the FIXED bottom nav; dvh tracks the
-      // on-screen keyboard so the composer rides above it while typing.
-      height: calc(100vh - 235px);
-      height: calc(100dvh - 235px);
+      // The phone shell is a fixed dvh flex column, so the panel just fills
+      // whatever is left under the header — no magic viewport constant. dvh on
+      // #main-content keeps the composer above the on-screen keyboard.
+      height: auto;
+      flex: 1;
+      min-height: 0;
 
       .chat-list {
         display: flex;

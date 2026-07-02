@@ -9,9 +9,13 @@
 
 @import "../ui/tokens";
 
-// Undo the legacy shell centering so cards fill the column.
+// Undo the legacy shell centering so cards fill the column. #discovery-review
+// must be listed too: as a `#tab-content > div > div` it inherits the phone
+// shell's centered flex column and shrinks to max-content — wider than the
+// viewport once a suggestion card renders → horizontal scroll on mobile.
 #main-content #tab-content > #automations,
-#main-content #tab-content > #automations > #automations-list {
+#main-content #tab-content > #automations > #automations-list,
+#main-content #tab-content > #automations > #discovery-review {
   display: block;
   height: auto;
   width: 100%;
@@ -78,8 +82,10 @@
   height: auto;
   max-width: 920px;
   gap: var(--space-3);
-  padding: 0 16px 120px;
-  overflow: scroll;
+  // No side padding (the shell already provides the page gutter — 16px here
+  // indented the cards relative to the CTAs above) and no inner scroller
+  // (#tab-content is the page's one scroll container).
+  padding: 0 0 var(--space-8);
 }
 
 #main-content #tab-content .effect-container {
@@ -301,6 +307,9 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
+    // The button base sets nowrap (right for pill buttons); this is a text row
+    // — without wrapping it sizes to max-content and runs off a phone screen.
+    white-space: normal;
     width: 100%;
     min-height: var(--tap-target-min);
     text-align: left;
@@ -418,6 +427,8 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    max-width: 100%; // a long "name category · #id" chip must wrap, not widen the page
+    box-sizing: border-box;
     font-size: 0.74rem;
     font-weight: var(--font-weight-semibold);
     padding: 4px 10px;
@@ -559,8 +570,13 @@
   }
 }
 
-// Narrow screens: stack the accept/dismiss actions.
+// Narrow screens: stack the accept/dismiss actions; the device chips reclaim
+// the spark-column indent (46px is too dear on a phone).
 @include mobile-only {
+  #main-content #tab-content .discovery-review .discovery-devices {
+    margin-left: 0;
+  }
+
   #main-content #tab-content .discovery-review .discovery-actions {
     flex-direction: column;
   }

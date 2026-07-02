@@ -22,6 +22,8 @@ import { Candidate, CandidateRow, DiscoveryReviewState } from "./discovery-revie
  * memory-service (acceptCandidate); the two stores stay decoupled, matching the rest of the stack.
  */
 class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
+  private unsubs: Array<() => void> = [];
+
   mount() {
     this.createBind({
       id: "discovery-review",
@@ -37,7 +39,25 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
         toggleCollapsed: () => { this.bind.collapsed = !this.bind.collapsed; },
       },
     });
+    // Candidates and the device/sensor rosters load in parallel, so a row can
+    // render before its names are resolvable — re-derive when a roster lands.
+    this.unsubs = [
+      store.subscribe("devices", () => this.redecorate()),
+      store.subscribe("sensors", () => this.redecorate()),
+    ];
     this.refresh();
+  }
+
+  unmount() {
+    this.unsubs.forEach((u) => u());
+    this.unsubs = [];
+  }
+
+  /** Recompute the display fields of the rows already on screen (identity
+   *  resolution only — no refetch), preserving any in-flight busy state. */
+  private redecorate() {
+    if (!this.mounted || !this.bind.rows.length) return;
+    this.bind.rows = this.bind.rows.map((r) => ({ ...this.toRow(r.candidate), busy: r.busy }));
   }
 
   private refresh() {
@@ -62,7 +82,7 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
     const ev = candidate.evidence;
     return {
       candidate,
-      line: candidate.line || this.fallbackLine(candidate),
+      line: candidate.line ? this.humanizeLine(candidate.line) : this.fallbackLine(candidate),
       actionDevice: this.deviceIdentity(candidate.arms[0]?.set?.nodeId),
       triggerDevice: this.deviceIdentity(candidate.trigger?.nodeId),
       zone: candidate.zone || "",
@@ -72,6 +92,22 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
       matured: !!candidate.matured,
       busy: false,
     };
+  }
+
+  /** The miner's prose refers to devices by raw id ("the light (#10039254)"). Swap every #id token
+   *  whose node we know for the device's real name, so the sentence reads "the light (Cocina)…"; the
+   *  identity chips below keep the exact #id as the secondary, disambiguating datum. Unknown ids stay
+   *  as-is. */
+  private humanizeLine(line: string): string {
+    return line.replace(/#([A-Za-z0-9_.:-]+)/g, (token, id) => this.nodeName(id) || token);
+  }
+
+  /** Display name of a device/sensor from the live store, or "" when unknown. */
+  private nodeName(nodeId: string): string {
+    const dev = store.get("devices").find((d) => d.id === nodeId);
+    if (dev?.name) return dev.name;
+    const sen = store.get("sensors").find((s) => s.id === nodeId);
+    return sen?.name || "";
   }
 
   /** Resolve a node id to a concrete handle "name category · #id" using the live device/sensor store,
@@ -97,7 +133,7 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
     const target = c.arms[0]?.set;
     const where = c.zone ? ` in the ${c.zone}` : "";
     return target
-      ? `A pattern around ${target.nodeId}${where} — want to automate it?`
+      ? `A pattern around ${this.nodeName(target.nodeId) || `#${target.nodeId}`}${where} — want to automate it?`
       : "A recurring pattern was noticed.";
   }
 
