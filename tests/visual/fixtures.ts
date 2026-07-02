@@ -68,3 +68,41 @@ export const candidates = {
     },
   ],
 };
+
+// ── Assistant chat history (hub /assistant/chats → gateway chat store) ────────
+// A live dashboard thread, an older closed one, and a satellite (voice) thread
+// with its room — so the panel renders every row/badge/bubble variant.
+export const chatMetas = [
+  { id: "c-live", surface: "dashboard", title: "apaga la luz de la sala", startedAt: "2026-07-02T09:00:00Z", updatedAt: "2026-07-02T09:04:00Z", turnCount: 4 },
+  { id: "c-voice", surface: "voice", zone: "cocina", title: "pon música para cocinar", startedAt: "2026-07-01T19:20:00Z", updatedAt: "2026-07-01T19:26:00Z", closedAt: "2026-07-01T19:40:00Z", turnCount: 2 },
+  { id: "c-old", surface: "dashboard", title: "¿qué tengo mañana en la agenda?", startedAt: "2026-06-30T08:00:00Z", updatedAt: "2026-06-30T08:03:00Z", closedAt: "2026-06-30T08:20:00Z", turnCount: 2 },
+];
+
+export const chatFull: Record<string, any> = {
+  "c-live": {
+    id: "c-live", surface: "dashboard", title: "apaga la luz de la sala",
+    startedAt: "2026-07-02T09:00:00Z", updatedAt: "2026-07-02T09:04:00Z",
+    turns: [
+      { role: "user", content: "apaga la luz de la sala", ts: "2026-07-02T09:00:10Z", speakerName: "David" },
+      { role: "assistant", content: "Ya quedó apagada la luz de la sala.", ts: "2026-07-02T09:00:14Z" },
+      { role: "user", content: "¿y cómo está la temperatura en la recámara?", ts: "2026-07-02T09:03:40Z", speakerName: "David" },
+      { role: "assistant", content: "La recámara está a veinticuatro grados, bastante agradable.", ts: "2026-07-02T09:03:46Z" },
+    ],
+  },
+  "c-voice": {
+    id: "c-voice", surface: "voice", zone: "cocina", title: "pon música para cocinar",
+    startedAt: "2026-07-01T19:20:00Z", updatedAt: "2026-07-01T19:26:00Z", closedAt: "2026-07-01T19:40:00Z",
+    turns: [
+      { role: "user", content: "pon música para cocinar", ts: "2026-07-01T19:20:05Z", speakerName: "David" },
+      { role: "assistant", content: "Va sonando tu playlist de cocina.", ts: "2026-07-01T19:20:09Z" },
+    ],
+  },
+  "c-old": {
+    id: "c-old", surface: "dashboard", title: "¿qué tengo mañana en la agenda?",
+    startedAt: "2026-06-30T08:00:00Z", updatedAt: "2026-06-30T08:03:00Z", closedAt: "2026-06-30T08:20:00Z",
+    turns: [
+      { role: "user", content: "¿qué tengo mañana en la agenda?", ts: "2026-06-30T08:00:10Z", speakerName: "David" },
+      { role: "assistant", content: "Mañana tienes la cita del dentista a las nueve.", ts: "2026-06-30T08:00:15Z" },
+    ],
+  },
+};

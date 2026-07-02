@@ -1,0 +1,256 @@
+// ============================================================================
+// UI LIBRARY · FORMS
+// Labels, text inputs, selects, sliders — token-based element defaults plus
+// the .form-group row pattern. The detail overlay re-skins inputs onto its
+// recessed surface in ui/overlay.scss; these are the app-wide defaults.
+// ============================================================================
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+// One field: label on top, control below, optional helper copy after.
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+// Inline variant: label + control(s) on one wrapping row.
+.form-group-inline {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+// ---- Labels -------------------------------------------------------------------
+label {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-normal);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  margin-bottom: var(--space-2);
+  transition: var(--transition-normal);
+
+  &:focus-within {
+    color: var(--color-primary);
+  }
+}
+
+// ---- Text inputs & textareas ----------------------------------------------------
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="time"],
+input[type="date"],
+textarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: var(--transition-normal);
+  box-sizing: border-box;
+  outline: none;
+  appearance: none;
+
+  &::placeholder {
+    color: var(--color-text-tertiary);
+  }
+
+  &:hover:not(:disabled):not(:read-only) {
+    border-color: var(--color-border-light);
+  }
+
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-rgba-20);
+  }
+
+  &:disabled,
+  &:read-only {
+    background-color: var(--color-surface-secondary);
+    color: var(--color-text-tertiary);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+// ---- Selects --------------------------------------------------------------------
+select {
+  width: 100%;
+  padding: var(--space-3) var(--space-8) var(--space-3) var(--space-4);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  box-sizing: border-box;
+  outline: none;
+  appearance: none;
+
+  // Custom dropdown arrow
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg fill='%238b7bff' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-2) center;
+  background-size: 1.2em;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+  }
+
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-rgba-20);
+  }
+
+  &:disabled {
+    background-color: var(--color-surface-secondary);
+    color: var(--color-text-tertiary);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  option {
+    color: var(--color-text-primary);
+    background-color: var(--color-surface);
+  }
+}
+
+// ---- Range sliders -----------------------------------------------------------------
+input[type="range"] {
+  width: 100%;
+  padding: var(--space-2) 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background: var(--color-surface-secondary);
+  border-radius: var(--radius-sm);
+  border: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  cursor: pointer;
+  border: 2px solid var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  margin-top: -7px;
+  transition: var(--transition-normal);
+}
+
+input[type="range"]::-moz-range-track {
+  background: var(--color-surface-secondary);
+  border-radius: var(--radius-sm);
+  border: none;
+  height: 6px;
+}
+
+input[type="range"]::-moz-range-progress {
+  background: var(--color-primary);
+  border-radius: var(--radius-sm);
+  height: 6px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  cursor: pointer;
+  border: 2px solid var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+input[type="range"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+// ---- Checkboxes / radios --------------------------------------------------------------
+input[type="radio"],
+input[type="checkbox"] {
+  margin-right: var(--space-2);
+  cursor: pointer;
+  accent-color: var(--color-primary);
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// ---- Value readout beside a slider ------------------------------------------------------
+.range-value {
+  display: inline-block;
+  text-align: right;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  min-width: 50px;
+}
+
+// ---- Responsive ergonomics ----------------------------------------------------------------
+@media (max-width: 639px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="time"],
+  input[type="date"],
+  textarea,
+  select {
+    font-size: 16px; // never below 16px — smaller makes iOS Safari zoom on focus
+  }
+}
+
+@media (min-width: 640px) {
+  // Cap free-standing input width so lines don't run absurdly long. Components
+  // that own their layout (overlay, chat composer) re-assert width there.
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="time"],
+  input[type="date"],
+  textarea,
+  select {
+    max-width: 500px;
+
+    &.full-width {
+      max-width: 100%;
+    }
+  }
+}

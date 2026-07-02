@@ -1,0 +1,271 @@
+// ============================================================================
+// UI LIBRARY · BUTTONS
+// A NEUTRAL element base + explicit, opt-in variants. A button gets its look
+// from a class — never from being a bare <button>. (The old global reset that
+// auto-painted every classless button primary + width:100% is gone; that was
+// the #1 specificity trap in this codebase.)
+//
+// Variants (see UI-LIBRARY.md §4):
+//   .btn-primary  — THE filled call-to-action (iris). One per group.
+//   .btn-outline  — companion/secondary action. Never two filled primaries.
+//   .btn-danger   — filled destructive confirm.
+//   .btn-quiet    — text-only destructive/dismiss (icon + word).
+//   .btn-icon     — square icon-only button (44px tap target).
+//   .btn-inline   — modifier: size to content instead of full width.
+//   .toggle-button (+ .toggle-group) — segmented binary choice.
+//
+// Legacy aliases kept as co-selectors so existing markup is already on the
+// system: .add-range-btn == .btn-primary, .remove-btn == .btn-quiet.
+// ============================================================================
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+
+  font-family: inherit;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
+
+  background: transparent;
+  color: inherit;
+  border: none;
+  border-radius: var(--radius-control);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+
+  transition: var(--transition-normal);
+  outline: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+
+  // Touch ergonomics (see --tap-target-min; mobile bumps to 48px below)
+  min-height: 40px;
+  min-width: 44px;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  i {
+    font-size: 1.1em;
+  }
+}
+
+@media (max-width: 639px) {
+  button {
+    min-height: 48px;
+  }
+}
+
+// ---- Filled primary ---------------------------------------------------------
+// Full-width by default (touch-first); add .btn-inline to size to content.
+.btn-primary,
+.add-range-btn {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  width: 100%;
+  min-height: var(--tap-target-min);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-primary-dark);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--color-primary-dark);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    background-color: var(--color-gray-300);
+    color: var(--color-text-tertiary);
+  }
+
+  // In-flight convention (bindrjs can't bind :disabled — see UI-LIBRARY.md §10)
+  &.busy {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+// ---- Outlined secondary -----------------------------------------------------
+.btn-outline {
+  background: transparent;
+  color: var(--color-primary-light);
+  border: 1px solid var(--color-border);
+  width: 100%;
+  min-height: var(--tap-target-min);
+
+  &:hover:not(:disabled) {
+    color: var(--color-text-primary);
+    border-color: var(--color-text-tertiary);
+  }
+
+  &:active:not(:disabled) {
+    background: var(--color-surface-secondary);
+  }
+}
+
+// ---- Filled destructive -----------------------------------------------------
+.btn-danger {
+  background-color: var(--color-error);
+  color: #fff;
+  min-height: var(--tap-target-min);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-error-dark);
+  }
+}
+
+// ---- Quiet destructive / dismiss (text + icon) -------------------------------
+// Works on <button> and on inline <span>/<i> wrappers alike.
+.btn-quiet,
+.remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-error);
+  transition: var(--transition-normal);
+
+  &:hover {
+    color: var(--color-error-dark);
+  }
+
+  &:disabled {
+    color: var(--color-text-tertiary);
+    cursor: not-allowed;
+  }
+}
+
+// ---- Icon-only --------------------------------------------------------------
+.btn-icon {
+  display: grid;
+  place-items: center;
+  width: var(--tap-target-min);
+  min-width: var(--tap-target-min);
+  min-height: var(--tap-target-min);
+  padding: 0;
+}
+
+// ---- Size-to-content modifier -------------------------------------------------
+.btn-inline {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+// ---- Segmented toggle (binary / small enum choices) ---------------------------
+.toggle-group {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-button {
+  background-color: var(--color-surface-secondary);
+  color: var(--color-primary);
+  border: 1px solid var(--color-surface-tertiary);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  min-height: 40px;
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-surface-tertiary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &.active {
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    border-color: var(--color-primary-dark);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// ---- On/off switch --------------------------------------------------------------
+// A 42×24 sliding switch. Success = enabled (matches the live-dot language).
+// Toggle by swapping the .on class; put it on a <button> with a .knob child.
+.switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-surface-secondary);
+  box-shadow: inset 0 0 0 1px var(--color-border-light);
+  cursor: pointer;
+  flex: none;
+  transition: background 180ms var(--ease-in-out);
+
+  .knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-text-tertiary);
+    transition: transform 180ms var(--ease-out), background 180ms var(--ease-in-out);
+  }
+
+  &.on {
+    background: var(--color-success);
+    box-shadow: none;
+
+    .knob {
+      transform: translateX(18px);
+      background: var(--color-on-fill);
+    }
+  }
+}
+
+// ---- Grid of equal-width buttons (e.g. blinds setup) --------------------------
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-2);
+}
+
+// ---- Motion preference --------------------------------------------------------
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none !important;
+    animation: none !important;
+
+    &:hover:not(:disabled),
+    &:active:not(:disabled) {
+      transform: none;
+    }
+  }
+}

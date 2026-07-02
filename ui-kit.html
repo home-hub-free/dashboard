@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Home Hub — UI Kit</title>
+        <!-- Living style guide: every ui/ primitive rendered from the SAME compiled
+             stylesheet the app uses. Dev-only page: `npm run dev` then open
+             http://localhost:8081/ui-kit.html . Catalog + usage: UI-LIBRARY.md -->
+        <style>
+            /* Kit-page scaffolding only — the components below use app styles. */
+            .kit {
+                max-width: 1080px;
+                margin: 0 auto;
+                padding: 32px 20px 120px;
+                -webkit-user-select: text;
+                user-select: text;
+            }
+            .kit h2 {
+                margin: 48px 0 6px;
+                font-size: 1.3rem;
+                color: var(--color-text-primary);
+            }
+            .kit .kit-note {
+                margin: 0 0 18px;
+                font-size: 0.88rem;
+                color: var(--color-text-tertiary);
+                max-width: 72ch;
+            }
+            .kit-row {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 14px;
+            }
+            .kit-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+                gap: 12px;
+            }
+            .kit-swatch {
+                border-radius: var(--radius-control);
+                border: 1px solid var(--color-border);
+                padding: 10px 12px;
+                font-size: 0.75rem;
+                color: var(--color-text-secondary);
+            }
+            .kit-swatch b {
+                display: block;
+                height: 34px;
+                border-radius: 8px;
+                margin-bottom: 8px;
+                border: 1px solid rgba(255, 255, 255, 0.06);
+            }
+            .kit-swatch code { color: var(--color-text-primary); font-size: 0.72rem; }
+            .kit code.sel {
+                background: var(--color-surface-secondary);
+                border: 1px solid var(--color-border);
+                border-radius: 6px;
+                padding: 1px 7px;
+                font-size: 0.78rem;
+                color: var(--color-primary-light);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="kit">
+            <header class="page-head">
+                <div class="ph-kicker">UI Library</div>
+                <h1 class="ph-title">Home Hub <em>UI kit.</em></h1>
+                <p class="ph-lede">
+                    Every reusable primitive, rendered live from src/styles/ui/. Written catalog +
+                    rules for new screens: <strong>UI-LIBRARY.md</strong>. Resize this window to
+                    check responsive behavior.
+                </p>
+            </header>
+
+            <h2>Color tokens</h2>
+            <p class="kit-note">
+                Three accent meanings, never mixed: GOLD = a light is on · CYAN = another device
+                active · IRIS = interactive/brand. Status colors: success / error / warning / info.
+            </p>
+            <div class="kit-grid">
+                <div class="kit-swatch"><b style="background: var(--color-primary)"></b><code>--color-primary</code> interactive / brand</div>
+                <div class="kit-swatch"><b style="background: var(--gradient-active-warm)"></b><code>--gradient-active-warm</code> light is on</div>
+                <div class="kit-swatch"><b style="background: var(--gradient-active-cool)"></b><code>--gradient-active-cool</code> device active</div>
+                <div class="kit-swatch"><b style="background: var(--color-success)"></b><code>--color-success</code> on / enabled</div>
+                <div class="kit-swatch"><b style="background: var(--color-error)"></b><code>--color-error</code> off / danger</div>
+                <div class="kit-swatch"><b style="background: var(--color-warning)"></b><code>--color-warning</code> caution</div>
+                <div class="kit-swatch"><b style="background: var(--color-surface)"></b><code>--color-surface</code> resting card</div>
+                <div class="kit-swatch"><b style="background: var(--color-surface-secondary)"></b><code>--color-surface-secondary</code> recessed control</div>
+                <div class="kit-swatch"><b style="background: var(--color-surface-tertiary)"></b><code>--color-surface-tertiary</code> recessed row</div>
+                <div class="kit-swatch"><b style="background: var(--color-background)"></b><code>--color-background</code> page</div>
+            </div>
+
+            <h2>Page header</h2>
+            <p class="kit-note"><code class="sel">.page-head</code> opens every screen: kicker + title (accent an <code class="sel">em</code>) + lede. Section groups get <code class="sel">.section-title</code>.</p>
+            <div class="page-head">
+                <div class="ph-kicker">Kicker</div>
+                <h1 class="ph-title">Big editorial <em>title.</em></h1>
+                <p class="ph-lede">One-line lede that explains the screen in plain words.</p>
+            </div>
+            <p class="section-title">Section title</p>
+
+            <h2>Buttons</h2>
+            <p class="kit-note">
+                A bare <code class="sel">&lt;button&gt;</code> is NEUTRAL — pick a variant. One
+                filled primary per group; the companion is outlined. Full-width by default
+                (touch-first); <code class="sel">.btn-inline</code> sizes to content.
+            </p>
+            <div class="kit-row">
+                <button class="btn-primary btn-inline"><i class="iconoir-plus"></i> Primary</button>
+                <button class="btn-outline btn-inline">Outline</button>
+                <button class="btn-danger btn-inline">Danger</button>
+                <button class="btn-quiet btn-inline"><i class="iconoir-trash"></i> Quiet</button>
+                <button class="btn-icon btn-primary btn-inline" title="Icon"><i class="iconoir-send"></i></button>
+                <button class="btn-primary btn-inline busy">Busy…</button>
+                <button class="btn-primary btn-inline" disabled>Disabled</button>
+            </div>
+            <div class="kit-row">
+                <div class="toggle-group" style="max-width: 320px; flex: 1">
+                    <button class="toggle-button active" style="flex: 1">Auto</button>
+                    <button class="toggle-button" style="flex: 1">Manual</button>
+                </div>
+                <button class="switch on" onclick="this.classList.toggle('on')" aria-label="Toggle"><span class="knob"></span></button>
+                <button class="switch" onclick="this.classList.toggle('on')" aria-label="Toggle"><span class="knob"></span></button>
+            </div>
+
+            <h2>Forms</h2>
+            <p class="kit-note"><code class="sel">.form-group</code> = label over control. Inputs never go below 16px font on phones (iOS zoom).</p>
+            <div class="kit-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr))">
+                <div class="form-group">
+                    <label>Text</label>
+                    <input type="text" placeholder="Type here…" />
+                </div>
+                <div class="form-group">
+                    <label>Select</label>
+                    <select><option>Living Room</option><option>Kitchen</option></select>
+                </div>
+                <div class="form-group">
+                    <label>Range</label>
+                    <input type="range" min="0" max="100" value="60" />
+                </div>
+                <div class="form-group">
+                    <label>Time</label>
+                    <input type="time" value="21:30" />
+                </div>
+            </div>
+
+            <h2>Panels, rows, pills</h2>
+            <p class="kit-note">
+                <code class="sel">.panel</code> is the resting content card (flat + border + lift —
+                floating layers use <code class="sel">--shadow-modal</code> instead). Rows inside
+                sit recessed on <code class="sel">.panel-row</code>.
+            </p>
+            <div class="panel" style="max-width: 560px">
+                <p class="section-title">Panel title</p>
+                <p class="section-hint">Helper copy under the title.</p>
+                <div class="panel-row">
+                    <span class="icon-bubble sm"><i class="iconoir-user"></i></span>
+                    <span style="flex: 1">A recessed row</span>
+                    <span class="state-dot on"></span>
+                    <button class="btn-quiet btn-inline"><i class="iconoir-trash"></i></button>
+                </div>
+                <div class="kit-row" style="margin: 0">
+                    <span class="pill"><i class="iconoir-position"></i> Living Room</span>
+                    <span class="pill pill-success">established</span>
+                    <span class="pill pill-brand"><i class="iconoir-flash"></i> action</span>
+                    <span class="pill pill-outline">read-only</span>
+                </div>
+                <div class="kit-row" style="margin: 0">
+                    <span class="icon-bubble"><i class="iconoir-light-bulb"></i></span>
+                    <span class="icon-bubble lg"><i class="iconoir-wind"></i></span>
+                    <span class="icon-bubble brand"><i class="iconoir-flare"></i></span>
+                </div>
+            </div>
+
+            <h2>Device tiles</h2>
+            <p class="kit-note">
+                The whole tile is the switch. <code class="sel">.cat-&lt;category&gt;</code> +
+                <code class="sel">.on</code> drive the fill: gold = lit light, cyan = other device
+                active. <code class="sel">.manual</code> = dashed border + lock badge. Channel
+                controls: chip / slider / stepper / readout.
+            </p>
+            <div class="kit-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr))">
+                <div class="device-tile cat-light on">
+                    <div class="tile-inner">
+                        <div class="tile-top">
+                            <span class="tile-icon"><i class="iconoir-light-bulb-on"></i></span>
+                            <i class="tile-edit iconoir-more-horiz"></i>
+                        </div>
+                        <div class="tile-body">
+                            <div class="tile-name">Ceiling</div>
+                            <div class="tile-meta"><span class="tile-status">On</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="device-tile cat-light manual">
+                    <div class="tile-inner">
+                        <div class="tile-top">
+                            <span class="tile-icon"><i class="iconoir-light-bulb"></i></span>
+                            <i class="tile-edit iconoir-more-horiz"></i>
+                        </div>
+                        <div class="tile-body">
+                            <div class="tile-name">Kitchen</div>
+                            <div class="tile-meta">
+                                <span class="tile-status">Off</span>
+                                <span class="tile-lock"><i class="iconoir-lock"></i> Manual</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="device-tile cat-blinds on">
+                    <div class="tile-inner">
+                        <div class="tile-top">
+                            <span class="tile-icon"><i class="iconoir-windows"></i></span>
+                            <i class="tile-edit iconoir-more-horiz"></i>
+                        </div>
+                        <div class="tile-body">
+                            <div class="tile-name">Blinds</div>
+                            <div class="tile-meta"><span class="tile-status">Open · 80%</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="device-tile cat-dimmable-light on">
+                    <div class="tile-inner">
+                        <div class="tile-top">
+                            <span class="tile-icon"><i class="iconoir-light-bulb-on"></i></span>
+                            <i class="tile-edit iconoir-more-horiz"></i>
+                        </div>
+                        <div class="tile-body">
+                            <div class="tile-name">Reading Lamp</div>
+                            <div class="tile-meta"><span class="tile-status">On · 60%</span></div>
+                            <div class="tile-controls">
+                                <input class="tile-slider" type="range" value="60" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="kit-row" style="margin-top: 14px">
+                <button class="chip on"><i class="iconoir-wind"></i> Fan</button>
+                <button class="chip"><i class="iconoir-droplet"></i> Water</button>
+                <div class="stepper">
+                    <span class="stepper-readout"><i class="iconoir-temperature-high"></i> 24.0°</span>
+                    <button class="step"><i class="iconoir-minus"></i></button>
+                    <button class="step"><i class="iconoir-plus"></i></button>
+                </div>
+                <div class="readout">
+                    <span class="readout-val reached">26.0°</span>
+                    <span class="readout-label">Room</span>
+                </div>
+            </div>
+
+            <h2>Sensor chips</h2>
+            <p class="kit-note">Read-only environment readings. Boolean → state dot; temp/humidity → two metrics.</p>
+            <div class="kit-row">
+                <div class="sensor-chip active">
+                    <div class="chip-head"><i class="iconoir-walking"></i><span class="chip-name">Living Room</span></div>
+                    <div class="chip-reading"><span class="dot on"></span> Detected</div>
+                </div>
+                <div class="sensor-chip">
+                    <div class="chip-head"><i class="iconoir-running"></i><span class="chip-name">Hallway</span></div>
+                    <div class="chip-reading"><span class="dot"></span> Clear</div>
+                </div>
+                <div class="sensor-chip">
+                    <div class="chip-head"><i class="iconoir-home-temperature-in"></i><span class="chip-name">Bedroom</span></div>
+                    <div class="chip-reading th">
+                        <span class="metric"><i class="iconoir-temperature-high"></i> 23°</span>
+                        <span class="metric"><i class="iconoir-droplet"></i> 45%</span>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Empty state</h2>
+            <div class="empty-state" style="padding: 30px 20px">
+                <i class="iconoir-home-simple-door"></i>
+                <span>No devices detected on your network</span>
+            </div>
+
+            <h2>Scoped components</h2>
+            <p class="kit-note">
+                Some components are id-scoped to their surface and don't render here: the detail
+                overlay (<code class="sel">#overlay-modal</code>), automations rows
+                (<code class="sel">#main-content #tab-content .effect-row</code>), the chat panel
+                (<code class="sel">#assistant</code>) and the nav. See their markup snippets in
+                UI-LIBRARY.md and the live screens in
+                designs/dashboard-redesign/screens/after/.
+            </p>
+        </div>
+        <script type="module" src="/src/ui-kit.ts"></script>
+    </body>
+</html>

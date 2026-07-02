@@ -1,0 +1,279 @@
+// ============================================================================
+// UI LIBRARY · APP SHELL & PAGE SCAFFOLDING
+// The chrome every screen mounts into (#main-content > #header + #tabs +
+// #tab-content), the editorial page header, section labels, page columns and
+// empty states. Mobile-first: phones get the fixed shell + bottom nav; ≥640px
+// the nav becomes a left rail (ui/nav.scss) and content offsets by its width.
+// ============================================================================
+
+@import "./tokens";
+
+$nav-rail-width: 248px;
+
+// ---- Phone shell (< 640px) ---------------------------------------------------
+@include mobile-only {
+  #main-content {
+    position: fixed;
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    height: calc(100% - 100px); // clear the 100px bottom nav
+    left: 0;
+    top: 0;
+    padding-bottom: 0;
+
+    .header {
+      height: 50px;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+
+      .header-title {
+        flex: 1;
+        justify-content: center;
+        line-height: 50px;
+        font-size: 2em;
+        display: flex;
+        color: var(--color-text-primary);
+      }
+    }
+
+    #tabs {
+      padding-top: 20px;
+
+      .menu-tabs {
+        height: 55px;
+        line-height: 50px;
+        font-size: 1.4em;
+        position: relative;
+        white-space: nowrap;
+        overflow-x: scroll;
+
+        .tab {
+          cursor: pointer;
+          padding: 0 20px;
+          display: inline-block;
+          color: var(--color-text-secondary);
+
+          &.active {
+            color: var(--color-primary-dark);
+          }
+        }
+
+        .active-indicator {
+          transition: all 220ms cubic-bezier(0.65, 0.41, 0.33, 1.21);
+          border-bottom: 3px;
+          border-bottom-style: solid;
+          position: absolute;
+          border-radius: 4px;
+          border-bottom-color: var(--color-primary-dark);
+        }
+      }
+    }
+
+    #tab-content {
+      text-align: center;
+      padding: 10px;
+      height: calc(100% - 145px);
+      position: relative;
+      overflow: scroll;
+
+      & > div {
+        & > div {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+      }
+    }
+  }
+}
+
+// ---- Desktop shell (>= 640px): content offsets past the left nav rail ---------
+@include desktop-up {
+  #tabs {
+    padding-top: 20px;
+    margin-left: $nav-rail-width;
+
+    .menu-tabs {
+      border-bottom: 2px;
+      border-bottom-style: solid;
+      border-bottom-color: var(--color-gray-400);
+      height: 55px;
+      line-height: 50px;
+      font-size: 1.4em;
+      position: relative;
+      white-space: nowrap;
+      overflow-x: scroll;
+
+      .tab {
+        cursor: pointer;
+        padding: 0 20px;
+        display: inline-block;
+        color: var(--color-text-secondary);
+
+        &.active {
+          font-weight: bold;
+          color: var(--color-primary-dark);
+        }
+      }
+
+      .active-indicator {
+        transition: all 130ms cubic-bezier(0.72, 0.32, 0.57, 1.21);
+        border-bottom: 5px;
+        border-bottom-style: solid;
+        position: fixed;
+        border-bottom-color: var(--color-primary-dark);
+      }
+    }
+  }
+
+  #tab-content {
+    margin-left: $nav-rail-width;
+    text-align: center;
+    padding: 32px;
+    height: calc(100% - 150px);
+    position: relative;
+    overflow: scroll;
+
+    & > div {
+      height: 100%;
+
+      & > div {
+        height: 100%;
+      }
+    }
+  }
+}
+
+// ---- Modern header + content alignment (beats the legacy centering above) -----
+#header {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+#main-content #header .header {
+  height: auto;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 18px 16px 10px;
+  text-align: left;
+
+  .header-title {
+    flex: none;
+    display: block;
+    justify-content: flex-start;
+    height: auto;
+    line-height: 1.1;
+    font-size: 2rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    letter-spacing: var(--letter-spacing-tight);
+  }
+
+  .header-subtitle {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.95rem;
+    font-weight: var(--font-weight-normal);
+    color: var(--color-text-secondary);
+  }
+}
+
+#main-content #tab-content {
+  text-align: left;
+}
+
+// Every view eases in on tab switch (roots mount per navigation, so this never
+// replays on a live data tick).
+#main-content #tab-content > div {
+  animation: rd-fade 280ms var(--ease-out) both;
+}
+
+// ---- Editorial page header -----------------------------------------------------
+// Opens Automations / Assistant / Settings the same way: kicker + big title +
+// lede. `em` inside the title takes the brand accent.
+.page-head {
+  text-align: left;
+  margin: 0 0 var(--space-6);
+
+  .ph-kicker {
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+  }
+
+  .ph-title {
+    margin: var(--space-2) 0 var(--space-1);
+    font-size: 2rem;
+    font-weight: var(--font-weight-extrabold);
+    line-height: 1.05;
+    letter-spacing: var(--letter-spacing-tight);
+    color: var(--color-text-primary);
+
+    em {
+      font-style: normal;
+      color: var(--color-primary-light);
+    }
+  }
+
+  .ph-lede {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--color-text-tertiary);
+    max-width: 60ch;
+  }
+}
+
+// ---- Section micro-label ---------------------------------------------------------
+// The uppercase label that heads a group of content, inside panels and out on
+// the page (Home uses the .home-sectit alias with side gutters).
+.section-title {
+  font-size: 0.72rem;
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin: 0 0 var(--space-3);
+}
+
+// ---- Page column -------------------------------------------------------------------
+// The single scrolling column Assistant/Settings render in. `.assistant-view`
+// is the legacy alias; new screens use `.page-col`.
+.page-col,
+.assistant-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+#main-content #tab-content {
+  .page-col,
+  .assistant-view {
+    max-width: 1080px;
+    gap: var(--space-4);
+    // Light default for any text that doesn't set its own colour — otherwise it
+    // inherits the browser default (black) and vanishes on the dark surfaces.
+    color: var(--color-text-primary);
+  }
+}
+
+// ---- Empty state ----------------------------------------------------------------------
+.empty-state {
+  grid-column: span 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 60px 20px;
+  color: var(--color-text-tertiary);
+
+  i {
+    font-size: 40px;
+  }
+}

@@ -15,7 +15,7 @@
 
             <div class="effect-actions" :if="effect.id !== this.pendingDeleteId">
                 <button
-                    class="effect-switch"
+                    class="switch effect-switch"
                     :class:on="effect.enabled !== false"
                     :onclick="this.toggleEffect(effect)"
                     aria-label="Toggle automation"

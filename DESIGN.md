@@ -1,7 +1,10 @@
 # Dashboard Design System
 
-Source of truth for the Home Hub dashboard UI. Read this before redesigning any
-area, and validate changes visually (see [Validating changes](#validating-changes)).
+Source of truth for the Home Hub dashboard UI **principles**. The component
+catalog — every reusable class with markup snippets, plus the recipe for adding
+a new screen — lives in [`UI-LIBRARY.md`](./UI-LIBRARY.md) (live gallery at
+`/ui-kit.html` under `npm run dev`). Read both before redesigning any area, and
+validate changes visually (see [Validating changes](#validating-changes)).
 
 The dashboard is a touch-first, dark-mode, wall-mounted home hub. Design priorities,
 in order:
@@ -14,11 +17,9 @@ in order:
 
 ## 1. Tokens
 
-All design tokens live in `src/styles/_variables.scss` as CSS custom properties on
+All design tokens live in `src/styles/ui/_tokens.scss` as CSS custom properties on
 `:root`. **Never hard-code a color, radius, spacing, shadow, or duration** — use a
-token so the system stays coherent. `src/styles/colors.scss` holds legacy aliases
-(`--primary`, `--surface`, …) mapping onto the new names for older call sites; prefer
-the `--color-*` tokens in new code.
+token so the system stays coherent.
 
 - **Spacing** — 8px base scale (`--space-1`…`--space-20`) plus aliases
   (`--space-xs`…`--space-2xl`) and `--gap-*`.
@@ -38,34 +39,34 @@ the `--color-*` tokens in new code.
 
 ## 2. Color semantics
 
-Dark mode: warm charcoal backgrounds (`--color-background` #1a1a1a), raised surfaces
-(`--color-surface` #3a3a3a, `--color-surface-secondary` #303030), warm-cream text
-(`--color-text-primary` #e8e4da).
+Dark mode, "Nocturne Console": cool blue-black backgrounds (`--color-background`
+#0b0e16), raised surfaces (`--color-surface` #171d2c, `--color-surface-secondary`
+#121724, `--color-surface-tertiary` #1f2638), cool near-white text
+(`--color-text-primary` #eef1f8).
 
 **Three distinct accent meanings — keep them separate:**
 
 | Meaning | Token | Where |
 |---|---|---|
-| **A light is on** (illumination) | `--gradient-active-warm` (amber) + `--glow-active-warm` | `.cat-light.on`, `.cat-dimmable-light.on` |
-| **Another device is active** (e.g. blinds open) | `--gradient-active-cool` (teal) + `--glow-active-cool` | `.cat-blinds.on` |
-| **Interactive / brand** | `--color-primary` (sage) | nav-active, buttons, focus rings, sliders |
+| **A light is on** (illumination) | `--gradient-active-warm` (gold) + `--glow-active-warm` | `.cat-light.on`, `.cat-dimmable-light.on` |
+| **Another device is active** (e.g. blinds open) | `--gradient-active-cool` (electric cyan) + `--glow-active-cool` | `.cat-blinds.on` |
+| **Interactive / brand** | `--color-primary` (iris violet) | nav-active, buttons, focus rings, sliders |
 
-The warm/teal/sage split is deliberate: a device-state fill must never read the same
-as an interactive control. Amber and teal are reserved for device state; sage is the
-brand/interaction color. **Do not paint buttons teal or device states sage.**
+The gold/cyan/iris split is deliberate: a device-state fill must never read the same
+as an interactive control. Gold and cyan are reserved for device state; iris is the
+brand/interaction color. **Do not paint buttons cyan or device states iris.**
 
 State/status colors use the semantic set: `--color-success` (on / detected /
 enabled), `--color-error` (off / danger / remove), `--color-warning`,
-`--color-info`. Device/automation state aliases (`--color-device-on`,
-`--color-automation-enabled`, …) map onto these.
+`--color-info`.
 
 **Text on filled accent surfaces** uses `--color-on-fill` (near-black) and its muted
-variants — verified ≥6:1 on both the warm and teal fills.
+variants — verified ≥6:1 on both the gold and cyan fills.
 
 ### Contrast (WCAG AA)
 Body/status text must clear **4.5:1** on its background. The gotcha: text that
 passes on the page background can fail on a *raised* surface. `--color-text-tertiary`
-is tuned (#b0a89c) to clear 4.5:1 on `--color-surface` and `--color-surface-secondary`
+is tuned (#8c96af) to clear 4.5:1 on `--color-surface` and `--color-surface-secondary`
 — if you darken it, re-check on-surface contrast. `--color-text-secondary` (≈5.1:1
 on surface) is the safe choice for on-surface helper/status copy.
 
@@ -81,27 +82,27 @@ Two tiers, applied consistently:
   `--shadow-modal` for the overlay sheet, `--shadow-lg`/`--shadow-md` for transient
   popups.
 
-The warm/teal **glow** on a lit tile is a *state accent*, not elevation — don't add a
+The gold/cyan **glow** on a lit tile is a *state accent*, not elevation — don't add a
 drop shadow to resting tiles to "match" it.
 
 ---
 
 ## 4. Core patterns
 
-### Device tile (`tiles.scss`, `views/home/devices/`)
+### Device tile (`ui/tiles.scss`, `views/home/devices/`)
 The whole tile is the switch for single-actuator devices. Tiles are **channel-driven**:
 `decorateDevice()` projects each device into channels, each tagged with a `control`
 (`chip` / `slider` / `stepper` / `readout` / `none`), and the template renders
-generically — no per-category layout. Lit tiles get the warm/teal fill + glow + the
+generically — no per-category layout. Lit tiles get the gold/cyan fill + glow + the
 on-fill text treatment. `manual` lock shows as a dashed border. Cooler and camera
 tiles are `wide` (span 2 columns).
 
-### Sensor chip (`tiles.scss`, `views/home/sensors/`)
+### Sensor chip (`ui/tiles.scss`, `views/home/sensors/`)
 Horizontally-scrolling environment band (`#sensors.env-band`). A right-edge mask
 hints there's more off-screen. Boolean sensors show a state dot (`.on` → success +
 glow); temp/humidity show two metrics.
 
-### Detail overlay (`components.scss` `#overlay-modal`, `overlay-modal.ts`)
+### Detail overlay (`ui/overlay.scss`, `overlay-modal.ts`)
 A floating sheet that animates open from the tapped element's rect to a near-full
 viewport rect, with `maxHeight` + internal `overflow: scroll` (never let content
 overflow the sheet). Header = round icon + title. Form rows are `.form-group`
@@ -111,6 +112,17 @@ overflow the sheet). Header = round icon + title. Form rows are `.form-group`
 Primary = filled `--color-primary`. A companion/secondary action is **outlined**
 (transparent bg, `--color-primary-light` text, border) — never two filled primaries
 side by side. All buttons honor `--tap-target-min` and use `scale(0.97)` on press.
+
+### Assistant chat panel (`views/assistant/`, `styles/views/assistant.scss`)
+Two panes: conversation history (left) + the open transcript with the composer (right); narrow
+screens show one pane at a time (`.chat-panel.pane-chat`) with a back button, and hide the
+editorial page-head so the composer stays above the fixed bottom nav. History is per-member
+(hub `/assistant/chats` scopes to the login) and includes satellite threads the member started —
+voice rows carry a **room chip** (`.chat-zone`), the composer's live thread a success dot. Bubbles:
+user = recessed + iris right edge; Aura = background tier, left-aligned. Old chats open read-only
+(`ended` badge + resume hint). The stale hero `.voice-talk` styles were removed from the old
+redesign layer — `#assistant` owns the compact composer now. Gotcha: iconoir's `send-diagonal`
+mask-icon is broken upstream (zero-size clipPath rect → invisible); use `iconoir-send`.
 
 ### Automations list (`views/automations/`)
 One card per target device (round device icon + name), with each rule as a recessed
@@ -130,26 +142,28 @@ absolute; inset: -Npx }` rather than enlarging the glyph — this avoids layout 
 
 ## 6. SCSS architecture & specificity caveats
 
-`src/styles/style.scss` is the single entry; **import order matters**. Files load:
-variables → colors (legacy aliases) → animations → buttons → cards → forms →
-responsive → inputs → platform-styles → **tiles → components** (last). Later files
-win on equal specificity, so the modern tile/component rules intentionally load last
-to beat legacy layout.
+`src/styles/style.scss` is the single entry manifest. Two layers:
 
-Two recurring traps:
+- **`src/styles/ui/`** — the UI library (tokens → base → buttons/forms →
+  layout/nav → panels/tiles/overlay/toast). Generic and reusable; new screens
+  are built from these. Catalog: [`UI-LIBRARY.md`](./UI-LIBRARY.md).
+- **`src/styles/views/`** — one file per screen (home, automations, assistant,
+  settings, login) holding only that screen's composition and one-offs.
 
-- **`buttons.scss` has a high-specificity global `button:not(...)` reset** that paints
-  every button with the primary color and `width: 100%`. To render a button
-  differently (e.g. the cooler chips, which must be content-width and state-colored),
-  scope your rule under a container **id** (`#devices .chip`) so the id specificity
-  beats the global reset.
-- **Platform mixins** (`platform-styles/`) lay out `#devices`/`#sensors` with 3-id
-  selectors. The tile layout re-asserts itself with matching-specificity rules under
-  `#main-content #tab-content …` in the `>=640px` media query — match that specificity
-  if you override.
+If a rule could serve two screens it belongs in `ui/`; single-screen rules go in
+the view file. Never add a top-level SCSS file without registering it in the
+`style.scss` manifest.
 
-When in doubt, scope under the owning container id rather than escalating with
-`!important`.
+The old global button reset (auto-primary paint + mobile `width:100%`) is gone —
+a bare `<button>` is now **neutral** and every visible button opts into a
+`.btn-*` variant. Two caveats survive:
+
+- The **app shell** (`ui/layout.scss`) still lays out `#tab-content` with legacy
+  id-scoped rules; the modern surfaces out-rank them with
+  `#main-content #tab-content …` selectors — match that scoping if you override
+  (e.g. the Home grid rules in `views/home.scss`).
+- Scope view-specific styles under the view's container id (`#assistant .chat-row`)
+  rather than escalating with `!important`.
 
 ---
 
@@ -186,5 +200,5 @@ state from the hub; for isolated UI work, run the Vite dev server and drive it h
 with Playwright, stubbing the API routes (`get-devices`, `get-sensors`,
 `get-effects-dynamic`, `get-zones`) with representative fixtures. Screenshot Home
 (mobile + desktop), Automations, Assistant, and an open detail overlay, and check:
-visual hierarchy, the warm/teal/sage separation, on-surface text contrast, tap-target
+visual hierarchy, the gold/cyan/iris separation, on-surface text contrast, tap-target
 sizes, and transitions.

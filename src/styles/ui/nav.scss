@@ -1,0 +1,318 @@
+// ============================================================================
+// UI LIBRARY · NAVIGATION
+// One component, two shapes: a fixed BOTTOM BAR on phones (<640px) and a left
+// BRAND RAIL on desktop (>=640px). Items come from nav-bar.constants.ts; the
+// trailing .nav-refresh is a connection-status affordance, not a destination.
+// ============================================================================
+
+@import "./tokens";
+
+// Before login the nav mounts as an empty shell — hide it so the brand/rail
+// doesn't bleed onto the login gate.
+#nav-bar:empty {
+  display: none;
+}
+
+#nav-bar {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  padding: 0.4rem 0;
+  padding-bottom: calc(0.4rem + env(safe-area-inset-bottom, 0));
+  cursor: pointer;
+  box-sizing: border-box;
+  z-index: var(--z-fixed);
+
+  .menu-item {
+    flex: 1;
+    text-align: center;
+    padding: 0.5rem 0;
+    transition: all 200ms ease;
+    color: var(--color-primary-dark);
+
+    &:active {
+      transform: scale(0.96);
+    }
+
+    &.active {
+      color: var(--color-primary-dark);
+      font-weight: 500;
+
+      .menu-item-icon {
+        background-color: var(--color-primary);
+        color: var(--color-text-inverse);
+        transform: translateY(-5px) scale(1.1);
+        box-shadow: 0 8px 20px -6px var(--color-primary-rgba-60);
+      }
+    }
+  }
+
+  .item-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .menu-item-icon {
+    font-size: 1.8em;
+    background: transparent;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 200ms cubic-bezier(0.66, 0.18, 0.59, 1.17);
+  }
+
+  .menu-item-text {
+    font-size: 0.75rem;
+    line-height: 1;
+  }
+
+  .toggle-subitems {
+    font-size: 0.8rem;
+    margin-left: 0.3rem;
+    transition: transform 200ms ease;
+
+    &.expanded {
+      transform: rotate(90deg);
+    }
+  }
+
+  // Connection status dot riding the corner of the refresh icon:
+  // green = live socket, amber pulse = mid-resync, red = disconnected.
+  .nav-refresh {
+    .menu-item-icon {
+      position: relative;
+    }
+
+    .ws-dot {
+      position: absolute;
+      top: 0.35rem;
+      right: 0.35rem;
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background: var(--color-success);
+      box-shadow: 0 0 0 2px var(--color-surface);
+      transition: background 200ms ease;
+    }
+
+    &.syncing {
+      .menu-item-icon i {
+        animation: nav-refresh-spin 700ms linear infinite;
+      }
+
+      .ws-dot {
+        background: var(--color-warning);
+      }
+    }
+
+    &.offline .ws-dot {
+      background: var(--color-error);
+    }
+  }
+}
+
+@keyframes nav-refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ---- Phone bottom bar (< 640px) -----------------------------------------------
+@include mobile-only {
+  #nav-bar {
+    height: 100px;
+    width: 100%;
+    left: 0;
+    bottom: 0;
+    flex-direction: row;
+    justify-content: space-evenly;
+
+    .menu-item {
+      padding: 10px;
+      flex: 1;
+      text-align: center;
+      box-sizing: border-box;
+
+      .menu-item-desktop {
+        display: none;
+      }
+    }
+
+    .item-container {
+      height: 100%;
+      flex-direction: column;
+      justify-content: space-around;
+    }
+
+    .menu-item-icon {
+      display: flex;
+      justify-content: center;
+    }
+
+    .toggle-subitems {
+      display: none;
+    }
+
+    // Refresh shrinks to a compact status chip so it doesn't read as a 5th tab.
+    .nav-refresh {
+      flex: 0 0 auto;
+
+      .menu-item-text {
+        font-size: 0.66rem;
+        color: var(--color-text-tertiary);
+      }
+    }
+  }
+}
+
+// ---- Desktop brand rail (>= 640px) ----------------------------------------------
+@include desktop-up {
+  #nav-bar {
+    height: 100%;
+    width: $nav-rail-width;
+    left: 0;
+    bottom: 0;
+    display: inline-block;
+    background:
+      radial-gradient(120% 40% at 0% 0%, var(--color-primary-rgba-10), transparent 60%),
+      var(--color-surface-secondary);
+    border-top: none;
+    border-right: 1px solid var(--color-border);
+    box-shadow: none;
+    padding-top: 8px;
+
+    // Brand lockup at the top of the rail.
+    &::before {
+      content: "◆ Home Hub";
+      display: block;
+      padding: 26px 22px 18px;
+      font-size: 1.02rem;
+      font-weight: var(--font-weight-extrabold);
+      letter-spacing: -0.01em;
+      color: var(--color-text-primary);
+      text-shadow: 0 0 18px var(--color-primary-rgba-40);
+    }
+
+    .menu-item {
+      position: relative;
+      padding: 15px;
+      height: 30px;
+      border-radius: 10px;
+      margin: 5px 10px;
+      color: var(--color-text-secondary);
+      transition: background var(--duration-fast) var(--ease-in-out),
+        color var(--duration-fast) var(--ease-in-out);
+
+      &:hover {
+        background-color: var(--color-gray-200);
+      }
+
+      // Invisible full-row click target rendered on desktop.
+      .menu-item-desktop {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      span {
+        line-height: 30px;
+      }
+
+      .menu-item-icon {
+        background: transparent;
+        font-size: 1.4em;
+        color: inherit;
+        box-shadow: none;
+        transform: none;
+      }
+
+      .menu-item-text {
+        font-weight: var(--font-weight-bold);
+        font-size: 0.97rem;
+        margin-left: 20px;
+      }
+
+      .toggle-subitems {
+        margin-right: 10px;
+        flex: 1;
+        text-align: right;
+
+        &.expanded i {
+          transform: rotate(90deg);
+        }
+
+        i {
+          display: inline-block;
+          vertical-align: middle;
+          transition: transform 145ms ease-in-out;
+        }
+      }
+
+      // Active destination: solid iris pill, dark ink, warm left accent bar.
+      &.active {
+        background: linear-gradient(100deg, var(--color-primary), var(--color-primary-dark));
+        color: var(--color-on-fill);
+        box-shadow: 0 12px 26px -12px var(--color-primary-rgba-60);
+
+        &::before {
+          content: "";
+          position: absolute;
+          left: -6px;
+          top: 9px;
+          bottom: 9px;
+          width: 4px;
+          border-radius: 4px;
+          background: var(--color-active-warm);
+        }
+
+        .menu-item-icon {
+          background: transparent;
+          color: var(--color-on-fill);
+          box-shadow: none;
+          transform: none;
+        }
+
+        .menu-item-text {
+          color: var(--color-on-fill);
+        }
+      }
+    }
+
+    .item-container {
+      flex-direction: row;
+    }
+
+    // Refresh pinned to the rail's bottom, de-emphasised.
+    .nav-refresh {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 12px;
+      margin: 0 14px;
+      padding: 8px 6px;
+
+      .menu-item-icon {
+        font-size: 1.05em;
+        color: var(--color-text-tertiary);
+      }
+
+      .menu-item-text {
+        font-weight: var(--font-weight-semibold);
+        font-size: 0.82rem;
+        color: var(--color-text-tertiary);
+      }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.04);
+      }
+    }
+  }
+}

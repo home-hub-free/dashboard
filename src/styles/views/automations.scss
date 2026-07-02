@@ -1,0 +1,793 @@
+// ============================================================================
+// VIEW · AUTOMATIONS
+// The rules screen: page CTAs, one card per target device with its rules as
+// recessed rows (live dot + switch + edit/delete), the "Suggested for you"
+// pattern-discovery cards, and the three authoring overlays (#new-automation,
+// #edit-automation, #multi-arm-automation — they render inside the detail
+// overlay sheet). Uses ui/ primitives: panel-like cards, pills, buttons.
+// ============================================================================
+
+@import "../ui/tokens";
+
+// Undo the legacy shell centering so cards fill the column.
+#main-content #tab-content > #automations,
+#main-content #tab-content > #automations > #automations-list {
+  display: block;
+  height: auto;
+  width: 100%;
+  align-items: stretch;
+}
+
+#automations {
+  text-align: left;
+}
+
+// ---- Page CTAs (New Automation / New Dynamic Rule) ------------------------------
+.effects-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  height: auto;
+  max-width: 920px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+#automations .add-range-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--tap-target-min);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-in-out),
+    border-color var(--duration-fast) var(--ease-in-out);
+
+  i {
+    font-size: 1.1em;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  // Companion action: outlined, never a second filled primary.
+  &.secondary {
+    background: transparent;
+    color: var(--color-primary-light);
+    border-color: var(--color-border);
+
+    &:active {
+      background: var(--color-surface-secondary);
+    }
+  }
+}
+
+// ---- Rule cards -------------------------------------------------------------------
+.effects-list {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  max-width: 920px;
+  gap: var(--space-3);
+  padding: 0 16px 120px;
+  overflow: scroll;
+}
+
+#main-content #tab-content .effect-container {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-tile);
+  box-shadow: var(--shadow-lift);
+  animation: rd-rise 420ms var(--ease-out) both;
+
+  &:nth-of-type(2) {
+    animation-delay: 60ms;
+  }
+
+  &:nth-of-type(3) {
+    animation-delay: 120ms;
+  }
+
+  &:nth-of-type(4) {
+    animation-delay: 180ms;
+  }
+}
+
+#main-content #tab-content .effect-group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+
+  .eg-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--color-surface-tertiary);
+    color: var(--color-text-secondary);
+    font-size: 1.15rem;
+    flex-shrink: 0;
+  }
+
+  strong {
+    font-size: 1.05rem;
+    font-weight: var(--font-weight-bold);
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+  }
+}
+
+// One rule: recessed row, live left accent + dot, switch + edit/delete actions.
+#main-content #tab-content .effect-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--color-surface-tertiary);
+  border-radius: var(--radius-control);
+  border-left: 3px solid var(--color-success);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--color-success);
+  }
+
+  &.disabled {
+    opacity: 0.55;
+    border-left-color: var(--color-gray-600);
+
+    &::before {
+      background: var(--color-gray-600);
+    }
+  }
+
+  .effect-dot {
+    margin-top: 6px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex: none;
+    background: var(--color-gray-600);
+
+    &.on {
+      background: var(--color-success);
+      box-shadow: 0 0 8px var(--color-success-rgba-40);
+    }
+  }
+
+  .effect-sentence {
+    flex: 1;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: var(--color-text-secondary);
+
+    b,
+    strong {
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-bold);
+    }
+  }
+
+  .effect-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: none;
+  }
+
+  // On/off switch: the generic .switch primitive (ui/buttons.scss); the
+  // .effect-switch class stays in the markup as the semantic hook.
+
+  .effect-edit,
+  .effect-del {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    flex: none;
+    transition: color 160ms, background 160ms;
+
+    i {
+      font-size: 1.05rem;
+    }
+  }
+
+  // Edit is benign → brand accent; delete stays destructive red.
+  .effect-edit:hover {
+    color: var(--color-primary-light);
+    background: var(--color-primary-rgba-10);
+  }
+
+  .effect-del:hover {
+    color: var(--color-error);
+    background: var(--color-error-rgba-10);
+  }
+
+  // Inline delete confirmation
+  .effect-confirm {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: none;
+
+    .effect-confirm-q {
+      font-size: 0.82rem;
+      color: var(--color-text-secondary);
+    }
+  }
+
+  .effect-confirm-yes,
+  .effect-confirm-no {
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+    padding: 6px 12px;
+    border-radius: var(--radius-control);
+    font-size: 0.82rem;
+    font-weight: var(--font-weight-bold);
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+
+  .effect-confirm-yes {
+    background: var(--color-error);
+    color: #fff;
+  }
+
+  .effect-confirm-no {
+    background: transparent;
+    color: var(--color-text-tertiary);
+    border-color: var(--color-border-light);
+  }
+}
+
+.effects-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 60px 20px;
+  color: var(--color-text-tertiary);
+
+  i {
+    font-size: 40px;
+  }
+}
+
+// ---- "Suggested for you" — pattern-discovery review ----------------------------------
+#main-content #tab-content .discovery-review {
+  max-width: 920px;
+  margin: 0 0 var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  text-align: left;
+
+  // Collapsed entry point: one tappable row with the count.
+  .discovery-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: var(--tap-target-min);
+    text-align: left;
+    padding: var(--space-3) var(--space-4);
+    background: linear-gradient(180deg, var(--color-surface), var(--color-surface-secondary));
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-tile);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: border-color 160ms var(--ease-in-out), background 160ms var(--ease-in-out);
+
+    &:hover {
+      border-color: var(--color-text-tertiary);
+    }
+
+    .discovery-banner-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      min-width: 0;
+
+      strong {
+        font-size: 0.98rem;
+        font-weight: var(--font-weight-extrabold);
+        letter-spacing: -0.01em;
+        color: var(--color-text-primary);
+      }
+    }
+
+    .discovery-banner-toggle {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.85rem;
+      font-weight: var(--font-weight-bold);
+      color: var(--color-primary-light);
+
+      i {
+        font-size: 1rem;
+      }
+    }
+  }
+
+  .discovery-sub {
+    font-size: 0.85rem;
+    color: var(--color-text-tertiary);
+  }
+
+  .discovery-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .discovery-loading,
+  .discovery-error {
+    color: var(--color-text-tertiary);
+    font-size: 0.88rem;
+  }
+
+  .discovery-card {
+    background:
+      radial-gradient(130% 150% at 0% 0%, var(--color-primary-rgba-10), transparent 58%),
+      linear-gradient(180deg, var(--color-surface), var(--color-surface-secondary));
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-tile);
+    box-shadow: 0 14px 30px -22px rgba(0, 0, 0, 0.9);
+    padding: var(--space-4) var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    color: var(--color-text-primary);
+    animation: rd-rise 420ms var(--ease-out) both;
+  }
+
+  .discovery-card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .discovery-spark {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--color-primary-rgba-20);
+    color: var(--color-primary-light);
+    font-size: 1.05rem;
+  }
+
+  .discovery-line {
+    font-size: 1.02rem;
+    font-weight: var(--font-weight-bold);
+    line-height: 1.35;
+    color: var(--color-text-primary);
+  }
+
+  // Concrete device identity (trigger → action)
+  .discovery-devices {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-left: calc(34px + var(--space-3)); // align under the line, past the spark
+  }
+
+  .discovery-dev {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.74rem;
+    font-weight: var(--font-weight-semibold);
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--color-surface-tertiary);
+    color: var(--color-text-secondary);
+
+    i {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    &.discovery-dev-action {
+      color: var(--color-text-primary);
+    }
+  }
+
+  .discovery-dev-sep {
+    color: var(--color-text-secondary);
+    opacity: 0.7;
+
+    i {
+      font-size: 0.95rem;
+    }
+  }
+
+  // Confidence meter
+  .discovery-conf {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .conf-track {
+    flex: 1;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--color-surface-tertiary);
+    overflow: hidden;
+  }
+
+  .conf-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+    transition: width 600ms var(--ease-out);
+  }
+
+  .conf-label {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+
+    strong {
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-bold);
+    }
+  }
+
+  .discovery-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .discovery-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.74rem;
+    font-weight: var(--font-weight-semibold);
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--color-surface-tertiary);
+    color: var(--color-text-secondary);
+
+    i {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    &.discovery-mature {
+      background: var(--color-success-rgba-10);
+      color: var(--color-success-light);
+    }
+  }
+
+  .discovery-actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+  }
+
+  .discovery-accept {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    background: var(--color-primary);
+    color: var(--color-on-fill);
+    border: none;
+    border-radius: var(--radius-control);
+    font-weight: var(--font-weight-bold);
+    min-height: 44px;
+    transition: transform 140ms var(--ease-out), background 160ms var(--ease-in-out);
+
+    &:hover:not(.busy) {
+      background: var(--color-primary-light);
+      transform: translateY(-1px);
+    }
+
+    &:active:not(.busy) {
+      transform: scale(0.98);
+    }
+  }
+
+  .discovery-dismiss {
+    background: transparent;
+    color: var(--color-text-tertiary);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-control);
+    font-weight: var(--font-weight-semibold);
+    min-height: 44px;
+    padding: 0 var(--space-5);
+    transition: color 160ms, border-color 160ms;
+
+    &:hover:not(.busy) {
+      color: var(--color-text-primary);
+      border-color: var(--color-text-tertiary);
+    }
+  }
+
+  // In-flight state (bindrjs can't bind :disabled — UI-LIBRARY.md §10)
+  .discovery-accept.busy,
+  .discovery-dismiss.busy {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+// Narrow screens: stack the accept/dismiss actions.
+@include mobile-only {
+  #main-content #tab-content .discovery-review .discovery-actions {
+    flex-direction: column;
+  }
+
+  #main-content #tab-content .discovery-review .discovery-accept,
+  #main-content #tab-content .discovery-review .discovery-dismiss {
+    width: 100%;
+    padding: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #tab-content .effect-container,
+  #tab-content .discovery-card {
+    animation: none !important;
+  }
+}
+
+// ---- Edit-automation overlay (the per-row ✎) -----------------------------------------
+// Only the action value + trigger predicate are editable; identity is fixed.
+#edit-automation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  text-align: left;
+
+  .edit-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .edit-kicker {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-tertiary);
+  }
+
+  .edit-sentence {
+    font-size: 1.05rem;
+    line-height: 1.4;
+    color: var(--color-text-secondary);
+
+    strong {
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-bold);
+    }
+  }
+
+  .edit-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .edit-label {
+    font-size: 0.88rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+  }
+
+  // Segmented control — content-width pills, current value filled in brand.
+  .edit-seg {
+    display: inline-flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .edit-seg-btn {
+    width: auto;
+    min-height: var(--tap-target-min);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-border-light);
+    background: var(--color-surface-tertiary);
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: background 160ms var(--ease-in-out), color 160ms, border-color 160ms;
+
+    &:hover {
+      color: var(--color-text-primary);
+      border-color: var(--color-text-tertiary);
+    }
+
+    &.active {
+      background: var(--color-primary);
+      color: var(--color-on-fill);
+      border-color: transparent;
+    }
+  }
+
+  .edit-num-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .edit-num,
+  .edit-time {
+    min-height: var(--tap-target-min);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-border-light);
+    background: var(--color-surface-tertiary);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+  }
+
+  .edit-num {
+    width: 7rem;
+  }
+
+  .edit-unit {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .edit-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+
+  .edit-save,
+  .edit-cancel {
+    width: 100%;
+    min-height: var(--tap-target-min);
+    border-radius: var(--radius-control);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    transition: background 160ms var(--ease-in-out), color 160ms, border-color 160ms;
+  }
+
+  .edit-save {
+    background: var(--color-primary);
+    color: var(--color-on-fill);
+    border: 1px solid transparent;
+
+    &:hover {
+      background: var(--color-primary-light);
+    }
+  }
+
+  .edit-cancel {
+    background: transparent;
+    color: var(--color-text-tertiary);
+    border: 1px solid var(--color-border-light);
+
+    &:hover {
+      color: var(--color-text-primary);
+      border-color: var(--color-text-tertiary);
+    }
+  }
+}
+
+// ---- New-automation overlay ---------------------------------------------------------
+#new-automation {
+  padding: 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+// ---- Multi-arm (dynamic rule) authoring overlay ----------------------------------------
+#multi-arm-automation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  text-align: left;
+
+  .ma-title {
+    margin: 0 0 var(--space-1);
+  }
+
+  .ma-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+
+    > label {
+      font-weight: 600;
+    }
+  }
+
+  .ma-guard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-left: var(--space-2);
+    border-left: 2px solid var(--color-border);
+  }
+
+  .ma-arm-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .ma-arm-label {
+    flex: 1;
+  }
+
+  .ma-remove {
+    cursor: pointer;
+    color: var(--color-error);
+    background: none;
+    border: none;
+    font-size: 1rem;
+
+    &:hover {
+      color: var(--color-error-dark);
+    }
+  }
+}

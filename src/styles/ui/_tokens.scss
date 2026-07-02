@@ -1,0 +1,295 @@
+// ============================================================================
+// UI LIBRARY · TOKENS
+// The single source of truth for color, spacing, type, radius, shadow, motion
+// and z-index. Never hard-code one of these values in a component — reference
+// the custom property. See dashboard/UI-LIBRARY.md §1.
+// ============================================================================
+
+// ============================================================================
+// 1. COLOR SYSTEM — "Nocturne Console"
+// Cool blue-black night base + a vivid IRIS-VIOLET brand. Three accent
+// meanings stay separable (see UI-LIBRARY.md §2):
+//   GOLD  = a light is on          (--gradient-active-warm)
+//   CYAN  = another device active  (--gradient-active-cool)
+//   IRIS  = interactive / brand    (--color-primary)
+// ============================================================================
+
+:root {
+  // Primary (main brand, actions, focus) — iris violet
+  --color-primary: #8b7bff;        // Electric iris (primary actions / brand)
+  --color-primary-light: #ab9dff;  // Hover / active text on dark
+  --color-primary-lighter: #cfc8ff; // Very light iris (backgrounds)
+  --color-primary-dark: #6a55f0;   // Pressed states
+  --color-primary-darker: #463794; // Strong emphasis
+
+  // Secondary (alternative actions) — azure
+  --color-secondary: #4c84e0;
+  --color-secondary-light: #6f9ff0;
+  --color-secondary-lighter: #b9d0f5;
+  --color-secondary-dark: #355fb0;
+
+  // Status (semantic) — saturated for the night base
+  --color-success: #2fd09a;        // on / active / success
+  --color-success-light: #66e0bb;
+  --color-success-lighter: #b3eddc;
+  --color-success-dark: #1ea077;
+
+  --color-error: #ff5d6c;          // off / error / danger
+  --color-error-light: #ff8693;
+  --color-error-lighter: #ffc2c9;
+  --color-error-dark: #d83a4a;
+
+  --color-warning: #ffba3a;        // caution / pending (light-on family)
+  --color-warning-light: #ffd072;
+  --color-warning-lighter: #ffe6b3;
+  --color-warning-dark: #d9961f;
+
+  --color-info: #5b8bf0;           // information / neutral
+  --color-info-light: #84a8f5;
+  --color-info-lighter: #c2d5fa;
+  --color-info-dark: #3d66c0;
+
+  // Neutrals (cool night)
+  --color-white: #eef1f8;          // Cool near-white (not pure white)
+  --color-black: #0b0e16;          // Blue-black (not pure black)
+
+  --color-gray-50: #eef1f8;
+  --color-gray-100: #d4dae8;
+  --color-gray-200: #252c3d;       // Borders
+  --color-gray-300: #1a2030;       // Disabled-dark
+  --color-gray-400: #8c96af;       // Muted text
+  --color-gray-500: #737e96;       // Secondary-muted text
+  --color-gray-600: #525c72;       // Dark slate
+  --color-gray-700: #39425a;       // Very dark slate
+  --color-gray-800: #161b28;       // Almost black
+  --color-gray-900: #0b0e16;       // Darkest (page background)
+
+  // Surfaces
+  --color-surface: #171d2c;          // Resting cards / panels
+  --color-surface-secondary: #121724; // Recessed controls on a surface
+  --color-surface-tertiary: #1f2638;  // Recessed insets / rows
+  --color-background: #0b0e16;        // Page background (blue-black)
+  --color-background-alt: #10141f;
+  --color-border: #232a3b;            // Hairline borders on dark
+  --color-border-light: #313a52;      // Slightly stronger separation
+
+  // Text — tertiary is tuned to clear WCAG AA 4.5:1 on raised surfaces
+  --color-text-primary: #eef1f8;
+  --color-text-secondary: #b7c0d6;
+  --color-text-tertiary: #8c96af;
+  --color-text-disabled: #5a6478;
+  --color-text-inverse: #0b0e16;     // Text on light / accent fills
+}
+
+// ============================================================================
+// 2. DEVICE-STATE ACCENTS + SURFACE GEOMETRY
+// ============================================================================
+
+:root {
+  // Warm "lit" accent (a light is ON) — glows like a real bulb
+  --color-active-warm: #ffbb3c;
+  --color-active-warm-light: #ffd479;
+  --gradient-active-warm: linear-gradient(150deg, #ffd479 0%, #ff9d2e 100%);
+  --glow-active-warm: 0 14px 32px -12px rgba(255, 170, 55, 0.7);
+
+  // Cool "active" accent (blinds open, other non-light device active).
+  // Deliberately an ELECTRIC CYAN, distinct from the brand iris, so a
+  // device-state fill never reads the same as an interactive control.
+  --gradient-active-cool: linear-gradient(150deg, #5fe3f2 0%, #1eb4da 100%);
+  --glow-active-cool: 0 14px 32px -12px rgba(34, 196, 230, 0.55);
+
+  // Text/icon color on any filled accent surface (gold or cyan)
+  --color-on-fill: #0a1018;
+  --color-on-fill-muted: rgba(10, 16, 24, 0.74);
+  --color-on-fill-faint: rgba(10, 16, 24, 0.52);
+
+  // Semantic geometry — keep every surface on this rhythm
+  --radius-tile: 22px;     // device tiles, panels, overlay sheet
+  --radius-chip: 18px;     // sensor chips, smaller cards, recessed groups
+  --radius-control: 12px;  // inputs, buttons, toggle segments
+  --tile-min-height: 122px;
+  --tap-target-min: 44px;  // WCAG minimum interactive size
+}
+
+// ============================================================================
+// 3. SPACING (8px base unit)
+// ============================================================================
+
+:root {
+  --space-0: 0;
+  --space-1: 0.25rem;    // 4px
+  --space-2: 0.5rem;     // 8px
+  --space-3: 0.75rem;    // 12px
+  --space-4: 1rem;       // 16px
+  --space-5: 1.25rem;    // 20px
+  --space-6: 1.5rem;     // 24px
+  --space-7: 1.75rem;    // 28px
+  --space-8: 2rem;       // 32px
+  --space-9: 2.25rem;    // 36px
+  --space-10: 2.5rem;    // 40px
+  --space-12: 3rem;      // 48px
+  --space-16: 4rem;      // 64px
+  --space-20: 5rem;      // 80px
+
+  // Aliases
+  --space-xs: var(--space-2);
+  --space-sm: var(--space-4);
+  --space-md: var(--space-6);
+  --space-lg: var(--space-8);
+  --space-xl: var(--space-12);
+  --space-2xl: var(--space-16);
+
+  --gap-xs: var(--space-2);
+  --gap-sm: var(--space-4);
+  --gap-md: var(--space-6);
+  --gap-lg: var(--space-8);
+}
+
+// ============================================================================
+// 4. TYPOGRAPHY
+// ============================================================================
+
+:root {
+  --font-family-primary: "Satoshi-Variable", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: "Courier New", Courier, monospace;
+
+  --font-size-xs: 0.75rem;      // 12px
+  --font-size-sm: 0.875rem;     // 14px
+  --font-size-base: 1rem;       // 16px
+  --font-size-lg: 1.125rem;     // 18px
+  --font-size-xl: 1.25rem;      // 20px
+  --font-size-2xl: 1.5rem;      // 24px
+  --font-size-3xl: 1.875rem;    // 30px
+  --font-size-4xl: 2.25rem;     // 36px
+
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0.025em;
+}
+
+// ============================================================================
+// 5. RADIUS · SHADOWS · MOTION · Z-INDEX
+// ============================================================================
+
+:root {
+  --radius-none: 0;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  --shadow-card: var(--shadow-sm);
+  --shadow-hover: var(--shadow-md);
+  --shadow-modal: var(--shadow-2xl);
+
+  // The resting-card lift used across tiles/panels (hairline top highlight +
+  // deep soft shadow) — reference it instead of re-typing the recipe.
+  --shadow-lift: inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 14px 30px -22px rgba(0, 0, 0, 0.9);
+
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --transition-fast: all var(--duration-fast) var(--ease-in-out);
+  --transition-normal: all var(--duration-normal) var(--ease-in-out);
+  --transition-slow: all var(--duration-slow) var(--ease-in-out);
+
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 900;
+  --z-modal: 1000;
+  --z-tooltip: 1100;
+  --z-notification: 1200;
+}
+
+// ============================================================================
+// 6. RGBA VARIANTS (for glows, focus rings, soft fills)
+// ============================================================================
+
+:root {
+  --color-primary-rgba-10: rgba(139, 123, 255, 0.1);
+  --color-primary-rgba-20: rgba(139, 123, 255, 0.2);
+  --color-primary-rgba-40: rgba(139, 123, 255, 0.4);
+  --color-primary-rgba-60: rgba(139, 123, 255, 0.6);
+
+  --color-error-rgba-10: rgba(255, 93, 108, 0.1);
+  --color-error-rgba-40: rgba(255, 93, 108, 0.4);
+
+  --color-success-rgba-10: rgba(47, 208, 154, 0.1);
+  --color-success-rgba-40: rgba(47, 208, 154, 0.4);
+
+  --color-warning-rgba-10: rgba(255, 186, 58, 0.1);
+  --color-warning-rgba-40: rgba(255, 186, 58, 0.4);
+
+  --color-info-rgba-10: rgba(91, 139, 240, 0.1);
+  --color-info-rgba-40: rgba(91, 139, 240, 0.4);
+}
+
+// ============================================================================
+// 7. BREAKPOINTS (SCSS — media queries can't read custom properties)
+// Mobile-first: base styles are the phone layout.
+//   ≥ $bp-desktop (640px)  — side nav rail, multi-column grids
+//   ≥ $bp-wide    (1000px) — Home two-pane (board + env rail)
+//   ≥ $bp-wall    (1400px) — wall-panel density
+// ============================================================================
+
+$bp-desktop: 640px;
+$bp-tablet-max: 1024px;
+$bp-wide: 1000px;
+$bp-wall: 1400px;
+
+@mixin desktop-up {
+  @media (min-width: $bp-desktop) {
+    @content;
+  }
+}
+
+@mixin mobile-only {
+  @media (max-width: ($bp-desktop - 1px)) {
+    @content;
+  }
+}
+
+@mixin wide-up {
+  @media (min-width: $bp-wide) {
+    @content;
+  }
+}
+
+@mixin wall-up {
+  @media (min-width: $bp-wall) {
+    @content;
+  }
+}

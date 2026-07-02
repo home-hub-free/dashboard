@@ -1,0 +1,111 @@
+// ============================================================================
+// VIEW · LOGIN
+// Full-screen gate shown before the app boots (main.ts adds `.active` when
+// mounting the form). A single centered editorial card.
+// ============================================================================
+
+#login-gate {
+  display: none;
+
+  &.active {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: var(--color-background);
+    box-sizing: border-box;
+  }
+}
+
+.login-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-tile);
+  box-shadow: var(--shadow-modal);
+  padding: 2rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-sizing: border-box;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: 0.01em;
+  color: var(--color-primary-dark);
+
+  i {
+    font-size: 1.6rem;
+    color: var(--color-primary);
+  }
+}
+
+.login-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--color-text-secondary);
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+
+  input {
+    width: 100%;
+    padding: 0.6rem 0.7rem;
+    font-size: 1rem;
+    border: 1px solid var(--color-primary-light);
+    border-radius: 8px;
+    background: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+
+    &:focus {
+      border-color: var(--color-primary-dark);
+    }
+  }
+}
+
+.login-error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-error);
+}
+
+.login-submit {
+  margin-top: 0.25rem;
+  padding: 0.7rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  transition: opacity 150ms ease, transform 120ms ease;
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &.busy {
+    opacity: 0.7;
+    cursor: default;
+  }
+}

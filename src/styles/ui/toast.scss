@@ -1,0 +1,74 @@
+// ============================================================================
+// UI LIBRARY · TOASTS
+// Transient popup messages (popup-message.ts). Floating layer → real shadow.
+// `from-top` / `from-bottom` come from the toasterOptions; the pop/hide classes
+// drive the entrance/exit (element must be removed ~180ms after .hide-toaster).
+// ============================================================================
+
+#popup-message-container {
+  .toaster-container {
+    position: absolute;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    padding: 10px 25px;
+    left: 50%;
+    width: max-content;
+    transform: translateY(0) translateX(-50%) scale(1);
+    box-shadow: var(--shadow-lg);
+    z-index: 5;
+
+    span,
+    i {
+      display: inline-block;
+    }
+
+    i {
+      vertical-align: sub;
+      font-size: 1.2em;
+    }
+
+    &.from-top,
+    &.from-bottom {
+      animation-duration: 180ms;
+      animation-timing-function: cubic-bezier(0.66, 0.18, 0.59, 1.17);
+    }
+
+    &.from-top {
+      top: 10px;
+    }
+
+    &.from-bottom {
+      bottom: 110px;
+    }
+  }
+}
+
+@keyframes pop-toast {
+  0% {
+    opacity: 0;
+    transform: translateY(0) translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateY(0) translateX(-50%) scale(1.05);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0) translateX(-50%) scale(0.95);
+  }
+  100% {
+    transform: translateY(0) translateX(-50%) scale(1);
+  }
+}
+
+.pop-toaster {
+  animation-name: pop-toast;
+}
+
+.hide-toaster {
+  opacity: 0;
+  transform-origin: center;
+  transform: translateY(0) translateX(-50%) scale(0.8) !important;
+  transition-property: opacity, transform;
+  transition-duration: 180ms;
+}

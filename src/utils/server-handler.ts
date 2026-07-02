@@ -557,6 +557,65 @@ export async function promoteGuest(guestId: string, userId: string, name?: strin
  * Ask the interactive agent via llm-gateway `/route` (buffered JSON path). Returns
  * the spoken reply text plus the action the agent took, if any.
  */
+// ── Assistant chat history (hub /assistant/chats → gateway chat store) ────────────────────────────
+// The hub is the auth boundary: it verifies the bearer token and scopes every call to the signed-in
+// member, so the dashboard never names an owner. Voice/satellite chats the member started (identity-
+// resolved by voiceprint) appear here too.
+
+export interface AssistantChatTurn {
+  role: "user" | "assistant";
+  content: string;
+  ts: string;
+  speakerId?: string;
+  speakerName?: string;
+}
+
+export interface AssistantChatMeta {
+  id: string;
+  surface: "dashboard" | "voice";
+  zone?: string;
+  title: string;
+  startedAt: string;
+  updatedAt: string;
+  closedAt?: string;
+  turnCount: number;
+}
+
+export interface AssistantChat extends Omit<AssistantChatMeta, "turnCount"> {
+  turns: AssistantChatTurn[];
+}
+
+export async function listAssistantChats(): Promise<AssistantChatMeta[]> {
+  const res = await fetch(server + "assistant/chats", { headers: authHeaders() });
+  if (res.status === 401) { handleUnauthorized(); return []; }
+  if (!res.ok) throw new Error(`chats failed (${res.status})`);
+  return (await res.json()).chats ?? [];
+}
+
+export async function getAssistantChat(id: string): Promise<AssistantChat | null> {
+  const res = await fetch(server + "assistant/chats/" + encodeURIComponent(id), { headers: authHeaders() });
+  if (res.status === 401) { handleUnauthorized(); return null; }
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`chat failed (${res.status})`);
+  return (await res.json()).chat ?? null;
+}
+
+/** End the live conversation so the next message starts a fresh thread ("New chat"). */
+export async function closeAssistantChat(): Promise<void> {
+  const res = await fetch(server + "assistant/chats/close", { method: "POST", headers: authHeaders() });
+  if (res.status === 401) { handleUnauthorized(); return; }
+  if (!res.ok) throw new Error(`close failed (${res.status})`);
+}
+
+export async function deleteAssistantChat(id: string): Promise<void> {
+  const res = await fetch(server + "assistant/chats/" + encodeURIComponent(id), {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (res.status === 401) { handleUnauthorized(); return; }
+  if (!res.ok) throw new Error(`delete failed (${res.status})`);
+}
+
 export async function askAgent(text: string, zone?: string): Promise<AgentReply> {
   // Carry the signed-in member's identity + prefs so the agent knows *who* is
   // asking and can personalise (greet by name, match tone). The llm-gateway

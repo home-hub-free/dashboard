@@ -31,9 +31,13 @@
             <option :foreach="zone in this.data.zoneOptions" :key="zone" :value="zone">${zone || '— Unassigned —'}</option>
         </select>
         <div class="zone-manage">
-            <input :id="this.data.id + '_zoneNew'" type="text" placeholder="New zone name" />
-            <button type="button" :onclick="this.actions.addZone(this.data)">Add</button>
-            <button type="button" :if="this.data.zone" class="danger" :onclick="this.actions.removeZone(this.data)">Remove “${this.data.zone}”</button>
+            <div class="zone-add-row">
+                <input :id="this.data.id + '_zoneNew'" type="text" placeholder="New zone name" />
+                <button type="button" :onclick="this.actions.addZone(this.data)">Add</button>
+            </div>
+            <button type="button" :if="this.data.zone" class="zone-remove" :onclick="this.actions.removeZone(this.data)">
+                <i class="iconoir-trash"></i> Remove “${this.data.zone}”
+            </button>
         </div>
     </div>
 

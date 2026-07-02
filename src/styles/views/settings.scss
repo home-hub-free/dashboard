@@ -1,0 +1,530 @@
+// ============================================================================
+// VIEW · SETTINGS
+// Household management, account, and the identity enrollments (Voice ID
+// conversation, Face ID live preview, calendar linking, people gallery).
+// Rows sit on the generic .panel-row surface (ui/panels.scss); this file adds
+// the settings-specific content inside them.
+// ============================================================================
+
+// ---- Household members --------------------------------------------------------
+.household-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.household-row {
+  .household-name {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .household-display {
+      font-weight: 600;
+    }
+
+    .household-you {
+      font-size: 0.72rem;
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      align-self: flex-start;
+    }
+  }
+
+  input,
+  select {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.9rem;
+    border: 1px solid var(--color-primary-light);
+    border-radius: 6px;
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    outline: none;
+  }
+}
+
+.household-tone-input {
+  min-width: 140px;
+}
+
+.household-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+
+  input {
+    flex: 1;
+    min-width: 120px;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.95rem;
+    border: 1px solid var(--color-primary-light);
+    border-radius: 6px;
+    background: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+  }
+}
+
+.household-error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-error);
+}
+
+.signed-in-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  .signed-in-who {
+    flex: 1;
+    font-size: 0.95rem;
+
+    .signed-in-name {
+      font-weight: 600;
+    }
+  }
+}
+
+// ---- Identity cards (Voice ID / Face ID / Calendar) ------------------------------
+// A recessed sub-card inside the account panel.
+.voice-id {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--color-surface-tertiary);
+  border-radius: var(--radius-chip);
+  padding: var(--space-4);
+
+  .voice-id-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  .voice-id-title {
+    font-weight: 600;
+  }
+
+  .voice-id-count {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    margin-left: auto;
+  }
+
+  .voice-id-hint {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--color-text-secondary);
+    // Long unbreakable tokens (the SA email) must wrap mid-string so they never
+    // force the card wider than the viewport.
+    overflow-wrap: anywhere;
+  }
+
+  .voice-id-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    // Flex containers refuse to shrink below content by default; 0 lets the
+    // row (and the card) narrow to the viewport.
+    min-width: 0;
+  }
+
+  // Calendar link rows reuse .voice-id-actions; the leading label names the
+  // target, then the connect button or a "connected" badge follows.
+  .cal-row-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    min-width: 0;
+    overflow-wrap: anywhere; // calendar summaries are often emails
+  }
+
+  .cal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  // Added but not shared with the service account yet — amber prompt.
+  .voice-id-count.pending {
+    color: var(--color-warning);
+    font-style: italic;
+  }
+
+  .voice-id-msg {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+  }
+}
+
+// ---- Guided enrollment (Voice ID conversation + Face ID live preview) --------------
+// A recessed panel opened for the session. The waveform <canvas> and camera
+// <video> live here and must NOT be torn down by per-phase updates — bindrjs
+// only re-renders the gated :if/interpolation nodes around them.
+.enroll-card {
+  margin-top: 0.75rem;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--color-surface-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-chip);
+}
+
+.enroll-progress {
+  display: flex;
+  align-items: center;
+
+  .enroll-step {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+  }
+}
+
+// Chat-style bubbles: the line the user reads, and Aura's spoken reply.
+.enroll-bubble {
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+
+  .enroll-bubble-who {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-tertiary);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .enroll-say {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.35;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .enroll-said {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    color: var(--color-text-primary);
+  }
+
+  &.you {
+    background: var(--color-surface-tertiary);
+  }
+
+  &.aura {
+    background: var(--color-primary-rgba-10);
+    border: 1px solid var(--color-primary-rgba-20);
+
+    .enroll-bubble-who {
+      color: var(--color-primary-light);
+    }
+  }
+}
+
+// Live mic waveform — drawn to the canvas (theme colors read off :root).
+.wave-canvas {
+  display: block;
+  width: 100%;
+  height: 56px;
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  transition: box-shadow 200ms ease;
+
+  &.live {
+    box-shadow: inset 0 0 0 1px var(--color-primary-rgba-40);
+  }
+}
+
+.enroll-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+
+  &.warn {
+    color: var(--color-warning);
+  }
+}
+
+.enroll-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+
+  .busy {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .face-auto-note {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-right: auto;
+  }
+}
+
+// ---- Face ID live stage ------------------------------------------------------------
+.face-stage {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 4 / 3;
+  margin: 0 auto;
+  border-radius: var(--radius-chip);
+  overflow: hidden;
+  background: #000;
+
+  .face-cam {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1); // mirror the preview so it reads like a mirror
+  }
+
+  // Oval guide; turns green when the face is framed.
+  .face-oval {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 46%;
+    height: 74%;
+    transform: translate(-50%, -50%);
+    border: 3px dashed rgba(255, 255, 255, 0.65);
+    border-radius: 50%;
+    pointer-events: none;
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+  }
+
+  &.ready .face-oval {
+    border-style: solid;
+    border-color: var(--color-success);
+    box-shadow: 0 0 0 9999px var(--color-success-rgba-10);
+  }
+
+  .face-count {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 4rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+  }
+
+  .face-ok {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--color-success);
+    color: var(--color-on-fill);
+    font-size: 1rem;
+  }
+}
+
+.face-pose {
+  text-align: center;
+
+  .face-pose-label {
+    margin: 0;
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .face-pose-hint {
+    margin: 0.15rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+  }
+}
+
+// ---- People the cameras have seen ------------------------------------------------------
+.people-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.person-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+  flex-wrap: wrap;
+}
+
+.person-face {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: 0 0 auto;
+  background: var(--color-surface-secondary);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .person-face-empty {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-tertiary);
+  }
+
+  &.tappable {
+    cursor: zoom-in;
+  }
+}
+
+.person-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 6rem;
+
+  .person-label {
+    font-weight: 600;
+  }
+
+  .person-tag {
+    font-size: 0.78rem;
+    color: var(--color-text-secondary);
+  }
+}
+
+.person-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.person-promote {
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  // A <select> sizes to its widest option; as a flex item it won't shrink
+  // below that — cap it so a long option truncates instead of overflowing.
+  min-width: 0;
+  max-width: 100%;
+}
+
+.person-empty {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+}
+
+// ---- Face lightbox (tapped gallery crop, full-size) ----------------------------------------
+.face-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.face-zoom-card {
+  position: relative;
+  max-width: min(92vw, 420px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-tile);
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+}
+
+.face-zoom-img {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  background: var(--color-surface-secondary);
+}
+
+.face-zoom-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px 14px;
+
+  .face-zoom-label {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+  }
+
+  .face-zoom-sub {
+    font-size: 0.82rem;
+    color: var(--color-text-tertiary);
+  }
+}
+
+.face-zoom-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  box-shadow: none;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
+}

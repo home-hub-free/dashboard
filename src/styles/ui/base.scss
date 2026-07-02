@@ -1,0 +1,158 @@
+// ============================================================================
+// UI LIBRARY · BASE
+// Global element defaults, the ambient page background, shared keyframes and
+// accessibility guards. Everything here is app-wide; component styles live in
+// the other ui/ files.
+// ============================================================================
+
+* {
+  -ms-touch-action: manipulation;
+  touch-action: manipulation;
+}
+
+body {
+  font-family: "Satoshi-Variable";
+  margin: 0;
+  color: var(--color-text-primary);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+
+  // Ambient depth: two faint brand-colored glows over the blue-black base.
+  background:
+    radial-gradient(130% 90% at 86% -14%, rgba(139, 123, 255, 0.12), transparent 52%),
+    radial-gradient(120% 85% at -10% 112%, rgba(34, 196, 230, 0.09), transparent 55%),
+    #080a12;
+  background-attachment: fixed;
+}
+
+// Data-forward numerals everywhere the app renders (temps, times, counts align).
+#main-content,
+#overlay-modal,
+#login-gate {
+  font-feature-settings: "tnum" 1, "ss01" 1;
+}
+
+@media (min-width: 1024px) {
+  body {
+    font-size: 15px;
+  }
+}
+
+// ============================================================================
+// Shared keyframes — reference these; don't re-declare per component.
+// ============================================================================
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// Content pop-in used by the overlay sheet (via `.animated`).
+@keyframes active-menu-item {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  80% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+// View entrances (see UI-LIBRARY.md §9 Motion): rise for content regions,
+// fade for whole views. Applied per-view; declared once here.
+@keyframes rd-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rd-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// ============================================================================
+// Tiny global utilities
+// ============================================================================
+
+.animated {
+  animation-duration: 270ms;
+  animation-fill-mode: forwards;
+  animation-name: active-menu-item;
+}
+
+// Continuous rotation for any font icon / SVG (loading, live fan…).
+.spin {
+  animation: spin 2s linear infinite;
+  display: inline-block;
+  transform-origin: center;
+}
+
+// Icon color semantics
+.iconoir-light-bulb {
+  color: var(--color-text-disabled);
+}
+
+.iconoir-light-bulb-on {
+  color: var(--color-warning); // golden — a lit bulb
+}
+
+// ============================================================================
+// Accessibility guards (app-wide)
+// ============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  input,
+  textarea,
+  select,
+  button {
+    border-width: 2px;
+  }
+
+  label {
+    font-weight: var(--font-weight-bold);
+  }
+
+  input:focus-visible,
+  button:focus-visible,
+  select:focus-visible {
+    outline-width: 3px;
+  }
+}

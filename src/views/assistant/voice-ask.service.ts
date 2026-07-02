@@ -9,6 +9,7 @@ import {
   VoiceTurnStages,
 } from "../../utils/server-handler";
 import { AssistantMenuState } from "./assistant.model";
+import { scrollTranscriptToBottom } from "./chats.service";
 
 /** Monotonic clock for stage timings (immune to wall-clock jumps); ms. */
 const now = () =>
@@ -40,6 +41,9 @@ export class VoiceAskServiceClass {
   private stream?: MediaStream;
   private chunks: Blob[] = [];
   private audio = new Audio();
+  /** Fired after a turn completes OK — the assistant tab re-syncs its persisted chat panel, then the
+   *  in-flight bubbles are cleared (the stored transcript now carries the exchange). */
+  onTurnComplete?: () => void | Promise<void>;
   // Per-turn E2E timing: id minted at record start; capture stamps bracket the recording.
   private turnId = "";
   private tRecStart = 0;
@@ -110,6 +114,7 @@ export class VoiceAskServiceClass {
     this.state.voiceTranscript = msg;
     this.state.voiceReply = "";
     this.state.voiceAction = "";
+    scrollTranscriptToBottom();
 
     try {
       this.state.voiceState = "thinking";
@@ -120,6 +125,7 @@ export class VoiceAskServiceClass {
       tool = r.action && "tool" in r.action ? r.action.tool : undefined;
       this.state.voiceReply = r.speech;
       this.state.voiceAction = actionLabel(r.action);
+      scrollTranscriptToBottom();
 
       if (r.speech) {
         this.state.voiceState = "speaking";
@@ -132,6 +138,7 @@ export class VoiceAskServiceClass {
       }
       ok = true;
       this.state.voiceState = "idle";
+      void this.syncChats();
     } catch (err: any) {
       const m: string = err?.message || "Request failed";
       errMsg = m;
@@ -188,6 +195,7 @@ export class VoiceAskServiceClass {
       }
       transcript = stt.text;
       this.state.voiceTranscript = stt.text;
+      scrollTranscriptToBottom();
 
       this.state.voiceState = "thinking";
       t = now();
@@ -197,6 +205,7 @@ export class VoiceAskServiceClass {
       tool = r.action && "tool" in r.action ? r.action.tool : undefined;
       this.state.voiceReply = r.speech;
       this.state.voiceAction = actionLabel(r.action);
+      scrollTranscriptToBottom();
 
       if (r.speech) {
         this.state.voiceState = "speaking";
@@ -209,6 +218,7 @@ export class VoiceAskServiceClass {
       }
       ok = true;
       this.state.voiceState = "idle";
+      void this.syncChats();
     } catch (err: any) {
       const msg: string = err?.message || "Voice request failed";
       errMsg = msg;
@@ -224,6 +234,27 @@ export class VoiceAskServiceClass {
         stages,
         totalMs: Math.round(now() - turnStart) + (stages.capture ?? 0),
       });
+    }
+  }
+
+  /** Post-turn sync: let the chat panel pull the persisted turns, THEN drop the in-flight bubbles
+   *  so the exchange isn't shown twice — but ONLY once the refreshed transcript actually contains
+   *  this turn. If the store hasn't caught up (a persist/fetch race, a gateway hiccup), clearing
+   *  would make the user's words visibly vanish; the pending bubbles are the safe fallback view. */
+  private async syncChats() {
+    const sent = this.state.voiceTranscript;
+    try {
+      await this.onTurnComplete?.();
+      const stored = (this.state.activeTurns ?? []).some(
+        (t) => t.role === "user" && t.content === sent,
+      );
+      if (stored) {
+        this.state.voiceTranscript = "";
+        this.state.voiceReply = "";
+        this.state.voiceAction = "";
+      }
+    } catch {
+      /* keep the pending bubbles as the fallback view */
     }
   }
 

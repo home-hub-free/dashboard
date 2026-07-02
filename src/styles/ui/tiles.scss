@@ -1,0 +1,641 @@
+// ============================================================================
+// UI LIBRARY · DEVICE TILE + SENSOR CHIP
+// The glanceable heart of the dashboard. The whole tile is the switch for
+// single-actuator devices; channels render one generic control each (chip /
+// slider / stepper / readout — chosen by channel.control in decorateDevice).
+// Lit tiles fill GOLD (a light) or CYAN (another device) and flip their text
+// to the dark on-fill ink. See UI-LIBRARY.md §5.
+// ============================================================================
+
+// ---- Device tile ---------------------------------------------------------------
+.device-tile {
+  position: relative;
+  min-height: var(--tile-min-height);
+  box-sizing: border-box;
+  padding: 14px;
+  border-radius: var(--radius-tile);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 180ms var(--ease-out), box-shadow 240ms var(--ease-in-out),
+    background 240ms var(--ease-in-out), border-color 240ms var(--ease-in-out);
+
+  &.wide {
+    grid-column: span 2;
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  // "Locked to manual" reads as a dashed edge (plus the .tile-lock badge).
+  &.manual {
+    border-style: dashed;
+  }
+}
+
+// Resting-tile depth (hairline top highlight + soft shadow — not elevation).
+#main-content #tab-content .device-tile {
+  box-shadow: var(--shadow-lift);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #main-content #tab-content .device-tile:not(.cat-camera):hover {
+    transform: translateY(-2px);
+  }
+}
+
+// State-accent bar: a 3px left bar encoding state — muted when off, on-fill ink
+// when lit. Camera is excluded (its image is full-bleed).
+.device-tile:not(.cat-camera)::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 16px;
+  bottom: 16px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-text-tertiary);
+  opacity: 0.3;
+  transition: background 220ms var(--ease-in-out), opacity 220ms var(--ease-in-out);
+  z-index: 1;
+}
+
+.device-tile.cat-light.on::before,
+.device-tile.cat-dimmable-light.on::before,
+.device-tile.cat-blinds.on::before {
+  background: var(--color-on-fill);
+  opacity: 0.42;
+}
+
+.tile-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 94px;
+}
+
+.tile-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.tile-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-size: 22px;
+  transition: all 220ms var(--ease-in-out);
+}
+
+.tile-edit {
+  position: relative;
+  color: var(--color-text-tertiary);
+  font-size: 22px;
+  line-height: 1;
+  padding: 2px;
+  border-radius: 8px;
+
+  // Compact glyph, full 44px touch target via invisible hit-area expansion —
+  // no layout shift (UI-LIBRARY.md §8 Tap targets).
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -11px;
+  }
+}
+
+.tile-body {
+  margin-top: auto;
+}
+
+.tile-name {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-size: 1.05rem;
+  line-height: 1.15;
+}
+
+.tile-meta {
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tile-status {
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+}
+
+// "Manual" lock badge — surfaced so the resident can SEE a tile is pinned to
+// manual and ignoring automations.
+.tile-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.01em;
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  box-shadow: inset 0 0 0 1px var(--color-border-light);
+
+  i {
+    font-size: 0.85rem;
+  }
+}
+
+// On a lit (filled) tile the badge inverts to the dark-on-fill ink.
+.device-tile.cat-light.on .tile-lock,
+.device-tile.cat-dimmable-light.on .tile-lock,
+.device-tile.cat-blinds.on .tile-lock {
+  background: rgba(0, 0, 0, 0.16);
+  color: var(--color-on-fill);
+  box-shadow: none;
+}
+
+// ---- Channel controls ------------------------------------------------------------
+// One control per channel. The wrapper uses display:contents so each control
+// becomes a direct flex item of .tile-controls.
+.tile-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.channel-control {
+  display: contents;
+}
+
+// Brightness slider (dimmable lights)
+.tile-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  margin-top: 12px;
+  border-radius: 999px;
+  background: var(--color-surface-secondary);
+  outline: none;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  &::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: #fff;
+  }
+}
+
+.tile-controls .tile-slider {
+  flex: 1 1 100%;
+  margin-top: 4px;
+}
+
+// Boolean channel → pill chip (cooler fan/water). Content-width, state-colored.
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  font-weight: var(--font-weight-medium);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 180ms var(--ease-in-out);
+
+  // ~36px visual height, expanded to the 44px touch minimum vertically.
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+
+  &:hover:not(:disabled) {
+    transform: none;
+    box-shadow: none;
+  }
+
+  &.on {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+  }
+
+  i.spin {
+    animation: spin 1s linear infinite;
+  }
+}
+
+// Number setting → ± stepper (cooler target)
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  .stepper-readout {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+  }
+
+  .step {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: var(--color-surface-secondary);
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    cursor: pointer;
+
+    i {
+      font-size: 16px;
+    }
+
+    // 30px visual, 44px touch target.
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -7px;
+    }
+  }
+}
+
+// Sensor channel → readout (cooler room/unit temps)
+.readout {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+
+  .readout-val {
+    font-size: 1.4rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+
+    &.reached {
+      color: var(--color-success);
+    }
+  }
+
+  .readout-label {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+  }
+}
+
+// ---- Lit states --------------------------------------------------------------------
+// Lights & dimmables glow warm gold when on (reads like a real bulb).
+.device-tile.cat-light.on,
+.device-tile.cat-dimmable-light.on {
+  background: var(--gradient-active-warm);
+  border-color: transparent;
+  box-shadow: var(--glow-active-warm);
+}
+
+// Blinds open → electric cyan (distinct from "a light is on").
+.device-tile.cat-blinds.on {
+  background: var(--gradient-active-cool);
+  border-color: transparent;
+  box-shadow: var(--glow-active-cool);
+}
+
+// Dark-on-light text/icon treatment for any filled tile.
+.device-tile.cat-light.on,
+.device-tile.cat-dimmable-light.on,
+.device-tile.cat-blinds.on {
+  .tile-icon {
+    background: rgba(0, 0, 0, 0.16);
+    color: var(--color-on-fill);
+  }
+
+  .tile-name {
+    color: var(--color-on-fill);
+  }
+
+  .tile-status {
+    color: var(--color-on-fill-muted);
+  }
+
+  .tile-edit {
+    color: var(--color-on-fill-faint);
+  }
+
+  .tile-slider {
+    background: rgba(0, 0, 0, 0.22);
+
+    &::-webkit-slider-thumb {
+      background: var(--color-on-fill);
+    }
+
+    &::-moz-range-thumb {
+      background: var(--color-on-fill);
+    }
+  }
+}
+
+// ---- Evaporative cooler (wide tile) ---------------------------------------------------
+.device-tile.cat-evap-cooler {
+  padding: 14px 16px;
+
+  .cooler {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 14px;
+    height: 100%;
+  }
+
+  .cooler-main {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cooler-temps {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+
+    .room-temp {
+      font-size: 2rem;
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      line-height: 1;
+
+      &.reached {
+        color: var(--color-success);
+      }
+    }
+
+    .target-temp {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.95rem;
+      color: var(--color-text-secondary);
+    }
+  }
+
+  .cooler-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .tile-controls {
+    gap: 14px;
+
+    .readout .readout-val {
+      font-size: 1.6rem;
+    }
+  }
+}
+
+// ---- Camera (wide, full-bleed) -----------------------------------------------------------
+.device-tile.cat-camera {
+  padding: 0;
+  min-height: 184px;
+  background: #000;
+  border-color: transparent;
+
+  .cam-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 184px;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  .cam-placeholder {
+    width: 100%;
+    height: 184px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--color-text-tertiary);
+    background: var(--color-surface-secondary);
+
+    i {
+      font-size: 46px;
+    }
+
+    span {
+      font-size: 0.85rem;
+    }
+  }
+
+  .cam-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    color: #fff;
+    font-weight: var(--font-weight-semibold);
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent);
+
+    i {
+      font-size: 18px;
+    }
+  }
+
+  // "Who is here" headline — bottom-anchored under the live view.
+  .cam-who {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: var(--font-weight-semibold);
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.66), transparent);
+
+    i {
+      font-size: 18px;
+      opacity: 0.9;
+    }
+  }
+
+  // Stream/detection health pill — a traffic-light dot: frames flowing?
+  // actually detecting, or running the null stub? Tooltip carries raw counters.
+  .cam-health {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+
+    .cam-health-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-text-secondary);
+      box-shadow: 0 0 6px currentColor;
+    }
+
+    &.cam-health--ok .cam-health-dot {
+      background: var(--color-success);
+      box-shadow: 0 0 7px var(--color-success);
+    }
+
+    &.cam-health--warn .cam-health-dot {
+      background: var(--color-warning);
+      box-shadow: 0 0 7px var(--color-warning);
+    }
+
+    &.cam-health--down .cam-health-dot {
+      background: var(--color-error);
+      box-shadow: 0 0 7px var(--color-error);
+    }
+  }
+}
+
+// ---- Sensor chip ---------------------------------------------------------------------------
+// Read-only environment reading: boolean sensors show a state dot, value
+// sensors two metrics. Lives in the Home env band / rail (views/home.scss).
+.sensor-chip {
+  flex: 0 0 auto;
+  min-width: 132px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-chip);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 200ms var(--ease-in-out), transform 120ms ease;
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &.active {
+    border-color: var(--color-success);
+  }
+
+  .chip-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+
+    i {
+      font-size: 18px;
+    }
+
+    .chip-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 110px;
+    }
+  }
+
+  .chip-reading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.05rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--color-gray-500);
+      transition: all 200ms ease;
+
+      &.on {
+        background: var(--color-success);
+        box-shadow: 0 0 0 4px var(--color-success-rgba-10);
+      }
+    }
+
+    &.th {
+      gap: 16px;
+    }
+
+    .metric {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.98rem;
+
+      i {
+        font-size: 15px;
+        color: var(--color-text-tertiary);
+      }
+    }
+  }
+}

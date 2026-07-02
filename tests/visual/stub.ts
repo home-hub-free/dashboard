@@ -54,4 +54,12 @@ export async function stubBackend(page: Page) {
   await page.route("**/speaker/health", (r) => r.fulfill(json({ ok: true })));
   await page.route("**/speaker/profiles", (r) => r.fulfill(json(fx.profiles)));
   await page.route("**/memory/candidates", (r) => r.fulfill(json(fx.candidates)));
+  // Assistant chat history: list + per-chat transcript (close/delete fall through to the catch-all).
+  await page.route("**/api/assistant/chats", (r) =>
+    r.request().method() === "GET" ? r.fulfill(json({ ok: true, chats: fx.chatMetas })) : r.fulfill(json({ ok: true })));
+  await page.route("**/api/assistant/chats/*", (r) => {
+    const id = r.request().url().split("/").pop()!.split("?")[0];
+    const chat = fx.chatFull[id];
+    return chat ? r.fulfill(json({ ok: true, chat })) : r.fulfill({ status: 404, contentType: "application/json", body: '{"error":"not found"}' });
+  });
 }

@@ -53,9 +53,26 @@ for (const vp of VIEWPORTS) {
     test("assistant", async ({ page }) => {
       await gotoHome(page);
       await clickMenu(page, "Assistant");
-      await page.waitForSelector(".assistant-view", { timeout: 20_000 }).catch(() => {});
-      await page.waitForTimeout(600);
+      await page.waitForSelector(".chat-panel", { timeout: 20_000 }).catch(() => {});
+      await page.waitForTimeout(800); // chat list + live transcript load
       await shot(page, "assistant", vp.tag);
+    });
+
+    test("assistant history", async ({ page }) => {
+      // An OLDER (closed) chat open read-only: list selection, the room chip on the voice row,
+      // the "ended" badge, and the resume hint all in one shot. Mobile first shows the list pane.
+      await gotoHome(page);
+      await clickMenu(page, "Assistant");
+      await page.waitForSelector(".chat-panel", { timeout: 20_000 }).catch(() => {});
+      await page.waitForTimeout(400);
+      if (vp.tag === "mobile") {
+        await page.locator(".chat-back").click().catch(() => {});
+        await page.waitForTimeout(200);
+        await shot(page, "assistant-chatlist", vp.tag);
+      }
+      await page.locator(".chat-row", { hasText: "pon música" }).first().click();
+      await page.waitForTimeout(600);
+      await shot(page, "assistant-history", vp.tag);
     });
 
     test("settings", async ({ page }) => {

@@ -2,58 +2,129 @@
     <header class="page-head">
         <div class="ph-kicker">Assistant</div>
         <h1 class="ph-title">Talk to your <em>home.</em></h1>
-        <p class="ph-lede">Hold to ask out loud — or type your request when you can't speak. Lights, climate, the forecast, your day.</p>
     </header>
 
-    <section class="assistant-section voice-ask">
-        <p class="section-title">Ask the assistant</p>
-        <button
-            class="voice-talk"
-            :class:recording="this.voiceState === 'recording'"
-            :class:busy="this.voiceState !== 'idle' && this.voiceState !== 'recording'"
-            :onpointerdown="this.voiceStart()"
-            :onpointerup="this.voiceStop()"
-            :onpointerleave="this.voiceStop()"
-            oncontextmenu="return false;"
-        >
-            <span class="voice-mic"><i class="iconoir-mic"></i></span>
-            <span :if="this.voiceState === 'idle'">Hold to talk</span>
-            <span :if="this.voiceState === 'recording'">Listening… release to send</span>
-            <span :if="this.voiceState === 'transcribing'">Transcribing…</span>
-            <span :if="this.voiceState === 'thinking'">Thinking…</span>
-            <span :if="this.voiceState === 'speaking'">Speaking…</span>
-        </button>
-
-        <div class="ask-type-divider"><span>or type your request</span></div>
-
-        <div class="ask-type">
-            <textarea
-                class="assistant-textarea"
-                name="prompt"
-                id="prompt"
-                placeholder="e.g. Turn off the kitchen lights"
-                :onkeydown="this.promptKey(event)"
-                :oninput="this.promptText = event.target.value"
-            >${this.promptText}</textarea>
-            <button
-                class="add-range-btn"
-                :class:busy="this.voiceState !== 'idle'"
-                :onmouseup="this.promptSend()"
-            >
-                <i class="iconoir-send-diagonal"></i> Send as you
-            </button>
-        </div>
-
-        <div class="voice-convo" :if="this.voiceTranscript">
-            <div class="voice-bubble you">
-                <span class="voice-who">You</span>
-                <span>${this.voiceTranscript}</span>
+    <section class="chat-panel" :class:pane-chat="this.mobilePane === 'chat'">
+        <!-- ── Conversation history (left pane) ─────────────────────────── -->
+        <aside class="chat-list">
+            <div class="chat-list-head">
+                <span class="chat-list-title">Conversations</span>
+                <button class="chat-new" :onmouseup="this.chatNew()" title="Start a new conversation">
+                    <i class="iconoir-plus"></i> New
+                </button>
             </div>
-            <div class="voice-bubble agent" :if="this.voiceReply">
-                <span class="voice-who">Assistant</span>
-                <span>${this.voiceReply}</span>
-                <span class="voice-chip" :if="this.voiceAction"><i class="iconoir-flash"></i> ${this.voiceAction}</span>
+
+            <div class="chat-list-empty" :if="this.chatsLoaded && !this.chatRows.length && !this.chatsError">
+                Nothing yet — say or type something and it will be saved here. Conversations you start
+                by voice around the house show up too.
             </div>
-        </div>
+            <div class="chat-list-empty error" :if="this.chatsError">${this.chatsError}</div>
+
+            <div class="chat-rows">
+                <div :foreach="row in this.chatRows"
+                     class="chat-row"
+                     :class:active="row.active"
+                     :onmouseup="this.chatSelect(row.id)">
+                    <span class="chat-live-dot" :if="row.live" title="Current conversation"></span>
+                    <span class="chat-row-main">
+                        <span class="chat-row-title">${row.title}</span>
+                        <span class="chat-row-sub">
+                            <i class="iconoir-mic" :if="row.voice"></i>
+                            <span class="chat-zone" :if="row.zone">${row.zone}</span>
+                            <span class="chat-when">${row.when}</span>
+                        </span>
+                    </span>
+                    <button class="chat-delete" title="Delete conversation"
+                            :onmouseup="this.chatDelete(row.id, event)">
+                        <i class="iconoir-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ── Open transcript + composer (right pane) ──────────────────── -->
+        <section class="chat-main">
+            <div class="chat-main-head">
+                <button class="chat-back" :onmouseup="this.showList()" title="All conversations">
+                    <i class="iconoir-nav-arrow-left"></i>
+                </button>
+                <span class="chat-main-title" :if="this.activeMeta && this.activeMeta.surface === 'voice'">
+                    <i class="iconoir-mic"></i> Spoken in ${this.activeMeta.zone}
+                </span>
+                <span class="chat-main-title" :if="!this.activeMeta || this.activeMeta.surface !== 'voice'">
+                    Chat with Aura
+                </span>
+                <span class="chat-readonly" :if="this.activeMeta && this.activeMeta.closed">ended</span>
+            </div>
+
+            <div class="chat-transcript" id="chat-transcript">
+                <div class="chat-hello" :if="!this.activeTurns.length && !this.voiceTranscript">
+                    Ask for a light, the weather, your day — hold the mic or type below.
+                </div>
+
+                <div :foreach="turn in this.activeTurns"
+                     class="chat-bubble"
+                     :class:you="turn.role === 'user'"
+                     :class:aura="turn.role === 'assistant'">
+                    <span class="bubble-who" :if="turn.role === 'assistant'">Aura</span>
+                    <span class="bubble-who" :if="turn.role === 'user'">${turn.speakerName || 'You'}</span>
+                    <span class="bubble-text">${turn.content}</span>
+                    <span class="bubble-time">${turn.time}</span>
+                </div>
+
+                <!-- The in-flight exchange (streams in before the store round-trips). -->
+                <div class="chat-bubble you pending" :if="this.voiceTranscript">
+                    <span class="bubble-who">You</span>
+                    <span class="bubble-text">${this.voiceTranscript}</span>
+                </div>
+                <div class="chat-bubble aura pending" :if="this.voiceReply">
+                    <span class="bubble-who">Aura</span>
+                    <span class="bubble-text">${this.voiceReply}</span>
+                    <span class="voice-chip" :if="this.voiceAction"><i class="iconoir-flash"></i> ${this.voiceAction}</span>
+                </div>
+            </div>
+
+            <!-- Viewing an ended chat: the composer moves you back to the live thread. -->
+            <div class="chat-resume" :if="this.activeMeta && this.activeMeta.closed">
+                This conversation has ended — new messages start from the current chat.
+            </div>
+
+            <div class="chat-composer">
+                <button
+                    class="voice-talk"
+                    :class:recording="this.voiceState === 'recording'"
+                    :class:busy="this.voiceState !== 'idle' && this.voiceState !== 'recording'"
+                    :onpointerdown="this.voiceStart()"
+                    :onpointerup="this.voiceStop()"
+                    :onpointerleave="this.voiceStop()"
+                    oncontextmenu="return false;"
+                    title="Hold to talk"
+                >
+                    <span class="voice-mic"><i class="iconoir-mic"></i></span>
+                    <span class="voice-talk-label" :if="this.voiceState === 'idle'">Hold to talk</span>
+                    <span class="voice-talk-label" :if="this.voiceState === 'recording'">Listening…</span>
+                    <span class="voice-talk-label" :if="this.voiceState === 'transcribing'">Transcribing…</span>
+                    <span class="voice-talk-label" :if="this.voiceState === 'thinking'">Thinking…</span>
+                    <span class="voice-talk-label" :if="this.voiceState === 'speaking'">Speaking…</span>
+                </button>
+                <textarea
+                    class="chat-input"
+                    name="prompt"
+                    id="prompt"
+                    rows="1"
+                    placeholder="Type a request — e.g. turn off the kitchen lights"
+                    :onkeydown="this.promptKey(event)"
+                    :oninput="this.promptText = event.target.value; this.promptGrow(event.target)"
+                >${this.promptText}</textarea>
+                <button
+                    class="chat-send"
+                    :class:busy="this.voiceState !== 'idle'"
+                    :onmouseup="this.promptSend()"
+                    title="Send"
+                >
+                    <i class="iconoir-send"></i>
+                </button>
+            </div>
+        </section>
     </section>
 </div>

@@ -1,0 +1,128 @@
+// ============================================================================
+// UI LIBRARY · PANELS, ROWS, PILLS
+// The resting-surface content card ("panel"), the recessed row that lives
+// inside one, and the small generic bits (pill badge, round icon bubble,
+// status dot). `.assistant-section` / `.household-row` are the legacy aliases
+// already in the markup; new screens use the generic names.
+// ============================================================================
+
+// ---- Panel: a resting content card ------------------------------------------
+// Flat surface + hairline border + the standard lift. NOT for floating layers
+// (those get --shadow-modal; see ui/overlay.scss).
+.panel,
+.assistant-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-tile);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: var(--shadow-lift);
+}
+
+// Panels ease in when their view mounts.
+#tab-content .panel,
+#tab-content .assistant-section {
+  animation: rd-rise 420ms var(--ease-out) both;
+}
+
+// Helper copy directly under a panel's .section-title.
+.section-hint {
+  margin: -4px 0 var(--space-3);
+  font-size: 0.86rem;
+  color: var(--color-text-tertiary);
+}
+
+// ---- Recessed row inside a panel ---------------------------------------------
+.panel-row,
+.household-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-tertiary);
+}
+
+// ---- Pill badge -----------------------------------------------------------------
+// Small inline metadata chip (a room name, a count, "read-only", "established").
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.74rem;
+  font-weight: var(--font-weight-semibold);
+  background: var(--color-surface-tertiary);
+  color: var(--color-text-secondary);
+
+  i {
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+
+  &.pill-success {
+    background: var(--color-success-rgba-10);
+    color: var(--color-success-light);
+  }
+
+  &.pill-brand {
+    background: var(--color-primary-rgba-20);
+    color: var(--color-primary-light);
+  }
+
+  &.pill-outline {
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
+  }
+}
+
+// ---- Round icon bubble --------------------------------------------------------------
+// The circled icon that leads a header row (overlay header, automation card
+// head, discovery spark). Sizes: default 40px, .sm 34px, .lg 46px.
+.icon-bubble {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-surface-tertiary);
+  color: var(--color-text-secondary);
+  font-size: 1.15rem;
+
+  &.sm {
+    width: 34px;
+    height: 34px;
+    font-size: 1.05rem;
+  }
+
+  &.lg {
+    width: 46px;
+    height: 46px;
+    font-size: 1.4rem;
+  }
+
+  &.brand {
+    background: var(--color-primary-rgba-20);
+    color: var(--color-primary-light);
+  }
+}
+
+// ---- Status dot -----------------------------------------------------------------------
+// The live-state dot pattern (rule enabled, sensor detected, live thread).
+.state-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--color-gray-600);
+
+  &.on {
+    background: var(--color-success);
+    box-shadow: 0 0 8px var(--color-success-rgba-40);
+  }
+}
