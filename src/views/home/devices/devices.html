@@ -44,14 +44,56 @@
                     <i class="iconoir-group"></i>
                     <span>${device.who}</span>
                 </div>
-                <!-- Stream/detection health: frames flowing? backend detecting or null stub? -->
-                <div :class="device.camHealthClass" :title="device.camHealthTitle" :if="device.camHealth">
+                <!-- Stream/detection health: frames flowing? backend detecting or null stub?
+                     NB: :class is single-token add/remove (bindrjs class-handler) — the
+                     static class lives here, the state modifier is the bound token. -->
+                <div class="cam-health" :class="device.camHealthClass" :title="device.camHealthTitle" :if="device.camHealth">
                     <span class="cam-health-dot"></span>
                     <span>${device.camHealth}</span>
                 </div>
                 <div class="cam-label">
                     <i class="iconoir-video-camera"></i>
                     <span>${device.name}</span>
+                </div>
+            </div>
+
+            <!-- CAMERA CONTROLS (ONVIF, per-capability): D-pad = one short auto-stopped
+                 nudge per tap; chips recall saved views; the tune button opens the
+                 overlay (save/delete views, image sliders). Fixed cams (no PTZ) show
+                 only the tune button; non-ONVIF cams (ESP32) show no bar at all. -->
+            <div
+                class="cam-ctrl"
+                :if="device.deviceCategory === 'camera' && (device.ptz || device.imagingCaps)"
+                :onclick="this.stop(event)"
+            >
+                <div class="cam-dpad" :if="device.ptz" role="group" aria-label="Pan and tilt">
+                    <button class="cam-nudge" title="Pan left" :onclick="this.onCamNudge(event, device.id, -1, 0)">
+                        <i class="iconoir-nav-arrow-left"></i>
+                    </button>
+                    <button class="cam-nudge" title="Tilt up" :onclick="this.onCamNudge(event, device.id, 0, 1)">
+                        <i class="iconoir-nav-arrow-up"></i>
+                    </button>
+                    <button class="cam-nudge" title="Tilt down" :onclick="this.onCamNudge(event, device.id, 0, -1)">
+                        <i class="iconoir-nav-arrow-down"></i>
+                    </button>
+                    <button class="cam-nudge" title="Pan right" :onclick="this.onCamNudge(event, device.id, 1, 0)">
+                        <i class="iconoir-nav-arrow-right"></i>
+                    </button>
+                </div>
+                <div class="cam-views">
+                    <button
+                        class="chip cam-preset"
+                        :foreach="preset in device.presets"
+                        :key="preset.token"
+                        :title="'Point the camera at “' + preset.name + '”'"
+                        :onclick="this.onCamGoto(event, device.id, preset.token)"
+                    >
+                        <i class="iconoir-bookmark-empty"></i> ${preset.name}
+                    </button>
+                    <button class="cam-nudge cam-tune" title="Camera settings — save views, image"
+                        :onclick="this.onCamSettings(event, device.id)">
+                        <i class="iconoir-settings"></i>
+                    </button>
                 </div>
             </div>
 

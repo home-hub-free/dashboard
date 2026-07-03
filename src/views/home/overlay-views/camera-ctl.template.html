@@ -1,0 +1,70 @@
+<div class="edit-container cam-ctl-overlay">
+    <div class="overlay-header">
+        <span class="oh-icon"><i class="iconoir-video-camera"></i></span>
+        <span class="oh-title">${this.data.name}</span>
+        <span class="pill" :if="this.data.zone">${this.data.zone}</span>
+    </div>
+
+    <!-- Saved views: recall / delete / save-current-aim. Tile arrows aim; here you name it. -->
+    <div class="device-setting" :if="this.data.ptz">
+        <p class="section-title">Saved views</p>
+        <p class="setting-hint">Aim the camera with the arrows on its tile, then save that view here to recall it with one tap.</p>
+
+        <div class="cam-preset-row" :foreach="p in this.data.presets" :key="p.token">
+            <span class="cam-preset-name"><i class="iconoir-bookmark-empty"></i> ${p.name}</span>
+            <button class="btn-outline btn-inline" :onclick="this.actions.gotoPreset(this.data, p.token)">
+                <i class="iconoir-eye-alt"></i> View
+            </button>
+            <button class="btn-quiet btn-inline" title="Delete this view" :onclick="this.actions.deletePreset(this.data, p.token)">
+                <i class="iconoir-trash"></i>
+            </button>
+        </div>
+
+        <div class="cam-preset-add" :if="!this.data.presetsFull">
+            <input :id="this.data.id + '_newPreset'" type="text" maxlength="24" placeholder="Name this view (e.g. Door)" />
+            <button class="btn-primary btn-inline" :onclick="this.actions.savePreset(this.data)">
+                <i class="iconoir-bookmark-empty"></i> Save view
+            </button>
+        </div>
+        <p class="setting-hint" :else>This camera stores up to 8 views — delete one to save another.</p>
+    </div>
+
+    <!-- Sensor profile: partial writes, merged camera-side; sliders commit on release. -->
+    <div class="device-setting" :if="this.data.imaging">
+        <p class="section-title">Image</p>
+
+        <div class="form-group">
+            <label>Brightness</label>
+            <input type="range" min="0" max="100"
+                :value="(this.data.imaging.brightness ?? 50) + ''"
+                :onchange="this.actions.setImaging(this.data, 'brightness', event)" />
+        </div>
+        <div class="form-group">
+            <label>Contrast</label>
+            <input type="range" min="0" max="100"
+                :value="(this.data.imaging.contrast ?? 50) + ''"
+                :onchange="this.actions.setImaging(this.data, 'contrast', event)" />
+        </div>
+        <div class="form-group">
+            <label>Color</label>
+            <input type="range" min="0" max="100"
+                :value="(this.data.imaging.saturation ?? 50) + ''"
+                :onchange="this.actions.setImaging(this.data, 'saturation', event)" />
+        </div>
+        <div class="form-group">
+            <label>Sharpness</label>
+            <input type="range" min="0" max="100"
+                :value="(this.data.imaging.sharpness ?? 50) + ''"
+                :onchange="this.actions.setImaging(this.data, 'sharpness', event)" />
+        </div>
+    </div>
+
+    <div class="status-group">
+        <div class="status-item" :if="this.data.motionEvents">
+            <span class="status-value"><i class="iconoir-activity"></i> In-camera motion</span>
+        </div>
+        <div class="status-item" :if="!this.data.reachable">
+            <span class="status-value"><i class="iconoir-wifi-off"></i> Camera unreachable</span>
+        </div>
+    </div>
+</div>

@@ -1,4 +1,5 @@
 import { Channel } from "./channels";
+import { CameraPreset } from "../../../utils/server-handler";
 
 export type Device = {
   id: string;
@@ -39,11 +40,25 @@ export type Device = {
   /** Camera only: vision-worker health badge text ("live · detecting", "live · no
    * detection", "offline") — answers "is the cam making frames AND is detection on?". */
   camHealth?: string;
-  /** Camera only: full badge class incl. state modifier for colour
-   * ("cam-health cam-health--ok|warn|down"). Bound directly to `:class`. */
+  /** Camera only: the badge's state-modifier class ("cam-health--ok|warn|down").
+   * ONE token — bindrjs `:class` add/removes a single class; the static
+   * `cam-health` base class lives in the markup. */
   camHealthClass?: string;
   /** Camera only: badge tooltip — raw worker counters (frames, frame age, backends). */
   camHealthTitle?: string;
+  /** Camera only: this tile came from the VISION-SERVICE roster (a static RTSP cam
+   * that never declares to the hub — e.g. the Tapo/Mercusys fleet). Its controls go
+   * via the hub /camera/:id proxy and the hub device-edit overlay doesn't apply. */
+  visionOnly?: boolean;
+  /** Camera only: ONVIF capability summary from the worker-status poll — which
+   * controls to draw. Fixed cams (C110) get imaging but no D-pad. */
+  onvifCaps?: { ptz: boolean; imaging: boolean; events: boolean } | null;
+  /** Camera only: PTZ available (onvifCaps.ptz) — gates the tile D-pad + preset chips. */
+  ptz?: boolean;
+  /** Camera only: imaging service available — gates the tune (settings) affordance. */
+  imagingCaps?: boolean;
+  /** Camera only: saved views (ONVIF presets) rendered as recall chips. */
+  presets?: CameraPreset[];
 };
 
 export type DeviceWSEvents = {
@@ -91,4 +106,10 @@ export type DevicesTabState = {
   onChannelStep: (event: Event, deviceId: string, channelKey: string, dir: -1 | 1) => void;
   stop: (event: Event) => void;
   onEditClick: (event: any, device: Device) => void;
+  // Camera tile controls (CAMERA_ONVIF_CONTROL_PLAN): D-pad nudge, preset recall,
+  // and the tune overlay (imaging + saved-view management). Primitive args only
+  // (bindrjs loop-var rule).
+  onCamNudge: (event: Event, deviceId: string, dx: number, dy: number) => void;
+  onCamGoto: (event: Event, deviceId: string, token: string) => void;
+  onCamSettings: (event: any, deviceId: string) => void;
 };

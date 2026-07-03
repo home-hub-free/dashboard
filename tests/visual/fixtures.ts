@@ -109,3 +109,25 @@ export const chatFull: Record<string, any> = {
     ],
   },
 };
+
+// vision-service /occupancy — includes a vision-roster-only ONVIF PTZ camera (the
+// MC200 pattern: never declares to the hub, tile is synthesized from this poll)
+// alongside the hub-declared ESP32 cam above (dev-cam → no ONVIF, no controls).
+export const visionOccupancy = {
+  zones: { entrance: [{ track: "t1", id: "u1", name: "David", class: "household", confidence: 0.9, since: 0 }] },
+  cameras: [
+    { id: "dev-cam", zone: "Garage", ip: "10.0.0.9", connected: true, frames_seen: 100, last_frame_age_s: 0.2, detector: "ultralytics", face: "null", rec_mode: "hybrid", onvif: null, events_attached: false, motion_active: null },
+    { id: "mc200-entrance", zone: "entrance", ip: "10.0.0.8", connected: true, frames_seen: 4200, last_frame_age_s: 0.1, detector: "ultralytics", face: "insightface", rec_mode: "continuous", onvif: { ptz: true, imaging: true, events: true }, events_attached: true, motion_active: false },
+  ],
+};
+
+// hub /camera/:id/controls — the one-shot control summary the tile fetches.
+export const cameraControls: Record<string, any> = {
+  "mc200-entrance": {
+    cam_id: "mc200-entrance", zone: "entrance",
+    onvif: { ptz: true, imaging: true, events: true }, reachable: true,
+    status: { x: 0.05, y: -0.57, move_status: "IDLE" },
+    presets: [{ token: "1", name: "hub-home", x: 0.05, y: -0.57 }, { token: "2", name: "Door", x: 0.4, y: -0.3 }],
+    imaging: { brightness: 50, saturation: 50, contrast: 50, sharpness: 50 },
+  },
+};

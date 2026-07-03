@@ -33,7 +33,8 @@ export async function seedSession(context: BrowserContext, authed = true) {
 export async function stubBackend(page: Page) {
   // realtime transports — abort so connections fail fast and quietly
   await page.route("**/socket.io/**", (r) => r.abort());
-  await page.route("**/camera/**", (r) => r.abort());
+  // MJPEG live views (vision-service /vision/stream/*) — abort, never buffer
+  await page.route("**/vision/stream/**", (r) => r.abort());
 
   // generic service catch-alls (low priority)
   await page.route("**/api/**", (r) => r.fulfill(json({ success: true })));
@@ -54,6 +55,17 @@ export async function stubBackend(page: Page) {
   await page.route("**/speaker/health", (r) => r.fulfill(json({ ok: true })));
   await page.route("**/speaker/profiles", (r) => r.fulfill(json(fx.profiles)));
   await page.route("**/memory/candidates", (r) => r.fulfill(json(fx.candidates)));
+  // vision-service world-model poll + camera controls (hub /camera/:id proxy).
+  await page.route("**/vision/occupancy", (r) => r.fulfill(json(fx.visionOccupancy)));
+  await page.route("**/vision/health", (r) => r.fulfill(json({ ok: true })));
+  await page.route("**/api/camera/*/controls", (r) => {
+    const id = decodeURIComponent(r.request().url().split("/camera/")[1].split("/")[0]);
+    const ctl = fx.cameraControls[id];
+    return ctl ? r.fulfill(json(ctl)) : r.fulfill(json({ cam_id: id, onvif: null, reachable: false }));
+  });
+  await page.route("**/api/camera/**/ptz/**", (r) => r.fulfill(json({ ok: true, zone: "entrance", ttl_s: 0.4 })));
+  await page.route("**/api/camera/**/imaging", (r) => r.fulfill(json({ ok: true, zone: "entrance", imaging: { brightness: 60, saturation: 50, contrast: 50, sharpness: 50 } })));
+
   // Assistant chat history: list + per-chat transcript (close/delete fall through to the catch-all).
   await page.route("**/api/assistant/chats", (r) =>
     r.request().method() === "GET" ? r.fulfill(json({ ok: true, chats: fx.chatMetas })) : r.fulfill(json({ ok: true })));

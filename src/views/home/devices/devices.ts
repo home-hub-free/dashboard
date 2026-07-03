@@ -2,11 +2,21 @@ import { Component } from "../../../core/component";
 import { bus } from "../../../core/bus";
 import { store } from "../../../store/store";
 import { showToaster } from "../../../components/popup-message/popup-message";
-import { setServerChannel, visionStreamUrl, ZoneOccupant, VisionCameraStatus } from "../../../utils/server-handler";
+import {
+  CameraControls,
+  cameraPtzGoto,
+  cameraPtzMove,
+  fetchCameraControls,
+  setServerChannel,
+  visionStreamUrl,
+  ZoneOccupant,
+  VisionCameraStatus,
+} from "../../../utils/server-handler";
 import template from "./devices.html?raw";
 import { Device, DeviceGroup, DevicesTabState } from "./devices.model";
 import { Channel, deviceChannels, withChannelValue } from "./channels";
 import { DevicesService, DevicesServiceClass } from "./devices.service";
+import { openCameraControls } from "./camera-ctl.service";
 import { startVisionOccupancy, stopVisionOccupancy } from "../../../utils/vision-handler";
 
 // Tiles with no zone set fall under this bucket; cameras get their own group.
@@ -66,7 +76,12 @@ function decorateDevice(device: Device): Device {
   device.wide = device.deviceCategory === "evap-cooler" || device.deviceCategory === "camera";
   // Camera live view comes from the vision-service (annotated MJPEG), never the cam
   // directly nor a relayed blob (§3.2/§6). `who` is filled by the occupancy poller.
-  if (device.deviceCategory === "camera") device.streamUrl = visionStreamUrl(device.id);
+  if (device.deviceCategory === "camera") {
+    device.streamUrl = visionStreamUrl(device.id);
+    // The control-bar :foreach must never see undefined — bindrjs renders the
+    // region the instant `ptz` flips true, before the controls fetch lands.
+    if (!device.presets) device.presets = [];
+  }
   device.isOn = actuators.some((c) =>
     c.kind === "boolean" ? c.value === true : (c.value as number) > 0,
   );
@@ -148,6 +163,19 @@ function summariseCamHealth(
   if (!fresh) return { text: "stalled", state: "warn", title };
   if (st.detector === "null") return { text: "live · no detection", state: "warn", title };
   return { text: st.face === "null" ? "live · detecting" : "live · ID on", state: "ok", title };
+}
+
+/** PTZ nudge tuning: one tap = a short timed move (auto-stopped service-side).
+ * Repeat taps to keep panning — no hold-to-move, so nothing can ever stick. */
+const CAM_NUDGE_SPEED = 0.5;
+const CAM_NUDGE_MS = 400;
+
+/** Display name for a camera that exists only in the vision roster (static RTSP
+ * fleet — no hub device row carrying a user-set name): its zone, capitalized. */
+function camDisplayName(status: VisionCameraStatus): string {
+  const zone = (status.zone || "").trim();
+  if (zone && zone !== "_") return zone.charAt(0).toUpperCase() + zone.slice(1);
+  return status.id;
 }
 
 /** Persisted collapse state — a Set of group keys the user has collapsed. Survives
@@ -252,6 +280,13 @@ class DevicesTabClass extends Component<DevicesTabState> {
   private camStatus: Record<string, VisionCameraStatus> = {};
   private collapsed = loadCollapse();
   private filterText = "";
+  // Latest per-camera worker statuses (vision poll) — kept so vision-only tiles can
+  // be re-synthesized after a store sync replaces bind.devices.
+  private lastCameras: VisionCameraStatus[] = [];
+  // Per-camera control summary (capabilities/presets/imaging) via the hub proxy —
+  // fetched once per camera when the poll first shows it is ONVIF-capable.
+  private camControls: Record<string, CameraControls> = {};
+  private camCtlRequested = new Set<string>();
 
   constructor(devicesService: DevicesServiceClass) {
     super();
@@ -299,7 +334,14 @@ class DevicesTabClass extends Component<DevicesTabState> {
         // The whole tile is the switch for single-actuator devices.
         onTileClick: (device: Device) => {
           const cat = device.deviceCategory;
-          if (cat === "blinds" || cat === "camera") {
+          if (cat === "camera") {
+            // Vision-roster cams have no hub device row — the hub edit overlay
+            // doesn't apply; open the camera tune overlay (views + image) instead.
+            if (device.visionOnly) this.openCamTune(device);
+            else this.devicesService.editClick({ target: this.tileEl(device.id) }, device);
+            return;
+          }
+          if (cat === "blinds") {
             this.devicesService.editClick({ target: this.tileEl(device.id) }, device);
             return;
           }
@@ -348,11 +390,38 @@ class DevicesTabClass extends Component<DevicesTabState> {
           event.stopPropagation();
           this.devicesService.editClick(event, device);
         },
+
+        // ── camera tile controls (CAMERA_ONVIF_CONTROL_PLAN §2/§4) ────────────
+        // One tap = one short auto-stopped nudge; the arrows can never leave the
+        // camera moving. Fire-and-forget with a toast on failure — the live view
+        // itself is the feedback.
+        onCamNudge: (event: Event, deviceId: string, dx: number, dy: number) => {
+          event.stopPropagation();
+          cameraPtzMove(deviceId, dx * CAM_NUDGE_SPEED, dy * CAM_NUDGE_SPEED, CAM_NUDGE_MS)
+            .then((ok) => {
+              if (!ok) showToaster({ message: "Couldn't move the camera", from: "bottom", timer: 2000 });
+            });
+        },
+
+        onCamGoto: (event: Event, deviceId: string, token: string) => {
+          event.stopPropagation();
+          cameraPtzGoto(deviceId, token).then((ok) => {
+            if (!ok) showToaster({ message: "Couldn't recall that view", from: "bottom", timer: 2000 });
+          });
+        },
+
+        onCamSettings: (event: any, deviceId: string) => {
+          event.stopPropagation();
+          const device = this.findCamera(deviceId);
+          if (device) this.openCamTune(device);
+        },
       },
     });
 
     this.unsubscribeDevices = store.subscribe("devices", (devices) => {
       this.bind.devices = devices.map(decorateDevice);
+      // A store sync replaces the array — re-merge the vision-only camera tiles.
+      this.syncVisionTiles(this.lastCameras);
       this.bind.hasDevices = this.bind.devices.length > 0;
       this.bind.groups = this.groups();
       this.applyOccupancy();
@@ -371,10 +440,14 @@ class DevicesTabClass extends Component<DevicesTabState> {
       this.zoneOccupants = zones || {};
       this.applyOccupancy();
     });
-    // Per-camera worker health (same poll) — drives the tile's stream/detection badge.
+    // Per-camera worker health (same poll) — drives the tile's stream/detection
+    // badge, synthesizes tiles for vision-roster-only cameras (static RTSP fleet),
+    // and lazily fetches each ONVIF camera's control summary (D-pad/presets/image).
     this.unsubscribeCameras = bus.on("vision:cameras", (cameras) => {
       this.camStatus = {};
       (cameras || []).forEach((c) => (this.camStatus[c.id] = c));
+      this.syncVisionTiles(cameras || []);
+      this.fetchCamControls(cameras || []);
       this.applyOccupancy();
     });
     startVisionOccupancy();
@@ -400,15 +473,119 @@ class DevicesTabClass extends Component<DevicesTabState> {
     });
   }
 
-  /** Push the latest per-zone occupancy + worker health onto each camera tile. */
+  /** Reconcile tiles for cameras that live only in the vision roster (static RTSP
+   * fleet — they never declare to the hub): push a synthetic camera Device into the
+   * BOUND devices array (the same path a hub `device:declare` takes — items must
+   * enter bindrjs through a bound array or their template region never evaluates),
+   * drop tiles whose camera vanished, keep zones fresh. Rebuilds the groups only on
+   * a structural change (the poll runs every 15s). */
+  private syncVisionTiles(cameras: VisionCameraStatus[]) {
+    this.lastCameras = cameras;
+    const current: Device[] = this.bind.devices || [];
+    const wanted = new Map(cameras.map((c) => [c.id, c]));
+    let changed = false;
+
+    // Keep everything except synthetic tiles whose camera left the vision roster.
+    const next = current.filter((d) => {
+      const keep = !d.visionOnly || wanted.has(d.id);
+      if (!keep) changed = true;
+      return keep;
+    });
+    for (const status of cameras) {
+      const existing = next.find((d) => d.id === status.id);
+      if (existing) {
+        if (existing.visionOnly && existing.zone !== status.zone) {
+          existing.zone = status.zone;
+          existing.name = camDisplayName(status);
+          changed = true;
+        }
+        continue; // hub roster wins on id clash
+      }
+      next.push(decorateDevice({
+        id: status.id,
+        deviceCategory: "camera",
+        name: camDisplayName(status),
+        zone: status.zone,
+        manual: false,
+        value: null,
+        type: "boolean",
+        operationalRanges: [],
+        visionOnly: true,
+      } as unknown as Device));
+      changed = true;
+    }
+    if (changed) {
+      // Whole-array reassignment (never push into the bound array) — the only
+      // add-an-item path bindrjs re-renders reliably (DESIGN.md §7).
+      this.bind.devices = next;
+      this.bind.groups = this.groups();
+    }
+  }
+
+  /** Fetch each ONVIF-capable camera's control summary once (hub /camera/:id proxy):
+   * which controls to draw + its saved views + imaging values. Retries next poll on
+   * failure (camera may have been rebooting). */
+  private fetchCamControls(cameras: VisionCameraStatus[]) {
+    for (const status of cameras) {
+      if (!status.onvif || this.camCtlRequested.has(status.id)) continue;
+      this.camCtlRequested.add(status.id);
+      fetchCameraControls(status.id).then((ctl) => {
+        if (ctl) {
+          this.camControls[status.id] = ctl;
+          this.applyOccupancy();
+        } else {
+          this.camCtlRequested.delete(status.id);
+        }
+      });
+    }
+  }
+
+  /** Every camera tile — hub-declared and vision-only alike live in bind.devices. */
+  private cameraTiles(): Device[] {
+    return (this.bind.devices || []).filter((d) => d.deviceCategory === "camera");
+  }
+
+  private findCamera(deviceId: string): Device | undefined {
+    return this.cameraTiles().find((d) => d.id === deviceId);
+  }
+
+  /** Open the camera tune overlay (saved views + image). Fetches the control summary
+   * on demand if the lazy poll hasn't landed yet. */
+  private async openCamTune(device: Device) {
+    let ctl = this.camControls[device.id];
+    if (!ctl) {
+      ctl = (await fetchCameraControls(device.id)) || undefined as any;
+      if (ctl) this.camControls[device.id] = ctl;
+    }
+    if (!ctl || !ctl.onvif) {
+      showToaster({ message: "This camera has no remote controls", from: "bottom", timer: 2000 });
+      return;
+    }
+    openCameraControls({ target: this.tileEl(device.id) }, device, ctl, (camId, fresh) => {
+      this.camControls[camId] = fresh;
+      this.applyOccupancy();
+    });
+  }
+
+  /** Push the latest per-zone occupancy + worker health + ONVIF control state onto
+   * each camera tile (hub-declared and vision-only alike). */
   private applyOccupancy() {
-    (this.bind.devices || []).forEach((device) => {
-      if (device.deviceCategory !== "camera") return;
+    this.cameraTiles().forEach((device) => {
       device.who = summariseOccupants(this.zoneOccupants[device.zone || "_"]);
       const health = summariseCamHealth(this.camStatus[device.id]);
       device.camHealth = health.text;
-      device.camHealthClass = `cam-health cam-health--${health.state}`;
+      // Single token — bindrjs :class add/removes ONE class (multi-word throws in
+      // DOMTokenList.add and aborts the whole rebind pass, blanking the tile).
+      device.camHealthClass = `cam-health--${health.state}`;
       device.camHealthTitle = health.title;
+      // Which controls the tile draws (fixed cams: no D-pad; ESP32-CAMs: nothing).
+      // Order matters: presets BEFORE the ptz flag — flipping `ptz` re-renders the
+      // control bar immediately and its :foreach must already have a real array.
+      const caps = this.camControls[device.id]?.onvif ?? this.camStatus[device.id]?.onvif ?? null;
+      device.presets = this.camControls[device.id]?.presets || device.presets || [];
+      device.onvifCaps = caps;
+      device.ptz = !!caps?.ptz;
+      device.imagingCaps = !!caps?.imaging;
     });
   }
 

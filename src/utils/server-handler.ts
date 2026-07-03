@@ -225,6 +225,12 @@ export type VisionCameraStatus = {
   id: string; zone: string; ip: string; connected: boolean;
   frames_seen: number; last_frame_age_s: number | null;
   detector: string; face: string; rec_mode: string;
+  /** ONVIF capability summary (cached probe) — null until probed / not an ONVIF cam.
+   * Drives which camera controls the tile draws (fixed cams get no D-pad). */
+  onvif?: { ptz: boolean; imaging: boolean; events: boolean } | null;
+  /** Live in-camera motion event subscription state (CAMERA_ONVIF_CONTROL_PLAN §3). */
+  events_attached?: boolean;
+  motion_active?: boolean | null;
 };
 
 /** One pull of the vision world-model: zone occupancy + per-camera worker health. */
@@ -240,6 +246,82 @@ export async function fetchVisionState(): Promise<{
   } catch {
     return { zones: {}, cameras: [] };
   }
+}
+
+// ── camera control (hub /camera/:id proxy → the vision-service ONVIF seam) ────
+// All CONTROL goes through the hub (auth + audit boundary, CAMERA_ONVIF_CONTROL_PLAN
+// §2) — never straight to the vision-service, and never to the camera itself.
+
+export type CameraPreset = { token: string; name: string; x: number | null; y: number | null };
+export type CameraImaging = {
+  brightness?: number; saturation?: number; contrast?: number; sharpness?: number;
+  /** Day/night/IR — only present when the camera exposes IrCutFilter (MC200 fw doesn't). */
+  ir_cut?: string;
+};
+export type CameraControls = {
+  cam_id: string;
+  zone?: string;
+  /** null = not an ONVIF camera (e.g. ESP32-CAM) — no controls to draw. */
+  onvif: { ptz: boolean; imaging: boolean; events: boolean } | null;
+  reachable: boolean;
+  status?: { x: number | null; y: number | null; move_status: string | null };
+  presets?: CameraPreset[];
+  imaging?: CameraImaging;
+};
+
+/** One-shot control summary for the camera tile (capabilities + presets + imaging). */
+export async function fetchCameraControls(camId: string): Promise<CameraControls | null> {
+  try {
+    const res = await fetch(server + `camera/${encodeURIComponent(camId)}/controls`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function cameraPost(camId: string, path: string, body: unknown): Promise<any | null> {
+  try {
+    const res = await authedFetch(server + `camera/${encodeURIComponent(camId)}${path}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Timed PTZ nudge (auto-stopped service-side; velocities in the -1..1 ONVIF space). */
+export function cameraPtzMove(camId: string, vx: number, vy: number, ttlMs = 400) {
+  return cameraPost(camId, "/ptz/move", { vx, vy, ttl_ms: ttlMs });
+}
+
+export function cameraPtzGoto(camId: string, token: string) {
+  return cameraPost(camId, "/ptz/goto", { token });
+}
+
+/** Save the camera's CURRENT aim as a named view; resolves to the new preset token. */
+export function cameraSavePreset(camId: string, name: string) {
+  return cameraPost(camId, "/ptz/preset", { name });
+}
+
+export async function cameraDeletePreset(camId: string, token: string): Promise<boolean> {
+  try {
+    const res = await authedFetch(
+      server + `camera/${encodeURIComponent(camId)}/ptz/preset/${encodeURIComponent(token)}`,
+      { method: "DELETE", headers },
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Partial imaging write (brightness/saturation/contrast/sharpness 0-100, ir_cut). */
+export function cameraSetImaging(camId: string, imaging: CameraImaging) {
+  return cameraPost(camId, "/imaging", imaging);
 }
 
 /** Whether the vision-service is up + routed (gates the Face-ID control + WHO overlay,

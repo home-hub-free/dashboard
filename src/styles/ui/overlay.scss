@@ -265,6 +265,46 @@
     font-weight: var(--font-weight-semibold);
   }
 
+  // Camera tune overlay (camera-ctl.template): saved-view rows + the add row.
+  .cam-preset-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 8px 8px 14px;
+    background: var(--color-surface);
+    border-radius: var(--radius-control);
+    margin-bottom: 8px;
+
+    .cam-preset-name {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: var(--font-weight-semibold);
+
+      i {
+        color: var(--color-primary);
+        flex: 0 0 auto;
+      }
+    }
+  }
+
+  .cam-preset-add {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+
+    input {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
   // Status read-outs (cooler temps)
   .status-group {
     display: flex;
