@@ -25,6 +25,9 @@ export const devices = [
   { id: "dev-door", deviceCategory: "door", name: "Back Door", zone: "Kitchen", value: false, type: "boolean", manual: false, operationalRanges: [] },
   { id: "dev-bedroom", deviceCategory: "dimmable-light", name: "Bedroom", zone: "Bedroom", value: 0, type: "value", manual: false, operationalRanges: [] },
   { id: "dev-cam", deviceCategory: "camera", name: "Garage Cam", zone: "Garage", value: null, type: "value", manual: true, operationalRanges: [] },
+  // Two satellites: one on battery (readout shows), one without a cell (-1 → hidden).
+  { id: "dev-sat", deviceCategory: "voice-satellite", name: "Oficina", zone: "Bedroom", value: { volume: 40, mic: true, battery: 72 }, type: "value", manual: false, operationalRanges: [] },
+  { id: "dev-sat2", deviceCategory: "voice-satellite", name: "Sala Sat", zone: "Kitchen", value: { volume: 55, mic: false, battery: -1 }, type: "value", manual: false, operationalRanges: [] },
 ];
 
 export const sensors = [

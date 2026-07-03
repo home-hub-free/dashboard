@@ -74,6 +74,9 @@ export function channelSchema(category: string | undefined): ChannelSpec[] | nul
       return [
         { key: "volume", role: "setting", kind: "number", unit: "%", range: PCT, writable: true, precision: true },
         { key: "mic", role: "setting", kind: "boolean", writable: true, precision: true },
+        // Battery % self-reported by the board (VBAT divider). No range: -1 means
+        // "no battery plugged" — decorateDevice drops the readout entirely then.
+        { key: "battery", role: "sensor", kind: "number", unit: "%", writable: false },
       ];
     default:
       return null;
@@ -91,6 +94,7 @@ const LABELS: { [key: string]: string } = {
   "unit-temp": "Unit",
   volume: "Volume",
   mic: "Mic",
+  battery: "Battery",
   value: "Value",
 };
 
@@ -105,6 +109,7 @@ const ICONS: { [key: string]: string } = {
   "unit-temp": "iconoir-temperature-high",
   volume: "iconoir-sound-high",
   mic: "iconoir-mic",
+  battery: "iconoir-battery-50", // level-accurate icon assigned in decorateDevice
   value: "iconoir-circle",
 };
 
@@ -166,6 +171,11 @@ export function withChannelValue(
   key: string,
   next: boolean | number,
 ): any {
-  if (category === "evap-cooler") return { ...(value ?? {}), [key]: next };
+  // Object-blob categories merge into the blob (mirrors the server's
+  // isObjectBlobCategory) — replacing the whole value with the scalar briefly
+  // wiped the satellite's sibling channels (mic/battery) until the WS echo.
+  if (category === "evap-cooler" || category === "voice-satellite") {
+    return { ...(value ?? {}), [key]: next };
+  }
   return next;
 }

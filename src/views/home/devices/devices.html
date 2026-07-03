@@ -106,7 +106,7 @@
 
                         <!-- sensor → readout (cooler room/unit temps) -->
                         <div class="readout" :if="channel.control === 'readout'">
-                            <span class="readout-val">${channel.display}</span>
+                            <span class="readout-val"><i :class="channel.icon"></i> ${channel.display}</span>
                             <span class="readout-label">${channel.label}</span>
                         </div>
                     </div>

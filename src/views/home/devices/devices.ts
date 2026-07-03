@@ -54,10 +54,15 @@ function decorateDevice(device: Device): Device {
     channels.forEach((c) => {
       if (c.key === "volume") c.control = "slider";
       if (c.key === "mic") c.control = "chip";
+      if (c.key === "battery") c.icon = batteryIcon(c.value as number);
     });
   }
 
-  device.channels = channels;
+  // Battery readout only exists when the board actually has a cell: the blob key is
+  // absent until the firmware's first report, and -1 means "slot empty".
+  device.channels = channels.filter(
+    (c) => c.key !== "battery" || ((device.value ?? {}).battery ?? -1) >= 0,
+  );
   device.wide = device.deviceCategory === "evap-cooler" || device.deviceCategory === "camera";
   // Camera live view comes from the vision-service (annotated MJPEG), never the cam
   // directly nor a relayed blob (§3.2/§6). `who` is filled by the occupancy poller.
@@ -70,6 +75,17 @@ function decorateDevice(device: Device): Device {
     ?? "iconoir-circle";
   device.status = computeStatus(device, actuators);
   return device;
+}
+
+/** Level-accurate battery glyph. Literal class names on purpose — the iconoir
+ * subset generator scans src/ for `iconoir-*` tokens, so a computed name would
+ * silently ship without its glyph. */
+function batteryIcon(pct: number): string {
+  if (pct > 85) return "iconoir-battery-full";
+  if (pct > 60) return "iconoir-battery-75";
+  if (pct > 35) return "iconoir-battery-50";
+  if (pct > 15) return "iconoir-battery-25";
+  return "iconoir-battery-warning";
 }
 
 /** The tile body status line, per category. Cooler shows its own readouts instead. */
