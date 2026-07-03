@@ -1,5 +1,5 @@
 import type { SessionUser } from "../assistant/household.service";
-import type { Person, ReviewCard } from "../../utils/server-handler";
+import type { Person, ReviewCard, MemberCluster, FaceThreshold } from "../../utils/server-handler";
 
 /**
  * Settings owns everything account/household — relocated out of the Assistant
@@ -104,6 +104,21 @@ export type SettingsState = {
   namedGuests: Person[] // labeled guests — review targets ("It's Abuela")
   peopleMsg: string
   forgetPerson: (id: string) => void
+
+  // Recognized-face audit — the images auto-heal folded into a member's profile, so
+  // its thresholded choices are reviewable. Opening a household member lists them
+  // (worst-match first); "Not me" detaches a wrong one → back to the review queue.
+  clustersOpenFor: string // user_id whose audit panel is open ("" = none)
+  clustersBusy: boolean
+  memberClusters: MemberCluster[]
+  toggleClusters: (userId: string) => void
+  detachClusterAction: (guestId: string) => void
+
+  // Recognition thresholds — the auto-heal/match/suggest levers, viewable + tunable
+  // live (persisted server-side, read by the resolver on the next face).
+  thresholds: FaceThreshold[]
+  saveThreshold: (key: string, value: string) => void
+  resetThreshold: (key: string) => void
 
   // Face review — the "Is this you?" card stack over the confidence-tiered queue
   // (vision /people/review). The definitely-them tier auto-merges server-side and

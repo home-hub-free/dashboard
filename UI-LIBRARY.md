@@ -55,7 +55,7 @@ custom property.
 
 | Group | Tokens | Notes |
 |---|---|---|
-| Brand | `--color-primary(-light/-dark/…)` | iris violet — interactive only |
+| Brand | `--color-primary(-light/-dark/…)` | warm coral — interactive only |
 | Status | `--color-success/error/warning/info` (+`-light/-dark`, `-rgba-10/40`) | on/off/caution/neutral |
 | Surfaces | `--color-background`, `--color-surface`, `--color-surface-secondary`, `--color-surface-tertiary`, `--color-border(-light)` | page → card → recessed control → recessed row |
 | Text | `--color-text-primary/secondary/tertiary/disabled/inverse` | tertiary is AA-tuned for raised surfaces |
@@ -72,17 +72,19 @@ SCSS breakpoint mixins (media queries can't read custom properties):
 `wall-up` (≥1400). Import via `@use`-style `@import "../ui/tokens";` in any file
 that needs them.
 
-## 2. Color semantics — the three accents
+## 2. Color semantics — the three accents ("Ember")
 
 | Meaning | Paint | Where |
 |---|---|---|
 | **A light is on** | `--gradient-active-warm` + `--glow-active-warm` (GOLD) | `.device-tile.cat-light.on`, `.cat-dimmable-light.on` |
-| **Another device active** | `--gradient-active-cool` + `--glow-active-cool` (CYAN) | `.device-tile.cat-blinds.on` |
-| **Interactive / brand** | `--color-primary` (IRIS) | buttons, nav-active, focus, sliders, "you" accents |
+| **Another device active** | `--gradient-active-cool` + `--glow-active-cool` (DUSK BLUE) | `.device-tile.cat-blinds.on` |
+| **Interactive / brand** | `--color-primary` (WARM CORAL) | buttons, nav-active, focus, sliders, "you" accents |
 
-Never paint a button gold/cyan or a device state iris. Text on any filled accent
-uses `--color-on-fill` (+`-muted/-faint`). Green (`--color-success`) means
-*enabled/detected/live* (dots, switches), red (`--color-error`) means
+Never paint a button gold/dusk-blue or a device state coral. Text on any
+filled accent uses `--color-on-fill` (+`-muted/-faint`); filled coral uses
+`--color-text-inverse` — cream on coral fails AA. Green (`--color-success`)
+means *enabled/detected/live* (dots, switches, **and `.chip.on`** — a chip is
+device state, so it must never fill brand), red (`--color-error`) means
 *off/destructive*.
 
 ## 3. Elevation
@@ -168,7 +170,9 @@ Every screen mounts into the shell (`#main-content > #header + #tabs +
 
 - `.page-col` — the single scrolling content column (max-width 1080 in-app).
 - `.page-head` — kicker + display title (`em` takes the brand accent) + lede.
-  On phones, views that need every vertical px may hide it (`#assistant` does).
+  **Desktop only**: on phones it's hidden globally (`ui/layout.scss`) — the shell
+  header is the one title, since the editorial block duplicated it and cost
+  ~150px a phone doesn't have.
 - `.section-title` — uppercase micro-label heading a group (inside panels too).
 - `.empty-state` — icon + line for "nothing here yet".
 
@@ -194,6 +198,9 @@ Every screen mounts into the shell (`#main-content > #header + #tabs +
   chip (room name, count, "read-only", "established").
 - `.icon-bubble` (+ `.sm/.lg/.brand`) — the round leading icon.
 - `.state-dot` (+ `.on`) — live-state dot; pair its meaning with green=enabled.
+- `.disclosure` — `<details>` group that folds secondary/infrequent controls away
+  (overlay "Advanced", Settings "Add a member"): `summary` (icon + label +
+  `.adv-chevron`) + `.disclosure-body`. `.overlay-advanced` is the legacy alias.
 
 ## 8. Device tiles & sensor chips (`ui/tiles.scss`)
 
@@ -205,10 +212,16 @@ renders one control per channel — no per-category layout. Conventions:
 - Anatomy: `.tile-inner > .tile-top (.tile-icon + .tile-edit) + .tile-body
   (.tile-name + .tile-meta) + .tile-controls`.
 - `.tile-lock` — the "Manual" badge; `.manual` also dashes the border.
-- Channel controls: `.chip` (boolean pill), `.tile-slider`, `.stepper` with
-  `.step` buttons, `.readout` (`.readout-val.reached` turns success).
+- Channel controls: `.chip` (boolean pill — `.on` fills success, never brand),
+  `.tile-slider`, `.stepper` with `.step` buttons, `.readout`
+  (`.readout-val.reached` turns success).
+- **Glanceable, not exhaustive**: the cooler is the reference — hero room-temp
+  readout (setpoint as its label) + status line + fan/water chips; unit temp and
+  the target stepper are overlay-only (`control: "none"` in `decorateDevice`).
 - Camera tiles are full-bleed: `.cam-wrap > img + .cam-who + .cam-health +
-  .cam-label`.
+  .cam-label`. **Tap = fullscreen live lightbox** (`.cam-live`, §9); config is
+  the ⋯ on `.cam-label`. The D-pad/nudge/preset vocabulary (`.cam-dpad`,
+  `.cam-nudge`, `.cam-views`) is generic — shared by the tile bar and lightbox.
 - `.sensor-chip` — read-only reading: `.chip-head` + `.chip-reading` (state
   `.dot`, or `.th` with two `.metric`s).
 
@@ -245,6 +258,12 @@ Also in the overlay vocabulary: `.toggle-group`/`.toggle-button` rows,
 zone editor, and the `.calibrate-setting` two-step flow. Keep content inside the
 sheet (`maxHeight` + internal scroll) — never let it overflow.
 
+**Fullscreen variant — the camera lightbox.** `openCameraLive` drives the same
+sheet to the full viewport (`padding: {x:0, y:0}`); a `> .cam-live` root strips
+the sheet chrome (black, no radius) and lays out stream + top bar (name ·
+health · `.cam-live-close`) + bottom bar (who · PTZ controls), safe-area padded.
+The sheet sits at `--z-modal` — above the fixed phone nav.
+
 ## 10. Toasts (`ui/toast.scss`)
 
 Use `PopupMessage` (`popup-message.ts`) — don't hand-roll; markup renders into
@@ -264,6 +283,11 @@ connection-status affordance, not a tab.
 
 Mobile-first; base styles are the phone layout. Breakpoints: **640px** (desktop
 shell + rail), **1000px** (Home two-pane), **1400px** (wall density).
+
+**The shell contributes no side padding on phones** — `#main-content` and
+`#tab-content` are 0; each view owns the single **16px gutter** (home board,
+hero, `.page-col`). Don't add a second layer back: 8+10+16 nested gutters once
+ate 17% of a 390px screen.
 
 Non-negotiables on phones:
 

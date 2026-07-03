@@ -21,15 +21,22 @@ import {
   cameraSavePreset,
   cameraSetImaging,
   cameraPtzGoto,
+  cameraPtzMove,
   fetchCameraControls,
 } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import CameraCtlView from "../overlay-views/camera-ctl.template.html?raw";
+import CameraLiveView from "../overlay-views/camera-live.template.html?raw";
 import { Device } from "./devices.model";
 
 /** The MC200 family stores at most 8 presets; surface the limit instead of the
  * camera's opaque fault when the user hits it. */
 const PRESET_LIMIT = 8;
+
+/** One tap = one short auto-stopped move — the arrows can never leave the camera
+ * moving. Shared by the tile D-pad and the lightbox D-pad. */
+export const CAM_NUDGE_SPEED = 0.5;
+export const CAM_NUDGE_MS = 400;
 
 const oops = (message: string) => showToaster({ message, from: "bottom", timer: 2500 });
 
@@ -103,5 +110,39 @@ export function openCameraControls(
     },
     startRect: rect,
     padding: { x: 6, y: 50 },
+  });
+}
+
+/**
+ * Fullscreen live lightbox — the camera tile's tap target. A snapshot of the
+ * decorated tile's display fields (stream, who, health, PTZ caps) rendered
+ * edge-to-edge; padding 0/0 drives the sheet to the full viewport.
+ */
+export function openCameraLive(event: any, device: Device) {
+  const rect = getGlobalPosition(event.target);
+
+  openOverlay({
+    template: CameraLiveView,
+    data: {
+      id: device.id,
+      name: device.name,
+      streamUrl: device.streamUrl || "",
+      who: device.who || "",
+      camHealth: device.camHealth || "",
+      camHealthClass: device.camHealthClass || "",
+      ptz: !!device.ptz,
+      presets: device.presets || [],
+    },
+    actions: {
+      nudge: async (data: any, dx: number, dy: number) => {
+        const ok = await cameraPtzMove(data.id, dx * CAM_NUDGE_SPEED, dy * CAM_NUDGE_SPEED, CAM_NUDGE_MS);
+        if (!ok) oops("Couldn't move the camera");
+      },
+      goto: async (data: any, token: string) => {
+        if (!(await cameraPtzGoto(data.id, token))) oops("Couldn't recall that view");
+      },
+    },
+    startRect: rect,
+    padding: { x: 0, y: 0 },
   });
 }

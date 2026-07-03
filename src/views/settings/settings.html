@@ -184,20 +184,24 @@
                     below to pick the family one and tick which are yours.
                 </p>
 
-                <div class="household-add">
+                <!-- Input on its own line; the actions row under it (one primary +
+                     one outline companion — never two stacked full-width bars). -->
+                <div class="cal-add">
                     <input
                         type="text"
-                        placeholder="add a calendar/account (e.g. you@gmail.com)"
+                        placeholder="you@gmail.com"
                         :value="this.calAddId"
                         :oninput="this.calAddId = event.target.value"
                     />
-                    <button class="add-range-btn" :if="!this.calendarBusy" :onmouseup="this.addCalendarById()">
-                        <i class="iconoir-plus"></i> <span>Add</span>
-                    </button>
-                    <button class="add-range-btn" :if="!this.calendarBusy && this.calDiscovered.length" :onmouseup="this.recheckCalendars()">
-                        <i class="iconoir-refresh-double"></i> <span>Recheck</span>
-                    </button>
-                    <button class="add-range-btn busy" :if="this.calendarBusy"><span>Working…</span></button>
+                    <div class="cal-add-actions">
+                        <button class="btn-primary btn-inline" :if="!this.calendarBusy" :onmouseup="this.addCalendarById()">
+                            <i class="iconoir-plus"></i> <span>Add calendar</span>
+                        </button>
+                        <button class="btn-outline btn-inline" :if="!this.calendarBusy && this.calDiscovered.length" :onmouseup="this.recheckCalendars()">
+                            <i class="iconoir-refresh-double"></i> <span>Recheck</span>
+                        </button>
+                        <button class="btn-primary btn-inline busy" :if="this.calendarBusy"><span>Working…</span></button>
+                    </div>
                 </div>
 
                 <p class="voice-id-hint" :if="!this.calDiscovered.length">
@@ -215,20 +219,28 @@
 
                 <p class="voice-id-hint" :if="this.calDiscovered.length"><i class="iconoir-user"></i> Calendars</p>
                 <div class="cal-list" :if="this.calDiscovered.length">
-                    <div class="voice-id-actions" :foreach="c in this.calDiscovered" :key="c.id">
-                        <span class="cal-row-label">${c.summary}</span>
-                        <span class="voice-id-count pending" :if="!c.reachable">share with the SA, then Recheck</span>
-                        <span class="voice-id-count" :if="c.reachable && !c.writable">read-only</span>
-                        <span class="voice-id-count" :if="c.reachable && c.mine"><i class="iconoir-check"></i> mine</span>
-                        <button class="add-range-btn" :if="c.reachable && !c.mine" :onmouseup="this.toggleMine(c.id)">
-                            <i class="iconoir-plus"></i> <span>Add to mine</span>
-                        </button>
-                        <button class="remove-btn" :if="c.reachable && c.mine" :onmouseup="this.toggleMine(c.id)">
-                            <i class="iconoir-minus"></i> Unassign
-                        </button>
-                        <button class="remove-btn" :onmouseup="this.removeCalendar(c.id)" title="Forget this calendar">
-                            <i class="iconoir-trash"></i>
-                        </button>
+                    <!-- One recessed row per calendar: name+status on the first line
+                         (the address ellipsizes, title carries the full string),
+                         compact actions on the second. Long emails must never
+                         scatter the buttons. -->
+                    <div class="cal-row" :foreach="c in this.calDiscovered" :key="c.id">
+                        <div class="cal-row-main">
+                            <span class="cal-row-label" :title="c.id">${c.summary}</span>
+                            <span class="voice-id-count pending" :if="!c.reachable" :title="'Share it with ' + this.calendarSaEmail + ' in Google Calendar, then Recheck'">not shared yet</span>
+                            <span class="voice-id-count" :if="c.reachable && !c.writable">read-only</span>
+                            <span class="voice-id-count" :if="c.reachable && c.mine"><i class="iconoir-check"></i> mine</span>
+                        </div>
+                        <div class="cal-row-actions">
+                            <button class="btn-outline btn-inline" :if="c.reachable && !c.mine" :onmouseup="this.toggleMine(c.id)">
+                                <i class="iconoir-plus"></i> <span>Add to mine</span>
+                            </button>
+                            <button class="btn-quiet btn-inline" :if="c.reachable && c.mine" :onmouseup="this.toggleMine(c.id)">
+                                <i class="iconoir-minus"></i> Unassign
+                            </button>
+                            <button class="btn-quiet btn-inline" :onmouseup="this.removeCalendar(c.id)" title="Forget this calendar">
+                                <i class="iconoir-trash"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -299,25 +311,83 @@
         </p>
 
         <div class="people-list">
-            <div class="person-row" :foreach="person in this.people" :key="person.id">
-                <div class="person-face" :class:tappable="person.thumbUrl" :onclick="this.openFace(person)">
-                    <img :if="person.thumbUrl" :src="person.thumbUrl" alt="" />
-                    <div :else class="person-face-empty"><i class="iconoir-user"></i></div>
+            <div class="person-item" :foreach="person in this.people" :key="person.id">
+                <div class="person-row">
+                    <div class="person-face" :class:tappable="person.thumbUrl" :onclick="this.openFace(person)">
+                        <img :if="person.thumbUrl" :src="person.thumbUrl" alt="" />
+                        <div :else class="person-face-empty"><i class="iconoir-user"></i></div>
+                    </div>
+                    <div class="person-info">
+                        <span class="person-label">${person.label}</span>
+                        <span class="person-tag" :if="person.class === 'household'">household</span>
+                        <span class="person-tag" :if="person.class === 'guest'">guest · seen ${person.sightings}×</span>
+                    </div>
+                    <div class="person-actions" :if="person.class === 'household'">
+                        <button class="btn-quiet btn-inline" :onclick="this.toggleClusters(person.id)">
+                            <i class="iconoir-check-circle"></i>
+                            ${this.clustersOpenFor === person.id ? "Hide" : "Recognized faces"}
+                        </button>
+                    </div>
+                    <div class="person-actions" :if="person.class === 'guest'">
+                        <button class="btn-quiet btn-inline" :onclick="this.forgetPerson(person.id)">
+                            <i class="iconoir-trash"></i> Forget
+                        </button>
+                    </div>
                 </div>
-                <div class="person-info">
-                    <span class="person-label">${person.label}</span>
-                    <span class="person-tag" :if="person.class === 'household'">household</span>
-                    <span class="person-tag" :if="person.class === 'guest'">guest · seen ${person.sightings}×</span>
-                </div>
-                <div class="person-actions" :if="person.class === 'guest'">
-                    <button class="btn-quiet btn-inline" :onclick="this.forgetPerson(person.id)">
-                        <i class="iconoir-trash"></i> Forget
-                    </button>
+
+                <!-- Audit panel: the faces auto-heal folded into this member. Worst match
+                     first so a wrong merge floats up; "Not me" detaches it → back to review. -->
+                <div class="person-audit" :if="this.clustersOpenFor === person.id">
+                    <p class="voice-id-hint">
+                        These faces were auto-matched into ${person.label}'s profile. A low
+                        match % may be a wrong guess — remove it and it goes back to review.
+                    </p>
+                    <p class="person-empty" :if="this.clustersBusy">Loading…</p>
+                    <p class="person-empty" :if="!this.clustersBusy && !this.memberClusters.length">
+                        No auto-matched faces — only the ones you enrolled.
+                    </p>
+                    <div class="cluster-grid">
+                        <div class="cluster-cell" :foreach="c in this.memberClusters" :key="c.guest_id">
+                            <img :if="c.thumbUrl" :src="c.thumbUrl" alt="" class="cluster-thumb" />
+                            <div :else class="cluster-thumb cluster-thumb-empty"><i class="iconoir-user"></i></div>
+                            <span class="cluster-score" :if="c.score !== null">match ${Math.round(c.score * 100)}%</span>
+                            <span class="cluster-score" :if="c.score === null">seen ${c.sightings}×</span>
+                            <button class="btn-quiet btn-inline" :onclick="this.detachClusterAction(c.guest_id)">
+                                <i class="iconoir-xmark"></i> Not me
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <p class="person-empty" :if="!this.people.length">No people seen yet.</p>
         <p class="voice-id-msg" :if="this.peopleMsg">${this.peopleMsg}</p>
+
+        <!-- Recognition thresholds: the auto-heal ladder is usually best left alone, so
+             fold it away. Raising auto-heal makes merges stricter (fewer wrong guesses,
+             more faces to review by hand); lowering it merges more eagerly. -->
+        <details class="disclosure" :if="this.thresholds.length">
+            <summary>Recognition thresholds (advanced)</summary>
+            <p class="voice-id-hint">
+                Higher = stricter. If the cameras keep mis-labeling people as each other,
+                raise <em>face_autoheal_threshold</em>. Blank a field and blur to reset it.
+            </p>
+            <div class="threshold-list">
+                <div class="threshold-row" :foreach="t in this.thresholds" :key="t.key">
+                    <span class="threshold-key">${t.key}</span>
+                    <input
+                        class="household-tone-input"
+                        type="number" step="0.01" min="0" max="1"
+                        :value="t.value"
+                        :onchange="this.saveThreshold(t.key, event.target.value)"
+                    />
+                    <span class="threshold-default" :if="t.overridden" :onclick="this.resetThreshold(t.key)">
+                        default ${t.default} · reset
+                    </span>
+                    <span class="threshold-default threshold-default-muted" :if="!t.overridden">default</span>
+                </div>
+            </div>
+        </details>
     </section>
 
     <section class="assistant-section">
@@ -347,35 +417,45 @@
             </div>
         </div>
 
-        <div class="household-add">
-            <input
-                type="text"
-                placeholder="username"
-                :value="this.newUsername"
-                :oninput="this.newUsername = event.target.value"
-            />
-            <input
-                type="text"
-                placeholder="display name"
-                :value="this.newDisplayName"
-                :oninput="this.newDisplayName = event.target.value"
-            />
-            <input
-                type="password"
-                placeholder="password"
-                :value="this.newPassword"
-                :oninput="this.newPassword = event.target.value"
-            />
-            <input
-                type="text"
-                placeholder="tone (optional)"
-                :value="this.newTone"
-                :oninput="this.newTone = event.target.value"
-            />
-        </div>
-        <button class="add-range-btn" :onmouseup="this.addHousehold()">
-            <i class="iconoir-add-user"></i> Add member
-        </button>
+        <!-- Adding a member is occasional — keep its four inputs folded away so the
+             roster stays the section's one subject (ui/panels.scss .disclosure). -->
+        <details class="disclosure">
+            <summary>
+                <i class="iconoir-add-user"></i><span>Add a member</span>
+                <i class="iconoir-nav-arrow-down adv-chevron"></i>
+            </summary>
+            <div class="disclosure-body">
+                <div class="household-add">
+                    <input
+                        type="text"
+                        placeholder="username"
+                        :value="this.newUsername"
+                        :oninput="this.newUsername = event.target.value"
+                    />
+                    <input
+                        type="text"
+                        placeholder="display name"
+                        :value="this.newDisplayName"
+                        :oninput="this.newDisplayName = event.target.value"
+                    />
+                    <input
+                        type="password"
+                        placeholder="password"
+                        :value="this.newPassword"
+                        :oninput="this.newPassword = event.target.value"
+                    />
+                    <input
+                        type="text"
+                        placeholder="tone (optional)"
+                        :value="this.newTone"
+                        :oninput="this.newTone = event.target.value"
+                    />
+                </div>
+                <button class="btn-primary" :onmouseup="this.addHousehold()">
+                    <i class="iconoir-add-user"></i> Add member
+                </button>
+            </div>
+        </details>
     </section>
 
     <!-- Face review: a swipeable "Is this you?" card stack — one face at a time, big

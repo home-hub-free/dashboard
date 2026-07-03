@@ -43,6 +43,7 @@ export async function stubBackend(page: Page) {
   await page.route("**/tts/**", (r) => r.fulfill({ status: 200, contentType: "audio/wav", body: "" }));
   await page.route("**/voice/**", (r) => r.fulfill(json({ text: "" })));
   await page.route("**/speaker/**", (r) => r.fulfill(json({ ok: true })));
+  await page.route("**/calendar/**", (r) => r.fulfill(json({ ok: true })));
 
   // specific GETs (high priority — registered last)
   await page.route("**/api/auth/me", (r) => r.fulfill(json({ user: fx.user })));
@@ -55,6 +56,9 @@ export async function stubBackend(page: Page) {
   await page.route("**/speaker/health", (r) => r.fulfill(json({ ok: true })));
   await page.route("**/speaker/profiles", (r) => r.fulfill(json(fx.profiles)));
   await page.route("**/memory/candidates", (r) => r.fulfill(json(fx.candidates)));
+  // calendar-service (Settings → Google Calendar card) — SA mode with long emails.
+  await page.route("**/calendar/status", (r) => r.fulfill(json(fx.calendarStatus)));
+  await page.route("**/calendar/calendars", (r) => r.fulfill(json(fx.calendarsView)));
   // vision-service world-model poll + camera controls (hub /camera/:id proxy).
   await page.route("**/vision/occupancy", (r) => r.fulfill(json(fx.visionOccupancy)));
   await page.route("**/vision/health", (r) => r.fulfill(json({ ok: true })));

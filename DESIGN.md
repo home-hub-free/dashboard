@@ -39,36 +39,42 @@ token so the system stays coherent.
 
 ## 2. Color semantics
 
-Dark mode, "Nocturne Console": cool blue-black backgrounds (`--color-background`
-#0b0e16), raised surfaces (`--color-surface` #171d2c, `--color-surface-secondary`
-#121724, `--color-surface-tertiary` #1f2638), cool near-white text
-(`--color-text-primary` #eef1f8).
+Dark mode, "Ember": near-neutral **warm charcoal** backgrounds (`--color-background`
+#131110), raised surfaces (`--color-surface` #1c1916, `--color-surface-secondary`
+#161311, `--color-surface-tertiary` #262220), warm near-white text
+(`--color-text-primary` #f1ece5). The warmth lives in the **accents**, not the
+walls — saturated brown surfaces read as mud, not home. Lamplight in a dark room.
 
 **Three distinct accent meanings — keep them separate:**
 
 | Meaning | Token | Where |
 |---|---|---|
 | **A light is on** (illumination) | `--gradient-active-warm` (gold) + `--glow-active-warm` | `.cat-light.on`, `.cat-dimmable-light.on` |
-| **Another device is active** (e.g. blinds open) | `--gradient-active-cool` (electric cyan) + `--glow-active-cool` | `.cat-blinds.on` |
-| **Interactive / brand** | `--color-primary` (iris violet) | nav-active, buttons, focus rings, sliders |
+| **Another device is active** (e.g. blinds open) | `--gradient-active-cool` (dusk blue) + `--glow-active-cool` | `.cat-blinds.on` |
+| **Interactive / brand** | `--color-primary` (warm coral) | nav-active, buttons, focus rings, sliders |
 
-The gold/cyan/iris split is deliberate: a device-state fill must never read the same
-as an interactive control. Gold and cyan are reserved for device state; iris is the
-brand/interaction color. **Do not paint buttons cyan or device states iris.**
+The gold/dusk-blue/coral split is deliberate: a device-state fill must never
+read the same as an interactive control. Gold and dusk blue are reserved for device
+state; coral is the brand/interaction color. **Do not paint buttons dusk blue
+or device states coral.** Small boolean state chips (cooler fan/water, the
+satellite mic) fill `--color-success` when on — green = enabled/live, same as the
+`.switch`.
 
 State/status colors use the semantic set: `--color-success` (on / detected /
 enabled), `--color-error` (off / danger / remove), `--color-warning`,
 `--color-info`.
 
-**Text on filled accent surfaces** uses `--color-on-fill` (near-black) and its muted
-variants — verified ≥6:1 on both the gold and cyan fills.
+**Text on filled accent surfaces** uses `--color-on-fill` (warm near-black) and its
+muted variants — verified ≥5.7:1 on the gold, dusk-blue and success fills. The same
+rule covers the coral brand fill via `--color-text-inverse`: **cream text FAILS on
+coral** — filled buttons always use the dark ink.
 
 ### Contrast (WCAG AA)
 Body/status text must clear **4.5:1** on its background. The gotcha: text that
 passes on the page background can fail on a *raised* surface. `--color-text-tertiary`
-is tuned (#8c96af) to clear 4.5:1 on `--color-surface` and `--color-surface-secondary`
-— if you darken it, re-check on-surface contrast. `--color-text-secondary` (≈5.1:1
-on surface) is the safe choice for on-surface helper/status copy.
+is tuned (#a09788; 6.1:1 on surface, 5.5:1 on the tertiary surface) — if you darken
+it, re-check on-surface contrast. `--color-text-secondary` (≈10:1 on surface) is the
+safe choice for on-surface helper/status copy.
 
 ---
 
@@ -93,9 +99,23 @@ drop shadow to resting tiles to "match" it.
 The whole tile is the switch for single-actuator devices. Tiles are **channel-driven**:
 `decorateDevice()` projects each device into channels, each tagged with a `control`
 (`chip` / `slider` / `stepper` / `readout` / `none`), and the template renders
-generically — no per-category layout. Lit tiles get the gold/cyan fill + glow + the
-on-fill text treatment. `manual` lock shows as a dashed border. Cooler and camera
+generically — no per-category layout. Lit tiles get the gold/dusk-blue fill + glow +
+the on-fill text treatment. `manual` lock shows as a dashed border. Cooler and camera
 tiles are `wide` (span 2 columns).
+
+**A tile is glanceable, not exhaustive.** The cooler is the reference case: one hero
+readout (room temp, with the setpoint as its label), one status line ("Cooling ·
+fan + water"), and the fan/water chips — the unit temp and the target stepper are
+demoted to the detail overlay (`control: "none"` in `decorateDevice`). Follow that
+hierarchy before adding a fourth data point to any tile.
+
+### Camera tile & lightbox (`ui/tiles.scss`, `ui/overlay.scss`)
+Tap = **fullscreen live lightbox** (`openCameraLive` → `.cam-live`): the stream
+edge-to-edge on black, name/health up top, "who is here" + the PTZ D-pad and
+saved-view chips along the bottom, safe-area padded. Config is behind the **⋯ on
+the cam label** (hub edit sheet, or the tune overlay for vision-only cams) —
+watching is the tile's primary action, matching every other tile where tap = act,
+⋯ = configure.
 
 ### Sensor chip (`ui/tiles.scss`, `views/home/sensors/`)
 Horizontally-scrolling environment band (`#sensors.env-band`). A right-edge mask

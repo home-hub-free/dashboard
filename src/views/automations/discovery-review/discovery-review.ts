@@ -186,16 +186,35 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
    * rule fires on that edge only (e.g. presence=true), not on its inverse.
    */
   private toEffect(c: Candidate): Effect {
-    const trigger: Trigger = { source: "sensor", nodeId: c.trigger.nodeId, channel: c.trigger.channel };
+    const channel = this.realChannel(c.trigger.nodeId, c.trigger.channel);
+    const trigger: Trigger = { source: "sensor", nodeId: c.trigger.nodeId, channel };
     const sensorGuard: ArmCondition = {
       kind: "sensor",
       nodeId: c.trigger.nodeId,
-      channel: c.trigger.channel,
+      channel,
       op: "eq",
       value: c.trigger.value,
     };
     const arms: Arm[] = c.arms.map((a) => ({ when: [sensorGuard, ...(a.when || [])], set: a.set }));
     return { trigger, arms, enabled: true };
+  }
+
+  /**
+   * Defensive channel normalization. The hub publishes each sensor event twice: on its real
+   * per-channel key (e.g. `presence`) AND on the legacy whole-value blob topic literally named
+   * `sensor`. The Pattern Discovery miner keys some candidates off that blob topic, so a crystallized
+   * rule would trigger on channel `sensor` — which the hub's evaluator (`Node.automations`) never
+   * fires, making the rule inert (a presence "turn off" rule that never turns off). We remap the
+   * legacy `sensor` channel to the node's real sensor channel here so the accepted rule fires. A
+   * non-legacy channel, or a node we can't resolve, passes through unchanged (no regression).
+   */
+  private realChannel(nodeId: string, channel: string): string {
+    if (channel !== "sensor") return channel;
+    const sen = store.get("sensors").find((s) => s.id === nodeId);
+    // Boolean motion/presence sensors project to the `presence` channel (server channels.ts);
+    // temp/humidity carries a numeric guard and is already keyed on its real channel by the miner.
+    if (sen && (sen.deviceCategory === "motion" || sen.deviceCategory === "presence")) return "presence";
+    return channel;
   }
 }
 

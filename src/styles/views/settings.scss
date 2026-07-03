@@ -13,42 +13,54 @@
   gap: 0.5rem;
 }
 
+// Fixed columns (name | tone | trash slot) so rows align whatever the name
+// length; the trash column stays reserved on the "you" row (no button) too.
 .household-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px 34px;
+  align-items: center;
+  gap: 0.6rem;
+
   .household-name {
-    flex: 1;
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
 
     .household-display {
       font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .household-you {
+      flex: none;
       font-size: 0.72rem;
       padding: 1px 7px;
       border-radius: 999px;
       background: var(--color-primary);
       color: var(--color-text-inverse);
-      align-self: flex-start;
     }
   }
 
   input,
   select {
+    width: 100%;
+    box-sizing: border-box;
     padding: 0.4rem 0.5rem;
     font-size: 0.9rem;
-    border: 1px solid var(--color-primary-light);
+    border: 1px solid var(--color-border-light);
     border-radius: 6px;
     background: var(--color-surface);
     color: var(--color-text-primary);
     font-family: inherit;
     outline: none;
-  }
-}
 
-.household-tone-input {
-  min-width: 140px;
+    &:focus {
+      border-color: var(--color-primary);
+    }
+  }
 }
 
 .household-add {
@@ -139,8 +151,9 @@
     min-width: 0;
   }
 
-  // Calendar link rows reuse .voice-id-actions; the leading label names the
-  // target, then the connect button or a "connected" badge follows.
+  // Calendar rows: the leading label names the target (often a long email) —
+  // it ELLIPSIZES on one line (full string in the title) instead of wrapping
+  // mid-address and scattering everything after it.
   .cal-row-label {
     display: inline-flex;
     align-items: center;
@@ -148,13 +161,88 @@
     font-size: 0.9rem;
     font-weight: 600;
     min-width: 0;
-    overflow-wrap: anywhere; // calendar summaries are often emails
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  // Add-a-calendar: input on its own line, compact actions row under it.
+  .cal-add {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.95rem;
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-control);
+      background: var(--color-background);
+      color: var(--color-text-primary);
+      font-family: inherit;
+      outline: none;
+
+      &:focus {
+        border-color: var(--color-primary);
+      }
+    }
+
+    .cal-add-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+
+  // The family-calendar picker fills the row remainder (long summaries clip).
+  .voice-id-actions .person-promote {
+    flex: 1;
+    min-width: 0;
   }
 
   .cal-list {
     display: flex;
     flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  // One recessed row per calendar: name + status line, actions line under it.
+  .cal-row {
+    display: flex;
+    flex-direction: column;
     gap: 0.35rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: var(--radius-control);
+    background: var(--color-surface-secondary);
+
+    .cal-row-main {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+
+      .cal-row-label {
+        flex: 1;
+      }
+
+      .voice-id-count {
+        flex: none;
+        margin-left: 0;
+      }
+    }
+
+    .cal-row-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.5rem;
+
+      &:empty {
+        display: none;
+      }
+    }
   }
 
   // Added but not shared with the service account yet — amber prompt.
@@ -448,16 +536,101 @@
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-text-primary);
-  // A <select> sizes to its widest option; as a flex item it won't shrink
-  // below that — cap it so a long option truncates instead of overflowing.
+  // A <select> sizes to its widest option (often a long email) and that
+  // INTRINSIC width propagates up and blows the whole panel past the viewport.
+  // Percentage max-width can't cap intrinsic sizing (treated as auto there) —
+  // only a definite length does, hence the vw cap.
   min-width: 0;
-  max-width: 100%;
+  max-width: calc(100vw - 96px);
 }
 
 .person-empty {
   margin: 0.25rem 0 0;
   font-size: 0.85rem;
   color: var(--color-text-tertiary);
+}
+
+// ---- Recognized-face audit panel (per member) -----------------------------------------------
+.person-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.person-audit {
+  margin: 0.25rem 0 0.75rem 3.75rem; // indent under the member's face
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--color-border);
+}
+
+.cluster-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.cluster-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 84px;
+
+  .cluster-thumb {
+    width: 72px;
+    height: 72px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    background: var(--color-surface-secondary);
+  }
+
+  .cluster-thumb-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-tertiary);
+  }
+
+  .cluster-score {
+    font-size: 0.72rem;
+    color: var(--color-text-secondary);
+  }
+}
+
+// ---- Recognition thresholds (advanced) ------------------------------------------------------
+.threshold-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.threshold-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .threshold-key {
+    flex: 1 1 auto;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.8rem;
+  }
+
+  .household-tone-input {
+    width: 5.5rem;
+    flex: 0 0 auto;
+  }
+
+  .threshold-default {
+    font-size: 0.72rem;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .threshold-default-muted {
+    cursor: default;
+  }
 }
 
 // ---- Face lightbox (tapped gallery crop, full-size) ----------------------------------------

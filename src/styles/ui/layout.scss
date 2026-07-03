@@ -15,7 +15,10 @@ $nav-rail-width: 248px;
   #main-content {
     position: fixed;
     width: 100%;
-    padding: 8px;
+    // No shell padding on phones: the header and each view own their single
+    // 16px gutter. (Shell 8px + tab-content 10px + view 16px used to nest into
+    // a 34px gutter — 17% of a 390px screen.)
+    padding: 0;
     box-sizing: border-box;
     height: calc(100% - 100px); // clear the 100px bottom nav (fallback)
     height: calc(100dvh - 100px); // dvh tracks the on-screen keyboard
@@ -48,41 +51,15 @@ $nav-rail-width: 248px;
     #tabs {
       // No top padding: the strip is empty on every current menu item, so any
       // padding here is a blank band between the header and the content.
+      // (The .menu-tabs strip itself only renders with >1 tab — which no menu
+      // item has — so it carries no phone styles anymore.)
       padding-top: 0;
-
-      .menu-tabs {
-        height: 55px;
-        line-height: 50px;
-        font-size: 1.4em;
-        position: relative;
-        white-space: nowrap;
-        overflow-x: scroll;
-
-        .tab {
-          cursor: pointer;
-          padding: 0 20px;
-          display: inline-block;
-          color: var(--color-text-secondary);
-
-          &.active {
-            color: var(--color-primary-dark);
-          }
-        }
-
-        .active-indicator {
-          transition: all 220ms cubic-bezier(0.65, 0.41, 0.33, 1.21);
-          border-bottom: 3px;
-          border-bottom-style: solid;
-          position: absolute;
-          border-radius: 4px;
-          border-bottom-color: var(--color-primary-dark);
-        }
-      }
     }
 
     #tab-content {
       text-align: center;
-      padding: 10px;
+      // Vertical-only: views own their 16px side gutters (single source).
+      padding: 6px 0 0;
       flex: 1;
       min-height: 0;
       position: relative;
@@ -198,6 +175,29 @@ $nav-rail-width: 248px;
   text-align: left;
 }
 
+// Phones: the shell header is the ONE title (views hide their .page-head, see
+// below) — slim it so content starts higher.
+@include mobile-only {
+  #main-content #header .header {
+    padding: 14px 16px 6px;
+
+    .header-title {
+      font-size: 1.7rem;
+    }
+
+    .header-subtitle {
+      margin-top: 2px;
+      font-size: 0.88rem;
+    }
+  }
+
+  // The editorial kicker+title+lede duplicates the shell header title and costs
+  // ~150px a phone doesn't have. Desktop (≥640px) keeps it.
+  #main-content #tab-content .page-head {
+    display: none;
+  }
+}
+
 // Every view eases in on tab switch (roots mount per navigation, so this never
 // replays on a live data tick).
 #main-content #tab-content > div {
@@ -274,6 +274,17 @@ $nav-rail-width: 248px;
     // Light default for any text that doesn't set its own colour — otherwise it
     // inherits the browser default (black) and vanishes on the dark surfaces.
     color: var(--color-text-primary);
+  }
+}
+
+// Phones: the column owns the single 16px gutter (the shell contributes none),
+// and with the page-head hidden it needs no extra headroom.
+@include mobile-only {
+  #main-content #tab-content {
+    .page-col,
+    .assistant-view {
+      padding: 4px 16px 16px;
+    }
   }
 }
 

@@ -16,7 +16,7 @@ import template from "./devices.html?raw";
 import { Device, DeviceGroup, DevicesTabState } from "./devices.model";
 import { Channel, deviceChannels, withChannelValue } from "./channels";
 import { DevicesService, DevicesServiceClass } from "./devices.service";
-import { openCameraControls } from "./camera-ctl.service";
+import { CAM_NUDGE_MS, CAM_NUDGE_SPEED, openCameraControls, openCameraLive } from "./camera-ctl.service";
 import { startVisionOccupancy, stopVisionOccupancy } from "../../../utils/vision-handler";
 
 // Tiles with no zone set fall under this bucket; cameras get their own group.
@@ -39,6 +39,17 @@ const TILE_ICON_OFF: { [cat: string]: string } = {
   camera: "iconoir-video-camera",
   "voice-satellite": "iconoir-sound-high",
 };
+
+/**
+ * A tile shows a vision-service live view when the node declares a camera-capability
+ * `stream` block — a `camera` proper OR a camera-equipped `voice-satellite` (its OV2640
+ * on the board's DVP connector). Gate on the block, not the category, so an audio-only
+ * satellite stays picture-free and a ribboned one lights up automatically. `camera`
+ * stays true even if the block hasn't landed yet (ONVIF/RTSP cams synthesize late).
+ */
+export function hasCamView(device: Device): boolean {
+  return device.deviceCategory === "camera" || !!device.stream?.path;
+}
 
 /**
  * Decorate a raw device with the display-time fields the generic template renders
@@ -68,15 +79,30 @@ function decorateDevice(device: Device): Device {
     });
   }
 
+  // Cooler: the tile is glanceable, not exhaustive — one hero readout (room temp,
+  // with the setpoint as its label) plus the fan/water chips. Unit temp and the
+  // target stepper are demoted to the detail overlay, which already carries both.
+  if (device.deviceCategory === "evap-cooler") {
+    const target = Number((device.value ?? {}).target);
+    channels.forEach((c) => {
+      if (c.key === "unit-temp" || c.key === "target") c.control = "none";
+      if (c.key === "room-temp" && Number.isFinite(target)) c.label = `target ${Math.round(target)}°`;
+    });
+  }
+
   // Battery readout only exists when the board actually has a cell: the blob key is
   // absent until the firmware's first report, and -1 means "slot empty".
   device.channels = channels.filter(
     (c) => c.key !== "battery" || ((device.value ?? {}).battery ?? -1) >= 0,
   );
-  device.wide = device.deviceCategory === "evap-cooler" || device.deviceCategory === "camera";
+  device.wide =
+    device.deviceCategory === "evap-cooler" || hasCamView(device);
   // Camera live view comes from the vision-service (annotated MJPEG), never the cam
   // directly nor a relayed blob (§3.2/§6). `who` is filled by the occupancy poller.
-  if (device.deviceCategory === "camera") {
+  // A camera-equipped satellite gets the identical view (same vision-service worker,
+  // keyed by device id) stacked above its normal audio/battery controls.
+  device.hasCamView = hasCamView(device);
+  if (device.hasCamView) {
     device.streamUrl = visionStreamUrl(device.id);
     // The control-bar :foreach must never see undefined — bindrjs renders the
     // region the instant `ptz` flips true, before the controls fetch lands.
@@ -103,7 +129,7 @@ function batteryIcon(pct: number): string {
   return "iconoir-battery-warning";
 }
 
-/** The tile body status line, per category. Cooler shows its own readouts instead. */
+/** The tile body status line, per category. */
 function computeStatus(device: Device, actuators: Channel[]): string {
   switch (device.deviceCategory) {
     case "light":
@@ -120,6 +146,14 @@ function computeStatus(device: Device, actuators: Channel[]): string {
       const vol = device.channels?.find((c) => c.key === "volume")?.value as number;
       const mic = device.channels?.find((c) => c.key === "mic")?.value === true;
       return `Vol ${Math.round(vol ?? 0)}% · Mic ${mic ? "on" : "off"}`;
+    }
+    case "evap-cooler": {
+      const fan = actuators.find((c) => c.key === "fan")?.value === true;
+      const water = actuators.find((c) => c.key === "water")?.value === true;
+      if (fan && water) return "Cooling · fan + water";
+      if (fan) return "Fan on";
+      if (water) return "Water on";
+      return "Idle";
     }
     default:
       return "";
@@ -165,10 +199,7 @@ function summariseCamHealth(
   return { text: st.face === "null" ? "live · detecting" : "live · ID on", state: "ok", title };
 }
 
-/** PTZ nudge tuning: one tap = a short timed move (auto-stopped service-side).
- * Repeat taps to keep panning — no hold-to-move, so nothing can ever stick. */
-const CAM_NUDGE_SPEED = 0.5;
-const CAM_NUDGE_MS = 400;
+// PTZ nudge tuning (CAM_NUDGE_*) lives in camera-ctl.service — shared with the lightbox.
 
 /** Display name for a camera that exists only in the vision roster (static RTSP
  * fleet — no hub device row carrying a user-set name): its zone, capitalized. */
@@ -335,10 +366,9 @@ class DevicesTabClass extends Component<DevicesTabState> {
         onTileClick: (device: Device) => {
           const cat = device.deviceCategory;
           if (cat === "camera") {
-            // Vision-roster cams have no hub device row — the hub edit overlay
-            // doesn't apply; open the camera tune overlay (views + image) instead.
-            if (device.visionOnly) this.openCamTune(device);
-            else this.devicesService.editClick({ target: this.tileEl(device.id) }, device);
+            // Watching is the primary action — fullscreen live lightbox. Config
+            // moved behind the ⋯ on the cam label (onCamEdit).
+            openCameraLive({ target: this.tileEl(device.id) }, device);
             return;
           }
           if (cat === "blinds") {
@@ -389,6 +419,15 @@ class DevicesTabClass extends Component<DevicesTabState> {
         onEditClick: (event: any, device: Device) => {
           event.stopPropagation();
           this.devicesService.editClick(event, device);
+        },
+
+        // Camera ⋯ — the config path (tap on the tile itself = live lightbox).
+        // Vision-roster cams have no hub device row, so the hub edit overlay
+        // doesn't apply; they get the camera tune overlay (views + image).
+        onCamEdit: (event: any, device: Device) => {
+          event.stopPropagation();
+          if (device.visionOnly) this.openCamTune(device);
+          else this.devicesService.editClick({ target: this.tileEl(device.id) }, device);
         },
 
         // ── camera tile controls (CAMERA_ONVIF_CONTROL_PLAN §2/§4) ────────────
@@ -540,9 +579,11 @@ class DevicesTabClass extends Component<DevicesTabState> {
     }
   }
 
-  /** Every camera tile — hub-declared and vision-only alike live in bind.devices. */
+  /** Every tile with a live view — `camera` nodes (hub-declared + vision-only) plus
+   * camera-equipped satellites — so occupancy/health enrichment reaches them all.
+   * Satellites carry no ONVIF caps, so the PTZ/imaging fields stay false for them. */
   private cameraTiles(): Device[] {
-    return (this.bind.devices || []).filter((d) => d.deviceCategory === "camera");
+    return (this.bind.devices || []).filter(hasCamView);
   }
 
   private findCamera(deviceId: string): Device | undefined {

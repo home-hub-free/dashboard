@@ -31,10 +31,20 @@
             :onclick="this.onTileClick(device)"
             oncontextmenu="return false;"
         >
-            <!-- CAMERA: full-bleed annotated live view (from the vision-service, not the cam)
-                 with the high-value "who is here" headline overlaid (§6). -->
-            <div class="cam-wrap" :if="device.deviceCategory === 'camera'">
-                <img :if="device.streamUrl" :src="device.streamUrl" alt="" />
+            <!-- CAMERA (or camera-equipped satellite): full-bleed annotated live view
+                 from the vision-service — not the cam — with the "who is here" headline
+                 overlaid (§6). A satellite keeps its audio/battery controls below. -->
+            <div class="cam-wrap" :if="device.hasCamView">
+                <!-- A dead stream must NEVER paint the broken-image glyph: it has its
+                     own intrinsic size and blows the tile layout apart. Hide (not
+                     remove — keeps the box) until a frame actually loads. -->
+                <img
+                    :if="device.streamUrl"
+                    :src="device.streamUrl"
+                    alt=""
+                    onerror="this.classList.add('img-dead')"
+                    onload="this.classList.remove('img-dead')"
+                />
                 <div :else class="cam-placeholder">
                     <i class="iconoir-video-camera-off"></i>
                     <span>No signal</span>
@@ -51,9 +61,16 @@
                     <span class="cam-health-dot"></span>
                     <span>${device.camHealth}</span>
                 </div>
+                <!-- Name row + the camera's ⋯ config affordance (tile tap = live
+                     lightbox). Satellites keep their own ⋯ in .tile-top below. -->
                 <div class="cam-label">
                     <i class="iconoir-video-camera"></i>
                     <span>${device.name}</span>
+                    <i
+                        class="tile-edit iconoir-more-horiz"
+                        :if="device.deviceCategory === 'camera'"
+                        :onclick="this.onCamEdit(event, device)"
+                    ></i>
                 </div>
             </div>
 

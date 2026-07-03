@@ -19,11 +19,12 @@ body {
   -moz-user-select: none;
   user-select: none;
 
-  // Ambient depth: two faint brand-colored glows over the blue-black base.
+  // Ambient depth: a faint coral glow up top, an ember-gold one below —
+  // lamplight over the warm-charcoal base ("Ember", see _tokens.scss §1).
   background:
-    radial-gradient(130% 90% at 86% -14%, rgba(139, 123, 255, 0.12), transparent 52%),
-    radial-gradient(120% 85% at -10% 112%, rgba(34, 196, 230, 0.09), transparent 55%),
-    #080a12;
+    radial-gradient(130% 90% at 86% -14%, rgba(232, 132, 99, 0.08), transparent 52%),
+    radial-gradient(120% 85% at -10% 112%, rgba(255, 170, 55, 0.05), transparent 55%),
+    #0f0d0c;
   background-attachment: fixed;
 }
 

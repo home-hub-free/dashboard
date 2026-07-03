@@ -45,7 +45,7 @@ async function gotoSettings(page: Page) {
   await page.waitForSelector("#devices .device-tile", { timeout: 30_000 }).catch(() => {});
   await page.locator(".menu-item", { hasText: "Settings" }).first().click();
   await page.waitForSelector(".settings-view", { timeout: 20_000 });
-  await page.waitForSelector(".cal-list .voice-id-actions", { timeout: 20_000 });
+  await page.waitForSelector(".cal-list .cal-row", { timeout: 20_000 });
   await page.waitForTimeout(400);
 }
 

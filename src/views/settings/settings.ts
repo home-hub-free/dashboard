@@ -100,6 +100,16 @@ class SettingsContentClass extends Component<SettingsState> {
         peopleMsg: "",
         forgetPerson: (id: string) => this.householdService.forgetPerson(id),
 
+        // Recognized-face audit + thresholds (service-driven).
+        clustersOpenFor: "",
+        clustersBusy: false,
+        memberClusters: [],
+        toggleClusters: (userId: string) => this.householdService.toggleClusters(userId),
+        detachClusterAction: (guestId: string) => this.householdService.detachClusterAction(guestId),
+        thresholds: [],
+        saveThreshold: (key: string, value: string) => this.householdService.saveThreshold(key, value),
+        resetThreshold: (key: string) => this.householdService.resetThreshold(key),
+
         // Face review — the "Is this you?" card stack (service-driven).
         reviewCards: [],
         reviewOthers: 0,

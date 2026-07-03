@@ -14,6 +14,9 @@
   top: 0;
   height: 100%;
   width: 100%;
+  // Above the fixed nav (--z-fixed) — without this the phone bottom bar drew
+  // over the sheet's lower edge (and over the fullscreen camera lightbox).
+  z-index: var(--z-modal);
 
   &.opening {
     transition: background-color 150ms ease 150ms;
@@ -389,45 +392,9 @@
     }
   }
 
-  // Advanced disclosure (installer / power-user controls)
-  .overlay-advanced {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-chip);
-    background: var(--color-surface-secondary);
-
-    > summary {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      padding: var(--space-4);
-      cursor: pointer;
-      list-style: none;
-      font-weight: var(--font-weight-bold);
-      color: var(--color-text-secondary);
-      user-select: none;
-
-      &::-webkit-details-marker {
-        display: none;
-      }
-
-      .adv-chevron {
-        margin-left: auto;
-        transition: transform 200ms var(--ease-out);
-      }
-    }
-
-    &[open] > summary {
-      border-bottom: 1px solid var(--color-border);
-
-      .adv-chevron {
-        transform: rotate(180deg);
-      }
-    }
-
-    > .device-setting {
-      margin: var(--space-4);
-    }
-  }
+  // Advanced disclosure (installer / power-user controls) — the styles are the
+  // generic .disclosure primitive in ui/panels.scss (.overlay-advanced is its
+  // co-selector alias, kept for the existing overlay markup).
 
   // 24-hour active-hours timeline
   .time-bar.day-bar {
@@ -553,6 +520,177 @@
 
     .spin {
       animation: spin 1s linear infinite;
+    }
+  }
+}
+
+// ---- Fullscreen camera lightbox (camera-live.template.html) ---------------------
+// The overlay sheet driven to the full viewport (openCameraLive: padding 0/0).
+// :has() strips the sheet chrome so the stream sits edge-to-edge on black.
+.overlay-modal-content .content:has(> .cam-live) {
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.overlay-modal-content .content.visible:has(> .cam-live) {
+  background-color: #000;
+}
+
+.cam-live {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  background: #000;
+
+  .cam-live-view {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; // whole frame visible — this is the "see everything" surface
+  }
+
+  .cam-live-placeholder {
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-text-tertiary);
+
+    i {
+      font-size: 52px;
+    }
+  }
+
+  // Top bar: name · health pill · close. Safe-area padded (notch).
+  .cam-live-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 18px;
+    color: #fff;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.65), transparent);
+  }
+
+  .cam-live-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: auto;
+    min-width: 0;
+    font-size: 1.05rem;
+    font-weight: var(--font-weight-semibold);
+
+    i {
+      font-size: 20px;
+    }
+  }
+
+  // Same pill as the tile's .cam-health, but in-flow in the top bar (the tile
+  // rules are scoped under .cat-camera).
+  .cam-health {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+
+    .cam-health-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-text-secondary);
+      box-shadow: 0 0 6px currentColor;
+    }
+
+    &.cam-health--ok .cam-health-dot {
+      background: var(--color-success);
+      box-shadow: 0 0 7px var(--color-success);
+    }
+
+    &.cam-health--warn .cam-health-dot {
+      background: var(--color-warning);
+      box-shadow: 0 0 7px var(--color-warning);
+    }
+
+    &.cam-health--down .cam-health-dot {
+      background: var(--color-error);
+      box-shadow: 0 0 7px var(--color-error);
+    }
+  }
+
+  .cam-live-close {
+    flex: 0 0 auto;
+    width: var(--tap-target-min);
+    height: var(--tap-target-min);
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+
+    i {
+      font-size: 24px;
+    }
+
+    &:active {
+      transform: scale(0.94);
+    }
+  }
+
+  // Bottom: "who is here" + the everyday PTZ controls, above the home indicator.
+  .cam-live-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 22px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.7), transparent);
+  }
+
+  .cam-live-who {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: var(--font-weight-semibold);
+
+    i {
+      font-size: 18px;
+      opacity: 0.9;
+    }
+  }
+
+  .cam-live-ctrl {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+
+    // On black, the recessed surfaces need a touch more presence.
+    .cam-nudge {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.22);
+      color: #fff;
+    }
+
+    .cam-preset {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
     }
   }
 }

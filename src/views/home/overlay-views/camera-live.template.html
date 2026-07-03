@@ -1,0 +1,55 @@
+<!-- Fullscreen live view (lightbox) — the camera tile's tap target. Watching is
+     the primary action; config lives behind the tile's ⋯ (hub edit sheet, or the
+     tune overlay for vision-only cams). Everyday PTZ controls ride along at the
+     bottom so you can aim while watching. -->
+<div class="cam-live">
+    <img
+        class="cam-live-view"
+        :if="this.data.streamUrl"
+        :src="this.data.streamUrl"
+        alt=""
+        onerror="this.classList.add('img-dead')"
+        onload="this.classList.remove('img-dead')"
+    />
+    <div :else class="cam-live-placeholder">
+        <i class="iconoir-video-camera-off"></i>
+        <span>No signal</span>
+    </div>
+
+    <div class="cam-live-top">
+        <span class="cam-live-title"><i class="iconoir-video-camera"></i> ${this.data.name}</span>
+        <span class="cam-health" :class="this.data.camHealthClass" :if="this.data.camHealth">
+            <span class="cam-health-dot"></span>
+            <span>${this.data.camHealth}</span>
+        </span>
+        <!-- NB: this iconoir version has no `xmark` — `cancel` is the ✕ glyph. -->
+        <button class="cam-live-close" aria-label="Close live view" :onmouseup="this.closeOverlay()">
+            <i class="iconoir-cancel"></i>
+        </button>
+    </div>
+
+    <div class="cam-live-bottom">
+        <div class="cam-live-who" :if="this.data.who">
+            <i class="iconoir-group"></i><span>${this.data.who}</span>
+        </div>
+        <div class="cam-live-ctrl" :if="this.data.ptz">
+            <div class="cam-dpad" role="group" aria-label="Pan and tilt">
+                <button class="cam-nudge" title="Pan left" :onclick="this.actions.nudge(this.data, -1, 0)"><i class="iconoir-nav-arrow-left"></i></button>
+                <button class="cam-nudge" title="Tilt up" :onclick="this.actions.nudge(this.data, 0, 1)"><i class="iconoir-nav-arrow-up"></i></button>
+                <button class="cam-nudge" title="Tilt down" :onclick="this.actions.nudge(this.data, 0, -1)"><i class="iconoir-nav-arrow-down"></i></button>
+                <button class="cam-nudge" title="Pan right" :onclick="this.actions.nudge(this.data, 1, 0)"><i class="iconoir-nav-arrow-right"></i></button>
+            </div>
+            <div class="cam-views">
+                <button
+                    class="chip cam-preset"
+                    :foreach="preset in this.data.presets"
+                    :key="preset.token"
+                    :title="'Point the camera at “' + preset.name + '”'"
+                    :onclick="this.actions.goto(this.data, preset.token)"
+                >
+                    <i class="iconoir-bookmark-empty"></i> ${preset.name}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

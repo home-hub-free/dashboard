@@ -615,6 +615,69 @@ export async function listPeople(): Promise<Person[]> {
   }
 }
 
+/** One image folded into a household member's face profile (auto-heal or manual
+ * promote) — the audit trail. `score` = how well it still matches the member (low =
+ * a likely wrong auto-heal); `thumbUrl` is the captured face. */
+export type MemberCluster = {
+  guest_id: string;
+  sightings: number;
+  first_seen: string;
+  last_seen: string;
+  score: number | null;
+  has_thumb: boolean;
+  thumbUrl: string | null;
+};
+export async function listMemberClusters(userId: string): Promise<MemberCluster[]> {
+  try {
+    const res = await fetch(visionServer + `faces/${encodeURIComponent(userId)}/clusters`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data?.clusters || []).map((c: any) => ({
+      ...c,
+      thumbUrl: c.has_thumb ? faceThumbUrl(c.guest_id) : null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/** "That one wasn't me" — un-merge a wrongly auto-healed cluster from a member; it
+ * stops matching them and returns to the review queue for a fresh decision. */
+export async function detachCluster(guestId: string): Promise<void> {
+  const res = await fetch(visionServer + `faces/clusters/${encodeURIComponent(guestId)}/detach`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`Could not detach (${res.status})`);
+}
+
+/** A tunable recognition threshold (the auto-heal / match / suggest ladder). */
+export type FaceThreshold = { key: string; value: number; default: number; overridden: boolean };
+export async function getFaceThresholds(): Promise<FaceThreshold[]> {
+  try {
+    const res = await fetch(visionServer + "faces/thresholds");
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data?.thresholds || [];
+  } catch {
+    return [];
+  }
+}
+
+/** Adjust thresholds live. Pass `null` for a key to clear its override (back to default). */
+export async function setFaceThresholds(
+  updates: Record<string, number | null>,
+): Promise<FaceThreshold[]> {
+  const res = await fetch(visionServer + "faces/thresholds", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ updates }),
+  });
+  if (!res.ok) throw new Error(`Could not save thresholds (${res.status})`);
+  const data = await res.json();
+  return data?.thresholds || [];
+}
+
 /** Name a recurring guest without promoting them to a household member. */
 export async function nameGuest(guestId: string, name: string): Promise<void> {
   const res = await fetch(visionServer + `guests/${encodeURIComponent(guestId)}/name`, {

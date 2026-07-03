@@ -11,10 +11,38 @@ export const user = {
   prefs: { tone: "casual" },
 };
 
+// Mixed-length display names on purpose — the roster layout must stay aligned
+// however long the name is.
 export const households = [
   { id: "u1", username: "david", displayName: "David", prefs: { tone: "casual" } },
   { id: "u2", username: "sam", displayName: "Sam", prefs: { tone: "formal" } },
+  { id: "u3", username: "alejandra", displayName: "Alejandra Domínguez Cortés", prefs: { tone: "" } },
+  { id: "u4", username: "leo", displayName: "Leo", prefs: { tone: "playful" } },
 ];
+
+// calendar-service (Settings → Google Calendar card), SA mode. Long calendar
+// ids/emails on purpose — the rows must survive them without breaking spacing.
+export const calendarStatus = {
+  ok: true,
+  backend: "google-sa",
+  auth: "service_account",
+  house_linked: true,
+  enrolled: ["u1"],
+  family_calendar: "family@group.calendar.google.com",
+  sa_email: "home-hub-calendar@home-hub-project-458812.iam.gserviceaccount.com",
+};
+
+export const calendarsView = {
+  ok: true,
+  sa_email: "home-hub-calendar@home-hub-project-458812.iam.gserviceaccount.com",
+  family: "family@group.calendar.google.com",
+  calendars: [
+    { id: "family@group.calendar.google.com", summary: "Family", writable: true, reachable: true },
+    { id: "damuz9502@gmail.com", summary: "damuz9502@gmail.com", writable: true, reachable: true },
+    { id: "samantha.dominguez.workspace@longcompanyname.com", summary: "samantha.dominguez.workspace@longcompanyname.com", writable: false, reachable: false },
+  ],
+  members: { u1: { calendars: ["damuz9502@gmail.com"] } },
+};
 
 export const devices = [
   { id: "dev-ceiling", deviceCategory: "light", name: "Ceiling", zone: "Living Room", value: true, type: "boolean", manual: false, operationalRanges: [] },
@@ -26,7 +54,10 @@ export const devices = [
   { id: "dev-bedroom", deviceCategory: "dimmable-light", name: "Bedroom", zone: "Bedroom", value: 0, type: "value", manual: false, operationalRanges: [] },
   { id: "dev-cam", deviceCategory: "camera", name: "Garage Cam", zone: "Garage", value: null, type: "value", manual: true, operationalRanges: [] },
   // Two satellites: one on battery (readout shows), one without a cell (-1 → hidden).
-  { id: "dev-sat", deviceCategory: "voice-satellite", name: "Oficina", zone: "Bedroom", value: { volume: 40, mic: true, battery: 72 }, type: "value", manual: false, operationalRanges: [] },
+  // The first also carries a DVP camera (`stream` block → hasCamView): its live view
+  // aborts in the harness, so this doubles as the dead-stream render check (the
+  // broken-image glyph must never blow the tile layout).
+  { id: "dev-sat", deviceCategory: "voice-satellite", name: "Oficina", zone: "Bedroom", value: { volume: 40, mic: true, battery: 72 }, type: "value", manual: false, operationalRanges: [], stream: { proto: "mjpeg", port: 81, path: "/stream" } },
   { id: "dev-sat2", deviceCategory: "voice-satellite", name: "Sala Sat", zone: "Kitchen", value: { volume: 55, mic: false, battery: -1 }, type: "value", manual: false, operationalRanges: [] },
 ];
 

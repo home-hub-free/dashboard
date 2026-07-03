@@ -248,9 +248,11 @@
     box-shadow: none;
   }
 
+  // ON = success (green = enabled/live, DESIGN.md §2) — never the brand iris:
+  // a chip is device STATE, and state must not read as an interactive accent.
   &.on {
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
+    background: var(--color-success);
+    color: var(--color-on-fill);
   }
 
   i.spin {
@@ -375,61 +377,30 @@
 }
 
 // ---- Evaporative cooler (wide tile) ---------------------------------------------------
+// Glanceable hierarchy: hero room-temp readout top-right (the setpoint is its
+// label), name + one status line, then the fan/water chips. Unit temp and the
+// target stepper live in the detail overlay (control: "none" — decorateDevice).
 .device-tile.cat-evap-cooler {
   padding: 14px 16px;
 
-  .cooler {
-    display: flex;
-    align-items: stretch;
-    justify-content: space-between;
-    gap: 14px;
-    height: 100%;
-  }
+  .tile-controls .readout {
+    position: absolute;
+    top: 14px;
+    right: 48px; // clear the ⋯ edit affordance
+    align-items: flex-end;
+    text-align: right;
 
-  .cooler-main {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
+    .readout-val {
+      font-size: 2.1rem;
+      letter-spacing: var(--letter-spacing-tight);
 
-  .cooler-temps {
-    display: flex;
-    align-items: baseline;
-    gap: 14px;
-
-    .room-temp {
-      font-size: 2rem;
-      font-weight: var(--font-weight-bold);
-      color: var(--color-text-primary);
-      line-height: 1;
-
-      &.reached {
-        color: var(--color-success);
+      i {
+        display: none; // the number IS the hero — no glyph beside it
       }
     }
 
-    .target-temp {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.95rem;
-      color: var(--color-text-secondary);
-    }
-  }
-
-  .cooler-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .tile-controls {
-    gap: 14px;
-
-    .readout .readout-val {
-      font-size: 1.6rem;
+    .readout-label {
+      font-size: 0.78rem;
     }
   }
 }
@@ -494,7 +465,15 @@
     i {
       font-size: 18px;
     }
+
+    // The camera's config affordance (tile tap = live lightbox).
+    .tile-edit {
+      margin-left: auto;
+      font-size: 22px;
+      color: rgba(255, 255, 255, 0.85);
+    }
   }
+
 
   // "Who is here" headline — bottom-anchored under the live view.
   .cam-who {
@@ -519,10 +498,12 @@
 
   // Stream/detection health pill — a traffic-light dot: frames flowing?
   // actually detecting, or running the null stub? Tooltip carries raw counters.
+  // Right-offset clears the label-row ⋯ (cameras only; the satellite's own
+  // .cam-health block keeps right: 10px — no label-row ⋯ there).
   .cam-health {
     position: absolute;
     top: 10px;
-    right: 10px;
+    right: 48px;
     z-index: 2;
     display: flex;
     align-items: center;
@@ -562,6 +543,8 @@
   // ONVIF control bar (CAMERA_ONVIF_CONTROL_PLAN §2) — drawn per-capability:
   // D-pad (PTZ cams), saved-view chips, and the tune button (any ONVIF cam).
   // Sits UNDER the live view on a normal surface so the video stays clean.
+  // (The D-pad/nudge/views vocabulary itself is generic — see below — the
+  // fullscreen lightbox reuses it.)
   .cam-ctrl {
     display: flex;
     align-items: center;
@@ -570,61 +553,172 @@
     background: var(--color-surface);
     border-top: 1px solid var(--color-border);
   }
+}
 
-  .cam-dpad {
-    display: flex;
-    gap: 6px;
-    flex: 0 0 auto;
+// A live-view <img> whose stream errored (onerror in the templates): keep the
+// box (overlays and siblings hold their layout) but never show the UA's
+// broken-image glyph — it has intrinsic size and wrecks the tile.
+.cam-wrap img.img-dead,
+.cam-live .cam-live-view.img-dead {
+  visibility: hidden;
+}
+
+// ---- Camera control vocabulary (shared) ------------------------------------------------------
+// The D-pad, nudge/tune button and saved-view chips — used by the tile's
+// .cam-ctrl bar AND the fullscreen lightbox (.cam-live-ctrl, ui/overlay.scss).
+.cam-dpad {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+// Square nudge/tune button — one tap, one short auto-stopped move.
+.cam-nudge {
+  position: relative;
+  width: 42px;
+  height: 36px;
+  min-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-surface-tertiary);
+  color: var(--color-text-secondary);
+
+  // Visual stays compact; hit area meets the 44px touch minimum (§12.4).
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -4px -1px;
   }
 
-  // Square nudge/tune button — one tap, one short auto-stopped move.
-  .cam-nudge {
-    position: relative;
-    width: 42px;
-    height: 36px;
-    min-height: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--color-border-light);
-    background: var(--color-surface-tertiary);
-    color: var(--color-text-secondary);
+  &:active {
+    transform: scale(0.97);
+    color: var(--color-text-primary);
+  }
 
-    // Visual stays compact; hit area meets the 44px touch minimum (§12.4).
-    &::before {
-      content: "";
-      position: absolute;
-      inset: -4px -1px;
-    }
+  i {
+    font-size: 18px;
+  }
+}
 
-    &:active {
-      transform: scale(0.97);
-      color: var(--color-text-primary);
-    }
+.cam-views {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+
+  .cam-preset {
+    max-width: 160px;
 
     i {
-      font-size: 18px;
+      font-size: 14px;
+      flex: 0 0 auto;
+    }
+  }
+}
+
+// ---- Camera-equipped voice satellite --------------------------------------------------------
+// A satellite with an OV2640 on its DVP connector shows the SAME vision-service live
+// view as the room cams, but as a bounded banner at the TOP of an otherwise-normal
+// tile — its audio/battery controls (.tile-inner) keep their body below. So, unlike
+// .cat-camera, we do NOT blank the tile to a full-bleed black frame: only .cam-wrap is
+// styled, and it bleeds out over the tile's 14px padding to reach the edges.
+.device-tile.cat-voice-satellite {
+  .cam-wrap {
+    position: relative;
+    margin: -14px -14px 12px;  // cancel the tile padding so the banner is edge-to-edge
+    height: 150px;
+    border-radius: var(--radius-tile) var(--radius-tile) 0 0;
+    overflow: hidden;
+    background: #000;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
   }
 
-  .cam-views {
+  // The tile body already shows the device name, so drop the video's name overlay.
+  .cam-label { display: none; }
+
+  // The banner offsets where .tile-inner starts, so the generic
+  // `.tile-inner { height: 100% }` would overflow the tile by exactly the
+  // banner height — clipping the audio/battery controls behind the tile's
+  // overflow:hidden. Size to content instead.
+  .cam-wrap + .tile-inner {
+    height: auto;
+    min-height: 0;
+  }
+
+  // Reuse the room-cam language for the overlays (the .cat-camera rules are scoped to
+  // that category, so restate the essentials here). No .cam-label — the tile body
+  // already shows the device name.
+  .cam-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--color-text-tertiary);
+    background: var(--color-surface-secondary);
+
+    i { font-size: 34px; }
+    span { font-size: 0.8rem; }
+  }
+
+  .cam-who {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: var(--font-weight-semibold);
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.66), transparent);
+
+    i { font-size: 16px; opacity: 0.9; }
+  }
+
+  .cam-health {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
     gap: 6px;
-    flex: 1;
-    min-width: 0;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: var(--font-weight-semibold);
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
 
-    .cam-preset {
-      max-width: 160px;
-
-      i {
-        font-size: 14px;
-        flex: 0 0 auto;
-      }
+    .cam-health-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--color-text-secondary);
+      box-shadow: 0 0 6px currentColor;
     }
+
+    &.cam-health--ok .cam-health-dot { background: var(--color-success); box-shadow: 0 0 7px var(--color-success); }
+    &.cam-health--warn .cam-health-dot { background: var(--color-warning); box-shadow: 0 0 7px var(--color-warning); }
+    &.cam-health--down .cam-health-dot { background: var(--color-error); box-shadow: 0 0 7px var(--color-error); }
   }
 }
 

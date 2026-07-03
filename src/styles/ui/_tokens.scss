@@ -6,79 +6,84 @@
 // ============================================================================
 
 // ============================================================================
-// 1. COLOR SYSTEM — "Nocturne Console"
-// Cool blue-black night base + a vivid IRIS-VIOLET brand. Three accent
-// meanings stay separable (see UI-LIBRARY.md §2):
-//   GOLD  = a light is on          (--gradient-active-warm)
-//   CYAN  = another device active  (--gradient-active-cool)
-//   IRIS  = interactive / brand    (--color-primary)
+// 1. COLOR SYSTEM — "Ember"
+// Near-neutral WARM CHARCOAL surfaces — the warmth lives in the accents, not
+// the walls (saturated brown surfaces read as mud, not home). Lamplight in a
+// dark room. Three accent meanings stay separable (see UI-LIBRARY.md §2):
+//   GOLD      = a light is on          (--gradient-active-warm)
+//   DUSK BLUE = another device active  (--gradient-active-cool)
+//   CORAL     = interactive / brand    (--color-primary)
 // ============================================================================
 
 :root {
-  // Primary (main brand, actions, focus) — iris violet
-  --color-primary: #8b7bff;        // Electric iris (primary actions / brand)
-  --color-primary-light: #ab9dff;  // Hover / active text on dark
-  --color-primary-lighter: #cfc8ff; // Very light iris (backgrounds)
-  --color-primary-dark: #6a55f0;   // Pressed states
-  --color-primary-darker: #463794; // Strong emphasis
+  // Primary (main brand, actions, focus) — warm coral.
+  // NB: cream text FAILS on this fill — filled controls use the dark ink
+  // (--color-text-inverse / --color-on-fill), same as the gold tiles.
+  --color-primary: #e88463;        // Warm coral (primary actions / brand)
+  --color-primary-light: #f4a488;  // Hover / active text on dark (8.8:1 on surface)
+  --color-primary-lighter: #f9c9b5; // Very light coral (backgrounds)
+  --color-primary-dark: #c96543;   // Pressed states
+  --color-primary-darker: #92462c; // Strong emphasis
 
-  // Secondary (alternative actions) — azure
-  --color-secondary: #4c84e0;
-  --color-secondary-light: #6f9ff0;
-  --color-secondary-lighter: #b9d0f5;
-  --color-secondary-dark: #355fb0;
+  // Secondary (alternative actions) — dusk blue: deliberately the one cool
+  // voice in the warm room, same family as --gradient-active-cool.
+  --color-secondary: #5f93c0;
+  --color-secondary-light: #82aed2;
+  --color-secondary-lighter: #c3d8ea;
+  --color-secondary-dark: #44719a;
 
-  // Status (semantic) — saturated for the night base
-  --color-success: #2fd09a;        // on / active / success
-  --color-success-light: #66e0bb;
-  --color-success-lighter: #b3eddc;
-  --color-success-dark: #1ea077;
+  // Status (semantic) — warm-tuned for the umber base
+  --color-success: #5fc98f;        // sage green — on / active / success
+  --color-success-light: #8adcb0;
+  --color-success-lighter: #c5eed8;
+  --color-success-dark: #3d9c6a;
 
-  --color-error: #ff5d6c;          // off / error / danger
-  --color-error-light: #ff8693;
-  --color-error-lighter: #ffc2c9;
-  --color-error-dark: #d83a4a;
+  --color-error: #ff7a67;          // warm coral — off / error / danger
+  --color-error-light: #ff9f90;
+  --color-error-lighter: #ffcdc5;
+  --color-error-dark: #d85543;
 
   --color-warning: #ffba3a;        // caution / pending (light-on family)
   --color-warning-light: #ffd072;
   --color-warning-lighter: #ffe6b3;
   --color-warning-dark: #d9961f;
 
-  --color-info: #5b8bf0;           // information / neutral
-  --color-info-light: #84a8f5;
-  --color-info-lighter: #c2d5fa;
-  --color-info-dark: #3d66c0;
+  --color-info: #7aa5d2;           // information / neutral (dusk family)
+  --color-info-light: #9dbede;
+  --color-info-lighter: #cfe0ef;
+  --color-info-dark: #527ea8;
 
-  // Neutrals (cool night)
-  --color-white: #eef1f8;          // Cool near-white (not pure white)
-  --color-black: #0b0e16;          // Blue-black (not pure black)
+  // Neutrals (warm charcoal — low saturation on purpose; see header)
+  --color-white: #f1ece5;          // Warm near-white (not pure white)
+  --color-black: #131110;          // Warm charcoal (not pure black)
 
-  --color-gray-50: #eef1f8;
-  --color-gray-100: #d4dae8;
-  --color-gray-200: #252c3d;       // Borders
-  --color-gray-300: #1a2030;       // Disabled-dark
-  --color-gray-400: #8c96af;       // Muted text
-  --color-gray-500: #737e96;       // Secondary-muted text
-  --color-gray-600: #525c72;       // Dark slate
-  --color-gray-700: #39425a;       // Very dark slate
-  --color-gray-800: #161b28;       // Almost black
-  --color-gray-900: #0b0e16;       // Darkest (page background)
+  --color-gray-50: #f1ece5;
+  --color-gray-100: #ded5c9;
+  --color-gray-200: #2e2925;       // Borders
+  --color-gray-300: #241f1b;       // Disabled-dark
+  --color-gray-400: #a09788;       // Muted text
+  --color-gray-500: #877e72;       // Secondary-muted text
+  --color-gray-600: #5f574d;       // Dark warm gray
+  --color-gray-700: #423c35;       // Very dark warm gray
+  --color-gray-800: #191613;       // Almost black
+  --color-gray-900: #131110;       // Darkest (page background)
 
   // Surfaces
-  --color-surface: #171d2c;          // Resting cards / panels
-  --color-surface-secondary: #121724; // Recessed controls on a surface
-  --color-surface-tertiary: #1f2638;  // Recessed insets / rows
-  --color-background: #0b0e16;        // Page background (blue-black)
-  --color-background-alt: #10141f;
-  --color-border: #232a3b;            // Hairline borders on dark
-  --color-border-light: #313a52;      // Slightly stronger separation
+  --color-surface: #1c1916;          // Resting cards / panels
+  --color-surface-secondary: #161311; // Recessed controls on a surface
+  --color-surface-tertiary: #262220;  // Recessed insets / rows
+  --color-background: #131110;        // Page background (warm charcoal)
+  --color-background-alt: #171412;
+  --color-border: #2e2925;            // Hairline borders on dark
+  --color-border-light: #3b342e;      // Slightly stronger separation
 
-  // Text — tertiary is tuned to clear WCAG AA 4.5:1 on raised surfaces
-  --color-text-primary: #eef1f8;
-  --color-text-secondary: #b7c0d6;
-  --color-text-tertiary: #8c96af;
-  --color-text-disabled: #5a6478;
-  --color-text-inverse: #0b0e16;     // Text on light / accent fills
+  // Text — tertiary is tuned to clear WCAG AA 4.5:1 on raised surfaces (6.1:1
+  // on --color-surface, 5.5:1 on the tertiary surface; re-check if you darken it)
+  --color-text-primary: #f1ece5;
+  --color-text-secondary: #cec6bb;
+  --color-text-tertiary: #a09788;
+  --color-text-disabled: #675f55;
+  --color-text-inverse: #1c130d;     // Text on light / accent fills
 }
 
 // ============================================================================
@@ -93,15 +98,16 @@
   --glow-active-warm: 0 14px 32px -12px rgba(255, 170, 55, 0.7);
 
   // Cool "active" accent (blinds open, other non-light device active).
-  // Deliberately an ELECTRIC CYAN, distinct from the brand iris, so a
-  // device-state fill never reads the same as an interactive control.
-  --gradient-active-cool: linear-gradient(150deg, #5fe3f2 0%, #1eb4da 100%);
-  --glow-active-cool: 0 14px 32px -12px rgba(34, 196, 230, 0.55);
+  // A calm DUSK BLUE — evening sky, not electric cyan — still clearly distinct
+  // from the gold light-on fill, the sage success, and the terracotta brand,
+  // so a device-state fill never reads the same as an interactive control.
+  --gradient-active-cool: linear-gradient(150deg, #a8cbe8 0%, #5f93c0 100%);
+  --glow-active-cool: 0 14px 32px -12px rgba(95, 147, 192, 0.5);
 
-  // Text/icon color on any filled accent surface (gold or cyan)
-  --color-on-fill: #0a1018;
-  --color-on-fill-muted: rgba(10, 16, 24, 0.74);
-  --color-on-fill-faint: rgba(10, 16, 24, 0.52);
+  // Text/icon color on any filled accent surface (gold or dusk blue)
+  --color-on-fill: #16100b;
+  --color-on-fill-muted: rgba(22, 16, 11, 0.74);
+  --color-on-fill-faint: rgba(22, 16, 11, 0.52);
 
   // Semantic geometry — keep every surface on this rhythm
   --radius-tile: 22px;     // device tiles, panels, overlay sheet
@@ -239,22 +245,22 @@
 // ============================================================================
 
 :root {
-  --color-primary-rgba-10: rgba(139, 123, 255, 0.1);
-  --color-primary-rgba-20: rgba(139, 123, 255, 0.2);
-  --color-primary-rgba-40: rgba(139, 123, 255, 0.4);
-  --color-primary-rgba-60: rgba(139, 123, 255, 0.6);
+  --color-primary-rgba-10: rgba(232, 132, 99, 0.1);
+  --color-primary-rgba-20: rgba(232, 132, 99, 0.2);
+  --color-primary-rgba-40: rgba(232, 132, 99, 0.4);
+  --color-primary-rgba-60: rgba(232, 132, 99, 0.6);
 
-  --color-error-rgba-10: rgba(255, 93, 108, 0.1);
-  --color-error-rgba-40: rgba(255, 93, 108, 0.4);
+  --color-error-rgba-10: rgba(255, 122, 103, 0.1);
+  --color-error-rgba-40: rgba(255, 122, 103, 0.4);
 
-  --color-success-rgba-10: rgba(47, 208, 154, 0.1);
-  --color-success-rgba-40: rgba(47, 208, 154, 0.4);
+  --color-success-rgba-10: rgba(95, 201, 143, 0.1);
+  --color-success-rgba-40: rgba(95, 201, 143, 0.4);
 
   --color-warning-rgba-10: rgba(255, 186, 58, 0.1);
   --color-warning-rgba-40: rgba(255, 186, 58, 0.4);
 
-  --color-info-rgba-10: rgba(91, 139, 240, 0.1);
-  --color-info-rgba-40: rgba(91, 139, 240, 0.4);
+  --color-info-rgba-10: rgba(122, 165, 210, 0.1);
+  --color-info-rgba-40: rgba(122, 165, 210, 0.4);
 }
 
 // ============================================================================

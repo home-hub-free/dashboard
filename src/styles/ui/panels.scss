@@ -19,6 +19,11 @@
   flex-direction: column;
   gap: 0.75rem;
   box-shadow: var(--shadow-lift);
+  // Panels are flex items of .page-col — never let one child's intrinsic width
+  // (a wide <select>, an unbroken string) push the panel past the column.
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 // Panels ease in when their view mounts.
@@ -124,5 +129,62 @@
   &.on {
     background: var(--color-success);
     box-shadow: 0 0 8px var(--color-success-rgba-40);
+  }
+}
+
+// ---- Disclosure -----------------------------------------------------------------
+// Collapsible group for secondary/infrequent controls (overlay "Advanced",
+// Settings "Add a member"): keeps a form's open inputs out of the way until
+// asked for. `.overlay-advanced` is the legacy alias used by overlay markup.
+//
+//   <details class="disclosure">
+//     <summary><i class="iconoir-add-user"></i><span>Add a member</span>
+//       <i class="iconoir-nav-arrow-down adv-chevron"></i></summary>
+//     <div class="disclosure-body"> … </div>
+//   </details>
+.disclosure,
+.overlay-advanced {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-chip);
+  background: var(--color-surface-secondary);
+
+  > summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    cursor: pointer;
+    list-style: none;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-secondary);
+    user-select: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    .adv-chevron {
+      margin-left: auto;
+      transition: transform 200ms var(--ease-out);
+    }
+  }
+
+  &[open] > summary {
+    border-bottom: 1px solid var(--color-border);
+
+    .adv-chevron {
+      transform: rotate(180deg);
+    }
+  }
+
+  > .device-setting {
+    margin: var(--space-4);
+  }
+
+  > .disclosure-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
   }
 }

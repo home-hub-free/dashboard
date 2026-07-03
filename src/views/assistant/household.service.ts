@@ -25,6 +25,10 @@ import {
   rejectFaceSuggestion,
   forgetGuest,
   mergeGuest,
+  listMemberClusters,
+  detachCluster,
+  getFaceThresholds,
+  setFaceThresholds,
   type ReviewCard,
   calendarStatus,
   calendarEnrollStart,
@@ -281,6 +285,7 @@ export class HouseholdServiceClass {
     if (this.state.peopleEnabled) {
       this.refreshPeople();
       this.refreshReview();
+      this.loadThresholds();
     }
   }
 
@@ -305,6 +310,60 @@ export class HouseholdServiceClass {
       await this.refreshReview();
     } catch (err: any) {
       this.state.peopleMsg = err?.message || "Could not forget person";
+    }
+  }
+
+  // ── Recognized-face audit (per member) + "that wasn't me" correction ────────
+  // Every image the auto-heal/promote folded into a member is reviewable: open the
+  // member's panel to see the faces behind their profile (worst-match first), and
+  // detach any the thresholds got wrong — it un-merges + returns to the review queue.
+  async toggleClusters(userId: string) {
+    if (this.state.clustersOpenFor === userId) {
+      this.state.clustersOpenFor = "";
+      this.state.memberClusters = [];
+      return;
+    }
+    this.state.clustersOpenFor = userId;
+    this.state.clustersBusy = true;
+    this.state.memberClusters = [];
+    this.state.memberClusters = await listMemberClusters(userId);
+    this.state.clustersBusy = false;
+  }
+
+  async detachClusterAction(guestId: string) {
+    try {
+      await detachCluster(guestId);
+      this.state.memberClusters = this.state.memberClusters.filter(
+        (c) => c.guest_id !== guestId
+      );
+      this.state.peopleMsg = "Removed — that face goes back to review";
+      await this.refreshReview();
+    } catch (err: any) {
+      this.state.peopleMsg = err?.message || "Could not remove that face";
+    }
+  }
+
+  // ── Recognition thresholds (view + live-tune the auto-heal ladder) ──────────
+  async loadThresholds() {
+    this.state.thresholds = await getFaceThresholds();
+  }
+
+  async saveThreshold(key: string, raw: string) {
+    const value = parseFloat(raw);
+    if (Number.isNaN(value)) return;
+    try {
+      this.state.thresholds = await setFaceThresholds({ [key]: value });
+      this.state.peopleMsg = "Threshold saved";
+    } catch (err: any) {
+      this.state.peopleMsg = err?.message || "Could not save threshold";
+    }
+  }
+
+  async resetThreshold(key: string) {
+    try {
+      this.state.thresholds = await setFaceThresholds({ [key]: null });
+    } catch (err: any) {
+      this.state.peopleMsg = err?.message || "Could not reset threshold";
     }
   }
 

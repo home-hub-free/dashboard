@@ -20,6 +20,17 @@ export type Device = {
    * the edit overlay. Drives per-zone routing on the memory/LLM side. */
   zone?: string;
   operationalRanges: string[];
+  /** Camera-capability block declared to the hub (§3.3) — present on a `camera` node
+   * and on a camera-equipped `voice-satellite`. Its existence (a `path`) is what makes
+   * a tile show a live view, not the category — see `hasCamView`. */
+  stream?: {
+    proto?: string;
+    port?: number;
+    path?: string;
+    snapshot?: string;
+    res?: string;
+    fps?: number;
+  } | null;
 
   // Stage 4c: display-time decoration computed from the channel projection
   // (see decorateDevice in devices.ts). Optional so raw server payloads still type.
@@ -32,7 +43,11 @@ export type Device = {
   isOn?: boolean;
   /** One-line tile body status ("On", "On · 80%", "Open · 40%"). */
   status?: string;
-  /** Camera only: the vision-service annotated MJPEG live-view URL (§6). */
+  /** Decorate-time: this tile shows a vision-service live view (a `camera`, or a
+   * camera-equipped `voice-satellite` — gated on the `stream` block, not the category).
+   * Drives the `cam-wrap` markup; a satellite also keeps its normal controls below. */
+  hasCamView?: boolean;
+  /** Camera / camera-satellite: the vision-service annotated MJPEG live-view URL (§6). */
   streamUrl?: string;
   /** Camera only: "who is here" headline from the occupancy world-model
    * ("David + 1 guest", "Empty") — the high-value surface, not the picture (§6). */
@@ -106,6 +121,8 @@ export type DevicesTabState = {
   onChannelStep: (event: Event, deviceId: string, channelKey: string, dir: -1 | 1) => void;
   stop: (event: Event) => void;
   onEditClick: (event: any, device: Device) => void;
+  /** Camera ⋯ — the config path (tile tap opens the live lightbox instead). */
+  onCamEdit: (event: any, device: Device) => void;
   // Camera tile controls (CAMERA_ONVIF_CONTROL_PLAN): D-pad nudge, preset recall,
   // and the tune overlay (imaging + saved-view management). Primitive args only
   // (bindrjs loop-var rule).
