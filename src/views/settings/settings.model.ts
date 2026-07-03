@@ -1,5 +1,5 @@
 import type { SessionUser } from "../assistant/household.service";
-import type { Person } from "../../utils/server-handler";
+import type { Person, ReviewCard } from "../../utils/server-handler";
 
 /**
  * Settings owns everything account/household — relocated out of the Assistant
@@ -95,13 +95,51 @@ export type SettingsState = {
   removeCalendar: (id: string) => void // SA mode: forget a calendar
 
   // People the cameras have seen — every person gets a default label + a captured
-  // face; the admin puts names to faces here (CAMERA_VISION_PLAN §6). Visible only
-  // when the vision-service is up (same gate as Face ID).
+  // face (CAMERA_VISION_PLAN §6). Labeling/linking lives in the REVIEW flow now;
+  // this list just shows the roster, with a forget affordance as the
+  // mistake-eraser (deleted guests re-enter review on their next sighting).
+  // Visible only when the vision-service is up (same gate as Face ID).
   peopleEnabled: boolean
   people: Person[]
+  namedGuests: Person[] // labeled guests — review targets ("It's Abuela")
   peopleMsg: string
-  namePerson: (id: string, name: string) => void
-  promotePerson: (id: string, userId: string) => void
+  forgetPerson: (id: string) => void
+
+  // Face review — the "Is this you?" card stack over the confidence-tiered queue
+  // (vision /people/review). The definitely-them tier auto-merges server-side and
+  // never reaches here; `suggest` cards are addressed to ONE member (shown only on
+  // that member's login), `unknown` cards go to everyone. The current card is
+  // flattened into primitives so the gated overlay is always safe to evaluate
+  // (same posture as the lightbox below).
+  reviewCards: ReviewCard[] // the WHOLE queue, self-identification cards first —
+  // any member answers everything (guests never log in; persisting them is our job)
+  reviewOthers: number // cards that look like other members (queued last, answerable)
+  reviewHealed: number // clusters auto-merged server-side on the last refresh
+  reviewOpen: boolean
+  reviewIndex: number // 1-based position within this run
+  reviewTotal: number
+  reviewHasCard: boolean // false once the run is exhausted → "all caught up"
+  reviewThumbUrl: string
+  reviewLabel: string
+  reviewSightings: number
+  reviewScore: number // suggest tier: similarity as 0–100 (0 = hidden)
+  reviewHasFaceBox: boolean // the face's position in the photo is known → ring + caption
+  reviewNoFace: boolean // detector found NO face in this capture → honest hint, skip/discard
+  reviewTier: "" | "suggest" | "unknown"
+  reviewSuggestKind: "" | "member" | "guest" // what the suggested identity is
+  reviewSuggestName: string // the suggested identity's name ("Is this Ana/Abuela?")
+  reviewSuggestIsMe: boolean // suggestion is the signed-in member → "Is this you?"
+  reviewBusy: boolean
+  reviewMsg: string
+  openReview: () => void
+  closeReview: () => void
+  reviewMe: () => void // "It's me" → merge the cluster into my face profile
+  reviewYes: () => void // confirm the suggestion (member = me; guest = merge into them)
+  reviewNo: () => void // "Not them" → never suggest this identity for the cluster again
+  reviewSkip: () => void // defer, client-side only
+  reviewDiscard: () => void // stranger / not-a-face crop → delete the cluster
+  reviewAssign: (id: string) => void // "It's <member|named guest>" → promote / merge
+  reviewNameGuest: (name: string) => void // label a NEW guest; they persist across visits
 
   // Face lightbox — tapping a gallery photo opens the captured crop full-size so the
   // admin can tell which face a row is about even when the crop holds more than one

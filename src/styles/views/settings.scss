@@ -528,3 +528,275 @@
   color: #fff;
   cursor: pointer;
 }
+
+// ---- Face review ("Is this you?" swipeable card stack) --------------------------------------
+.review-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-primary-rgba-40, var(--color-border));
+  background: var(--color-primary-rgba-10, var(--color-surface-secondary));
+
+  .review-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 12rem;
+  }
+
+  .review-banner-title {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+  }
+
+  .review-banner-sub {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+  }
+}
+
+.review-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(3px);
+  overflow-y: auto;
+}
+
+.review-head {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+
+  .review-progress {
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: var(--font-weight-bold);
+  }
+
+  // Reuse the lightbox ✕ look, but in-flow (the head row lays it out).
+  .review-close {
+    position: static;
+  }
+}
+
+.review-stage {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  margin-top: 4px;
+}
+
+.review-card {
+  position: relative;
+  border-radius: var(--radius-tile);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+  touch-action: pan-y; // vertical page scroll stays native; horizontal drag is ours
+  will-change: transform;
+
+  // The photo area clips the ring's dim-halo so it darkens ONLY the picture,
+  // never the meta strip below.
+  .review-card-photo {
+    position: relative;
+    height: min(52vh, 380px);
+    overflow: hidden;
+    background: var(--color-surface-secondary);
+  }
+
+  .review-card-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    // contain, not cover: legacy crops are tall full-person rectangles — cover
+    // was cutting the face out of the preview entirely.
+    object-fit: contain;
+
+    &.review-card-noimg {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: var(--color-text-tertiary);
+    }
+  }
+
+  // Positioned over THE face the question refers to (service computes the spot
+  // through the contain transform); the giant shadow dims every OTHER face.
+  .review-face-ring {
+    position: absolute;
+    display: none;
+    border: 3px solid var(--color-primary);
+    border-radius: 12px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+  }
+
+  .review-card-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 10px 14px 12px;
+
+    .review-card-label {
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+    }
+
+    .review-card-sub {
+      font-size: 0.8rem;
+      color: var(--color-text-tertiary);
+    }
+  }
+
+  // Swipe verdict stamps — revealed by the drag direction (data-swipe set by the
+  // gesture handler; no re-render mid-drag).
+  .review-stamp {
+    position: absolute;
+    top: 18px;
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    border: 2px solid;
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  .review-stamp-yes {
+    left: 14px;
+    color: var(--color-success);
+    border-color: var(--color-success);
+    transform: rotate(-8deg);
+  }
+
+  .review-stamp-no {
+    right: 14px;
+    color: var(--color-error);
+    border-color: var(--color-error);
+    transform: rotate(8deg);
+  }
+
+  &[data-swipe="yes"] .review-stamp-yes,
+  &[data-swipe="no"] .review-stamp-no {
+    opacity: 1;
+  }
+}
+
+.review-question {
+  margin: 0;
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: var(--font-weight-bold);
+  color: #fff;
+
+  .review-score {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.8rem;
+    font-weight: normal;
+    color: rgba(255, 255, 255, 0.65);
+  }
+}
+
+.review-actions {
+  display: flex;
+  gap: 0.6rem;
+
+  .review-btn {
+    flex: 1 1 0;
+    min-height: 52px; // fat thumb targets — this is a run-through-30-cards flow
+  }
+}
+
+.review-alt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+
+  .review-name-input {
+    flex: 1 1 10rem;
+    min-width: 0;
+  }
+
+  // Quiet buttons sit on the dark backdrop, not a panel — lift their text.
+  .btn-quiet {
+    color: rgba(255, 255, 255, 0.75);
+  }
+}
+
+.review-ring-hint {
+  margin: -0.35rem 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-primary);
+}
+
+.review-noface-hint {
+  margin: -0.35rem 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.review-swipe-hint {
+  margin: 0;
+  text-align: center;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.review-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: auto 0;
+  text-align: center;
+  color: #fff;
+
+  i {
+    font-size: 3rem;
+    color: var(--color-success);
+  }
+
+  .review-done-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: var(--font-weight-bold);
+  }
+
+  .review-done-sub {
+    margin: 0;
+    max-width: 26rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+.review-msg {
+  color: #fff;
+}

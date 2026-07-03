@@ -635,6 +635,75 @@ export async function promoteGuest(guestId: string, userId: string, name?: strin
   if (!res.ok) throw new Error(`Could not promote guest (${res.status})`);
 }
 
+/** One card in the "Is this you?" face-review queue (vision `/people/review`).
+ * Confidence-tiered: `suggested` set = the system thinks it's that member (the card
+ * is addressed to them); null = nobody scored close enough, everyone reviews. The
+ * definitely-them tier never surfaces — it auto-merges server-side (`healed`). */
+export type ReviewCard = {
+  guest_id: string;
+  label: string;
+  sightings: number;
+  last_seen: string;
+  tier: "suggest" | "unknown";
+  /** Who the system thinks this is: a household member (card addressed to them
+   * only) or a NAMED guest like "Abuela" (anyone can confirm). */
+  suggested: { kind: "member" | "guest"; id: string; name: string | null; score: number } | null;
+  rejected_user_ids: string[];
+  has_thumb: boolean;
+  thumbUrl: string | null;
+  /** Normalized [x,y,w,h] of THE face within the thumb (legacy crops can hold more
+   * than one person) — the card rings it so there's no doubt who's being asked about. */
+  face_box: number[] | null;
+  /** The detector looked at this thumb and found NO face (blurry/cut-off legacy
+   * crop) — the card says so; the thumb self-replaces on the next sighting. */
+  no_face?: boolean;
+};
+export async function listFaceReview(): Promise<{ cards: ReviewCard[]; healed: number }> {
+  try {
+    const res = await fetch(visionServer + "people/review");
+    if (!res.ok) return { cards: [], healed: 0 };
+    const data = await res.json();
+    const cards = (data?.queue || []).map((c: any) => ({
+      ...c,
+      thumbUrl: c.has_thumb ? faceThumbUrl(c.guest_id) : null,
+    }));
+    return { cards, healed: (data?.healed || []).length };
+  } catch {
+    return { cards: [], healed: 0 };
+  }
+}
+
+/** "No, that's not me/them" — the cluster is never suggested to (or auto-merged
+ * into) that member again; it falls to the next tier for review. */
+export async function rejectFaceSuggestion(guestId: string, userId: string): Promise<void> {
+  const res = await fetch(visionServer + `guests/${encodeURIComponent(guestId)}/reject`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ user_id: userId }),
+  });
+  if (!res.ok) throw new Error(`Could not record answer (${res.status})`);
+}
+
+/** Fold a cluster into a NAMED guest ("yes, that's Abuela") — she keeps getting
+ * recognised across angles/visits instead of respawning as a new "Person N". */
+export async function mergeGuest(guestId: string, intoGuestId: string): Promise<void> {
+  const res = await fetch(visionServer + `guests/${encodeURIComponent(guestId)}/merge`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ into: intoGuestId }),
+  });
+  if (!res.ok) throw new Error(`Could not merge (${res.status})`);
+}
+
+/** Discard a guest cluster entirely (a stranger / not-a-face crop). */
+export async function forgetGuest(guestId: string): Promise<void> {
+  const res = await fetch(visionServer + `guests/${encodeURIComponent(guestId)}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`Could not discard (${res.status})`);
+}
+
 /**
  * Ask the interactive agent via llm-gateway `/route` (buffered JSON path). Returns
  * the spoken reply text plus the action the agent took, if any.

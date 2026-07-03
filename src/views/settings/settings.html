@@ -273,9 +273,31 @@
     <section class="assistant-section" :if="this.peopleEnabled">
         <p class="section-title">People the cameras have seen</p>
         <p class="voice-id-hint">
-            Every detected person gets a face and a default label. Put a name to a face,
-            or link them to a household member.
+            Every detected person gets a face and a label. New faces are named in the
+            review flow; named guests stay recognised across visits. Forget someone to
+            erase a wrong label — they'll be reviewed again next time they're seen.
         </p>
+
+        <!-- Review banner: the confidence-tiered queue. Sure matches were already
+             merged silently (reviewHealed); what's left needs a human — ANY member
+             can answer every card (yours come first; guests never log in, so
+             persisting them is the household's job). -->
+        <div class="review-banner" :if="this.reviewCards.length > 0">
+            <div class="review-banner-text">
+                <span class="review-banner-title">
+                    <i class="iconoir-face-id"></i> ${this.reviewCards.length} face(s) to review
+                </span>
+                <span class="review-banner-sub" :if="this.reviewHealed > 0">${this.reviewHealed} recognised and merged automatically</span>
+                <span class="review-banner-sub" :if="this.reviewOthers > 0">${this.reviewOthers} look like other members — you can answer for them</span>
+            </div>
+            <button class="btn-primary btn-inline" :onclick="this.openReview()">
+                <i class="iconoir-eye-alt"></i> Review
+            </button>
+        </div>
+        <p class="voice-id-hint" :if="this.reviewCards.length === 0 && this.reviewHealed > 0">
+            ${this.reviewHealed} unrecognised face(s) were matched to household members automatically.
+        </p>
+
         <div class="people-list">
             <div class="person-row" :foreach="person in this.people" :key="person.id">
                 <div class="person-face" :class:tappable="person.thumbUrl" :onclick="this.openFace(person)">
@@ -288,16 +310,9 @@
                     <span class="person-tag" :if="person.class === 'guest'">guest · seen ${person.sightings}×</span>
                 </div>
                 <div class="person-actions" :if="person.class === 'guest'">
-                    <input
-                        class="household-tone-input"
-                        type="text"
-                        placeholder="name this person"
-                        :onchange="this.namePerson(person.id, event.target.value)"
-                    />
-                    <select class="person-promote" :onchange="this.promotePerson(person.id, event.target.value)">
-                        <option value="">Link to member…</option>
-                        <option :foreach="m in this.households" :key="m.id" :value="m.id">${m.displayName}</option>
-                    </select>
+                    <button class="btn-quiet btn-inline" :onclick="this.forgetPerson(person.id)">
+                        <i class="iconoir-trash"></i> Forget
+                    </button>
                 </div>
             </div>
         </div>
@@ -362,6 +377,104 @@
             <i class="iconoir-add-user"></i> Add member
         </button>
     </section>
+
+    <!-- Face review: a swipeable "Is this you?" card stack — one face at a time, big
+         photo, one-tap answers. Swipe right = it's me, left = not me / not sure
+         (touch listeners live in the service; the card carries data-swipe for the
+         stamp CSS). The current card is primitive-flattened state (null-safe). -->
+    <div class="review-overlay" :if="this.reviewOpen">
+        <div class="review-head">
+            <span class="review-progress" :if="this.reviewHasCard">${this.reviewIndex} / ${this.reviewTotal}</span>
+            <button class="face-zoom-close review-close" :onclick="this.closeReview()" aria-label="Close">
+                <i class="iconoir-cancel"></i>
+            </button>
+        </div>
+
+        <div class="review-stage" :if="this.reviewHasCard">
+            <div class="review-card">
+                <!-- The photo renders contain (never crop-cuts a face out of view);
+                     the ring is positioned over THE face in question by the service
+                     (positionFaceRing) and dims everything around it. -->
+                <div class="review-card-photo">
+                    <img class="review-card-img" :if="this.reviewThumbUrl" :src="this.reviewThumbUrl" alt="" />
+                    <div :else class="review-card-img review-card-noimg"><i class="iconoir-user"></i></div>
+                    <span class="review-face-ring"></span>
+                </div>
+                <div class="review-card-meta">
+                    <span class="review-card-label">${this.reviewLabel}</span>
+                    <span class="review-card-sub">seen ${this.reviewSightings}×</span>
+                </div>
+                <span class="review-stamp review-stamp-yes" :if="this.reviewTier !== 'suggest' || this.reviewSuggestIsMe">It's me</span>
+                <span class="review-stamp review-stamp-yes" :if="this.reviewTier === 'suggest' && !this.reviewSuggestIsMe">It's ${this.reviewSuggestName}</span>
+                <span class="review-stamp review-stamp-no" :if="this.reviewTier === 'suggest'">Not them</span>
+                <span class="review-stamp review-stamp-no" :if="this.reviewTier === 'unknown'">Not sure</span>
+            </div>
+
+            <p class="review-question" :if="this.reviewSuggestIsMe">
+                Is this you, ${this.signedInName}?
+                <span class="review-score" :if="this.reviewScore > 0">${this.reviewScore}% match</span>
+            </p>
+            <!-- Someone-else suggestion — another member OR a named guest: any of us
+                 answers for them (guests never log in to this app). -->
+            <p class="review-question" :if="this.reviewTier === 'suggest' && !this.reviewSuggestIsMe">
+                Is this ${this.reviewSuggestName}?
+                <span class="review-score" :if="this.reviewScore > 0">${this.reviewScore}% match</span>
+            </p>
+            <p class="review-question" :if="this.reviewTier === 'unknown'">Who is this?</p>
+            <p class="review-ring-hint" :if="this.reviewHasFaceBox">Asking about the highlighted face</p>
+            <p class="review-noface-hint" :if="this.reviewNoFace">
+                No clear face in this capture — skip it (the photo refreshes next time
+                this person is seen) or discard.
+            </p>
+
+            <div class="review-actions" :if="this.reviewTier === 'suggest'">
+                <button class="btn-outline review-btn" :onclick="this.reviewNo()">
+                    <i class="iconoir-cancel"></i> No
+                </button>
+                <button class="btn-primary btn-inline review-btn" :if="this.reviewSuggestIsMe" :onclick="this.reviewYes()">
+                    <i class="iconoir-check"></i> Yes, it's me
+                </button>
+                <button class="btn-primary btn-inline review-btn" :if="!this.reviewSuggestIsMe" :onclick="this.reviewYes()">
+                    <i class="iconoir-check"></i> Yes, it's ${this.reviewSuggestName}
+                </button>
+            </div>
+            <div class="review-actions" :if="this.reviewTier === 'unknown'">
+                <button class="btn-outline review-btn" :onclick="this.reviewSkip()">Not sure</button>
+                <button class="btn-primary btn-inline review-btn" :onclick="this.reviewMe()">
+                    <i class="iconoir-check"></i> It's me
+                </button>
+            </div>
+
+            <div class="review-alt">
+                <select class="person-promote" :onchange="this.reviewAssign(event.target.value)">
+                    <option value="">It's someone else…</option>
+                    <option :foreach="m in this.households" :key="m.id" :value="m.id">${m.displayName}</option>
+                    <option :foreach="g in this.namedGuests" :key="g.id" :value="g.id">${g.label} (guest)</option>
+                </select>
+                <input
+                    class="household-tone-input review-name-input"
+                    type="text"
+                    placeholder="New guest? Name them…"
+                    :onchange="this.reviewNameGuest(event.target.value)"
+                />
+                <button class="btn-quiet btn-inline" :if="this.reviewTier === 'suggest'" :onclick="this.reviewSkip()">Skip</button>
+                <button class="btn-quiet btn-inline" :onclick="this.reviewDiscard()">
+                    <i class="iconoir-trash"></i> Discard
+                </button>
+            </div>
+            <p class="review-swipe-hint" :if="this.reviewTier === 'suggest'">Swipe right = yes · swipe left = no</p>
+            <p class="review-swipe-hint" :if="this.reviewTier === 'unknown'">Swipe right = it's me · swipe left = not sure</p>
+        </div>
+
+        <div class="review-done" :if="!this.reviewHasCard">
+            <i class="iconoir-check"></i>
+            <p class="review-done-title">All caught up</p>
+            <p class="review-done-sub">Every new face has been reviewed. Your answers make recognition sharper.</p>
+            <button class="btn-primary btn-inline" :onclick="this.closeReview()">Done</button>
+        </div>
+
+        <p class="voice-id-msg review-msg" :if="this.reviewMsg">${this.reviewMsg}</p>
+    </div>
 
     <!-- Face lightbox: the tapped gallery crop, full-size. Backdrop closes; the card
          swallows the click (stopZoom) so only outside / the ✕ dismisses it. -->

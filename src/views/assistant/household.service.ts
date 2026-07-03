@@ -21,6 +21,11 @@ import {
   listPeople,
   nameGuest,
   promoteGuest,
+  listFaceReview,
+  rejectFaceSuggestion,
+  forgetGuest,
+  mergeGuest,
+  type ReviewCard,
   calendarStatus,
   calendarEnrollStart,
   calendarRevoke,
@@ -273,40 +278,276 @@ export class HouseholdServiceClass {
     if (this.state.faceIdEnabled && id) {
       this.state.faceSamples = await getFaceSamples(id);
     }
-    if (this.state.peopleEnabled) this.refreshPeople();
+    if (this.state.peopleEnabled) {
+      this.refreshPeople();
+      this.refreshReview();
+    }
   }
 
-  // ── People roster (label everyone by default id; admin puts names to faces) ──
+  // ── People roster (labeling lives in the review flow; the list just shows it) ──
   async refreshPeople() {
     this.state.people = await listPeople();
+    // Named guests are review targets ("It's Abuela") — surfaced in the card's
+    // someone-else picker alongside household members.
+    this.state.namedGuests = this.state.people.filter(
+      (p) => p.class === "guest" && p.named
+    );
   }
 
-  /** Name a default-labelled person (a `guest:N` cluster) — keeps them a recurring
-   * guest, just with a real name. Admin-gated server-side (auth token). */
-  async namePerson(id: string, name: string) {
-    const trimmed = (name || "").trim();
-    if (!trimmed) return;
+  /** Forget a labelled guest — the mistake-eraser now that per-row labeling is
+   * gone: delete the cluster and the person re-enters review on their next
+   * sighting. Admin-gated server-side. */
+  async forgetPerson(id: string) {
     try {
-      await nameGuest(id, trimmed);
-      this.state.peopleMsg = `Named ${trimmed}`;
+      await forgetGuest(id);
+      this.state.peopleMsg = "Forgotten — they'll be reviewed again if seen";
       await this.refreshPeople();
+      await this.refreshReview();
     } catch (err: any) {
-      this.state.peopleMsg = err?.message || "Could not name person";
+      this.state.peopleMsg = err?.message || "Could not forget person";
     }
   }
 
-  /** Promote a default-labelled person into an existing household member's face
-   * gallery (merges their face into that member). Admin-gated server-side. */
-  async promotePerson(id: string, userId: string) {
-    if (!userId) return;
-    const member = this.state.households.find((u) => u.id === userId);
-    try {
-      await promoteGuest(id, userId, member?.displayName);
-      this.state.peopleMsg = `Linked to ${member?.displayName || userId}`;
-      await this.refreshPeople();
-    } catch (err: any) {
-      this.state.peopleMsg = err?.message || "Could not promote person";
+  // ── Face review — the "Is this you?" card stack ─────────────────────────────
+  // The queue is confidence-tiered server-side (vision /people/review) across
+  // EVERY known identity; the definitely-them tier auto-merges before we ever see
+  // it. ANY household member can answer EVERY card — guests never log in, so
+  // persisting them (and clearing the whole queue) is the household's job. The
+  // ordering keeps self-identification first: cards suggested as YOU ("Is this
+  // you?"), then named guests / unclaimed faces, then cards that look like OTHER
+  // members ("Is this Ana?" — answer for them). Answers feed the gallery back
+  // (promote / merge / reject), so every swipe makes tomorrow's recognition sharper.
+  private reviewCursor = 0;
+  private reviewGesturesOff: (() => void) | null = null;
+
+  async refreshReview() {
+    const { cards, healed } = await listFaceReview();
+    const rank = (c: ReviewCard) =>
+      c.suggested?.kind === "member"
+        ? c.suggested.id === this.state.meId ? 0 : 3
+        : c.suggested ? 1 : 2;
+    this.state.reviewCards = [...cards].sort((a, b) => rank(a) - rank(b));
+    this.state.reviewOthers = cards.filter((c) => rank(c) === 3).length;
+    this.state.reviewHealed = healed;
+    if (healed > 0) this.refreshPeople(); // auto-merges changed the roster
+  }
+
+  openReview() {
+    if (!this.state.reviewCards.length) return;
+    this.state.reviewTotal = this.state.reviewCards.length;
+    this.state.reviewMsg = "";
+    this.state.reviewBusy = false;
+    this.state.reviewOpen = true;
+    this.presentReviewCard(0);
+    this.bindReviewGestures();
+  }
+
+  async closeReview() {
+    this.reviewGesturesOff?.();
+    this.reviewGesturesOff = null;
+    this.state.reviewOpen = false;
+    await this.refreshPeople(); // answers changed the roster + the queue
+    await this.refreshReview();
+  }
+
+  /** Flatten cards[i] into the primitive fields the overlay renders (reassigning
+   * primitives re-renders the gated region and is null-safe — lightbox posture). */
+  private presentReviewCard(i: number) {
+    this.reviewCursor = i;
+    const card: ReviewCard | undefined = this.state.reviewCards[i];
+    this.state.reviewHasCard = !!card;
+    this.state.reviewIndex = Math.min(i + 1, this.state.reviewTotal);
+    this.state.reviewThumbUrl = card?.thumbUrl || "";
+    this.state.reviewLabel = card?.label || "";
+    this.state.reviewSightings = card?.sightings || 0;
+    this.state.reviewTier = card?.tier || "";
+    this.state.reviewSuggestKind = card?.suggested?.kind || "";
+    this.state.reviewSuggestName = card?.suggested?.name || "";
+    // Self-identification ("Is this you?") vs answering for someone else ("Is this
+    // Ana / Abuela?") — same yes/no mechanics, different phrasing.
+    this.state.reviewSuggestIsMe =
+      card?.suggested?.kind === "member" && card.suggested.id === this.state.meId;
+    this.state.reviewScore = card?.suggested
+      ? Math.round(card.suggested.score * 100)
+      : 0;
+    this.reviewFaceBox =
+      card?.face_box && card.face_box.length === 4 ? card.face_box : null;
+    this.state.reviewHasFaceBox = !!this.reviewFaceBox;
+    this.state.reviewNoFace = !!card?.no_face;
+    // The ring needs the RENDERED image's geometry — position it after this
+    // state write has re-rendered the card (and again once the image loads).
+    requestAnimationFrame(() => this.positionFaceRing());
+  }
+
+  /** Ring THE face the card is about. The photo renders object-fit:contain (so a
+   * face can never be crop-cut out of view); this maps the normalized face box
+   * through the contain transform onto the displayed image. Direct style writes —
+   * same no-re-render posture as the drag. */
+  private reviewFaceBox: number[] | null = null;
+
+  private positionFaceRing() {
+    const ring = document.querySelector<HTMLElement>(".review-face-ring");
+    if (!ring) return;
+    const img = document.querySelector<HTMLImageElement>("img.review-card-img");
+    const box = this.reviewFaceBox;
+    if (!box || !img) {
+      ring.style.display = "none";
+      return;
     }
+    if (!img.complete || !img.naturalWidth) {
+      ring.style.display = "none";
+      img.addEventListener("load", () => this.positionFaceRing(), { once: true });
+      return;
+    }
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const cw = img.clientWidth, ch = img.clientHeight;
+    const s = Math.min(cw / iw, ch / ih);
+    const dw = iw * s, dh = ih * s;
+    const ox = img.offsetLeft + (cw - dw) / 2;
+    const oy = img.offsetTop + (ch - dh) / 2;
+    const [fx, fy, fw, fh] = box;
+    const px = fw * dw * 0.18, py = fh * dh * 0.18; // breathing room around the face
+    ring.style.left = `${ox + fx * dw - px}px`;
+    ring.style.top = `${oy + fy * dh - py}px`;
+    ring.style.width = `${fw * dw + 2 * px}px`;
+    ring.style.height = `${fh * dh + 2 * py}px`;
+    ring.style.display = "block";
+  }
+
+  private async answerReview(
+    action: "me" | "yes" | "no" | "skip" | "discard" | "assign" | "nameguest",
+    value?: string
+  ) {
+    const card = this.state.reviewCards[this.reviewCursor];
+    if (!card || this.state.reviewBusy) return;
+    this.state.reviewBusy = true;
+    try {
+      if (action === "me") {
+        const me = this.state.households.find((u) => u.id === this.state.meId);
+        await promoteGuest(card.guest_id, this.state.meId, me?.displayName);
+      } else if (action === "yes") {
+        // Confirm the suggestion: a guest card merges into the named guest (so
+        // "Abuela" keeps being recognised instead of respawning as Person N); a
+        // member card promotes into that member — mine OR another member's, since
+        // any of us can answer for the household.
+        if (card.suggested?.kind === "guest") {
+          await mergeGuest(card.guest_id, card.suggested.id);
+        } else {
+          const id = card.suggested?.id || this.state.meId;
+          const member = this.state.households.find((u) => u.id === id);
+          await promoteGuest(card.guest_id, id,
+            member?.displayName || card.suggested?.name || undefined);
+        }
+      } else if (action === "assign") {
+        // "It's someone else…" — a household member or a named guest.
+        if (!value) { this.state.reviewBusy = false; return; }
+        if (value.startsWith("guest:")) {
+          await mergeGuest(card.guest_id, value);
+        } else {
+          const member = this.state.households.find((u) => u.id === value);
+          await promoteGuest(card.guest_id, value, member?.displayName);
+        }
+      } else if (action === "nameguest") {
+        // A brand-new guest: label them once; from now on the tiers recognise
+        // them ("Is this <name>?" / silent merge) across re-appearances.
+        const name = (value || "").trim();
+        if (!name) { this.state.reviewBusy = false; return; }
+        await nameGuest(card.guest_id, name);
+      } else if (action === "no") {
+        // "Not them" sticks: this cluster is never suggested as that identity
+        // again — it falls to the next-best identity or the everyone-reviews tier.
+        await rejectFaceSuggestion(
+          card.guest_id,
+          card.suggested?.id || this.state.meId
+        );
+      } else if (action === "discard") {
+        await forgetGuest(card.guest_id);
+      } // skip = defer, nothing recorded
+      this.state.reviewMsg = "";
+    } catch (err: any) {
+      this.state.reviewMsg = err?.message || "Could not save that answer";
+      this.state.reviewBusy = false;
+      return;
+    }
+    this.state.reviewBusy = false;
+    this.presentReviewCard(this.reviewCursor + 1);
+  }
+
+  reviewMe() { this.answerReview("me"); }
+  reviewYes() { this.answerReview("yes"); }
+  reviewNo() { this.answerReview("no"); }
+  reviewSkip() { this.answerReview("skip"); }
+  reviewDiscard() { this.answerReview("discard"); }
+  reviewAssign(id: string) {
+    if (id) this.answerReview("assign", id);
+  }
+  reviewNameGuest(name: string) {
+    this.answerReview("nameguest", name);
+  }
+
+  /** Tinder-style input: swipe right = confirm ("it's me" / "yes, it's Abuela"),
+   * swipe left = "not them" (suggest tier) / "not sure" (unknown tier); ⇄ arrow
+   * keys mirror it, Esc closes. The drag moves the card via direct style writes
+   * (no state churn → no re-render per frame); listeners live on document so they
+   * survive bindrjs region re-renders. */
+  private bindReviewGestures() {
+    let startX = 0;
+    let dragging = false;
+    const cardEl = () =>
+      document.querySelector<HTMLElement>(".review-card");
+    const swipeLeft = () =>
+      this.state.reviewTier === "suggest" ? this.reviewNo() : this.reviewSkip();
+    const swipeRight = () =>
+      this.state.reviewTier === "suggest" ? this.reviewYes() : this.reviewMe();
+
+    const onStart = (e: TouchEvent) => {
+      if (!(e.target as HTMLElement | null)?.closest?.(".review-card")) return;
+      dragging = true;
+      startX = e.touches[0].clientX;
+    };
+    const onMove = (e: TouchEvent) => {
+      if (!dragging) return;
+      const dx = e.touches[0].clientX - startX;
+      const el = cardEl();
+      if (el) {
+        el.style.transition = "none";
+        el.style.transform = `translateX(${dx}px) rotate(${dx / 24}deg)`;
+        el.dataset.swipe = dx > 40 ? "yes" : dx < -40 ? "no" : "";
+      }
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (!dragging) return;
+      dragging = false;
+      const dx = (e.changedTouches[0]?.clientX ?? startX) - startX;
+      const el = cardEl();
+      if (Math.abs(dx) > 90 && this.state.reviewHasCard && !this.state.reviewBusy) {
+        if (dx > 0) swipeRight();
+        else swipeLeft();
+        // answering re-renders a fresh, untransformed card — nothing to reset
+      } else if (el) {
+        el.style.transition = "transform 0.18s ease";
+        el.style.transform = "";
+        el.dataset.swipe = "";
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (!this.state.reviewOpen) return;
+      if (e.key === "Escape") this.closeReview();
+      if (!this.state.reviewHasCard || this.state.reviewBusy) return;
+      if (e.key === "ArrowRight") swipeRight();
+      if (e.key === "ArrowLeft") swipeLeft();
+    };
+
+    document.addEventListener("touchstart", onStart, { passive: true });
+    document.addEventListener("touchmove", onMove, { passive: true });
+    document.addEventListener("touchend", onEnd);
+    document.addEventListener("keydown", onKey);
+    this.reviewGesturesOff = () => {
+      document.removeEventListener("touchstart", onStart);
+      document.removeEventListener("touchmove", onMove);
+      document.removeEventListener("touchend", onEnd);
+      document.removeEventListener("keydown", onKey);
+    };
   }
 
   async refresh() {
