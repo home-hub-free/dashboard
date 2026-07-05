@@ -308,6 +308,120 @@
     }
   }
 
+  // Footage-review overlay (recordings.template): player + day chips + clip list.
+  .cam-rec-empty,
+  .cam-rec-none,
+  .cam-rec-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 22px 14px;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+
+    i {
+      font-size: 24px;
+    }
+  }
+
+  .cam-rec-player {
+    background: #000;
+    border-radius: var(--radius-control);
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    margin-bottom: 14px;
+    display: grid;
+    place-items: center;
+  }
+
+  .cam-rec-video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+  }
+
+  .cam-rec-player-hint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-text-secondary);
+
+    i {
+      font-size: 34px;
+    }
+  }
+
+  .cam-rec-days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 6px;
+
+    .cam-rec-day.active {
+      background: var(--color-primary);
+      color: #fff;
+      border-color: var(--color-primary);
+    }
+  }
+
+  .cam-rec-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cam-rec-seg {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    text-align: left;
+    border: 1px solid transparent;
+    background: var(--color-surface);
+    border-radius: var(--radius-control);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-xs);
+
+    .cam-rec-seg-time {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: var(--font-weight-semibold);
+
+      i {
+        color: var(--color-primary);
+      }
+    }
+
+    .cam-rec-seg-dur {
+      color: var(--color-text-secondary);
+    }
+
+    .cam-rec-seg-who {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--color-text-secondary);
+    }
+
+    &.active {
+      border-color: var(--color-primary);
+    }
+
+    &:active {
+      transform: scale(0.99);
+    }
+  }
+
   // Status read-outs (cooler temps)
   .status-group {
     display: flex;
@@ -628,7 +742,8 @@
     }
   }
 
-  .cam-live-close {
+  .cam-live-close,
+  .cam-live-rec {
     flex: 0 0 auto;
     width: var(--tap-target-min);
     height: var(--tap-target-min);
@@ -647,6 +762,10 @@
     &:active {
       transform: scale(0.94);
     }
+  }
+
+  .cam-live-rec i {
+    font-size: 22px;
   }
 
   // Bottom: "who is here" + the everyday PTZ controls, above the home indicator.

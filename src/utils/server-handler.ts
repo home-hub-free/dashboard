@@ -225,6 +225,9 @@ export type VisionCameraStatus = {
   id: string; zone: string; ip: string; connected: boolean;
   frames_seen: number; last_frame_age_s: number | null;
   detector: string; face: string; rec_mode: string;
+  /** Whether this camera archives footage (IP cams with an RTSP main stream). Only
+   * recording cams get a Recordings review entry point; face-ID desk/entrance cams don't. */
+  records?: boolean;
   /** ONVIF capability summary (cached probe) — null until probed / not an ONVIF cam.
    * Drives which camera controls the tile draws (fixed cams get no D-pad). */
   onvif?: { ptz: boolean; imaging: boolean; events: boolean } | null;
@@ -246,6 +249,66 @@ export async function fetchVisionState(): Promise<{
   } catch {
     return { zones: {}, cameras: [] };
   }
+}
+
+// ── footage review (vision /recordings/* — authenticated dashboard feature) ───
+// Listing is bearer-gated (a signed-in member only); the clip URL each segment carries
+// is self-signed (short-TTL token) so the <video> element can play + seek it without a
+// header. Recording is scoped to the IP-cam fleet (RTSP main) — face-ID cams have none.
+
+/** A recording camera + the distinct days it has footage for (the day picker). */
+export type RecordingCamera = { id: string; name: string | null; zone: string | null; days: string[] };
+
+/** One archived segment: its clock span, the signed clip URL to play it, and the
+ * identity/event markers that fall inside it (timeline pins the reviewer scrubs to). */
+export type RecordingSegment = {
+  id: number;
+  start: number;
+  end: number | null;
+  duration: number | null;
+  /** Signed, relative clip path from the vision-service — prefix with visionServer. */
+  clip: string;
+  events: { ts: number; edge: string; identity: { id: string | null; name: string | null; class: string } }[];
+};
+
+/** Cameras that record + their footage days. Bearer-gated; [] when unauthed/unavailable. */
+export async function fetchRecordingCameras(): Promise<RecordingCamera[]> {
+  const token = getToken();
+  try {
+    const res = await fetch(visionServer + "recordings/cameras", {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data?.cameras || [];
+  } catch {
+    return [];
+  }
+}
+
+/** A camera's segments overlapping [start, end] (epoch seconds — usually one local day). */
+export async function fetchRecordingSegments(
+  camId: string,
+  start: number,
+  end: number,
+): Promise<RecordingSegment[]> {
+  const token = getToken();
+  try {
+    const res = await fetch(
+      visionServer + `recordings/${encodeURIComponent(camId)}/segments?start=${start}&end=${end}`,
+      { headers: token ? { Authorization: `Bearer ${token}` } : undefined },
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data?.segments || [];
+  } catch {
+    return [];
+  }
+}
+
+/** Absolute, playable URL for a segment's signed clip path (goes straight to vision). */
+export function recordingClipUrl(seg: RecordingSegment): string {
+  return visionServer + seg.clip;
 }
 
 // ── camera control (hub /camera/:id proxy → the vision-service ONVIF seam) ────
@@ -626,6 +689,11 @@ export type MemberCluster = {
   score: number | null;
   has_thumb: boolean;
   thumbUrl: string | null;
+  /** Normalized [x,y,w,h] of THE face this cluster is about within its thumb (legacy
+   * crops can hold several faces) — the full-image viewer rings it. null = unknown. */
+  face_box: number[] | null;
+  /** The detector looked and found no clear face in this capture. */
+  no_face?: boolean;
 };
 export async function listMemberClusters(userId: string): Promise<MemberCluster[]> {
   try {

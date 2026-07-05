@@ -74,6 +74,9 @@ export type Device = {
   imagingCaps?: boolean;
   /** Camera only: saved views (ONVIF presets) rendered as recall chips. */
   presets?: CameraPreset[];
+  /** Camera only: archives footage (IP cams with an RTSP main) → shows the Recordings
+   * review entry point in the live view. Face-ID desk/entrance cams are false. */
+  records?: boolean;
 };
 
 export type DeviceWSEvents = {

@@ -23,10 +23,15 @@ import {
   cameraPtzGoto,
   cameraPtzMove,
   fetchCameraControls,
+  fetchRecordingCameras,
+  fetchRecordingSegments,
+  recordingClipUrl,
+  RecordingSegment,
 } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import CameraCtlView from "../overlay-views/camera-ctl.template.html?raw";
 import CameraLiveView from "../overlay-views/camera-live.template.html?raw";
+import RecordingsView from "../overlay-views/recordings.template.html?raw";
 import { Device } from "./devices.model";
 
 /** The MC200 family stores at most 8 presets; surface the limit instead of the
@@ -132,6 +137,7 @@ export function openCameraLive(event: any, device: Device) {
       camHealthClass: device.camHealthClass || "",
       ptz: !!device.ptz,
       presets: device.presets || [],
+      records: !!device.records,
     },
     actions: {
       nudge: async (data: any, dx: number, dy: number) => {
@@ -141,8 +147,91 @@ export function openCameraLive(event: any, device: Device) {
       goto: async (data: any, token: string) => {
         if (!(await cameraPtzGoto(data.id, token))) oops("Couldn't recall that view");
       },
+      recordings: (_data: any) => openCameraRecordings({ target: event.target }, device),
     },
     startRect: rect,
     padding: { x: 0, y: 0 },
   });
+}
+
+/** Local-day (YYYY-MM-DD) → [start, end] epoch-second window for the segment query. */
+function dayRange(day: string): { start: number; end: number } {
+  const start = new Date(`${day}T00:00:00`).getTime() / 1000;
+  return { start, end: start + 86400 };
+}
+
+const timeFmt = new Intl.DateTimeFormat([], { hour: "2-digit", minute: "2-digit" });
+
+/** Decorate raw segments with the display fields the template renders (start time,
+ * duration, and a deduped "who was present" line pulled from the event markers) and the
+ * absolute, signed clip URL the <video> plays. */
+function decorateSegments(segs: RecordingSegment[]) {
+  return segs.map((seg) => {
+    const dur = seg.duration;
+    const durationLabel =
+      dur == null ? "recording…" : `${Math.floor(dur / 60)}:${String(Math.round(dur % 60)).padStart(2, "0")}`;
+    const names = Array.from(
+      new Set((seg.events || []).map((e) => e.identity?.name).filter((n): n is string => !!n)),
+    );
+    return {
+      id: seg.id,
+      clip: recordingClipUrl(seg),
+      startLabel: timeFmt.format(new Date(seg.start * 1000)),
+      durationLabel,
+      whoLabel: names.join(", "),
+    };
+  });
+}
+
+/**
+ * Footage-review overlay — browse + play a recording camera's archived clips. Fetches
+ * the camera's footage days on open, loads the newest day's segments, and plays a
+ * chosen clip in a seekable <video> (signed clip URL). Only the IP-cam fleet ever
+ * reaches here; face-ID cams have no `records` flag so no entry point renders.
+ */
+export async function openCameraRecordings(event: any, device: Device) {
+  const rect = getGlobalPosition(event.target);
+
+  const base = {
+    id: device.id,
+    name: device.name,
+    zone: device.zone || "",
+    days: [] as string[],
+    selectedDay: "",
+    segments: [] as ReturnType<typeof decorateSegments>,
+    activeClip: "",
+    loading: true,
+    empty: false,
+  };
+
+  const loadDay = async (data: any, day: string) => {
+    updateOverlayData({ ...data, selectedDay: day, loading: true, segments: [] });
+    const { start, end } = dayRange(day);
+    const segs = decorateSegments(await fetchRecordingSegments(device.id, start, end));
+    updateOverlayData({ ...data, selectedDay: day, loading: false, segments: segs });
+  };
+
+  openOverlay({
+    template: RecordingsView,
+    data: base,
+    actions: {
+      pickDay: async (data: any, day: string) => {
+        if (day !== data.selectedDay) await loadDay(data, day);
+      },
+      play: (data: any, seg: { clip: string }) => updateOverlayData({ ...data, activeClip: seg.clip }),
+    },
+    startRect: rect,
+    padding: { x: 6, y: 50 },
+  });
+
+  // Resolve this camera's footage days, then auto-load the newest.
+  const cams = await fetchRecordingCameras();
+  const mine = cams.find((c) => c.id === device.id);
+  const days = mine?.days || [];
+  if (days.length === 0) {
+    updateOverlayData({ ...base, loading: false, empty: true });
+    return;
+  }
+  updateOverlayData({ ...base, days, loading: true });
+  await loadDay({ ...base, days }, days[0]);
 }

@@ -22,6 +22,11 @@
             <span class="cam-health-dot"></span>
             <span>${this.data.camHealth}</span>
         </span>
+        <!-- Recordings review — IP cams (RTSP main) only; face-ID cams have no footage. -->
+        <button class="cam-live-rec" :if="this.data.records" aria-label="View recordings"
+            title="View recordings" :onclick="this.actions.recordings(this.data)">
+            <i class="iconoir-clock-rotate-right"></i>
+        </button>
         <!-- NB: this iconoir version has no `xmark` — `cancel` is the ✕ glyph. -->
         <button class="cam-live-close" aria-label="Close live view" :onmouseup="this.closeOverlay()">
             <i class="iconoir-cancel"></i>

@@ -627,6 +627,8 @@ class DevicesTabClass extends Component<DevicesTabState> {
       device.onvifCaps = caps;
       device.ptz = !!caps?.ptz;
       device.imagingCaps = !!caps?.imaging;
+      // Only the IP-cam fleet archives footage → only they get a Recordings entry point.
+      device.records = !!this.camStatus[device.id]?.records;
     });
   }
 
