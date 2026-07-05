@@ -1,4 +1,38 @@
 import { defineConfig } from 'vite';
+import fs from 'fs';
+import path from 'path';
+
+// Build stamp shared by the injected bundle constant, the emitted /version.json,
+// and the service worker. The version guard (src/utils/version-guard.ts) compares
+// the baked-in stamp against /version.json to force stale clients onto a new deploy.
+const BUILD_VERSION = process.env.BUILD_VERSION || String(Date.now());
+
+// Emit dist/version.json and stamp dist/sw.js with the build version after bundling.
+function versionStampPlugin() {
+  let outDir = 'dist';
+  return {
+    name: 'hhf-version-stamp',
+    configResolved(cfg) {
+      outDir = cfg.build.outDir;
+    },
+    closeBundle() {
+      const dist = path.isAbsolute(outDir) ? outDir : path.resolve(__dirname, outDir);
+      try {
+        fs.writeFileSync(
+          path.join(dist, 'version.json'),
+          JSON.stringify({ version: BUILD_VERSION }) + '\n',
+        );
+        const swPath = path.join(dist, 'sw.js');
+        if (fs.existsSync(swPath)) {
+          const sw = fs.readFileSync(swPath, 'utf8').replace(/__BUILD_VERSION__/g, BUILD_VERSION);
+          fs.writeFileSync(swPath, sw);
+        }
+      } catch (e) {
+        this.warn('version stamp failed: ' + e.message);
+      }
+    },
+  };
+}
 
 // In prod the dashboard is served behind nginx, which routes same-origin paths
 // (/api, /memory, /gateway, /voice, /tts, /speaker, /camera) to each service. Mirror
@@ -20,6 +54,10 @@ const proxy = (prefix, port, ws = false, keepPrefix = false) => ({
 
 /** @type {import('vite').UserConfig} */
 export default defineConfig({
+  plugins: [versionStampPlugin()],
+  define: {
+    __APP_VERSION__: JSON.stringify(BUILD_VERSION),
+  },
   server: {
     port: 8081,
     proxy: {

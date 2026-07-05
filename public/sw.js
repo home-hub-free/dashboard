@@ -10,9 +10,12 @@
  *     (so a new deploy is always picked up when online).
  *   • live API/service routes — passthrough, never cached (always hit the network).
  *
- * Bump VERSION to force-drop old caches on the next launch.
+ * VERSION is stamped per build (vite.config.js replaces __BUILD_VERSION__), so every
+ * deploy changes this file's bytes → the browser installs a new worker and `activate`
+ * drops the previous build's caches. (Falls back to a constant for the un-stamped dev
+ * copy served straight from public/.)
  */
-const VERSION = "hhf-v1";
+const VERSION = "hhf-__BUILD_VERSION__";
 const SHELL = "shell-" + VERSION;
 const ASSETS = "assets-" + VERSION;
 
@@ -21,11 +24,18 @@ const SHELL_URLS = [
   "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon-180.png",
 ];
 
-// Live backends — must always go to the network (never served from cache).
+// Live backends + the deploy stamp — must always go to the network (never cached),
+// so the version guard reads the *deployed* version, not a cached one.
 const BYPASS = [
   /^\/api\//, /^\/gateway\//, /^\/voice\//, /^\/tts\//, /^\/memory\//,
-  /^\/vision\//, /^\/speaker\//, /^\/calendar\//,
+  /^\/vision\//, /^\/speaker\//, /^\/calendar\//, /^\/version\.json$/,
 ];
+
+// Let the page tell a waiting worker to take over immediately (main.ts posts this
+// when it detects an update), so a new build activates without a manual close.
+self.addEventListener("message", (e) => {
+  if (e.data && e.data.type === "SKIP_WAITING") self.skipWaiting();
+});
 
 self.addEventListener("install", (e) => {
   e.waitUntil(

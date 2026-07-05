@@ -6,6 +6,7 @@ import { NavActions } from "./store/actions";
 import { syncState } from "./utils/sync";
 import { Login } from "./components/login/login";
 import { fetchMe } from "./utils/auth";
+import { checkVersion, initVersionGuard } from "./utils/version-guard";
 
 // CSS
 import "./styles/style.scss";
@@ -24,6 +25,13 @@ async function startApp() {
 }
 
 async function init() {
+  // Before anything else, make sure we are the current build. If a stale bundle
+  // is running (the classic home-screen-app failure — old code + a dead token that
+  // can't log in), this wipes caches, drops the worker, and reloads; execution
+  // stops here on that path. Then keep watching on resume/focus.
+  await checkVersion();
+  initVersionGuard();
+
   // Gate the dashboard behind a household login: the hub is the single front
   // door and identity feeds the agent (askAgent → data.user). A cached token is
   // validated against the hub; if it's missing/expired we show the login form
@@ -43,7 +51,21 @@ init();
 // PWA) launch are instant instead of re-downloading everything. No-op on insecure
 // origins (e.g. the http dev server) — the rejection is swallowed.
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  window.addEventListener("load", async () => {
+    try {
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      // When a new worker finishes installing, tell it to activate immediately
+      // instead of waiting for every tab to close.
+      reg.addEventListener("updatefound", () => {
+        const sw = reg.installing;
+        sw?.addEventListener("statechange", () => {
+          if (sw.state === "installed" && navigator.serviceWorker.controller) {
+            sw.postMessage({ type: "SKIP_WAITING" });
+          }
+        });
+      });
+    } catch {
+      /* insecure origin (http dev server) — SW unavailable, no-op */
+    }
   });
 }
