@@ -75,6 +75,7 @@ function decorateDevice(device: Device): Device {
     channels.forEach((c) => {
       if (c.key === "volume") c.control = "slider";
       if (c.key === "mic") c.control = "chip";
+      if (c.key === "flip") c.control = "chip";
       if (c.key === "battery") c.icon = batteryIcon(c.value as number);
     });
   }
@@ -91,10 +92,13 @@ function decorateDevice(device: Device): Device {
   }
 
   // Battery readout only exists when the board actually has a cell: the blob key is
-  // absent until the firmware's first report, and -1 means "slot empty".
-  device.channels = channels.filter(
-    (c) => c.key !== "battery" || ((device.value ?? {}).battery ?? -1) >= 0,
-  );
+  // absent until the firmware's first report, and -1 means "slot empty". Same
+  // presence rule for the camera Flip chip — audio-only satellites never report it.
+  device.channels = channels.filter((c) => {
+    if (c.key === "battery") return ((device.value ?? {}).battery ?? -1) >= 0;
+    if (c.key === "flip") return (device.value ?? {}).flip !== undefined;
+    return true;
+  });
   device.wide =
     device.deviceCategory === "evap-cooler" || hasCamView(device);
   // Camera live view comes from the vision-service (annotated MJPEG), never the cam
@@ -419,6 +423,15 @@ class DevicesTabClass extends Component<DevicesTabState> {
         onEditClick: (event: any, device: Device) => {
           event.stopPropagation();
           this.devicesService.editClick(event, device);
+        },
+
+        // Camera banner tap = the fullscreen live lightbox. Cameras also get here
+        // via the whole-tile tap (propagation is stopped so it opens once); for a
+        // camera-equipped satellite the banner is the ONLY expand path — its tile
+        // body is the audio controls, so the tile tap can't mean "watch".
+        onCamExpand: (event: Event, device: Device) => {
+          event.stopPropagation();
+          openCameraLive({ target: this.tileEl(device.id) }, device);
         },
 
         // Camera ⋯ — the config path (tap on the tile itself = live lightbox).

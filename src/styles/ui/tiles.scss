@@ -632,10 +632,13 @@
   .cam-wrap {
     position: relative;
     margin: -14px -14px 12px;  // cancel the tile padding so the banner is edge-to-edge
-    height: 150px;
+    // Slim preview on purpose: the satellite cam is a VGA visual aid, not a room
+    // camera — the banner is a peek, the lightbox (banner tap) is the real view.
+    height: 110px;
     border-radius: var(--radius-tile) var(--radius-tile) 0 0;
     overflow: hidden;
     background: #000;
+    cursor: pointer;
 
     img {
       width: 100%;
@@ -643,6 +646,28 @@
       object-fit: cover;
       display: block;
     }
+  }
+
+  // The banner's "this expands" cue — a pill mirroring .cam-health on the other
+  // corner. Pure affordance: the tap is handled by the banner itself.
+  .cam-expand {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    cursor: pointer;
   }
 
   // The tile body already shows the device name, so drop the video's name overlay.

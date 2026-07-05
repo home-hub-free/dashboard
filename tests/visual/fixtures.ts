@@ -57,7 +57,7 @@ export const devices = [
   // The first also carries a DVP camera (`stream` block → hasCamView): its live view
   // aborts in the harness, so this doubles as the dead-stream render check (the
   // broken-image glyph must never blow the tile layout).
-  { id: "dev-sat", deviceCategory: "voice-satellite", name: "Oficina", zone: "Bedroom", value: { volume: 40, mic: true, battery: 72 }, type: "value", manual: false, operationalRanges: [], stream: { proto: "mjpeg", port: 81, path: "/stream" } },
+  { id: "dev-sat", deviceCategory: "voice-satellite", name: "Oficina", zone: "Bedroom", value: { volume: 40, mic: true, battery: 72, flip: true }, type: "value", manual: false, operationalRanges: [], stream: { proto: "mjpeg", port: 81, path: "/stream" } },
   { id: "dev-sat2", deviceCategory: "voice-satellite", name: "Sala Sat", zone: "Kitchen", value: { volume: 55, mic: false, battery: -1 }, type: "value", manual: false, operationalRanges: [] },
 ];
 

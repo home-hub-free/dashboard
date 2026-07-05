@@ -34,7 +34,7 @@
             <!-- CAMERA (or camera-equipped satellite): full-bleed annotated live view
                  from the vision-service — not the cam — with the "who is here" headline
                  overlaid (§6). A satellite keeps its audio/battery controls below. -->
-            <div class="cam-wrap" :if="device.hasCamView">
+            <div class="cam-wrap" :if="device.hasCamView" :onclick="this.onCamExpand(event, device)">
                 <!-- A dead stream must NEVER paint the broken-image glyph: it has its
                      own intrinsic size and blows the tile layout apart. Hide (not
                      remove — keeps the box) until a frame actually loads. -->
@@ -49,6 +49,17 @@
                     <i class="iconoir-video-camera-off"></i>
                     <span>No signal</span>
                 </div>
+                <!-- Satellite banner: visible "this expands" cue (a camera tile's whole-tile
+                     tap already means the lightbox; the satellite's tile body is its audio
+                     controls, so the banner carries its own). The banner's onclick does the
+                     work — this button is the affordance, clicks bubble to it. -->
+                <button
+                    class="cam-expand"
+                    :if="device.deviceCategory !== 'camera'"
+                    title="Fullscreen live view"
+                >
+                    <i class="iconoir-expand"></i>
+                </button>
                 <!-- WHO is here — the headline, not the picture. -->
                 <div class="cam-who" :if="device.who">
                     <i class="iconoir-group"></i>

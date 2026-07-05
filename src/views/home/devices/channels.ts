@@ -74,6 +74,11 @@ export function channelSchema(category: string | undefined): ChannelSpec[] | nul
       return [
         { key: "volume", role: "setting", kind: "number", unit: "%", range: PCT, writable: true, precision: true },
         { key: "mic", role: "setting", kind: "boolean", writable: true, precision: true },
+        // Camera 180° rotation — the board mounts its DVP connector opposite the
+        // ESP32-CAM's, so a naturally-ribboned module films upside down. Only
+        // camera-equipped units report the key; decorateDevice drops the chip when
+        // the value blob doesn't carry it (audio-only satellites).
+        { key: "flip", role: "setting", kind: "boolean", writable: true, precision: true },
         // Battery % self-reported by the board (VBAT divider). No range: -1 means
         // "no battery plugged" — decorateDevice drops the readout entirely then.
         { key: "battery", role: "sensor", kind: "number", unit: "%", writable: false },
@@ -94,6 +99,7 @@ const LABELS: { [key: string]: string } = {
   "unit-temp": "Unit",
   volume: "Volume",
   mic: "Mic",
+  flip: "Flip",
   battery: "Battery",
   value: "Value",
 };
@@ -109,6 +115,7 @@ const ICONS: { [key: string]: string } = {
   "unit-temp": "iconoir-temperature-high",
   volume: "iconoir-sound-high",
   mic: "iconoir-mic",
+  flip: "iconoir-flip",
   battery: "iconoir-battery-50", // level-accurate icon assigned in decorateDevice
   value: "iconoir-circle",
 };

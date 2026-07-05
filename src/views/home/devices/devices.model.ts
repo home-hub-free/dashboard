@@ -126,6 +126,9 @@ export type DevicesTabState = {
   onEditClick: (event: any, device: Device) => void;
   /** Camera ⋯ — the config path (tile tap opens the live lightbox instead). */
   onCamEdit: (event: any, device: Device) => void;
+  /** Camera banner tap → fullscreen live lightbox (the satellite's expand path;
+   * cameras reach the same lightbox via the whole-tile tap too). */
+  onCamExpand: (event: Event, device: Device) => void;
   // Camera tile controls (CAMERA_ONVIF_CONTROL_PLAN): D-pad nudge, preset recall,
   // and the tune overlay (imaging + saved-view management). Primitive args only
   // (bindrjs loop-var rule).
