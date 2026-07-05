@@ -13,6 +13,14 @@
   display: none;
 }
 
+// The full-image face viewer wants the whole screen. #main-content is position:fixed
+// (its own stacking context at z:auto), so a modal nested inside it can't paint over
+// this fixed nav sibling by z-index alone — hide the nav for the viewer's lifetime
+// (toggled by household.service `setViewerNavHidden`). No reflow: the nav is fixed.
+body.face-viewer-open #nav-bar {
+  display: none;
+}
+
 #nav-bar {
   position: fixed;
   bottom: 0;

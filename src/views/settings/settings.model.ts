@@ -119,6 +119,7 @@ export type SettingsState = {
   thresholds: FaceThreshold[]
   saveThreshold: (key: string, value: string) => void
   resetThreshold: (key: string) => void
+  openClusterFace: (cluster: MemberCluster) => void
 
   // Face review — the "Is this you?" card stack over the confidence-tiered queue
   // (vision /people/review). The definitely-them tier auto-merges server-side and
@@ -164,6 +165,16 @@ export type SettingsState = {
   zoomUrl: string
   zoomLabel: string
   zoomSub: string
+  zoomFaceBox: number[] | null // ring THE face when known (multi-face captures); null = none
+  // Paged viewer over a member's audit collection: ← → keys / swipe / on-screen arrows.
+  zoomIndex: number // 0-based position within the collection
+  zoomCount: number // collection size (1 = single image, arrows hidden)
+  zoomHasPrev: boolean
+  zoomHasNext: boolean
+  zoomGuestId: string // current cluster's id ("" for a roster face) → gates the detach CTA
+  zoomPrev: () => void
+  zoomNext: () => void
+  zoomDetach: () => void // "Not me" from inside the viewer (same as the thumbnail CTA)
   openFace: (person: Person) => void
   closeFace: () => void
   stopZoom: (event: Event) => void

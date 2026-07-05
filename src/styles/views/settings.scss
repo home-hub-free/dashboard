@@ -6,6 +6,16 @@
 // the settings-specific content inside them.
 // ============================================================================
 
+// iOS rubber-band guard: even a few px of horizontal overflow (a wide child in a
+// flex/grid row) extends the scroll column, and on iOS that turns every vertical
+// drag into a horizontal rubber-band bounce. Clip the settings column on the x-axis
+// so there's nothing to scroll sideways. `clip` (not `hidden`) is deliberate: it
+// doesn't establish a scroll container or force overflow-y, so vertical scroll,
+// sticky, and the fixed-position modals (which escape this box) are untouched.
+.settings-view {
+  overflow-x: clip;
+}
+
 // ---- Household members --------------------------------------------------------
 .household-list {
   display: flex;
@@ -582,6 +592,14 @@
     border-radius: var(--radius-sm);
     object-fit: cover;
     background: var(--color-surface-secondary);
+
+    &.tappable {
+      cursor: zoom-in;
+    }
+  }
+
+  .cluster-noface {
+    color: var(--color-warning, var(--color-text-tertiary));
   }
 
   .cluster-thumb-empty {
@@ -664,11 +682,66 @@
   background: var(--color-surface-secondary);
 }
 
+// Ring over THE face in a multi-face capture (service positions it through the
+// contain transform); the giant shadow dims every other face — same treatment as
+// the review card, so the audit viewer answers "which face is this?" unambiguously.
+.face-zoom-ring {
+  position: absolute;
+  display: none;
+  border: 3px solid var(--color-primary);
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.face-zoom-hint {
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+}
+
+// Prev/next arrows over the collection (keys + swipe do the same). Vertically
+// centered on the image band; dim + non-interactive at the ends.
+.face-zoom-nav {
+  position: absolute;
+  top: calc(35vh - 22px); // roughly centered on the max 70vh image
+  width: 44px;
+  height: 44px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  font-size: 1.3rem;
+
+  &:disabled {
+    opacity: 0.28;
+    cursor: default;
+  }
+
+  &.face-zoom-prev { left: 8px; }
+  &.face-zoom-next { right: 8px; }
+}
+
 .face-zoom-meta {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   padding: 12px 16px 14px;
+
+  .face-zoom-metatext {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
 
   .face-zoom-label {
     font-weight: var(--font-weight-bold);
@@ -678,6 +751,10 @@
   .face-zoom-sub {
     font-size: 0.82rem;
     color: var(--color-text-tertiary);
+  }
+
+  .face-zoom-cta {
+    flex: 0 0 auto;
   }
 }
 

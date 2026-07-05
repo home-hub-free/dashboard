@@ -30,6 +30,7 @@ import {
   getFaceThresholds,
   setFaceThresholds,
   type ReviewCard,
+  type MemberCluster,
   calendarStatus,
   calendarEnrollStart,
   calendarRevoke,
@@ -50,6 +51,15 @@ import {
   speakAura,
 } from "../../utils/media-enroll";
 import type { SettingsState } from "../settings/settings.model";
+
+// The phone nav bar (#nav-bar) is a fixed sibling of #main-content; because
+// #main-content is itself position:fixed (its own stacking context at z:auto), a modal
+// nested inside it can't out-stack the nav no matter its z-index. The full-image viewer
+// wants the whole screen, so we hide the nav for its lifetime via a body class (no
+// reflow — the nav is fixed). See nav.scss `body.face-viewer-open`.
+function setViewerNavHidden(on: boolean) {
+  document.body.classList.toggle("face-viewer-open", on);
+}
 
 // Min mic peak (0..1) for a voice line to count — below this we ask the user to retry
 // the same line instead of enrolling near-silence.
@@ -445,17 +455,26 @@ export class HouseholdServiceClass {
   private reviewFaceBox: number[] | null = null;
 
   private positionFaceRing() {
-    const ring = document.querySelector<HTMLElement>(".review-face-ring");
+    this.positionRing("img.review-card-img", ".review-face-ring", this.reviewFaceBox,
+                      () => this.positionFaceRing());
+  }
+
+  /** Place a highlight ring over THE face (`box` = normalized [x,y,w,h] within the
+   * image) accounting for the image's `object-fit: contain` letterboxing, so it works
+   * for both the review card and the full-image lightbox. Retries once the image
+   * loads. Shared so multi-face disambiguation is identical everywhere. */
+  private positionRing(imgSel: string, ringSel: string, box: number[] | null,
+                       retry: () => void) {
+    const ring = document.querySelector<HTMLElement>(ringSel);
     if (!ring) return;
-    const img = document.querySelector<HTMLImageElement>("img.review-card-img");
-    const box = this.reviewFaceBox;
-    if (!box || !img) {
+    const img = document.querySelector<HTMLImageElement>(imgSel);
+    if (!box || box.length !== 4 || !img) {
       ring.style.display = "none";
       return;
     }
     if (!img.complete || !img.naturalWidth) {
       ring.style.display = "none";
-      img.addEventListener("load", () => this.positionFaceRing(), { once: true });
+      img.addEventListener("load", retry, { once: true });
       return;
     }
     const iw = img.naturalWidth, ih = img.naturalHeight;
@@ -471,6 +490,121 @@ export class HouseholdServiceClass {
     ring.style.width = `${fw * dw + 2 * px}px`;
     ring.style.height = `${fh * dh + 2 * py}px`;
     ring.style.display = "block";
+  }
+
+  // ── Full-image lightbox over the audit collection (paged) ───────────────────
+  // The viewer opens on ONE cluster face but carries the whole member's collection so
+  // you can page through them (← → keys, swipe, or the on-screen arrows) without
+  // closing — each frame shows the full capture (contain) with a ring on THE face.
+  private zoomClusters: MemberCluster[] = [];
+  private zoomGesturesOff: (() => void) | null = null;
+
+  /** Open the full-image lightbox on an audit cluster's face — the whole capture
+   * (contain, so a tall standing-person crop is never cut off) with a ring on the
+   * exact face this cluster is about (the pain point that made manual review guesswork
+   * when a photo held several faces). Pages through the member's whole collection. */
+  openClusterFace(cluster: MemberCluster) {
+    if (!cluster?.thumbUrl) return;
+    this.zoomClusters = this.state.memberClusters.filter((c) => c.thumbUrl);
+    const idx = Math.max(0, this.zoomClusters.findIndex((c) => c.guest_id === cluster.guest_id));
+    this.state.zoomOpen = true;
+    setViewerNavHidden(true); // the phone nav bar can't be out-stacked from here — hide it
+    this.renderZoomAt(idx);
+    this.bindZoomGestures();
+  }
+
+  private renderZoomAt(index: number) {
+    const list = this.zoomClusters;
+    if (!list.length) return;
+    const i = Math.max(0, Math.min(index, list.length - 1));
+    const c = list[i];
+    this.state.zoomIndex = i;
+    this.state.zoomCount = list.length;
+    this.state.zoomHasPrev = i > 0;
+    this.state.zoomHasNext = i < list.length - 1;
+    this.state.zoomGuestId = c.guest_id; // enables the "Not me" CTA on cluster faces
+    this.state.zoomUrl = c.thumbUrl || "";
+    this.state.zoomLabel = `Auto-matched face ${i + 1} / ${list.length}`;
+    this.state.zoomSub = c.no_face
+      ? "No clear face found in this capture"
+      : c.score !== null
+        ? `Match ${Math.round(c.score * 100)}% · seen ${c.sightings}×`
+        : `Seen ${c.sightings}×`;
+    this.state.zoomFaceBox = c.face_box && c.face_box.length === 4 ? c.face_box : null;
+    // Re-run ring placement once the (new) image has loaded.
+    requestAnimationFrame(() => this.positionZoomRing());
+  }
+
+  private positionZoomRing() {
+    this.positionRing(".face-zoom-img", ".face-zoom-ring", this.state.zoomFaceBox,
+                      () => this.positionZoomRing());
+  }
+
+  zoomNext() {
+    if (this.state.zoomHasNext) this.renderZoomAt(this.state.zoomIndex + 1);
+  }
+
+  zoomPrev() {
+    if (this.state.zoomHasPrev) this.renderZoomAt(this.state.zoomIndex - 1);
+  }
+
+  /** Tear down the lightbox + its gesture listeners (called by closeFace). */
+  closeZoom() {
+    this.state.zoomOpen = false;
+    this.state.zoomGuestId = "";
+    this.zoomGesturesOff?.();
+    this.zoomGesturesOff = null;
+    this.zoomClusters = [];
+    setViewerNavHidden(false);
+  }
+
+  /** The same "Not me" CTA the thumbnail carries, from inside the full-image viewer:
+   * detach this face from the member, drop it from the open collection, and advance to
+   * the next (or close when it was the last one). */
+  async zoomDetach() {
+    const id = this.state.zoomGuestId;
+    if (!id) return;
+    await this.detachClusterAction(id); // un-merge + back to review + refresh roster
+    this.zoomClusters = this.zoomClusters.filter((c) => c.guest_id !== id);
+    if (!this.zoomClusters.length) {
+      this.closeZoom();
+      return;
+    }
+    this.renderZoomAt(Math.min(this.state.zoomIndex, this.zoomClusters.length - 1));
+  }
+
+  /** ← / → (and swipe) page through the collection; Esc closes. Listeners live on
+   * document so they survive bindrjs re-renders; torn down on close. Mirrors the
+   * review card's gesture handling but navigates instead of answering. */
+  private bindZoomGestures() {
+    this.zoomGesturesOff?.(); // never stack listeners across reopens
+    let startX = 0;
+    let dragging = false;
+    const onStart = (e: TouchEvent) => {
+      if (!(e.target as HTMLElement | null)?.closest?.(".face-zoom-card")) return;
+      dragging = true;
+      startX = e.touches[0].clientX;
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (!dragging) return;
+      dragging = false;
+      const dx = (e.changedTouches[0]?.clientX ?? startX) - startX;
+      if (Math.abs(dx) > 50) (dx < 0 ? this.zoomNext() : this.zoomPrev());
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (!this.state.zoomOpen) return;
+      if (e.key === "Escape") this.closeZoom();
+      else if (e.key === "ArrowRight") this.zoomNext();
+      else if (e.key === "ArrowLeft") this.zoomPrev();
+    };
+    document.addEventListener("touchstart", onStart, { passive: true });
+    document.addEventListener("touchend", onEnd);
+    document.addEventListener("keydown", onKey);
+    this.zoomGesturesOff = () => {
+      document.removeEventListener("touchstart", onStart);
+      document.removeEventListener("touchend", onEnd);
+      document.removeEventListener("keydown", onKey);
+    };
   }
 
   private async answerReview(

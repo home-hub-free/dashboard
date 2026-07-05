@@ -348,10 +348,11 @@
                     </p>
                     <div class="cluster-grid">
                         <div class="cluster-cell" :foreach="c in this.memberClusters" :key="c.guest_id">
-                            <img :if="c.thumbUrl" :src="c.thumbUrl" alt="" class="cluster-thumb" />
+                            <img :if="c.thumbUrl" :src="c.thumbUrl" alt="" class="cluster-thumb" :class:tappable="c.thumbUrl" :onclick="this.openClusterFace(c)" />
                             <div :else class="cluster-thumb cluster-thumb-empty"><i class="iconoir-user"></i></div>
-                            <span class="cluster-score" :if="c.score !== null">match ${Math.round(c.score * 100)}%</span>
-                            <span class="cluster-score" :if="c.score === null">seen ${c.sightings}×</span>
+                            <span class="cluster-score cluster-noface" :if="c.no_face">no clear face</span>
+                            <span class="cluster-score" :if="!c.no_face && c.score !== null">match ${Math.round(c.score * 100)}%</span>
+                            <span class="cluster-score" :if="!c.no_face && c.score === null">seen ${c.sightings}×</span>
                             <button class="btn-quiet btn-inline" :onclick="this.detachClusterAction(c.guest_id)">
                                 <i class="iconoir-xmark"></i> Not me
                             </button>
@@ -564,9 +565,26 @@
                 <i class="iconoir-cancel"></i>
             </button>
             <img class="face-zoom-img" :src="this.zoomUrl" alt="" />
+            <span class="face-zoom-ring"></span>
+            <!-- Page through the member's collection (also ← → keys / swipe). Shown
+                 only when there's more than one image. -->
+            <button class="face-zoom-nav face-zoom-prev" :if="this.zoomCount > 1" :disabled="!this.zoomHasPrev" :onclick="this.zoomPrev()" aria-label="Previous">
+                <i class="iconoir-nav-arrow-left"></i>
+            </button>
+            <button class="face-zoom-nav face-zoom-next" :if="this.zoomCount > 1" :disabled="!this.zoomHasNext" :onclick="this.zoomNext()" aria-label="Next">
+                <i class="iconoir-nav-arrow-right"></i>
+            </button>
             <div class="face-zoom-meta">
-                <span class="face-zoom-label">${this.zoomLabel}</span>
-                <span class="face-zoom-sub" :if="this.zoomSub">${this.zoomSub}</span>
+                <div class="face-zoom-metatext">
+                    <span class="face-zoom-label">${this.zoomLabel}</span>
+                    <span class="face-zoom-sub" :if="this.zoomSub">${this.zoomSub}</span>
+                    <span class="face-zoom-hint" :if="this.zoomFaceBox">Highlighted = the face in question</span>
+                    <span class="face-zoom-hint" :if="this.zoomCount > 1">← → or swipe to move between faces</span>
+                </div>
+                <!-- Same "Not me" correction the thumbnail carries, on cluster faces only. -->
+                <button class="btn-quiet btn-inline face-zoom-cta" :if="this.zoomGuestId" :onclick="this.zoomDetach()">
+                    <i class="iconoir-xmark"></i> Not me
+                </button>
             </div>
         </div>
     </div>

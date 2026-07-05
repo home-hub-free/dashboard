@@ -109,6 +109,7 @@ class SettingsContentClass extends Component<SettingsState> {
         thresholds: [],
         saveThreshold: (key: string, value: string) => this.householdService.saveThreshold(key, value),
         resetThreshold: (key: string) => this.householdService.resetThreshold(key),
+        openClusterFace: (cluster) => this.householdService.openClusterFace(cluster),
 
         // Face review — the "Is this you?" card stack (service-driven).
         reviewCards: [],
@@ -148,19 +149,33 @@ class SettingsContentClass extends Component<SettingsState> {
         zoomUrl: "",
         zoomLabel: "",
         zoomSub: "",
+        zoomFaceBox: null,
+        zoomIndex: 0,
+        zoomCount: 1,
+        zoomHasPrev: false,
+        zoomHasNext: false,
+        zoomGuestId: "",
+        zoomPrev: () => this.householdService.zoomPrev(),
+        zoomNext: () => this.householdService.zoomNext(),
+        zoomDetach: () => this.householdService.zoomDetach(),
         openFace: (person: Person) => {
           if (!person?.thumbUrl) return; // nothing captured yet → no-op
+          this.householdService.closeZoom(); // drop any prior collection listeners
           this.bind.zoomUrl = person.thumbUrl;
           this.bind.zoomLabel = person.name || person.label;
           this.bind.zoomSub =
             person.class === "guest"
               ? `Guest · seen ${person.sightings ?? 0}×`
               : "Household member";
+          this.bind.zoomFaceBox = null; // roster faces carry no per-face box → no ring
+          this.bind.zoomCount = 1; // single image → no nav arrows
+          this.bind.zoomHasPrev = false;
+          this.bind.zoomHasNext = false;
+          this.bind.zoomGuestId = ""; // roster face → no detach CTA
           this.bind.zoomOpen = true;
+          document.body.classList.add("face-viewer-open"); // hide nav under the viewer
         },
-        closeFace: () => {
-          this.bind.zoomOpen = false;
-        },
+        closeFace: () => this.householdService.closeZoom(),
         stopZoom: (event: Event) => event.stopPropagation(),
       },
     });
