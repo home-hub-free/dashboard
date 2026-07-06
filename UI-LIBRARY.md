@@ -55,11 +55,11 @@ custom property.
 
 | Group | Tokens | Notes |
 |---|---|---|
-| Brand | `--color-primary(-light/-dark/…)` | bougainvillea — interactive only |
+| Brand | `--color-primary(-light/-dark/…)` | clay (the brick) — interactive only |
 | Status | `--color-success/error/warning/info` (+`-light/-dark`, `-rgba-10/40`) | on/off/caution/neutral |
 | Surfaces | `--color-background`, `--color-surface`, `--color-surface-secondary`, `--color-surface-tertiary`, `--color-border(-light)` | ink page → plate → recessed control → raised row |
 | Text | `--color-text-primary/secondary/tertiary/disabled/inverse` | tertiary is AA-tuned for raised surfaces |
-| Device state | `--color-active-warm` (amber), `--color-active-cool` (dusk), `--color-on-fill(-muted/-faint)` | flat lamp fills — the `--gradient-*`/`--glow-*` names survive but resolve flat; see §2 |
+| Device state | `--color-active-warm` (honey), `--color-active-cool` (stone blue), `--color-on-fill(-muted/-faint)` | flat lamp fills — the `--gradient-*`/`--glow-*` names survive but resolve flat; see §2 |
 | Geometry | `--radius-tile` 10px · `--radius-chip` 8px · `--radius-control` 8px · `--tap-target-min` 44px | plates, not blobs |
 | Spacing | `--space-1…20` (8px scale), `--gap-*` | |
 | Type | `--font-family-primary` (Archivo) + `--font-stretch-display` for display text · `--font-family-data` (IBM Plex Mono) for every live value · `--font-size-xs…4xl`, `--font-weight-*` | two materials: labels vs readings |
@@ -72,19 +72,22 @@ SCSS breakpoint mixins (media queries can't read custom properties):
 `wall-up` (≥1400). Import via `@use`-style `@import "../ui/tokens";` in any file
 that needs them.
 
-## 2. Color semantics — the four lamps ("Tablero")
+## 2. Color semantics — the four lamps ("Tablero", calm set)
+
+Accents are the house's own materials, desaturated: honey lamplight on pine,
+stone blue, sage like the plants, clay like the brick.
 
 | Meaning | Paint | Where |
 |---|---|---|
-| **A light is on** | `--color-active-warm` flat fill (AMBER) | `.device-tile.cat-light.on`, `.cat-dimmable-light.on`, rail/house-bar lamps |
-| **Another device active** | `--color-active-cool` flat fill (DUSK BLUE) | `.device-tile.cat-blinds.on` |
-| **Live / enabled / ok** | `--color-success` (GREEN) | dots, switches, `.chip.on`, motion lamps |
-| **Interactive / brand** | `--color-primary` (BOUGAINVILLEA) | buttons, nav-active, focus, sliders, "you" accents |
+| **A light is on** | `--color-active-warm` flat fill (HONEY #e6a959) | `.device-tile.cat-light.on`, `.cat-dimmable-light.on`, rail/house-bar lamps |
+| **Another device active** | `--color-active-cool` flat fill (STONE BLUE #7d9ab5) | `.device-tile.cat-blinds.on` |
+| **Live / enabled / ok** | `--color-success` (SAGE #74a980) | dots, switches, `.chip.on`, motion lamps |
+| **Interactive / brand** | `--color-primary` (CLAY #c97a5b) | buttons, nav-active, focus, sliders, "you" accents |
 
 State is a lamp: a flat fill and/or a dot — **never a gradient or a glow**.
-Never paint a button amber/dusk-blue or a device state pink. Text on any
+Never paint a button honey/stone-blue or a device state clay. Text on any
 filled lamp uses `--color-on-fill` (+`-muted/-faint`); the filled brand uses
-`--color-text-inverse` — bone on bougainvillea fails AA. Red (`--color-error`)
+`--color-text-inverse` — bone on clay fails AA. Brick-red (`--color-error`)
 means *fault/destructive*.
 
 ## 3. Elevation

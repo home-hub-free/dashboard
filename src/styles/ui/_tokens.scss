@@ -6,53 +6,55 @@
 // ============================================================================
 
 // ============================================================================
-// 1. COLOR SYSTEM — "Tablero"
-// A labeled control board on a warm wall. Ink-black walls, warm plates, bone
-// ink. State is shown as INDICATOR LAMPS — flat fills + a dot — never glows or
-// gradient washes. Four separable meanings (see UI-LIBRARY.md §2):
-//   AMBER        = a light is on          (--color-active-warm fill)
-//   DUSK BLUE    = another device active  (--color-active-cool fill)
-//   GREEN        = live / enabled / ok    (--color-success)
-//   BOUGAINVILLEA= interactive / brand    (--color-primary)
+// 1. COLOR SYSTEM — "Tablero" (calm set)
+// A labeled control board in THIS house: pine and handmade wood, brick walls,
+// white walls under warm light, plants everywhere, instruments on stands.
+// Every accent is a material from the room, desaturated to stay calm. State is
+// shown as INDICATOR LAMPS — flat fills + a dot — never glows or gradient
+// washes. Four separable meanings (see UI-LIBRARY.md §2):
+//   HONEY      = a light is on          (--color-active-warm fill — lamplight on pine)
+//   STONE BLUE = another device active  (--color-active-cool fill)
+//   SAGE       = live / enabled / ok    (--color-success — the plants)
+//   CLAY       = interactive / brand    (--color-primary — the brick)
 // ============================================================================
 
 :root {
-  // Primary (actions, focus, selection) — bougainvillea. The one flower color
-  // on the board; never used for device state.
+  // Primary (actions, focus, selection) — clay, off the brick walls. Muted on
+  // purpose; never used for device state.
   // NB: bone text FAILS on this fill — filled controls use the dark ink
   // (--color-text-inverse / --color-on-fill).
-  --color-primary: #e0517e;        // Bougainvillea (primary actions / brand)
-  --color-primary-light: #ef7fa0;  // Hover / active text on dark
-  --color-primary-lighter: #f7b3c6; // Very light (tints)
-  --color-primary-dark: #c03a63;   // Pressed states
-  --color-primary-darker: #8e2947; // Strong emphasis
+  --color-primary: #c97a5b;        // Clay (primary actions / brand)
+  --color-primary-light: #dd9a7f;  // Hover / active text on dark
+  --color-primary-lighter: #eec4b2; // Very light (tints)
+  --color-primary-dark: #a95f43;   // Pressed states
+  --color-primary-darker: #7d452f; // Strong emphasis
 
-  // Secondary — dusk blue (shares family with the active-cool device fill).
-  --color-secondary: #6f9ec9;
-  --color-secondary-light: #92b7d9;
-  --color-secondary-lighter: #c9dcec;
-  --color-secondary-dark: #4f7ba3;
+  // Secondary — stone blue (shares family with the active-cool device fill).
+  --color-secondary: #7d9ab5;
+  --color-secondary-light: #9cb2c8;
+  --color-secondary-lighter: #cddae5;
+  --color-secondary-dark: #5d7b96;
 
   // Status (semantic)
-  --color-success: #4cc47e;        // live / on / enabled
-  --color-success-light: #7dd6a1;
-  --color-success-lighter: #bfeccf;
-  --color-success-dark: #349a5e;
+  --color-success: #74a980;        // sage — live / on / enabled
+  --color-success-light: #97c2a1;
+  --color-success-lighter: #c8e0cd;
+  --color-success-dark: #558463;
 
-  --color-error: #ff6b57;          // fault / danger / remove
-  --color-error-light: #ff9484;
-  --color-error-lighter: #ffc8bf;
-  --color-error-dark: #d84a38;
+  --color-error: #d95f4c;          // brick-red — fault / danger / remove
+  --color-error-light: #e68a7b;
+  --color-error-lighter: #f2c2b9;
+  --color-error-dark: #b34435;
 
-  --color-warning: #e8a13c;        // caution / pending
-  --color-warning-light: #f0bc6f;
-  --color-warning-lighter: #f8ddb1;
-  --color-warning-dark: #bf7d20;
+  --color-warning: #d98e36;        // dry honey — caution / pending
+  --color-warning-light: #e5ac66;
+  --color-warning-lighter: #f1d3a8;
+  --color-warning-dark: #b06f22;
 
-  --color-info: #6f9ec9;           // information / neutral
-  --color-info-light: #92b7d9;
-  --color-info-lighter: #c9dcec;
-  --color-info-dark: #4f7ba3;
+  --color-info: #7d9ab5;           // information / neutral
+  --color-info-light: #9cb2c8;
+  --color-info-lighter: #cddae5;
+  --color-info-dark: #5d7b96;
 
   // Neutrals — ink black + warm plates, bone ink
   --color-white: #ece4d6;          // Bone (not pure white)
@@ -95,15 +97,15 @@
 // ============================================================================
 
 :root {
-  // Amber "lit" lamp (a light is ON)
-  --color-active-warm: #ffb02e;
-  --color-active-warm-light: #ffc463;
-  --gradient-active-warm: linear-gradient(#ffb02e, #ffb02e); // flat by design
+  // Honey "lit" lamp (a light is ON) — lamplight on pine, not neon amber
+  --color-active-warm: #e6a959;
+  --color-active-warm-light: #f0c184;
+  --gradient-active-warm: linear-gradient(#e6a959, #e6a959); // flat by design
   --glow-active-warm: inset 0 0 0 1px rgba(23, 17, 12, 0.28);
 
-  // Dusk "active" lamp (blinds open, other non-light device active)
-  --color-active-cool: #6f9ec9;
-  --gradient-active-cool: linear-gradient(#6f9ec9, #6f9ec9); // flat by design
+  // Stone-blue "active" lamp (blinds open, other non-light device active)
+  --color-active-cool: #7d9ab5;
+  --gradient-active-cool: linear-gradient(#7d9ab5, #7d9ab5); // flat by design
   --glow-active-cool: inset 0 0 0 1px rgba(23, 17, 12, 0.28);
 
   // Text/icon color on any filled lamp surface (amber or dusk)
@@ -256,22 +258,22 @@
 // ============================================================================
 
 :root {
-  --color-primary-rgba-10: rgba(224, 81, 126, 0.1);
-  --color-primary-rgba-20: rgba(224, 81, 126, 0.2);
-  --color-primary-rgba-40: rgba(224, 81, 126, 0.4);
-  --color-primary-rgba-60: rgba(224, 81, 126, 0.6);
+  --color-primary-rgba-10: rgba(201, 122, 91, 0.1);
+  --color-primary-rgba-20: rgba(201, 122, 91, 0.2);
+  --color-primary-rgba-40: rgba(201, 122, 91, 0.4);
+  --color-primary-rgba-60: rgba(201, 122, 91, 0.6);
 
-  --color-error-rgba-10: rgba(255, 107, 87, 0.1);
-  --color-error-rgba-40: rgba(255, 107, 87, 0.4);
+  --color-error-rgba-10: rgba(217, 95, 76, 0.1);
+  --color-error-rgba-40: rgba(217, 95, 76, 0.4);
 
-  --color-success-rgba-10: rgba(76, 196, 126, 0.1);
-  --color-success-rgba-40: rgba(76, 196, 126, 0.4);
+  --color-success-rgba-10: rgba(116, 169, 128, 0.1);
+  --color-success-rgba-40: rgba(116, 169, 128, 0.4);
 
-  --color-warning-rgba-10: rgba(232, 161, 60, 0.1);
-  --color-warning-rgba-40: rgba(232, 161, 60, 0.4);
+  --color-warning-rgba-10: rgba(217, 142, 54, 0.1);
+  --color-warning-rgba-40: rgba(217, 142, 54, 0.4);
 
-  --color-info-rgba-10: rgba(111, 158, 201, 0.1);
-  --color-info-rgba-40: rgba(111, 158, 201, 0.4);
+  --color-info-rgba-10: rgba(125, 154, 181, 0.1);
+  --color-info-rgba-40: rgba(125, 154, 181, 0.4);
 }
 
 // ============================================================================

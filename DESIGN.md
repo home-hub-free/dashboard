@@ -46,10 +46,12 @@ token so the system stays coherent.
 
 ## 2. Color semantics
 
-Dark mode, **"Tablero"** — a labeled control board on a warm wall. Ink-black page
-(`--color-background` #0f0d0b), warm plates (`--color-surface` #1a1715,
-`--color-surface-secondary` #141210, `--color-surface-tertiary` #23201c), bone
-ink (`--color-text-primary` #ece4d6). The walls are flat — **no ambient gradients,
+Dark mode, **"Tablero"** — a labeled control board in THIS house: pine and
+handmade wood, brick walls, white walls under warm light, plants everywhere.
+Ink-black page (`--color-background` #0f0d0b), warm plates (`--color-surface`
+#1a1715, `--color-surface-secondary` #141210, `--color-surface-tertiary` #23201c),
+bone ink (`--color-text-primary` #ece4d6). Every accent is a **material from the
+room, desaturated to stay calm**. The walls are flat — **no ambient gradients,
 no glows, no gradient fills anywhere**. State is shown as INDICATOR LAMPS: a flat
 color fill and/or a small dot. (The `--gradient-*`/`--glow-*` token names survive
 for compat but resolve to flat fills / flat inset rings.)
@@ -58,14 +60,16 @@ for compat but resolve to flat fills / flat inset rings.)
 
 | Meaning | Token | Where |
 |---|---|---|
-| **A light is on** (illumination) | `--color-active-warm` (flat amber) | `.cat-light.on`, `.cat-dimmable-light.on`, room-rail/house-bar lamps |
-| **Another device is active** (e.g. blinds open) | `--color-active-cool` (flat dusk blue) | `.cat-blinds.on` |
-| **Live / enabled / ok** | `--color-success` (green) | `.switch.on`, boolean chips, motion lamps, WS dot |
-| **Interactive / brand** | `--color-primary` (**bougainvillea** #e0517e) | nav-active lamp bar, buttons, focus rings, sliders |
+| **A light is on** (illumination) | `--color-active-warm` (**honey** #e6a959 — lamplight on pine) | `.cat-light.on`, `.cat-dimmable-light.on`, room-rail/house-bar lamps |
+| **Another device is active** (e.g. blinds open) | `--color-active-cool` (**stone blue** #7d9ab5) | `.cat-blinds.on` |
+| **Live / enabled / ok** | `--color-success` (**sage** #74a980 — the plants) | `.switch.on`, boolean chips, motion lamps, WS dot |
+| **Interactive / brand** | `--color-primary` (**clay** #c97a5b — the brick) | nav-active lamp bar, buttons, focus rings, sliders |
 
-A device-state fill must never read the same as an interactive control. Amber and
-dusk blue are reserved for device state; bougainvillea is the brand/interaction
-color. **Do not paint buttons dusk blue or device states pink.**
+A device-state fill must never read the same as an interactive control. Honey and
+stone blue are reserved for device state; clay is the brand/interaction color.
+**Do not paint buttons stone blue or device states clay.** Clay (muted red-orange)
+and honey (yellow-orange) sit near each other — keep brand ink on *controls* and
+honey on *slabs/lamps* so scale keeps them apart.
 
 State/status colors use the semantic set: `--color-success` (on / detected /
 enabled), `--color-error` (off / danger / remove), `--color-warning`,
@@ -73,7 +77,7 @@ enabled), `--color-error` (off / danger / remove), `--color-warning`,
 
 **Text on filled accent surfaces** uses `--color-on-fill` (warm near-black) and its
 muted variants — verified ≥5.7:1 on the gold, dusk-blue and success fills. The same
-rule covers the bougainvillea brand fill via `--color-text-inverse`: **bone text
+rule covers the clay brand fill via `--color-text-inverse`: **bone text
 FAILS on the brand fill** — filled buttons always use the dark ink.
 
 ### Contrast (WCAG AA)
@@ -257,5 +261,5 @@ state from the hub; for isolated UI work, run the Vite dev server and drive it h
 with Playwright, stubbing the API routes (`get-devices`, `get-sensors`,
 `get-effects-dynamic`, `get-zones`) with representative fixtures. Screenshot Home
 (mobile + desktop), Automations, Assistant, and an open detail overlay, and check:
-visual hierarchy, the amber/dusk/green/bougainvillea separation, on-surface text contrast, tap-target
+visual hierarchy, the honey/stone/sage/clay separation, on-surface text contrast, tap-target
 sizes, and transitions.
