@@ -32,7 +32,6 @@ import {
 import { getGlobalPosition } from "../../../utils/utils.service";
 import CameraCtlView from "../overlay-views/camera-ctl.template.html?raw";
 import CameraLiveView from "../overlay-views/camera-live.template.html?raw";
-import RecordingsView from "../overlay-views/recordings.template.html?raw";
 import { Device } from "./devices.model";
 
 /** The MC200 family stores at most 8 presets; surface the limit instead of the
@@ -123,9 +122,66 @@ export function openCameraControls(
  * Fullscreen live lightbox — the camera tile's tap target. A snapshot of the
  * decorated tile's display fields (stream, who, health, PTZ caps) rendered
  * edge-to-edge; padding 0/0 drives the sheet to the full viewport.
+ *
+ * PLAYBACK rides inside it (`mode: "live" | "rec"`): the clock button swaps the
+ * live stream for a <video> over the archived clips, with day chips + a 24h
+ * timeline (segments as spans, identity events as dots — tap to jump). While in
+ * rec mode the live <img> is REMOVED, so the MJPEG connection drops.
+ *
+ * NB updateOverlayData replaces the whole data blob and bindrjs's :attr handler
+ * re-sets `src` unconditionally — re-setting a <video src> restarts it. So while
+ * a clip plays, NOTHING may call updateOverlayData except an action that changes
+ * the clip anyway; the timeline playhead is driven imperatively (direct style
+ * writes at ontimeupdate), never through bind data.
  */
 export function openCameraLive(event: any, device: Device) {
   const rect = getGlobalPosition(event.target);
+
+  // Seek to apply once the pending clip's metadata loads (timeline taps land
+  // mid-segment). Closure state, deliberately outside the bind data (see NB).
+  let pendingSeekS = 0;
+
+  const hidePlayhead = () => {
+    const el = document.querySelector(".cam-tl-playhead") as HTMLElement | null;
+    if (el) el.style.opacity = "0";
+  };
+
+  /** Swap the player to one segment (optionally starting mid-clip). */
+  const playSegment = (data: any, seg: DecoratedSegment, seekS = 0) => {
+    pendingSeekS = seekS;
+    hidePlayhead();
+    updateOverlayData({
+      ...data,
+      activeClip: seg.clip,
+      activeStart: `${seg.startLabel} · ${seg.durationLabel}`,
+      activeWho: seg.whoLabel,
+    });
+  };
+
+  /** Load one day's segments (+ timeline geometry); optionally auto-play the
+   * newest clip — entering playback means "show me the most recent moment". */
+  const loadDay = async (data: any, day: string, autoplayLatest: boolean) => {
+    const base = {
+      ...data,
+      mode: "rec",
+      selectedDay: day,
+      recLoading: true,
+      segments: [],
+      marks: [],
+      activeClip: "",
+      activeStart: "",
+      activeWho: "",
+    };
+    updateOverlayData(base);
+    const { start, end } = dayRange(day);
+    const { segments, marks } = decorateSegments(
+      await fetchRecordingSegments(device.id, start, end), start);
+    const next = { ...base, recLoading: false, segments, marks };
+    updateOverlayData(next);
+    if (autoplayLatest && segments.length) {
+      playSegment(next, segments[segments.length - 1]);
+    }
+  };
 
   openOverlay({
     template: CameraLiveView,
@@ -140,6 +196,17 @@ export function openCameraLive(event: any, device: Device) {
       presets: device.presets || [],
       records: !!device.records,
       privacy: !!device.privacy,
+      // ── playback state (mode "rec") ──────────────────────────────────────
+      mode: "live",
+      dayChips: [] as { day: string; label: string }[],
+      selectedDay: "",
+      segments: [] as DecoratedSegment[],
+      marks: [] as TimelineMark[],
+      activeClip: "",
+      activeStart: "",
+      activeWho: "",
+      recLoading: false,
+      recEmpty: false,
     },
     actions: {
       nudge: async (data: any, dx: number, dy: number) => {
@@ -149,7 +216,69 @@ export function openCameraLive(event: any, device: Device) {
       goto: async (data: any, token: string) => {
         if (!(await cameraPtzGoto(data.id, token))) oops("Couldn't recall that view");
       },
-      recordings: (_data: any) => openCameraRecordings({ target: event.target }, device),
+
+      // ── playback (footage review inside the lightbox) ────────────────────
+      recordings: async (data: any) => {
+        updateOverlayData({ ...data, mode: "rec", recLoading: true, recEmpty: false });
+        const cams = await fetchRecordingCameras();
+        const days = cams.find((c) => c.id === device.id)?.days || [];
+        if (!days.length) {
+          updateOverlayData({ ...data, mode: "rec", recLoading: false, recEmpty: true });
+          return;
+        }
+        const dayChips = days.map((day) => ({ day, label: dayLabel(day) }));
+        await loadDay({ ...data, dayChips, recEmpty: false }, days[0], true);
+      },
+
+      backToLive: (data: any) => {
+        updateOverlayData({ ...data, mode: "live", activeClip: "" });
+      },
+
+      pickDay: async (data: any, day: string) => {
+        if (day !== data.selectedDay) await loadDay(data, day, false);
+      },
+
+      // Tap the 24h timeline → play the segment under that instant, seeked to it
+      // (or the next recorded moment if the tap lands in a gap).
+      seekTimeline: (data: any) => {
+        const ev = (window as any).event as MouseEvent | undefined;
+        const el = ev?.currentTarget as HTMLElement | null;
+        if (!el || !data.selectedDay) return;
+        const box = el.getBoundingClientRect();
+        const frac = Math.min(1, Math.max(0, (ev!.clientX - box.left) / box.width));
+        const t = dayRange(data.selectedDay).start + frac * 86400;
+        const segs: DecoratedSegment[] = data.segments || [];
+        const inside = segs.find((s) => t >= s.start && t <= (s.end ?? t));
+        if (inside) return playSegment(data, inside, t - inside.start);
+        const after = segs.find((s) => s.start > t);
+        if (after) playSegment(data, after);
+      },
+
+      // Auto-advance: a finished clip flows into the next one — re-watching an
+      // evening shouldn't take a tap every 5 minutes.
+      clipEnded: (data: any) => {
+        const segs: DecoratedSegment[] = data.segments || [];
+        const i = segs.findIndex((s) => s.clip === data.activeClip);
+        if (i > -1 && i + 1 < segs.length) playSegment(data, segs[i + 1]);
+      },
+
+      // <video> plumbing — both imperative on purpose (see NB above).
+      applySeek: () => {
+        const v = (window as any).event?.target as HTMLVideoElement | undefined;
+        if (v && pendingSeekS > 0) {
+          v.currentTime = pendingSeekS;
+          pendingSeekS = 0;
+        }
+      },
+      onTime: (data: any) => {
+        const v = (window as any).event?.target as HTMLVideoElement | undefined;
+        const seg = (data.segments || []).find((s: DecoratedSegment) => s.clip === data.activeClip);
+        const el = document.querySelector(".cam-tl-playhead") as HTMLElement | null;
+        if (!v || !seg || !el || !data.selectedDay) return;
+        const frac = (seg.start + v.currentTime - dayRange(data.selectedDay).start) / 86400;
+        el.style.left = `${Math.min(100, Math.max(0, frac * 100)).toFixed(3)}%`;
+        el.style.opacity = "1";
+      },
 
       // Privacy switch, mirrored from the tile: optimistic flip here AND on the
       // shared device object (same reference the tile renders), reverted on failure.
@@ -185,77 +314,76 @@ function dayRange(day: string): { start: number; end: number } {
 }
 
 const timeFmt = new Intl.DateTimeFormat([], { hour: "2-digit", minute: "2-digit" });
+const dayFmt = new Intl.DateTimeFormat([], { month: "short", day: "numeric" });
+
+/** Day-chip label for a local YYYY-MM-DD: "Today" / "Yesterday" / "Jul 4". */
+function dayLabel(day: string): string {
+  const start = new Date(`${day}T00:00:00`);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = Math.round((today.getTime() - start.getTime()) / 86_400_000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  return dayFmt.format(start);
+}
+
+/** One playable clip, decorated for the template: labels + its span on the 24h
+ * timeline (`bar` feeds a bindrjs `:style` object binding). */
+export type DecoratedSegment = {
+  id: number;
+  clip: string;
+  start: number;
+  end: number | null;
+  startLabel: string;
+  durationLabel: string;
+  whoLabel: string;
+  bar: { left: string; width: string };
+};
+
+/** An identity moment ("David entered, 14:03") as a tappable dot on the timeline. */
+export type TimelineMark = { key: string; name: string; style: { left: string } };
+
+const dayPct = (t: number, dayStart: number): string =>
+  `${Math.min(100, Math.max(0, ((t - dayStart) / 86_400) * 100)).toFixed(3)}%`;
 
 /** Decorate raw segments with the display fields the template renders (start time,
- * duration, and a deduped "who was present" line pulled from the event markers) and the
- * absolute, signed clip URL the <video> plays. */
-function decorateSegments(segs: RecordingSegment[]) {
-  return segs.map((seg) => {
+ * duration, a deduped "who was present" line, the signed clip URL the <video>
+ * plays, and timeline geometry) + the day's identity marks (one dot per person
+ * per ~5 minutes, so a long presence doesn't smear into a solid row of dots). */
+function decorateSegments(
+  segs: RecordingSegment[],
+  dayStart: number,
+): { segments: DecoratedSegment[]; marks: TimelineMark[] } {
+  const marks: TimelineMark[] = [];
+  const seenMarks = new Set<string>();
+  const segments = segs.map((seg) => {
     const dur = seg.duration;
     const durationLabel =
       dur == null ? "recording…" : `${Math.floor(dur / 60)}:${String(Math.round(dur % 60)).padStart(2, "0")}`;
     const names = Array.from(
       new Set((seg.events || []).map((e) => e.identity?.name).filter((n): n is string => !!n)),
     );
+    for (const e of seg.events || []) {
+      const name = e.identity?.name;
+      if (!name) continue;
+      const key = `${name}@${Math.floor(e.ts / 300)}`;
+      if (seenMarks.has(key)) continue;
+      seenMarks.add(key);
+      marks.push({ key, name: `${name} · ${timeFmt.format(new Date(e.ts * 1000))}`, style: { left: dayPct(e.ts, dayStart) } });
+    }
+    const endT = seg.end ?? Date.now() / 1000;
+    // Width floor keeps a lone 5-min clip visible (0.35% of a day ≈ invisible).
+    const width = Math.max(0.4, ((endT - seg.start) / 86_400) * 100);
     return {
       id: seg.id,
       clip: recordingClipUrl(seg),
+      start: seg.start,
+      end: seg.end,
       startLabel: timeFmt.format(new Date(seg.start * 1000)),
       durationLabel,
       whoLabel: names.join(", "),
+      bar: { left: dayPct(seg.start, dayStart), width: `${width.toFixed(3)}%` },
     };
   });
-}
-
-/**
- * Footage-review overlay — browse + play a recording camera's archived clips. Fetches
- * the camera's footage days on open, loads the newest day's segments, and plays a
- * chosen clip in a seekable <video> (signed clip URL). Only the IP-cam fleet ever
- * reaches here; face-ID cams have no `records` flag so no entry point renders.
- */
-export async function openCameraRecordings(event: any, device: Device) {
-  const rect = getGlobalPosition(event.target);
-
-  const base = {
-    id: device.id,
-    name: device.name,
-    zone: device.zone || "",
-    days: [] as string[],
-    selectedDay: "",
-    segments: [] as ReturnType<typeof decorateSegments>,
-    activeClip: "",
-    loading: true,
-    empty: false,
-  };
-
-  const loadDay = async (data: any, day: string) => {
-    updateOverlayData({ ...data, selectedDay: day, loading: true, segments: [] });
-    const { start, end } = dayRange(day);
-    const segs = decorateSegments(await fetchRecordingSegments(device.id, start, end));
-    updateOverlayData({ ...data, selectedDay: day, loading: false, segments: segs });
-  };
-
-  openOverlay({
-    template: RecordingsView,
-    data: base,
-    actions: {
-      pickDay: async (data: any, day: string) => {
-        if (day !== data.selectedDay) await loadDay(data, day);
-      },
-      play: (data: any, seg: { clip: string }) => updateOverlayData({ ...data, activeClip: seg.clip }),
-    },
-    startRect: rect,
-    padding: { x: 6, y: 50 },
-  });
-
-  // Resolve this camera's footage days, then auto-load the newest.
-  const cams = await fetchRecordingCameras();
-  const mine = cams.find((c) => c.id === device.id);
-  const days = mine?.days || [];
-  if (days.length === 0) {
-    updateOverlayData({ ...base, loading: false, empty: true });
-    return;
-  }
-  updateOverlayData({ ...base, days, loading: true });
-  await loadDay({ ...base, days }, days[0]);
+  return { segments, marks };
 }

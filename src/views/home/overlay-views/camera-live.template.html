@@ -1,44 +1,78 @@
 <!-- Fullscreen live view (lightbox) — the camera tile's tap target. Watching is
      the primary action; config lives behind the tile's ⋯ (hub edit sheet, or the
      tune overlay for vision-only cams). Everyday PTZ controls ride along at the
-     bottom so you can aim while watching. -->
+     bottom so you can aim while watching.
+
+     PLAYBACK mode ("rec"): the clock button swaps the live stream for archived
+     clips — fullscreen <video>, day chips, and a 24h timeline (segment spans +
+     identity dots; tap anywhere to jump to that moment). The live <img> is
+     REMOVED while in playback so its MJPEG connection drops. -->
 <div class="cam-live">
+    <!-- ── LIVE surface ─────────────────────────────────────────────────── -->
     <!-- Privacy mode: the stream <img> is REMOVED so the browser drops the
          connection; the placeholder says why the view is dark. -->
-    <div class="cam-live-placeholder" :if="this.data.privacy">
+    <div class="cam-live-placeholder" :if="this.data.mode === 'live' && this.data.privacy">
         <i class="iconoir-eye-off"></i>
         <span>Privacy on — not streaming or recording</span>
     </div>
     <img
         class="cam-live-view"
-        :if="!this.data.privacy && this.data.streamUrl"
+        :if="this.data.mode === 'live' && !this.data.privacy && this.data.streamUrl"
         :src="this.data.streamUrl"
         alt=""
         onerror="this.classList.add('img-dead')"
         onload="this.classList.remove('img-dead')"
     />
-    <div class="cam-live-placeholder" :if="!this.data.privacy && !this.data.streamUrl">
+    <div class="cam-live-placeholder" :if="this.data.mode === 'live' && !this.data.privacy && !this.data.streamUrl">
         <i class="iconoir-video-camera-off"></i>
         <span>No signal</span>
     </div>
 
+    <!-- ── PLAYBACK surface ─────────────────────────────────────────────── -->
+    <video
+        class="cam-live-view cam-rec-video"
+        :if="this.data.mode === 'rec' && this.data.activeClip"
+        :src="this.data.activeClip"
+        controls
+        autoplay
+        playsinline
+        :onloadedmetadata="this.actions.applySeek(this.data)"
+        :ontimeupdate="this.actions.onTime(this.data)"
+        :onended="this.actions.clipEnded(this.data)"
+    ></video>
+    <div class="cam-live-placeholder" :if="this.data.mode === 'rec' && !this.data.activeClip">
+        <i class="iconoir-clock-rotate-right"></i>
+        <span :if="this.data.recLoading">Loading recordings…</span>
+        <span :if="!this.data.recLoading && this.data.recEmpty">No recordings yet for this camera.</span>
+        <span :if="!this.data.recLoading && !this.data.recEmpty">Pick a moment on the timeline.</span>
+    </div>
+
     <div class="cam-live-top">
         <span class="cam-live-title"><i class="iconoir-video-camera"></i> ${this.data.name}</span>
-        <span class="cam-health" :class="this.data.camHealthClass" :if="this.data.camHealth">
+        <span class="cam-health" :class="this.data.camHealthClass" :if="this.data.mode === 'live' && this.data.camHealth">
             <span class="cam-health-dot"></span>
             <span>${this.data.camHealth}</span>
         </span>
+        <span class="cam-health cam-health--rec" :if="this.data.mode === 'rec'">
+            <span class="cam-health-dot"></span>
+            <span>playback</span>
+        </span>
         <!-- Privacy switch — stop/resume streaming + recording + perception. -->
         <button class="cam-live-rec cam-live-priv" aria-label="Privacy mode"
+            :if="this.data.mode === 'live'"
             :class="this.data.privacy ? 'cam-priv--on' : 'cam-priv--off'"
             title="Privacy — stop or resume streaming & recording"
             :onclick="this.actions.privacy(this.data)">
             <i class="iconoir-eye-off"></i>
         </button>
         <!-- Recordings review — IP cams (RTSP main) only; face-ID cams have no footage. -->
-        <button class="cam-live-rec" :if="this.data.records" aria-label="View recordings"
-            title="View recordings" :onclick="this.actions.recordings(this.data)">
+        <button class="cam-live-rec" :if="this.data.records && this.data.mode === 'live'" aria-label="Watch recordings"
+            title="Watch recordings" :onclick="this.actions.recordings(this.data)">
             <i class="iconoir-clock-rotate-right"></i>
+        </button>
+        <button class="cam-live-rec cam-live-back" :if="this.data.mode === 'rec'" aria-label="Back to live view"
+            title="Back to live view" :onclick="this.actions.backToLive(this.data)">
+            <i class="iconoir-video-camera"></i>
         </button>
         <!-- NB: this iconoir version has no `xmark` — `cancel` is the ✕ glyph. -->
         <button class="cam-live-close" aria-label="Close live view" :onmouseup="this.closeOverlay()">
@@ -47,10 +81,11 @@
     </div>
 
     <div class="cam-live-bottom">
-        <div class="cam-live-who" :if="this.data.who">
+        <!-- live mode: who is here + everyday PTZ -->
+        <div class="cam-live-who" :if="this.data.mode === 'live' && this.data.who">
             <i class="iconoir-group"></i><span>${this.data.who}</span>
         </div>
-        <div class="cam-live-ctrl" :if="this.data.ptz">
+        <div class="cam-live-ctrl" :if="this.data.mode === 'live' && this.data.ptz">
             <div class="cam-dpad" role="group" aria-label="Pan and tilt">
                 <button class="cam-nudge" title="Pan left" :onclick="this.actions.nudge(this.data, -1, 0)"><i class="iconoir-nav-arrow-left"></i></button>
                 <button class="cam-nudge" title="Tilt up" :onclick="this.actions.nudge(this.data, 0, 1)"><i class="iconoir-nav-arrow-up"></i></button>
@@ -67,6 +102,45 @@
                 >
                     <i class="iconoir-bookmark-empty"></i> ${preset.name}
                 </button>
+            </div>
+        </div>
+
+        <!-- rec mode: day chips + the 24h timeline + what's playing -->
+        <div class="cam-rec-bar" :if="this.data.mode === 'rec' && !this.data.recEmpty">
+            <div class="cam-rec-days">
+                <button
+                    class="chip cam-rec-day"
+                    :foreach="chip in this.data.dayChips"
+                    :key="chip.day"
+                    :class:active="chip.day === this.data.selectedDay"
+                    :onclick="this.actions.pickDay(this.data, chip.day)"
+                >
+                    ${chip.label}
+                </button>
+            </div>
+            <!-- 24h of the selected day: segment spans are the recorded stretches,
+                 dots are identity moments; the playhead line tracks the video
+                 (written imperatively — see camera-ctl.service NB). -->
+            <div class="cam-tl" :onclick="this.actions.seekTimeline(this.data)" role="slider" aria-label="Recording timeline">
+                <div class="cam-tl-seg"
+                    :foreach="seg in this.data.segments"
+                    :key="seg.id"
+                    :style="seg.bar"
+                    :class:active="seg.clip === this.data.activeClip"
+                ></div>
+                <div class="cam-tl-mark"
+                    :foreach="mark in this.data.marks"
+                    :key="mark.key"
+                    :style="mark.style"
+                    :title="mark.name"
+                ></div>
+                <div class="cam-tl-playhead"></div>
+            </div>
+            <div class="cam-tl-hours"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
+            <div class="cam-rec-now" :if="this.data.activeClip">
+                <i class="iconoir-play"></i>
+                <span>${this.data.activeStart}</span>
+                <span class="cam-rec-now-who" :if="this.data.activeWho"><i class="iconoir-group"></i> ${this.data.activeWho}</span>
             </div>
         </div>
     </div>
