@@ -120,7 +120,16 @@ test.describe("camera playback", () => {
     await expect(live.locator(".cam-tl-seg")).toHaveCount(2);
     await expect(live.locator(".cam-tl-seg.active")).toHaveCount(1);
     await expect(live.locator(".cam-tl-mark")).toHaveCount(1);
-    await expect(live.locator(".cam-rec-now")).toContainText("5:00");
+    // Readout = the clip's START time only — clip length/elapsed belong to the
+    // native video controls (printing both read as overlapping timestamps).
+    await expect(live.locator(".cam-rec-now")).toContainText(/2:00/);
+
+    // Column layout: our control bar sits BELOW the video, never over the
+    // native <video controls> strip along the video's own bottom edge.
+    await expect(live).toHaveClass(/cam-live--rec/);
+    const videoBox = (await video.boundingBox())!;
+    const barBox = (await live.locator(".cam-live-bottom").boundingBox())!;
+    expect(videoBox.y + videoBox.height).toBeLessThanOrEqual(barBox.y + 1);
 
     expect(errors, "no uncaught JS errors").toEqual([]);
   });

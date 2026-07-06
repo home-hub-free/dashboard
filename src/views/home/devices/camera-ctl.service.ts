@@ -146,14 +146,16 @@ export function openCameraLive(event: any, device: Device) {
     if (el) el.style.opacity = "0";
   };
 
-  /** Swap the player to one segment (optionally starting mid-clip). */
+  /** Swap the player to one segment (optionally starting mid-clip). No duration
+   * in the readout — the native video controls already show elapsed/length, and
+   * two time pairs on one row read as overlapping timestamps. */
   const playSegment = (data: any, seg: DecoratedSegment, seekS = 0) => {
     pendingSeekS = seekS;
     hidePlayhead();
     updateOverlayData({
       ...data,
       activeClip: seg.clip,
-      activeStart: `${seg.startLabel} · ${seg.durationLabel}`,
+      activeStart: seg.startLabel,
       activeWho: seg.whoLabel,
     });
   };
@@ -335,7 +337,6 @@ export type DecoratedSegment = {
   start: number;
   end: number | null;
   startLabel: string;
-  durationLabel: string;
   whoLabel: string;
   bar: { left: string; width: string };
 };
@@ -347,9 +348,10 @@ const dayPct = (t: number, dayStart: number): string =>
   `${Math.min(100, Math.max(0, ((t - dayStart) / 86_400) * 100)).toFixed(3)}%`;
 
 /** Decorate raw segments with the display fields the template renders (start time,
- * duration, a deduped "who was present" line, the signed clip URL the <video>
- * plays, and timeline geometry) + the day's identity marks (one dot per person
- * per ~5 minutes, so a long presence doesn't smear into a solid row of dots). */
+ * a deduped "who was present" line, the signed clip URL the <video> plays, and
+ * timeline geometry) + the day's identity marks (one dot per person per ~5
+ * minutes, so a long presence doesn't smear into a solid row of dots). Clip
+ * length is the native video controls' job — we never print a second duration. */
 function decorateSegments(
   segs: RecordingSegment[],
   dayStart: number,
@@ -357,9 +359,6 @@ function decorateSegments(
   const marks: TimelineMark[] = [];
   const seenMarks = new Set<string>();
   const segments = segs.map((seg) => {
-    const dur = seg.duration;
-    const durationLabel =
-      dur == null ? "recording…" : `${Math.floor(dur / 60)}:${String(Math.round(dur % 60)).padStart(2, "0")}`;
     const names = Array.from(
       new Set((seg.events || []).map((e) => e.identity?.name).filter((n): n is string => !!n)),
     );
@@ -380,7 +379,6 @@ function decorateSegments(
       start: seg.start,
       end: seg.end,
       startLabel: timeFmt.format(new Date(seg.start * 1000)),
-      durationLabel,
       whoLabel: names.join(", "),
       bar: { left: dayPct(seg.start, dayStart), width: `${width.toFixed(3)}%` },
     };

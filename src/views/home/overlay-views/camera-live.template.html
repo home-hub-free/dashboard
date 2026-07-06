@@ -7,7 +7,7 @@
      clips — fullscreen <video>, day chips, and a 24h timeline (segment spans +
      identity dots; tap anywhere to jump to that moment). The live <img> is
      REMOVED while in playback so its MJPEG connection drops. -->
-<div class="cam-live">
+<div class="cam-live" :class:cam-live--rec="this.data.mode === 'rec'">
     <!-- ── LIVE surface ─────────────────────────────────────────────────── -->
     <!-- Privacy mode: the stream <img> is REMOVED so the browser drops the
          connection; the placeholder says why the view is dark. -->

@@ -696,9 +696,11 @@
     position: relative;
     height: 36px;
     border-radius: var(--radius-control);
+    // Light-on-dark surface: the bar sits on the solid playback strip, so it
+    // must read as a tappable track, not vanish black-on-black.
     background:
-      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.14) 0 1px, transparent 1px 25%),
-      rgba(0, 0, 0, 0.5);
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px 25%),
+      rgba(255, 255, 255, 0.09);
     overflow: hidden;
     cursor: pointer;
     touch-action: manipulation;
@@ -812,6 +814,28 @@
     gap: 10px;
     padding: 22px 14px calc(12px + env(safe-area-inset-bottom, 0px));
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.7), transparent);
+  }
+
+  // ── playback layout (mode "rec") ─────────────────────────────────────────
+  // The <video> keeps its NATIVE controls (play/scrub/time render along its own
+  // bottom edge) — so our chips/timeline/readout must NOT overlay the video like
+  // the live-mode gradient bar does, or the two control rows land on top of each
+  // other (live-found: native bottom-left timestamps under our readout). In rec
+  // mode the lightbox becomes a real column: video above, our bar in-flow below.
+  &.cam-live--rec {
+    flex-direction: column;
+
+    .cam-live-view {
+      flex: 1;
+      min-height: 0;
+      height: auto;
+    }
+
+    .cam-live-bottom {
+      position: static;
+      background: rgba(0, 0, 0, 0.92);
+      padding-top: 12px;
+    }
   }
 
   .cam-live-who {
