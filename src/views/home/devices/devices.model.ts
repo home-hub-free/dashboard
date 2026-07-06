@@ -77,6 +77,12 @@ export type Device = {
   /** Camera only: archives footage (IP cams with an RTSP main) → shows the Recordings
    * review entry point in the live view. Face-ID desk/entrance cams are false. */
   records?: boolean;
+  /** Camera only: privacy mode — the vision worker isn't pulling from this camera at
+   * all (no live view / recording / perception). Gates the tile's stream <img> off. */
+  privacy?: boolean;
+  /** Camera only: the privacy toggle's state-modifier class ("cam-priv--on|off").
+   * ONE token — same bindrjs `:class` rule as camHealthClass. */
+  privacyClass?: string;
 };
 
 export type DeviceWSEvents = {
@@ -151,4 +157,6 @@ export type DevicesTabState = {
   onCamNudge: (event: Event, deviceId: string, dx: number, dy: number) => void;
   onCamGoto: (event: Event, deviceId: string, token: string) => void;
   onCamSettings: (event: any, deviceId: string) => void;
+  /** Privacy switch (label-row shield): stop/resume streaming + recording + perception. */
+  onCamPrivacy: (event: Event, device: Device) => void;
 };

@@ -3,15 +3,21 @@
      tune overlay for vision-only cams). Everyday PTZ controls ride along at the
      bottom so you can aim while watching. -->
 <div class="cam-live">
+    <!-- Privacy mode: the stream <img> is REMOVED so the browser drops the
+         connection; the placeholder says why the view is dark. -->
+    <div class="cam-live-placeholder" :if="this.data.privacy">
+        <i class="iconoir-eye-off"></i>
+        <span>Privacy on — not streaming or recording</span>
+    </div>
     <img
         class="cam-live-view"
-        :if="this.data.streamUrl"
+        :if="!this.data.privacy && this.data.streamUrl"
         :src="this.data.streamUrl"
         alt=""
         onerror="this.classList.add('img-dead')"
         onload="this.classList.remove('img-dead')"
     />
-    <div :else class="cam-live-placeholder">
+    <div class="cam-live-placeholder" :if="!this.data.privacy && !this.data.streamUrl">
         <i class="iconoir-video-camera-off"></i>
         <span>No signal</span>
     </div>
@@ -22,6 +28,13 @@
             <span class="cam-health-dot"></span>
             <span>${this.data.camHealth}</span>
         </span>
+        <!-- Privacy switch — stop/resume streaming + recording + perception. -->
+        <button class="cam-live-rec cam-live-priv" aria-label="Privacy mode"
+            :class="this.data.privacy ? 'cam-priv--on' : 'cam-priv--off'"
+            title="Privacy — stop or resume streaming & recording"
+            :onclick="this.actions.privacy(this.data)">
+            <i class="iconoir-eye-off"></i>
+        </button>
         <!-- Recordings review — IP cams (RTSP main) only; face-ID cams have no footage. -->
         <button class="cam-live-rec" :if="this.data.records" aria-label="View recordings"
             title="View recordings" :onclick="this.actions.recordings(this.data)">

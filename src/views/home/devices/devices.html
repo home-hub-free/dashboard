@@ -83,17 +83,23 @@
                  from the vision-service — not the cam — with the "who is here" headline
                  overlaid (§6). A satellite keeps its audio/battery controls below. -->
             <div class="cam-wrap" :if="device.hasCamView" :onclick="this.onCamExpand(event, device)">
+                <!-- Privacy mode: the stream <img> is REMOVED (not hidden) so the
+                     browser drops its connection — nothing keeps pulling frames. -->
+                <div class="cam-placeholder cam-placeholder--privacy" :if="device.privacy">
+                    <i class="iconoir-eye-off"></i>
+                    <span>Privacy on — not streaming or recording</span>
+                </div>
                 <!-- A dead stream must NEVER paint the broken-image glyph: it has its
                      own intrinsic size and blows the tile layout apart. Hide (not
                      remove — keeps the box) until a frame actually loads. -->
                 <img
-                    :if="device.streamUrl"
+                    :if="!device.privacy && device.streamUrl"
                     :src="device.streamUrl"
                     alt=""
                     onerror="this.classList.add('img-dead')"
                     onload="this.classList.remove('img-dead')"
                 />
-                <div :else class="cam-placeholder">
+                <div class="cam-placeholder" :if="!device.privacy && !device.streamUrl">
                     <i class="iconoir-video-camera-off"></i>
                     <span>No signal</span>
                 </div>
@@ -125,6 +131,15 @@
                 <div class="cam-label">
                     <i class="iconoir-video-camera"></i>
                     <span>${device.name}</span>
+                    <!-- Privacy switch — stop/resume ALL watching of this camera
+                         (stream + recording + perception). Every camera-view tile
+                         gets it, satellites included. -->
+                    <i
+                        class="tile-edit cam-priv iconoir-eye-off"
+                        :class="device.privacyClass"
+                        title="Privacy — stop or resume streaming & recording"
+                        :onclick="this.onCamPrivacy(event, device)"
+                    ></i>
                     <i
                         class="tile-edit iconoir-more-horiz"
                         :if="device.deviceCategory === 'camera'"

@@ -6,6 +6,7 @@ import {
   CameraControls,
   cameraPtzGoto,
   cameraPtzMove,
+  cameraSetPrivacy,
   fetchCameraControls,
   setServerChannel,
   visionStreamUrl,
@@ -115,6 +116,10 @@ function decorateDevice(device: Device): Device {
     // The control-bar :foreach must never see undefined — bindrjs renders the
     // region the instant `ptz` flips true, before the controls fetch lands.
     if (!device.presets) device.presets = [];
+    // Privacy fields must be concrete before first render (:class needs ONE real
+    // token); the occupancy poll + the toggle keep them fresh afterwards.
+    device.privacy = !!device.privacy;
+    device.privacyClass = device.privacy ? "cam-priv--on" : "cam-priv--off";
   }
   device.isOn = actuators.some((c) =>
     c.kind === "boolean" ? c.value === true : (c.value as number) > 0,
@@ -193,10 +198,13 @@ function summariseOccupants(occ: ZoneOccupant[] | undefined): string {
  * The tooltip carries the raw counters (frames_seen, frame age, backend names). */
 function summariseCamHealth(
   st: VisionCameraStatus | undefined,
-): { text: string; state: "ok" | "warn" | "down"; title: string } {
+): { text: string; state: "ok" | "warn" | "down" | "priv"; title: string } {
   if (!st) {
     // Resident-facing word, not infra jargon; the tooltip keeps the real cause.
     return { text: "offline", state: "down", title: "vision-service has no worker for this camera (not on roster / no stream URL)" };
+  }
+  if (st.privacy) {
+    return { text: "privacy", state: "priv", title: "Privacy mode — this camera is not being streamed, recorded or analyzed" };
   }
   const title =
     `frames: ${st.frames_seen} · last frame: ${st.last_frame_age_s ?? "—"}s ago · ` +
@@ -598,6 +606,12 @@ class DevicesTabClass extends Component<DevicesTabState> {
           const device = this.findCamera(deviceId);
           if (device) this.openCamTune(device);
         },
+
+        // Privacy switch — the "stop watching this camera" control (label-row shield).
+        onCamPrivacy: (event: Event, device: Device) => {
+          event.stopPropagation();
+          this.toggleCamPrivacy(device);
+        },
       },
     });
 
@@ -796,6 +810,32 @@ class DevicesTabClass extends Component<DevicesTabState> {
       device.imagingCaps = !!caps?.imaging;
       // Only the IP-cam fleet archives footage → only they get a Recordings entry point.
       device.records = !!this.camStatus[device.id]?.records;
+      // Privacy mode: gates the tile's stream <img> off and lights the toggle.
+      device.privacy = !!this.camStatus[device.id]?.privacy;
+      device.privacyClass = device.privacy ? "cam-priv--on" : "cam-priv--off";
+    });
+  }
+
+  /** Flip a camera's privacy mode (stop/resume streaming + recording + perception).
+   * Optimistic — the tile flips instantly; reverts with a toast if the hub/vision
+   * call fails. The worker-status poll keeps it honest afterwards. */
+  private toggleCamPrivacy(device: Device) {
+    const next = !device.privacy;
+    const paint = (on: boolean) => {
+      device.privacy = on;
+      device.privacyClass = on ? "cam-priv--on" : "cam-priv--off";
+      if (this.camStatus[device.id]) this.camStatus[device.id].privacy = on;
+      this.applyOccupancy();
+    };
+    paint(next);
+    cameraSetPrivacy(device.id, next).then((result) => {
+      if (result) return;
+      paint(!next);
+      showToaster({
+        message: next ? "Couldn't enable privacy mode" : "Couldn't resume the camera",
+        from: "bottom",
+        timer: 2500,
+      });
     });
   }
 

@@ -20,6 +20,7 @@ import {
   cameraDeletePreset,
   cameraSavePreset,
   cameraSetImaging,
+  cameraSetPrivacy,
   cameraPtzGoto,
   cameraPtzMove,
   fetchCameraControls,
@@ -138,6 +139,7 @@ export function openCameraLive(event: any, device: Device) {
       ptz: !!device.ptz,
       presets: device.presets || [],
       records: !!device.records,
+      privacy: !!device.privacy,
     },
     actions: {
       nudge: async (data: any, dx: number, dy: number) => {
@@ -148,6 +150,28 @@ export function openCameraLive(event: any, device: Device) {
         if (!(await cameraPtzGoto(data.id, token))) oops("Couldn't recall that view");
       },
       recordings: (_data: any) => openCameraRecordings({ target: event.target }, device),
+
+      // Privacy switch, mirrored from the tile: optimistic flip here AND on the
+      // shared device object (same reference the tile renders), reverted on failure.
+      // The health pill follows along (the poll that normally feeds it is 15s away).
+      privacy: async (data: any) => {
+        const next = !data.privacy;
+        const paint = (on: boolean) => {
+          device.privacy = on;
+          device.privacyClass = on ? "cam-priv--on" : "cam-priv--off";
+          updateOverlayData({
+            ...data,
+            privacy: on,
+            camHealth: on ? "privacy" : device.camHealth || "",
+            camHealthClass: on ? "cam-health--priv" : device.camHealthClass || "",
+          });
+        };
+        paint(next);
+        if (!(await cameraSetPrivacy(device.id, next))) {
+          paint(!next);
+          oops(next ? "Couldn't enable privacy mode" : "Couldn't resume the camera");
+        }
+      },
     },
     startRect: rect,
     padding: { x: 0, y: 0 },

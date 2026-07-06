@@ -234,6 +234,9 @@ export type VisionCameraStatus = {
   /** Live in-camera motion event subscription state (CAMERA_ONVIF_CONTROL_PLAN §3). */
   events_attached?: boolean;
   motion_active?: boolean | null;
+  /** Privacy mode — the worker isn't pulling from this camera at all (no live view,
+   * no recording, no perception). Toggled via the hub `/camera/:id/privacy` proxy. */
+  privacy?: boolean;
 };
 
 /** One pull of the vision world-model: zone occupancy + per-camera worker health. */
@@ -385,6 +388,14 @@ export async function cameraDeletePreset(camId: string, token: string): Promise<
 /** Partial imaging write (brightness/saturation/contrast/sharpness 0-100, ir_cut). */
 export function cameraSetImaging(camId: string, imaging: CameraImaging) {
   return cameraPost(camId, "/imaging", imaging);
+}
+
+/** Privacy mode toggle — stop (or resume) ALL watching of this camera: live view,
+ * recording and perception end at the vision-service worker. Authenticated + audited
+ * through the hub proxy like every other camera control; resolves to
+ * `{ privacy: boolean }` on success, null on failure. */
+export function cameraSetPrivacy(camId: string, on: boolean) {
+  return cameraPost(camId, "/privacy", { on });
 }
 
 /** Whether the vision-service is up + routed (gates the Face-ID control + WHO overlay,

@@ -740,6 +740,19 @@
       background: var(--color-error);
       box-shadow: 0 0 7px var(--color-error);
     }
+
+    // Privacy mode — a chosen state, not a fault (matches the tile pill).
+    &.cam-health--priv .cam-health-dot {
+      background: var(--color-info);
+      box-shadow: 0 0 7px var(--color-info);
+    }
+  }
+
+  // Privacy switch lit while ON — the one control that stays visible over the
+  // privacy placeholder (it's also the way back).
+  .cam-live-priv.cam-priv--on {
+    color: var(--color-info-light);
+    background: rgba(0, 0, 0, 0.65);
   }
 
   .cam-live-close,
