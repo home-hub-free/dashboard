@@ -55,15 +55,15 @@ custom property.
 
 | Group | Tokens | Notes |
 |---|---|---|
-| Brand | `--color-primary(-light/-dark/…)` | warm coral — interactive only |
+| Brand | `--color-primary(-light/-dark/…)` | bougainvillea — interactive only |
 | Status | `--color-success/error/warning/info` (+`-light/-dark`, `-rgba-10/40`) | on/off/caution/neutral |
-| Surfaces | `--color-background`, `--color-surface`, `--color-surface-secondary`, `--color-surface-tertiary`, `--color-border(-light)` | page → card → recessed control → recessed row |
+| Surfaces | `--color-background`, `--color-surface`, `--color-surface-secondary`, `--color-surface-tertiary`, `--color-border(-light)` | ink page → plate → recessed control → raised row |
 | Text | `--color-text-primary/secondary/tertiary/disabled/inverse` | tertiary is AA-tuned for raised surfaces |
-| Device state | `--gradient-active-warm` + `--glow-active-warm`, `--gradient-active-cool` + `--glow-active-cool`, `--color-on-fill(-muted/-faint)` | see §2 |
-| Geometry | `--radius-tile` 22px · `--radius-chip` 18px · `--radius-control` 12px · `--tap-target-min` 44px | keep surfaces on this rhythm |
+| Device state | `--color-active-warm` (amber), `--color-active-cool` (dusk), `--color-on-fill(-muted/-faint)` | flat lamp fills — the `--gradient-*`/`--glow-*` names survive but resolve flat; see §2 |
+| Geometry | `--radius-tile` 10px · `--radius-chip` 8px · `--radius-control` 8px · `--tap-target-min` 44px | plates, not blobs |
 | Spacing | `--space-1…20` (8px scale), `--gap-*` | |
-| Type | `--font-size-xs…4xl`, `--font-weight-*`, `--letter-spacing-*` | body font is Satoshi |
-| Motion | `--duration-fast/normal/slow`, `--ease-in/out/in-out/bounce` | default state change ≈ 200ms in-out |
+| Type | `--font-family-primary` (Archivo) + `--font-stretch-display` for display text · `--font-family-data` (IBM Plex Mono) for every live value · `--font-size-xs…4xl`, `--font-weight-*` | two materials: labels vs readings |
+| Motion | `--duration-fast/normal/slow`, `--ease-in/out/in-out/bounce` | mechanical: 120–240ms ease-out; press = translateY(1px) |
 | Shadow | `--shadow-sm…2xl`, `--shadow-modal`, `--shadow-lift` | lift = resting-card depth; modal = floating layers |
 | Z | `--z-dropdown…notification` | never raw numbers |
 
@@ -72,28 +72,28 @@ SCSS breakpoint mixins (media queries can't read custom properties):
 `wall-up` (≥1400). Import via `@use`-style `@import "../ui/tokens";` in any file
 that needs them.
 
-## 2. Color semantics — the three accents ("Ember")
+## 2. Color semantics — the four lamps ("Tablero")
 
 | Meaning | Paint | Where |
 |---|---|---|
-| **A light is on** | `--gradient-active-warm` + `--glow-active-warm` (GOLD) | `.device-tile.cat-light.on`, `.cat-dimmable-light.on` |
-| **Another device active** | `--gradient-active-cool` + `--glow-active-cool` (DUSK BLUE) | `.device-tile.cat-blinds.on` |
-| **Interactive / brand** | `--color-primary` (WARM CORAL) | buttons, nav-active, focus, sliders, "you" accents |
+| **A light is on** | `--color-active-warm` flat fill (AMBER) | `.device-tile.cat-light.on`, `.cat-dimmable-light.on`, rail/house-bar lamps |
+| **Another device active** | `--color-active-cool` flat fill (DUSK BLUE) | `.device-tile.cat-blinds.on` |
+| **Live / enabled / ok** | `--color-success` (GREEN) | dots, switches, `.chip.on`, motion lamps |
+| **Interactive / brand** | `--color-primary` (BOUGAINVILLEA) | buttons, nav-active, focus, sliders, "you" accents |
 
-Never paint a button gold/dusk-blue or a device state coral. Text on any
-filled accent uses `--color-on-fill` (+`-muted/-faint`); filled coral uses
-`--color-text-inverse` — cream on coral fails AA. Green (`--color-success`)
-means *enabled/detected/live* (dots, switches, **and `.chip.on`** — a chip is
-device state, so it must never fill brand), red (`--color-error`) means
-*off/destructive*.
+State is a lamp: a flat fill and/or a dot — **never a gradient or a glow**.
+Never paint a button amber/dusk-blue or a device state pink. Text on any
+filled lamp uses `--color-on-fill` (+`-muted/-faint`); the filled brand uses
+`--color-text-inverse` — bone on bougainvillea fails AA. Red (`--color-error`)
+means *fault/destructive*.
 
 ## 3. Elevation
 
-- **Resting surfaces** (tiles, panels, chips, cards): `--color-surface` +
-  `1px solid --color-border` + `--shadow-lift`. No real drop shadow.
+- **Resting surfaces** (plates, panels, chips, cards): `--color-surface` +
+  `1px solid --color-border` + `--shadow-lift` (hairline top light only).
 - **Floating layers** (overlay sheet, lightbox, toasts): `--shadow-modal` /
   `--shadow-lg`.
-- The warm/cool **glow** on a lit tile is a state accent, not elevation.
+- A lit tile's flat fill is a state lamp, not elevation — no shadows to match.
 
 ---
 

@@ -1,15 +1,11 @@
 import { Component } from "../../../core/component";
-import { getWeather, Weather } from "../../../utils/server-handler";
+import { store } from "../../../store/store";
+import { showToaster } from "../../../components/popup-message/popup-message";
+import { getWeather, setServerChannel, Weather } from "../../../utils/server-handler";
+import { Device } from "../devices/devices.model";
+import { deviceChannels } from "../devices/channels";
 import template from "./status.html?raw";
 import { HomeStatusState } from "./status.model";
-
-function timeOfDay(d = new Date()): string {
-  const h = d.getHours();
-  if (h < 5) return "night";
-  if (h < 12) return "morning";
-  if (h < 18) return "afternoon";
-  return "evening";
-}
 
 /** Date only — no clock time (the OS already shows the time; it was redundant here). */
 function dateLabel(d = new Date()): string {
@@ -32,51 +28,96 @@ function weatherIcon(code: number | null): string {
   return "iconoir-cloud";
 }
 
+/** Every light/dimmable that is currently on, with its primary actuator key —
+ * the write set for "All off". */
+function litLights(devices: Device[]): { device: Device; key: string; off: boolean | number }[] {
+  const out: { device: Device; key: string; off: boolean | number }[] = [];
+  for (const d of devices) {
+    if (d.deviceCategory !== "light" && d.deviceCategory !== "dimmable-light") continue;
+    const primary = deviceChannels(d).find((c) => c.role === "actuator");
+    if (!primary) continue;
+    const on = primary.kind === "boolean" ? primary.value === true : (primary.value as number) > 0;
+    if (on) out.push({ device: d, key: primary.key, off: primary.kind === "boolean" ? false : 0 });
+  }
+  return out;
+}
+
 /**
- * The compact home hero: a slim greeting + date on the left and a live weather chip
- * on the right. Deliberately lightweight — the old wide editorial band and its
- * lights-on/devices-active/warmest stat-cards were dropped (redundant against the
- * device wall itself), so this no longer subscribes to the device/sensor stores. It
- * only ticks the date/greeting and polls the hub forecast.
+ * The house bar: date, whole-house lights answer (+ "All off"), live weather.
+ * The greeting hero is gone — a control board doesn't say good afternoon, it
+ * tells you whether the house is settled.
  */
 class HomeStatusClass extends Component<HomeStatusState> {
   private dayTimer?: number;
   private weatherTimer?: number;
+  private unsubscribeDevices?: () => void;
 
   mount() {
     this.createBind({
       id: "home-status",
       template,
-      bind: this.baseState(),
+      bind: {
+        ...this.baseState(),
+        onAllLightsOff: () => this.allLightsOff(),
+      },
     });
 
-    // Date + greeting only change slowly; a 5-min tick is plenty to roll past midnight
-    // and from afternoon into evening without a per-second clock.
+    // Date changes slowly; a 5-min tick is plenty to roll past midnight.
     this.dayTimer = window.setInterval(() => {
       this.bind.date = dateLabel();
-      this.bind.timeOfDay = timeOfDay();
     }, 5 * 60 * 1000);
 
+    this.applyLights(store.get("devices") || []);
+    this.unsubscribeDevices = store.subscribe("devices", (devices) => this.applyLights(devices));
+
     this.refreshWeather();
-    // Open-Meteo updates hourly at best; 15 min keeps the chip fresh without churn.
+    // Open-Meteo updates hourly at best; 15 min keeps the readout fresh without churn.
     this.weatherTimer = window.setInterval(() => this.refreshWeather(), 15 * 60 * 1000);
   }
 
   unmount() {
     if (this.dayTimer) window.clearInterval(this.dayTimer);
     if (this.weatherTimer) window.clearInterval(this.weatherTimer);
+    this.unsubscribeDevices?.();
   }
 
-  private baseState(): HomeStatusState {
+  private baseState(): Omit<HomeStatusState, "onAllLightsOff"> {
     return {
       date: dateLabel(),
-      timeOfDay: timeOfDay(),
       hasWeather: false,
       weatherIcon: "iconoir-cloud",
       temp: "—",
       conditions: "",
       range: "",
+      lightsOn: 0,
+      lightsLabel: "All lights off",
     };
+  }
+
+  private applyLights(devices: Device[]) {
+    const n = litLights(devices).length;
+    this.bind.lightsOn = n;
+    this.bind.lightsLabel = n === 0 ? "All lights off" : n === 1 ? "1 light on" : `${n} lights on`;
+  }
+
+  /** One tap on the way out. Fires the same channel-addressed writes the tiles
+   * use; the WS `device-update` broadcasts refresh every tile + this count. */
+  private async allLightsOff() {
+    const targets = litLights(store.get("devices") || []);
+    if (!targets.length) return;
+    const results = await Promise.allSettled(
+      targets.map(({ device, key, off }) => setServerChannel(device.id, key, off)),
+    );
+    const failed = results.filter(
+      (r) => r.status === "rejected" || (r.status === "fulfilled" && !(r.value as any)?.success),
+    ).length;
+    if (failed) {
+      showToaster({
+        message: `${failed} light${failed === 1 ? " didn't" : "s didn't"} respond — still on`,
+        from: "bottom",
+        timer: 3000,
+      });
+    }
   }
 
   private async refreshWeather() {

@@ -21,6 +21,7 @@ import {
 } from "../../../utils/zones.service";
 import DeviceEditView from "../overlay-views/devices-edit.template.html?raw";
 import { Device } from "./devices.model";
+import { isPinned, togglePin } from "./pins.service";
 
 const DeviceInputType: { [key in Device["deviceCategory"]]?: string } = {
   "evap-cooler": "button",
@@ -81,6 +82,7 @@ export class DevicesServiceClass {
           ...device,
           inputType,
           parsedRanges,
+          pinned: isPinned(device.id),
           // Options for the zone <select>, current value ordered first (see
           // zoneOptions). Picks from the shared registry instead of free-typing.
           zoneOptions: zoneOptions(device.zone, store.get("zones")),
@@ -96,11 +98,18 @@ export class DevicesServiceClass {
           saveZone: this.saveZone.bind(this),
           addZone: this.addZone.bind(this),
           removeZone: this.removeZone.bind(this),
+          togglePin: this.togglePin.bind(this),
         },
         startRect: rect,
         padding: { x: 6, y: 50 },
       });
     }, 600);
+  }
+
+  /** Pin/unpin from the detail sheet — reflects the new state back into the
+   * open overlay (the board's Pinned strip follows via the pins:changed bus). */
+  togglePin(data: any) {
+    updateOverlayData({ ...data, pinned: togglePin(data.id) });
   }
 
   deviceTouchMove(event: TouchEvent, device: Device) {
@@ -177,6 +186,7 @@ export class DevicesServiceClass {
         ...device,
         inputType,
         parsedRanges,
+        pinned: isPinned(device.id),
         // Options for the zone <select>, current value ordered first (see
         // zoneOptions). Picks from the shared registry instead of free-typing.
         zoneOptions: zoneOptions(device.zone, store.get("zones")),
@@ -192,6 +202,7 @@ export class DevicesServiceClass {
         saveZone: this.saveZone.bind(this),
         addZone: this.addZone.bind(this),
         removeZone: this.removeZone.bind(this),
+        togglePin: this.togglePin.bind(this),
       },
       startRect: rect,
       padding: { x: 6, y: 50 },

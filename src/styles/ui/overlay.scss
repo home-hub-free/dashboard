@@ -813,3 +813,46 @@
     }
   }
 }
+
+// ---- Pin row (device sheet) -----------------------------------------------------
+// Label + switch on one line: "Pin to the top of Home".
+.pin-row {
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+
+  label {
+    margin: 0;
+  }
+}
+
+// ---- Satellite light-ring legend (device sheet) -----------------------------------
+// Matches the firmware ring colors (ledIncoming/ledSpeaking/ledListening/ledUploading
+// in devices/voice-satellite/src/main.cpp — keep the two in lockstep).
+.led-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+
+  .led-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+
+  .led-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex: none;
+
+    &.amber  { background: #cc8400; }
+    &.orange { background: #e08a28; }
+    &.cyan   { background: #00a5e0; }
+    &.violet { background: #9b1fd6; }
+  }
+}

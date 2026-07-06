@@ -11,7 +11,7 @@
 }
 
 body {
-  font-family: "Satoshi-Variable";
+  font-family: var(--font-family-primary);
   margin: 0;
   color: var(--color-text-primary);
   -webkit-touch-callout: none;
@@ -19,13 +19,22 @@ body {
   -moz-user-select: none;
   user-select: none;
 
-  // Ambient depth: a faint coral glow up top, an ember-gold one below —
-  // lamplight over the warm-charcoal base ("Ember", see _tokens.scss §1).
-  background:
-    radial-gradient(130% 90% at 86% -14%, rgba(232, 132, 99, 0.08), transparent 52%),
-    radial-gradient(120% 85% at -10% 112%, rgba(255, 170, 55, 0.05), transparent 55%),
-    #0f0d0c;
-  background-attachment: fixed;
+  // The wall is a wall: flat ink black. Depth comes from plate surfaces and
+  // lamp fills, not ambient gradient washes ("Tablero", see _tokens.scss §1).
+  background: var(--color-background);
+}
+
+// Display voice: Archivo's width axis. Room names, screen titles, tile names.
+.type-display {
+  font-stretch: var(--font-stretch-display);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+// Instrument readouts: every LIVE value (temps, %, counts, clock) is Plex Mono.
+.type-data {
+  font-family: var(--font-family-data);
+  font-feature-settings: "tnum" 1;
 }
 
 // Data-forward numerals everywhere the app renders (temps, times, counts align).

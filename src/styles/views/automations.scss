@@ -37,41 +37,58 @@
   margin-bottom: var(--space-5);
 }
 
+// One primary Add; the multi-arm builder is power-user tooling and reads as a
+// quiet text-level action beside it — not a second banner.
 #automations .add-range-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: 100%;
   min-height: var(--tap-target-min);
+  padding-inline: var(--space-5);
   border: 1px solid transparent;
   border-radius: var(--radius-control);
   background: var(--color-primary);
   color: var(--color-text-inverse);
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: background var(--duration-fast) var(--ease-in-out),
-    border-color var(--duration-fast) var(--ease-in-out);
+  transition: background var(--duration-fast) var(--ease-in-out);
 
   i {
     font-size: 1.1em;
   }
 
   &:active {
-    transform: scale(0.98);
+    transform: translateY(1px);
+  }
+}
+
+#automations .fx-advanced {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap-target-min);
+  padding-inline: var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: 0.88rem;
+  font-weight: var(--font-weight-medium);
+
+  &:hover {
+    color: var(--color-text-secondary);
   }
 
-  // Companion action: outlined, never a second filled primary.
-  &.secondary {
-    background: transparent;
-    color: var(--color-primary-light);
-    border-color: var(--color-border);
+  &:active {
+    transform: translateY(1px);
+  }
+}
 
-    &:active {
-      background: var(--color-surface-secondary);
-    }
+@include mobile-only {
+  #automations .add-range-btn {
+    flex: 1 1 100%;
   }
 }
 
@@ -314,7 +331,7 @@
     min-height: var(--tap-target-min);
     text-align: left;
     padding: var(--space-3) var(--space-4);
-    background: linear-gradient(180deg, var(--color-surface), var(--color-surface-secondary));
+    background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-left: 3px solid var(--color-primary);
     border-radius: var(--radius-tile);
@@ -374,19 +391,16 @@
   }
 
   .discovery-card {
-    background:
-      radial-gradient(130% 150% at 0% 0%, var(--color-primary-rgba-10), transparent 58%),
-      linear-gradient(180deg, var(--color-surface), var(--color-surface-secondary));
+    background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-left: 3px solid var(--color-primary);
     border-radius: var(--radius-tile);
-    box-shadow: 0 14px 30px -22px rgba(0, 0, 0, 0.9);
     padding: var(--space-4) var(--space-5);
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
     color: var(--color-text-primary);
-    animation: rd-rise 420ms var(--ease-out) both;
+    animation: rd-rise 260ms var(--ease-out) both;
   }
 
   .discovery-card-top {
@@ -473,8 +487,8 @@
   .conf-fill {
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
-    transition: width 600ms var(--ease-out);
+    background: var(--color-primary);
+    transition: width 400ms var(--ease-out);
   }
 
   .conf-label {
@@ -610,10 +624,11 @@
   }
 
   .edit-kicker {
-    font-size: 0.72rem;
+    font-family: var(--font-family-data);
+    font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.05em;
+    font-weight: var(--font-weight-medium);
     color: var(--color-text-tertiary);
   }
 

@@ -1,13 +1,13 @@
 // ============================================================================
-// VIEW · HOME
-// Composition of the Home dashboard: compact greeting hero, the zone-grouped
-// device board, and the environment band/rail of sensor chips. The tile and
-// chip COMPONENTS live in ui/tiles.scss — this file only lays them out.
+// VIEW · HOME — "Tablero"
+// Composition of the Home board: the house bar (date · lights answer · weather),
+// the ROOM RAIL (switch-plate room tabs with live lamps = the jump nav), the
+// room-grouped device board with sensor-fused headers, and the compact Sensors
+// band at the bottom. Tile/chip COMPONENTS live in ui/tiles.scss.
 //
 // Responsive shape:
-//   < 640px   one column: hero → board (2-col tile grid) → horizontal env band
-//   ≥ 640px   bento board: 4 tracks, wide devices become full-width bands
-//   ≥ 1000px  two-pane: board beside a sticky environment rail, hero on top
+//   < 640px   one column: house bar → rail → board (2-col grid) → sensors band
+//   ≥ 640px   4 tracks, wide devices become full-width bands
 //   ≥ 1400px  wall panel: 6 tracks (three tiles per row)
 // ============================================================================
 
@@ -27,156 +27,208 @@
 }
 
 .home-dash {
-  padding-bottom: 120px; // clear the fixed bottom nav
+  padding-bottom: 104px; // clear the fixed bottom nav
 }
 
-// ---- Section headers (Devices / Environment) ----------------------------------
-// Same recipe as .section-title, with the board's side gutters.
+// ---- Section label (Sensors) ---------------------------------------------------
 .home-sectit {
-  margin: 0 16px 12px;
-  font-size: 0.72rem;
-  font-weight: var(--font-weight-extrabold);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
+  margin: 20px 16px 10px;
+  font-size: 0.95rem;
+  font-weight: var(--font-weight-semibold);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--color-text-secondary);
 }
 
-.home-board .device-grid {
-  margin-bottom: 8px;
-}
-
-// ---- Compact greeting hero -------------------------------------------------------
-// "Good evening" + date on the left, live weather chip on the right.
+// ---- House bar --------------------------------------------------------------------
+// One slim instrument row: date · whole-house lights answer (+ All off) · weather.
 .home-status {
   display: flex;
-  flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px 20px;
-  position: relative;
-  overflow: hidden;
-  margin: 4px 16px 16px;
-  padding: 14px 18px 14px 22px;
-  border-radius: var(--radius-chip);
+  gap: 8px 20px;
+  margin: 4px 16px 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-tile);
   border: 1px solid var(--color-border);
-  background: linear-gradient(170deg, var(--color-surface), var(--color-surface-secondary));
-
-  // Brand signature: a slim iris→gold edge bar down the left.
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-active-warm) 100%);
-  }
-
-  .hs-greet {
-    min-width: 0;
-  }
-
-  .hs-hello {
-    font-size: 1.35rem;
-    font-weight: var(--font-weight-extrabold);
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    color: var(--color-text-primary);
-
-    em {
-      font-style: normal;
-      background: linear-gradient(96deg, var(--color-primary-light), var(--color-active-warm-light));
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-  }
+  background: var(--color-surface);
 
   .hs-date {
-    margin-top: 2px;
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     color: var(--color-text-tertiary);
+  }
+
+  .hs-lights {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .hs-lamp {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-gray-600);
+      transition: background var(--duration-normal) var(--ease-out);
+    }
+
+    &.any-on .hs-lamp {
+      background: var(--color-active-warm);
+    }
+
+    .hs-lights-label {
+      font-family: var(--font-family-data);
+      font-feature-settings: "tnum" 1;
+      font-size: 0.85rem;
+      color: var(--color-text-secondary);
+    }
+
+    .hs-alloff {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      min-height: 32px;
+      min-width: 0;
+      padding: 4px 10px;
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-control);
+      background: var(--color-surface-secondary);
+      color: var(--color-text-secondary);
+      font-size: 0.8rem;
+      font-weight: var(--font-weight-semibold);
+
+      &.shown {
+        display: inline-flex;
+      }
+
+      &:active {
+        transform: translateY(1px);
+      }
+
+      i {
+        font-size: 15px;
+      }
+    }
   }
 
   .hs-weather {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    margin-left: auto;
     min-width: 0;
 
     .hs-wx-icon {
-      font-size: 1.9rem;
-      color: var(--color-active-warm-light);
+      font-size: 1.3rem;
+      color: var(--color-text-secondary);
     }
 
-    .hs-wx-read {
-      display: grid;
-      grid-template-columns: auto auto;
-      align-items: baseline;
-      column-gap: 8px;
-      row-gap: 1px;
-      min-width: 0;
-
-      b {
-        grid-row: 1 / span 2;
-        align-self: center;
-        font-size: 1.7rem;
-        font-weight: var(--font-weight-extrabold);
-        font-variant-numeric: tabular-nums;
-        letter-spacing: -0.02em;
-        line-height: 1;
-        color: var(--color-text-primary);
-      }
+    .hs-wx-temp {
+      font-family: var(--font-family-data);
+      font-feature-settings: "tnum" 1;
+      font-size: 1.05rem;
+      color: var(--color-text-primary);
     }
 
     .hs-wx-cond {
-      font-size: 0.84rem;
-      color: var(--color-text-secondary);
+      font-size: 0.8rem;
+      color: var(--color-text-tertiary);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
     .hs-wx-range {
+      font-family: var(--font-family-data);
+      font-feature-settings: "tnum" 1;
       font-size: 0.78rem;
       color: var(--color-text-tertiary);
-      font-variant-numeric: tabular-nums;
     }
   }
 }
 
-// ---- Environment band (mobile: horizontal scroll strip) ----------------------------
-#sensors.env-band {
+// ---- Room rail ----------------------------------------------------------------------
+// The signature: switch-plate room tabs, sticky over the board. A lamp dot on a
+// tab means that room has lights on. Horizontal scroll on narrow screens.
+.room-rail {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
   display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
+  margin: 0 -16px 10px;
+  padding: 8px 16px;
   overflow-x: auto;
-  padding: 6px 16px 16px;
   scrollbar-width: none;
-
-  // Right-edge fade hints that the band scrolls horizontally.
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
 
   &::-webkit-scrollbar {
     display: none;
   }
+
+  .rail-chip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 36px;
+    min-width: 0;
+    padding: 6px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    font-weight: var(--font-weight-medium);
+
+    &:active {
+      transform: translateY(1px);
+    }
+
+    .rail-lamp {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--color-gray-600);
+      transition: background var(--duration-normal) var(--ease-out);
+
+      &.lit {
+        background: var(--color-active-warm);
+      }
+    }
+
+    .rail-pin {
+      font-size: 14px;
+      color: var(--color-text-tertiary);
+    }
+
+    .rail-name {
+      white-space: nowrap;
+    }
+
+    &.rail-search {
+      margin-left: auto;
+      padding: 6px 10px;
+
+      i {
+        font-size: 16px;
+      }
+
+      &.active {
+        border-color: var(--color-primary);
+        color: var(--color-primary-light);
+      }
+    }
+  }
 }
 
-.env-empty {
-  padding: 4px 16px 16px;
-  color: var(--color-text-tertiary);
-  font-size: 0.9rem;
-}
-
-// ---- Device board: collapsible zone sections ------------------------------------------
+// ---- Device board: collapsible room sections ------------------------------------------
 // 3-id selectors keep these layout rules above the legacy shell rules.
 #main-content #tab-content #devices.device-board {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding: 0 16px;
   align-content: start;
 }
@@ -220,26 +272,35 @@
 
 .zone-section {
   min-width: 0;
+  scroll-margin-top: 62px; // land jumps below the sticky room rail
 }
 
-// Zone header button: full-width divider row that toggles its grid.
+.zone-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+// Room header: name in the display voice, then the room's ambient instruments
+// (temp/hum readout + motion lamp) fused from its sensors, then the on-count.
 #main-content #tab-content #devices .zone-head {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   margin: 0;
   padding: 10px 6px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--color-border);
   border-radius: 0;
   box-shadow: none;
   cursor: pointer;
   text-align: left;
   color: var(--color-text-secondary);
-  transition: background 160ms var(--ease-in-out);
+  transition: background var(--duration-fast) var(--ease-out);
 
   &:hover {
     background: var(--color-surface);
@@ -248,21 +309,77 @@
   .zone-caret {
     font-size: 1rem;
     color: var(--color-text-tertiary);
-    transition: transform 180ms var(--ease-in-out);
+    transition: transform var(--duration-normal) var(--ease-out);
   }
 
   .zone-name {
-    font-size: 0.92rem;
-    font-weight: var(--font-weight-bold);
-    letter-spacing: 0.01em;
+    font-size: 1rem;
+    font-weight: var(--font-weight-semibold);
+    font-stretch: var(--font-stretch-display);
+    letter-spacing: var(--letter-spacing-tight);
     color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .zone-env {
+    font-family: var(--font-family-data);
+    font-feature-settings: "tnum" 1;
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+  }
+
+  .zone-motion {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex: none;
+    background: var(--color-gray-600);
+    transition: background var(--duration-normal) var(--ease-out);
+
+    &.on {
+      background: var(--color-success);
+    }
   }
 
   .zone-summary {
     margin-left: auto;
-    font-size: 0.78rem;
-    font-variant-numeric: tabular-nums;
+    font-family: var(--font-family-data);
+    font-feature-settings: "tnum" 1;
+    font-size: 0.75rem;
     color: var(--color-text-tertiary);
+    white-space: nowrap;
+  }
+}
+
+// Room "Lights off" — appears only while the room has lit lights.
+#main-content #tab-content #devices .zone-off {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  min-height: 32px;
+  min-width: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: var(--font-weight-semibold);
+
+  &.shown {
+    display: inline-flex;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  i {
+    font-size: 14px;
   }
 }
 
@@ -275,53 +392,66 @@
 #main-content #tab-content #devices .device-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  padding: 8px 0 4px;
+  gap: 10px;
+  padding: 10px 0 6px;
   align-content: start;
+}
+
+// ---- Sensors band (bottom): the hardware list, horizontally scrollable ---------------
+#sensors.env-band {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 2px 16px 16px;
+  scrollbar-width: none;
+
+  // Right-edge fade hints that the band scrolls horizontally.
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.env-empty {
+  padding: 4px 16px 16px;
+  color: var(--color-text-tertiary);
+  font-size: 0.9rem;
 }
 
 // ---- Entrance motion (regions are stable bind roots — never replays on a tick)
 .home-status {
-  animation: rd-rise 440ms var(--ease-out) both;
-}
-
-.home-board .home-sectit,
-.home-env .home-sectit {
-  animation: rd-rise 440ms var(--ease-out) both;
+  animation: rd-rise 240ms var(--ease-out) both;
 }
 
 #main-content #tab-content #devices {
-  animation: rd-rise 480ms var(--ease-out) 60ms both;
+  animation: rd-rise 260ms var(--ease-out) 40ms both;
 }
 
 #main-content #tab-content #sensors.env-band {
-  animation: rd-rise 480ms var(--ease-out) 120ms both;
+  animation: rd-rise 260ms var(--ease-out) 80ms both;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .home-status,
-  .home-board .home-sectit,
-  .home-env .home-sectit,
   #main-content #tab-content #devices,
   #main-content #tab-content #sensors.env-band {
     animation: none !important;
   }
 }
 
-// ---- Bento board (>= 640px) ------------------------------------------------------------
+// ---- Board (>= 640px) ------------------------------------------------------------
 @include desktop-up {
-  #main-content #tab-content #sensors.env-band {
-    display: flex;
-    grid-template-columns: none;
-  }
-
   // Small tiles tile uniformly; the content-heavy devices (cooler, camera)
   // become full-width feature bands.
   #main-content #tab-content #devices .device-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-auto-rows: minmax(132px, auto);
-    gap: 14px;
+    grid-auto-rows: minmax(128px, auto);
+    gap: 12px;
   }
 
   #main-content #tab-content #devices .device-tile {
@@ -343,82 +473,33 @@
     height: 100%;
   }
 
-  .home-status {
-    gap: 16px 32px;
-  }
-
   .home-dash {
     padding-bottom: 32px;
   }
-}
 
-// ---- Two-pane command center (>= 1000px) --------------------------------------------------
-// Full-width hero on top; the device board runs beside a sticky environment rail.
-@include wide-up {
-  #main-content #tab-content > #home > .home-dash {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) clamp(260px, 21vw, 320px);
-    grid-template-areas:
-      "hero  hero"
-      "board env";
-    column-gap: var(--space-6);
-    row-gap: 4px;
-    align-items: start;
-    padding: 8px 0 40px;
+  // The board is a centered column on big screens — no side rail to feed.
+  .home-status,
+  .home-board,
+  .home-env {
+    max-width: 1080px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .home-status {
-    grid-area: hero;
-    margin: 0 0 18px;
+    margin-top: 0;
+    margin-bottom: 14px;
+    padding: 12px 18px;
   }
 
-  .home-board {
-    grid-area: board;
-    min-width: 0;
-  }
-
-  .home-env {
-    grid-area: env;
-    position: sticky;
-    top: 12px;
-  }
-
-  .home-sectit {
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  #main-content #tab-content #devices.device-board {
-    padding: 0;
-  }
-
-  #main-content #tab-content #devices .device-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    padding: 8px 0 4px;
-  }
-
-  #main-content #tab-content #devices .device-tile {
-    grid-column: span 2;
-  }
-
-  // Environment becomes a sticky vertical rail of full-width chips.
-  #main-content #tab-content #sensors.env-band {
-    flex-direction: column;
-    flex-wrap: nowrap;
-    overflow: visible;
-    gap: 10px;
-    padding: 0 0 16px;
-    -webkit-mask-image: none;
-    mask-image: none;
-  }
-
-  #main-content #tab-content #sensors.env-band .sensor-chip {
-    width: 100%;
-    min-width: 0;
+  .room-rail {
+    margin: 0 0 12px;
+    padding: 8px 2px;
+    border-radius: 0;
   }
 }
 
-// ---- Wall panel (>= 1400px): three tiles per row, bigger hero ------------------------------
+// ---- Wall panel (>= 1400px): three tiles per row ------------------------------
 @include wall-up {
   #main-content #tab-content #devices .device-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -428,56 +509,9 @@
     grid-column: span 2;
   }
 
-  .home-status {
-    padding: 18px 28px 18px 30px;
-
-    .hs-hello {
-      font-size: 1.55rem;
-    }
-
-    .hs-weather .hs-wx-icon {
-      font-size: 2.1rem;
-    }
-
-    .hs-weather .hs-wx-read b {
-      font-size: 1.9rem;
-    }
-  }
-}
-
-// ── Voice-satellite tile: LED-ring legend ───────────────────────────────────
-// Explains the device's physical ring colors (firmware states in
-// devices/voice-satellite/src/main.cpp — keep the two in lockstep):
-// amber = clip incoming (about to speak) · orange = speaking ·
-// cyan = mic open for the answer (no wake name) · violet = uploading the reply.
-#main-content #tab-content > #home .led-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--color-border);
-
-  .led-key {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.72rem;
-    color: var(--color-text-tertiary);
-    white-space: nowrap;
-    cursor: default;
-  }
-
-  .led-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex: none;
-
-    // Match the firmware ring colors (ledIncoming/ledSpeaking/ledListening/ledUploading).
-    &.amber  { background: #cc8400; box-shadow: 0 0 5px rgba(204, 132, 0, 0.55); }
-    &.orange { background: #e08a28; box-shadow: 0 0 5px rgba(224, 138, 40, 0.55); }
-    &.cyan   { background: #00a5e0; box-shadow: 0 0 5px rgba(0, 165, 224, 0.55); }
-    &.violet { background: #9b1fd6; box-shadow: 0 0 5px rgba(155, 31, 214, 0.55); }
+  .home-status,
+  .home-board,
+  .home-env {
+    max-width: 1280px;
   }
 }

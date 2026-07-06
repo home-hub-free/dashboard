@@ -1,15 +1,11 @@
 <div class="assistant-view">
-    <header class="page-head">
-        <div class="ph-kicker">Assistant</div>
-        <h1 class="ph-title">Talk to your <em>home.</em></h1>
-    </header>
 
     <section class="chat-panel" :class:pane-chat="this.mobilePane === 'chat'">
         <!-- ── Conversation history (left pane) ─────────────────────────── -->
         <aside class="chat-list">
             <div class="chat-list-head">
                 <span class="chat-list-title">Conversations</span>
-                <button class="chat-new" :onmouseup="this.chatNew()" title="Start a new conversation">
+                <button class="chat-new" :onclick="this.chatNew()" title="Start a new conversation">
                     <i class="iconoir-plus"></i> New
                 </button>
             </div>
@@ -35,7 +31,7 @@
                         </span>
                     </span>
                     <button class="chat-delete" title="Delete conversation"
-                            :onmouseup="this.chatDelete(row.id, event)">
+                            :onclick="this.chatDelete(row.id, event)">
                         <i class="iconoir-trash"></i>
                     </button>
                 </div>

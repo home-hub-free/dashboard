@@ -50,8 +50,9 @@ test.describe("functionality intact", () => {
     await expect(page.locator(".settings-view .signed-in-row")).toBeVisible();
 
     await page.locator(".menu-item", { hasText: "Home" }).first().click();
-    // The home hero's greeting block (.hs-greet is unconditional; .hs-weather is gated on data).
-    await expect(page.locator("#home-status .hs-greet")).toBeVisible();
+    // The house bar's date + lights blocks are unconditional (.hs-weather is gated on data).
+    await expect(page.locator("#home-status .hs-day")).toBeVisible();
+    await expect(page.locator("#home-status .hs-lights")).toBeVisible();
     await expect(page.locator("#devices .device-tile").first()).toBeVisible();
 
     expect(errors, "no uncaught JS errors").toEqual([]);
@@ -114,7 +115,7 @@ test.describe("functionality intact", () => {
     await page.goto("/");
     await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
     await page.locator(".menu-item", { hasText: "Automations" }).first().click();
-    await page.locator(".effects-actions .add-range-btn", { hasText: "New Automation" }).click();
+    await page.locator(".effects-actions .add-range-btn", { hasText: "Add automation" }).click();
     await page.waitForSelector("#new-automation", { timeout: 10_000 });
 
     // Walk the cascading form: dimmable target → numeric value → a temp/humidity sensor → LOWER than.

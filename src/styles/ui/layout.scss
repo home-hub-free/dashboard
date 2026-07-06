@@ -8,7 +8,7 @@
 
 @import "./tokens";
 
-$nav-rail-width: 248px;
+$nav-rail-width: 208px;
 
 // ---- Phone shell (< 640px) ---------------------------------------------------
 @include mobile-only {
@@ -20,8 +20,8 @@ $nav-rail-width: 248px;
     // a 34px gutter — 17% of a 390px screen.)
     padding: 0;
     box-sizing: border-box;
-    height: calc(100% - 100px); // clear the 100px bottom nav (fallback)
-    height: calc(100dvh - 100px); // dvh tracks the on-screen keyboard
+    height: calc(100% - 84px); // clear the 84px bottom nav (fallback)
+    height: calc(100dvh - 84px); // dvh tracks the on-screen keyboard
     left: 0;
     top: 0;
     padding-bottom: 0;
@@ -199,57 +199,50 @@ $nav-rail-width: 248px;
 }
 
 // Every view eases in on tab switch (roots mount per navigation, so this never
-// replays on a live data tick).
+// replays on a live data tick). Quick mechanical rise, not a slow fade.
 #main-content #tab-content > div {
-  animation: rd-fade 280ms var(--ease-out) both;
+  animation: rd-rise 200ms var(--ease-out) both;
 }
 
-// ---- Editorial page header -----------------------------------------------------
-// Opens Automations / Assistant / Settings the same way: kicker + big title +
-// lede. `em` inside the title takes the brand accent.
+// ---- Page header ---------------------------------------------------------------
+// A nameplate, not an editorial spread: one expanded-Archivo title, flush left.
+// No kicker, no accent word, no lede — a control panel doesn't introduce itself.
+// (.ph-kicker / .ph-lede are retired; any straggler markup renders invisible.)
 .page-head {
   text-align: left;
-  margin: 0 0 var(--space-6);
+  margin: 0 0 var(--space-5);
 
-  .ph-kicker {
-    font-size: 0.72rem;
-    font-weight: var(--font-weight-extrabold);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--color-text-tertiary);
+  .ph-kicker,
+  .ph-lede {
+    display: none;
   }
 
   .ph-title {
-    margin: var(--space-2) 0 var(--space-1);
-    font-size: 2rem;
-    font-weight: var(--font-weight-extrabold);
-    line-height: 1.05;
+    margin: 0;
+    font-size: 1.45rem;
+    font-weight: var(--font-weight-semibold);
+    font-stretch: var(--font-stretch-display);
+    line-height: 1.1;
     letter-spacing: var(--letter-spacing-tight);
     color: var(--color-text-primary);
 
     em {
       font-style: normal;
-      color: var(--color-primary-light);
+      color: inherit;
     }
-  }
-
-  .ph-lede {
-    margin: 0;
-    font-size: 0.92rem;
-    color: var(--color-text-tertiary);
-    max-width: 60ch;
   }
 }
 
-// ---- Section micro-label ---------------------------------------------------------
-// The uppercase label that heads a group of content, inside panels and out on
-// the page (Home uses the .home-sectit alias with side gutters).
+// ---- Section label ---------------------------------------------------------------
+// Heads a group of content (Home uses the .home-sectit alias with side gutters).
+// Expanded Archivo, normal case — a stamped panel label, not a tracked-out eyebrow.
 .section-title {
-  font-size: 0.72rem;
-  font-weight: var(--font-weight-extrabold);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
+  font-size: 0.95rem;
+  font-weight: var(--font-weight-semibold);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--letter-spacing-tight);
+  text-transform: none;
+  color: var(--color-text-secondary);
   margin: 0 0 var(--space-3);
 }
 
@@ -285,6 +278,34 @@ $nav-rail-width: 248px;
     .assistant-view {
       padding: 4px 16px 16px;
     }
+  }
+}
+
+// ---- Hub-offline banner -----------------------------------------------------------------
+// Slim strip pinned over the shell while the socket is down. The app keeps
+// showing last-known state; this says it may be stale — and that we're on it.
+.hub-offline {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  background: var(--color-surface-tertiary);
+  border-bottom: 1px solid var(--color-border-light);
+
+  &.shown {
+    display: flex;
+  }
+
+  .hub-offline-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-error);
+    animation: pulse 1.4s var(--ease-in-out) infinite;
   }
 }
 

@@ -8,8 +8,17 @@
             <i :if="this.data.deviceCategory === 'evap-cooler'" class="iconoir-wind"></i>
             <i :if="this.data.deviceCategory === 'camera'" class="iconoir-video-camera"></i>
             <i :if="this.data.deviceCategory === 'presence-relay'" class="iconoir-walking"></i>
+            <i :if="this.data.deviceCategory === 'voice-satellite'" class="iconoir-sound-high"></i>
         </span>
         <span class="oh-title">${this.data.name}</span>
+    </div>
+
+    <!-- Pin to top: this member's shortcut strip on Home (stored per-login) -->
+    <div class="form-group pin-row">
+        <label>Pin to the top of Home</label>
+        <button class="switch" :class:on="this.data.pinned" :onclick="this.actions.togglePin(this.data)" title="Pinned devices show first, just for your login">
+            <span class="knob"></span>
+        </button>
     </div>
 
     <!-- Device Name -->
@@ -136,6 +145,18 @@
     <div class="device-setting" :if="this.data.deviceCategory === 'camera'">
         <p class="section-title">Camera View</p>
         <img :src="this.data.value" alt="Camera Feed" />
+    </div>
+
+    <!-- Satellite: what the device's LED ring colors mean (matches the firmware
+         states). Reference material — lives here, not on the Home tile. -->
+    <div class="device-setting" :if="this.data.deviceCategory === 'voice-satellite'">
+        <p class="section-title">Light ring</p>
+        <div class="led-legend">
+            <span class="led-key"><i class="led-dot amber"></i>about to speak</span>
+            <span class="led-key"><i class="led-dot orange"></i>speaking</span>
+            <span class="led-key"><i class="led-dot cyan"></i>listening</span>
+            <span class="led-key"><i class="led-dot violet"></i>sending</span>
+        </div>
     </div>
 
     <!-- Advanced: installer / setup controls, tucked away so the overlay opens on

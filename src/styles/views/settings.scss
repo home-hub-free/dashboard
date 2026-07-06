@@ -16,6 +16,46 @@
   overflow-x: clip;
 }
 
+// ---- Section jump-rail (same idiom as Home's room rail) -------------------------
+.settings-rail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-bottom: var(--space-2);
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rail-chip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    min-width: 0;
+    padding: 6px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+
+    &:active {
+      transform: translateY(1px);
+    }
+  }
+}
+
+// Jumps land below the top of the scroll container, clear of the shell header.
+.settings-view .assistant-section,
+.settings-view .voice-id {
+  scroll-margin-top: 12px;
+}
+
 // ---- Household members --------------------------------------------------------
 .household-list {
   display: flex;
@@ -288,8 +328,9 @@
   align-items: center;
 
   .enroll-step {
-    font-size: 0.78rem;
-    font-weight: 600;
+    font-family: var(--font-family-data);
+    font-size: 0.75rem;
+    font-weight: 500;
     letter-spacing: 0.02em;
     text-transform: uppercase;
     color: var(--color-text-tertiary);
@@ -305,8 +346,9 @@
   gap: 0.2rem;
 
   .enroll-bubble-who {
-    font-size: 0.72rem;
-    font-weight: 600;
+    font-family: var(--font-family-data);
+    font-size: 0.7rem;
+    font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--color-text-tertiary);

@@ -93,15 +93,21 @@ export type DeviceWSEvents = {
  * place without rebuilding the groups.
  */
 export type DeviceGroup = {
-  /** Stable key for :key + collapse persistence (zone name, "_unassigned", "_cameras"). */
+  /** Stable key for :key + collapse persistence (zone name, "_unassigned", "_cameras", "_pinned"). */
   key: string;
   /** Header label shown to the user. */
   label: string;
-  kind: "zone" | "cameras";
+  kind: "zone" | "cameras" | "pinned";
   devices: Device[];
   /** Right-aligned header summary ("2 on", "4 cameras"). */
   summary: string;
   collapsed: boolean;
+  /** Room ambient glance, fused from the zone's sensors (temp/humidity reading;
+   * motion true/false, or null when the room has no boolean sensor). */
+  envReading?: string;
+  envMotion?: boolean | null;
+  /** How many light/dimmable tiles are on — gates the header "Lights off" action. */
+  lightsOn: number;
 };
 
 export type DevicesTabState = {
@@ -110,6 +116,16 @@ export type DevicesTabState = {
   groups: DeviceGroup[];
   /** Whether any device exists at all (empty-state gate). */
   hasDevices: boolean;
+  /** First-load: the initial resync hasn't settled yet → skeleton plates. */
+  loading: boolean;
+  /** The search field is revealed (the room rail is the primary finder). */
+  searchOpen: boolean;
+  /** Room-rail tap: expand the group and scroll its section into view. */
+  jumpTo: (key: string) => void;
+  /** Reveal/hide the name filter input. */
+  toggleSearch: () => void;
+  /** Header action: turn every light in the group off. */
+  onLightsOff: (event: Event, key: string) => void;
   /** Toggle a group's collapsed state (persisted). */
   toggleGroup: (key: string) => void;
   /** Filter tiles by name/zone substring (uncontrolled input → recompute groups). */

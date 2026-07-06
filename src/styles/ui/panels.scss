@@ -29,7 +29,7 @@
 // Panels ease in when their view mounts.
 #tab-content .panel,
 #tab-content .assistant-section {
-  animation: rd-rise 420ms var(--ease-out) both;
+  animation: rd-rise 260ms var(--ease-out) both;
 }
 
 // Helper copy directly under a panel's .section-title.

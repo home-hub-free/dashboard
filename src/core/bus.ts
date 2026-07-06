@@ -17,6 +17,11 @@ export type BusEvents = {
   // status badge (frames flowing? backend detecting, or null stub?).
   'vision:cameras': VisionCameraStatus[];
   'ws:status': { state: 'connected' | 'disconnected' | 'syncing' };
+  // Fired when a full-state resync settles — success or failure. Views use it to
+  // leave their skeleton first-load state (and show real empty/error states).
+  'sync:done': { ok: boolean };
+  // The signed-in member's pinned-device list changed (see pins.service).
+  'pins:changed': string[];
 };
 
 type Handler<K extends keyof BusEvents> = (data: BusEvents[K]) => void;

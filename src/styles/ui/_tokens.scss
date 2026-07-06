@@ -6,114 +6,116 @@
 // ============================================================================
 
 // ============================================================================
-// 1. COLOR SYSTEM — "Ember"
-// Near-neutral WARM CHARCOAL surfaces — the warmth lives in the accents, not
-// the walls (saturated brown surfaces read as mud, not home). Lamplight in a
-// dark room. Three accent meanings stay separable (see UI-LIBRARY.md §2):
-//   GOLD      = a light is on          (--gradient-active-warm)
-//   DUSK BLUE = another device active  (--gradient-active-cool)
-//   CORAL     = interactive / brand    (--color-primary)
+// 1. COLOR SYSTEM — "Tablero"
+// A labeled control board on a warm wall. Ink-black walls, warm plates, bone
+// ink. State is shown as INDICATOR LAMPS — flat fills + a dot — never glows or
+// gradient washes. Four separable meanings (see UI-LIBRARY.md §2):
+//   AMBER        = a light is on          (--color-active-warm fill)
+//   DUSK BLUE    = another device active  (--color-active-cool fill)
+//   GREEN        = live / enabled / ok    (--color-success)
+//   BOUGAINVILLEA= interactive / brand    (--color-primary)
 // ============================================================================
 
 :root {
-  // Primary (main brand, actions, focus) — warm coral.
-  // NB: cream text FAILS on this fill — filled controls use the dark ink
-  // (--color-text-inverse / --color-on-fill), same as the gold tiles.
-  --color-primary: #e88463;        // Warm coral (primary actions / brand)
-  --color-primary-light: #f4a488;  // Hover / active text on dark (8.8:1 on surface)
-  --color-primary-lighter: #f9c9b5; // Very light coral (backgrounds)
-  --color-primary-dark: #c96543;   // Pressed states
-  --color-primary-darker: #92462c; // Strong emphasis
+  // Primary (actions, focus, selection) — bougainvillea. The one flower color
+  // on the board; never used for device state.
+  // NB: bone text FAILS on this fill — filled controls use the dark ink
+  // (--color-text-inverse / --color-on-fill).
+  --color-primary: #e0517e;        // Bougainvillea (primary actions / brand)
+  --color-primary-light: #ef7fa0;  // Hover / active text on dark
+  --color-primary-lighter: #f7b3c6; // Very light (tints)
+  --color-primary-dark: #c03a63;   // Pressed states
+  --color-primary-darker: #8e2947; // Strong emphasis
 
-  // Secondary (alternative actions) — dusk blue: deliberately the one cool
-  // voice in the warm room, same family as --gradient-active-cool.
-  --color-secondary: #5f93c0;
-  --color-secondary-light: #82aed2;
-  --color-secondary-lighter: #c3d8ea;
-  --color-secondary-dark: #44719a;
+  // Secondary — dusk blue (shares family with the active-cool device fill).
+  --color-secondary: #6f9ec9;
+  --color-secondary-light: #92b7d9;
+  --color-secondary-lighter: #c9dcec;
+  --color-secondary-dark: #4f7ba3;
 
-  // Status (semantic) — warm-tuned for the umber base
-  --color-success: #5fc98f;        // sage green — on / active / success
-  --color-success-light: #8adcb0;
-  --color-success-lighter: #c5eed8;
-  --color-success-dark: #3d9c6a;
+  // Status (semantic)
+  --color-success: #4cc47e;        // live / on / enabled
+  --color-success-light: #7dd6a1;
+  --color-success-lighter: #bfeccf;
+  --color-success-dark: #349a5e;
 
-  --color-error: #ff7a67;          // warm coral — off / error / danger
-  --color-error-light: #ff9f90;
-  --color-error-lighter: #ffcdc5;
-  --color-error-dark: #d85543;
+  --color-error: #ff6b57;          // fault / danger / remove
+  --color-error-light: #ff9484;
+  --color-error-lighter: #ffc8bf;
+  --color-error-dark: #d84a38;
 
-  --color-warning: #ffba3a;        // caution / pending (light-on family)
-  --color-warning-light: #ffd072;
-  --color-warning-lighter: #ffe6b3;
-  --color-warning-dark: #d9961f;
+  --color-warning: #e8a13c;        // caution / pending
+  --color-warning-light: #f0bc6f;
+  --color-warning-lighter: #f8ddb1;
+  --color-warning-dark: #bf7d20;
 
-  --color-info: #7aa5d2;           // information / neutral (dusk family)
-  --color-info-light: #9dbede;
-  --color-info-lighter: #cfe0ef;
-  --color-info-dark: #527ea8;
+  --color-info: #6f9ec9;           // information / neutral
+  --color-info-light: #92b7d9;
+  --color-info-lighter: #c9dcec;
+  --color-info-dark: #4f7ba3;
 
-  // Neutrals (warm charcoal — low saturation on purpose; see header)
-  --color-white: #f1ece5;          // Warm near-white (not pure white)
-  --color-black: #131110;          // Warm charcoal (not pure black)
+  // Neutrals — ink black + warm plates, bone ink
+  --color-white: #ece4d6;          // Bone (not pure white)
+  --color-black: #0f0d0b;          // Ink black (not pure black)
 
-  --color-gray-50: #f1ece5;
-  --color-gray-100: #ded5c9;
-  --color-gray-200: #2e2925;       // Borders
-  --color-gray-300: #241f1b;       // Disabled-dark
-  --color-gray-400: #a09788;       // Muted text
-  --color-gray-500: #877e72;       // Secondary-muted text
-  --color-gray-600: #5f574d;       // Dark warm gray
-  --color-gray-700: #423c35;       // Very dark warm gray
-  --color-gray-800: #191613;       // Almost black
-  --color-gray-900: #131110;       // Darkest (page background)
+  --color-gray-50: #ece4d6;
+  --color-gray-100: #d8cdbb;
+  --color-gray-200: #322c26;       // Borders
+  --color-gray-300: #262019;       // Disabled-dark
+  --color-gray-400: #9c9181;       // Muted text
+  --color-gray-500: #857b6d;       // Secondary-muted text
+  --color-gray-600: #5c5348;       // Dark warm gray
+  --color-gray-700: #403931;       // Very dark warm gray
+  --color-gray-800: #161311;       // Almost black
+  --color-gray-900: #0f0d0b;       // Darkest (page background)
 
-  // Surfaces
-  --color-surface: #1c1916;          // Resting cards / panels
-  --color-surface-secondary: #161311; // Recessed controls on a surface
-  --color-surface-tertiary: #262220;  // Recessed insets / rows
-  --color-background: #131110;        // Page background (warm charcoal)
-  --color-background-alt: #171412;
-  --color-border: #2e2925;            // Hairline borders on dark
-  --color-border-light: #3b342e;      // Slightly stronger separation
+  // Surfaces — "plates" on the board
+  --color-surface: #1a1715;          // Resting plates / panels
+  --color-surface-secondary: #141210; // Recessed controls on a plate
+  --color-surface-tertiary: #23201c;  // Raised insets / rows
+  --color-background: #0f0d0b;        // Page background (ink black)
+  --color-background-alt: #131110;
+  --color-border: #322c26;            // Hairline borders on dark
+  --color-border-light: #423a31;      // Slightly stronger separation
 
-  // Text — tertiary is tuned to clear WCAG AA 4.5:1 on raised surfaces (6.1:1
-  // on --color-surface, 5.5:1 on the tertiary surface; re-check if you darken it)
-  --color-text-primary: #f1ece5;
-  --color-text-secondary: #cec6bb;
-  --color-text-tertiary: #a09788;
-  --color-text-disabled: #675f55;
-  --color-text-inverse: #1c130d;     // Text on light / accent fills
+  // Text — tertiary is tuned to clear WCAG AA 4.5:1 on raised surfaces
+  // (re-check on-surface contrast if you darken it)
+  --color-text-primary: #ece4d6;
+  --color-text-secondary: #cdc3b2;
+  --color-text-tertiary: #9c9181;
+  --color-text-disabled: #665e52;
+  --color-text-inverse: #17110c;     // Text on light / accent fills
 }
 
 // ============================================================================
-// 2. DEVICE-STATE ACCENTS + SURFACE GEOMETRY
+// 2. DEVICE-STATE LAMPS + SURFACE GEOMETRY
+// State = a flat fill + an indicator dot. No gradients, no glows: a lamp is
+// either lit or it isn't. (The --gradient-*/--glow-* names survive for compat;
+// they now resolve to flat fills / flat rings.)
 // ============================================================================
 
 :root {
-  // Warm "lit" accent (a light is ON) — glows like a real bulb
-  --color-active-warm: #ffbb3c;
-  --color-active-warm-light: #ffd479;
-  --gradient-active-warm: linear-gradient(150deg, #ffd479 0%, #ff9d2e 100%);
-  --glow-active-warm: 0 14px 32px -12px rgba(255, 170, 55, 0.7);
+  // Amber "lit" lamp (a light is ON)
+  --color-active-warm: #ffb02e;
+  --color-active-warm-light: #ffc463;
+  --gradient-active-warm: linear-gradient(#ffb02e, #ffb02e); // flat by design
+  --glow-active-warm: inset 0 0 0 1px rgba(23, 17, 12, 0.28);
 
-  // Cool "active" accent (blinds open, other non-light device active).
-  // A calm DUSK BLUE — evening sky, not electric cyan — still clearly distinct
-  // from the gold light-on fill, the sage success, and the terracotta brand,
-  // so a device-state fill never reads the same as an interactive control.
-  --gradient-active-cool: linear-gradient(150deg, #a8cbe8 0%, #5f93c0 100%);
-  --glow-active-cool: 0 14px 32px -12px rgba(95, 147, 192, 0.5);
+  // Dusk "active" lamp (blinds open, other non-light device active)
+  --color-active-cool: #6f9ec9;
+  --gradient-active-cool: linear-gradient(#6f9ec9, #6f9ec9); // flat by design
+  --glow-active-cool: inset 0 0 0 1px rgba(23, 17, 12, 0.28);
 
-  // Text/icon color on any filled accent surface (gold or dusk blue)
-  --color-on-fill: #16100b;
-  --color-on-fill-muted: rgba(22, 16, 11, 0.74);
-  --color-on-fill-faint: rgba(22, 16, 11, 0.52);
+  // Text/icon color on any filled lamp surface (amber or dusk)
+  --color-on-fill: #17110c;
+  --color-on-fill-muted: rgba(23, 17, 12, 0.72);
+  --color-on-fill-faint: rgba(23, 17, 12, 0.5);
 
-  // Semantic geometry — keep every surface on this rhythm
-  --radius-tile: 22px;     // device tiles, panels, overlay sheet
-  --radius-chip: 18px;     // sensor chips, smaller cards, recessed groups
-  --radius-control: 12px;  // inputs, buttons, toggle segments
-  --tile-min-height: 122px;
+  // Semantic geometry — plates, not blobs
+  --radius-tile: 10px;     // device plates, panels, overlay sheet
+  --radius-chip: 8px;      // sensor chips, smaller cards, recessed groups
+  --radius-control: 8px;   // inputs, buttons, toggle segments
+  --tile-min-height: 116px;
   --tap-target-min: 44px;  // WCAG minimum interactive size
 }
 
@@ -153,12 +155,21 @@
 
 // ============================================================================
 // 4. TYPOGRAPHY
+// Two materials: Archivo (labels, UI, room names — the width axis is the
+// voice: display text sets font-stretch 118–125%) and IBM Plex Mono (every
+// LIVE VALUE: temps, %, counts, times — tabular, instrument-grade).
 // ============================================================================
 
 :root {
-  --font-family-primary: "Satoshi-Variable", -apple-system, BlinkMacSystemFont,
+  --font-family-primary: "Archivo", -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-family-mono: "Courier New", Courier, monospace;
+  --font-family-display: "Archivo", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif; // use with --font-stretch-display
+  --font-family-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-family-mono: var(--font-family-data);
+
+  --font-stretch-display: 122%;   // room names, screen titles
+  --font-stretch-normal: 100%;
 
   --font-size-xs: 0.75rem;      // 12px
   --font-size-sm: 0.875rem;     // 14px
@@ -187,6 +198,8 @@
 
 // ============================================================================
 // 5. RADIUS · SHADOWS · MOTION · Z-INDEX
+// Motion is mechanical: quick, ease-out, small distances. Press = 1px throw
+// (translateY), never scale.
 // ============================================================================
 
 :root {
@@ -194,41 +207,39 @@
   --radius-xs: 2px;
   --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 24px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
   --radius-full: 9999px;
 
   --shadow-none: none;
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 3px 8px -2px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 20px -6px rgba(0, 0, 0, 0.55);
+  --shadow-xl: 0 14px 32px -8px rgba(0, 0, 0, 0.6);
+  --shadow-2xl: 0 22px 48px -12px rgba(0, 0, 0, 0.7);
 
-  --shadow-card: var(--shadow-sm);
-  --shadow-hover: var(--shadow-md);
+  --shadow-card: var(--shadow-none);
+  --shadow-hover: var(--shadow-sm);
   --shadow-modal: var(--shadow-2xl);
 
-  // The resting-card lift used across tiles/panels (hairline top highlight +
-  // deep soft shadow) — reference it instead of re-typing the recipe.
-  --shadow-lift: inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 14px 30px -22px rgba(0, 0, 0, 0.9);
+  // Resting plates are flat: hairline top light only, no drop shadow.
+  --shadow-lift: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 
-  --duration-fast: 150ms;
-  --duration-normal: 200ms;
-  --duration-slow: 300ms;
-  --duration-slower: 500ms;
+  --duration-fast: 120ms;
+  --duration-normal: 160ms;
+  --duration-slow: 240ms;
+  --duration-slower: 400ms;
 
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 0.84, 0.44, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.4, 0.64, 1);
 
-  --transition-fast: all var(--duration-fast) var(--ease-in-out);
-  --transition-normal: all var(--duration-normal) var(--ease-in-out);
-  --transition-slow: all var(--duration-slow) var(--ease-in-out);
+  --transition-fast: all var(--duration-fast) var(--ease-out);
+  --transition-normal: all var(--duration-normal) var(--ease-out);
+  --transition-slow: all var(--duration-slow) var(--ease-out);
 
   --z-base: 0;
   --z-dropdown: 100;
@@ -241,26 +252,26 @@
 }
 
 // ============================================================================
-// 6. RGBA VARIANTS (for glows, focus rings, soft fills)
+// 6. RGBA VARIANTS (focus rings, soft fills, lamp halos)
 // ============================================================================
 
 :root {
-  --color-primary-rgba-10: rgba(232, 132, 99, 0.1);
-  --color-primary-rgba-20: rgba(232, 132, 99, 0.2);
-  --color-primary-rgba-40: rgba(232, 132, 99, 0.4);
-  --color-primary-rgba-60: rgba(232, 132, 99, 0.6);
+  --color-primary-rgba-10: rgba(224, 81, 126, 0.1);
+  --color-primary-rgba-20: rgba(224, 81, 126, 0.2);
+  --color-primary-rgba-40: rgba(224, 81, 126, 0.4);
+  --color-primary-rgba-60: rgba(224, 81, 126, 0.6);
 
-  --color-error-rgba-10: rgba(255, 122, 103, 0.1);
-  --color-error-rgba-40: rgba(255, 122, 103, 0.4);
+  --color-error-rgba-10: rgba(255, 107, 87, 0.1);
+  --color-error-rgba-40: rgba(255, 107, 87, 0.4);
 
-  --color-success-rgba-10: rgba(95, 201, 143, 0.1);
-  --color-success-rgba-40: rgba(95, 201, 143, 0.4);
+  --color-success-rgba-10: rgba(76, 196, 126, 0.1);
+  --color-success-rgba-40: rgba(76, 196, 126, 0.4);
 
-  --color-warning-rgba-10: rgba(255, 186, 58, 0.1);
-  --color-warning-rgba-40: rgba(255, 186, 58, 0.4);
+  --color-warning-rgba-10: rgba(232, 161, 60, 0.1);
+  --color-warning-rgba-40: rgba(232, 161, 60, 0.4);
 
-  --color-info-rgba-10: rgba(122, 165, 210, 0.1);
-  --color-info-rgba-40: rgba(122, 165, 210, 0.4);
+  --color-info-rgba-10: rgba(111, 158, 201, 0.1);
+  --color-info-rgba-40: rgba(111, 158, 201, 0.4);
 }
 
 // ============================================================================

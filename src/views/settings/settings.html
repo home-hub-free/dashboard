@@ -1,11 +1,19 @@
 <div class="assistant-view settings-view">
     <header class="page-head">
-        <div class="ph-kicker">Settings</div>
-        <h1 class="ph-title">Your <em>household.</em></h1>
-        <p class="ph-lede">Manage who lives here, how the house addresses them, and your own account.</p>
+        <h1 class="ph-title">Settings</h1>
     </header>
 
-    <section class="assistant-section">
+    <!-- Section jump-rail — same idiom as Home's room rail: one tap to any
+         group instead of scrolling a long page. Plain inline handlers on
+         purpose (no bind state; the ids live on the sections below). -->
+    <nav class="settings-rail">
+        <button class="rail-chip" onclick="document.getElementById('set-account').scrollIntoView({behavior:'smooth',block:'start'})">Account</button>
+        <button class="rail-chip" onclick="document.getElementById('set-calendar')?.scrollIntoView({behavior:'smooth',block:'start'})">Calendar</button>
+        <button class="rail-chip" onclick="document.getElementById('set-people')?.scrollIntoView({behavior:'smooth',block:'start'})">Cameras</button>
+        <button class="rail-chip" onclick="document.getElementById('set-household').scrollIntoView({behavior:'smooth',block:'start'})">Household</button>
+    </nav>
+
+    <section class="assistant-section" id="set-account">
         <p class="section-title">Your account</p>
         <div class="signed-in-row">
             <span class="signed-in-who">
@@ -168,7 +176,7 @@
             <p class="voice-id-msg" :if="this.faceMsg">${this.faceMsg}</p>
         </div>
 
-        <div class="voice-id" :if="this.calendarEnabled">
+        <div class="voice-id" id="set-calendar" :if="this.calendarEnabled">
             <div class="voice-id-head">
                 <span class="voice-id-title"><i class="iconoir-calendar"></i> Google Calendar</span>
                 <span class="voice-id-count" :if="this.calendarMineLinked">connected</span>
@@ -282,7 +290,7 @@
         </div>
     </section>
 
-    <section class="assistant-section" :if="this.peopleEnabled">
+    <section class="assistant-section" id="set-people" :if="this.peopleEnabled">
         <p class="section-title">People the cameras have seen</p>
         <p class="voice-id-hint">
             Every detected person gets a face and a label. New faces are named in the
@@ -391,7 +399,7 @@
         </details>
     </section>
 
-    <section class="assistant-section">
+    <section class="assistant-section" id="set-household">
         <p class="section-title">Household members</p>
         <p class="household-error" :if="this.householdError">${this.householdError}</p>
 

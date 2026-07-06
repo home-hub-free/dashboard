@@ -71,7 +71,8 @@ button {
 }
 
 // ---- Filled primary ---------------------------------------------------------
-// Full-width by default (touch-first); add .btn-inline to size to content.
+// Full-width on phones (touch-first); sizes to content on desktop — a button
+// is a control, not a banner. Press = 1px switch throw, no hover lift.
 .btn-primary,
 .add-range-btn {
   background-color: var(--color-primary);
@@ -79,16 +80,20 @@ button {
   width: 100%;
   min-height: var(--tap-target-min);
 
+  @media (min-width: 640px) {
+    width: auto;
+    padding-inline: var(--space-6);
+    // Column-flex parents (panels) stretch children — keep the button a control.
+    align-self: flex-start;
+  }
+
   &:hover:not(:disabled) {
     background-color: var(--color-primary-dark);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
   }
 
   &:active:not(:disabled) {
     background-color: var(--color-primary-dark);
-    box-shadow: var(--shadow-sm);
-    transform: translateY(0);
+    transform: translateY(1px);
   }
 
   &:disabled {
@@ -110,6 +115,12 @@ button {
   border: 1px solid var(--color-border);
   width: 100%;
   min-height: var(--tap-target-min);
+
+  @media (min-width: 640px) {
+    width: auto;
+    padding-inline: var(--space-6);
+    align-self: flex-start;
+  }
 
   &:hover:not(:disabled) {
     color: var(--color-text-primary);

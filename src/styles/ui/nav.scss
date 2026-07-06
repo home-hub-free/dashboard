@@ -40,22 +40,31 @@ body.face-viewer-open #nav-bar {
     flex: 1;
     text-align: center;
     padding: 0.5rem 0;
-    transition: all 200ms ease;
-    color: var(--color-primary-dark);
+    transition: color var(--duration-fast) var(--ease-out);
+    color: var(--color-text-tertiary);
 
     &:active {
-      transform: scale(0.96);
+      transform: translateY(1px);
     }
 
+    // Active destination: the label lights, and a lamp dot appears under the
+    // icon — an indicator, not a floating pill.
     &.active {
-      color: var(--color-primary-dark);
-      font-weight: 500;
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-semibold);
 
       .menu-item-icon {
-        background-color: var(--color-primary);
-        color: var(--color-text-inverse);
-        transform: translateY(-5px) scale(1.1);
-        box-shadow: 0 8px 20px -6px var(--color-primary-rgba-60);
+        color: var(--color-primary);
+
+        &::after {
+          content: "";
+          display: block;
+          margin: 3px auto 0;
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          background: var(--color-primary);
+        }
       }
     }
   }
@@ -134,7 +143,7 @@ body.face-viewer-open #nav-bar {
 // ---- Phone bottom bar (< 640px) -----------------------------------------------
 @include mobile-only {
   #nav-bar {
-    height: 100px;
+    height: 84px;
     width: 100%;
     left: 0;
     bottom: 0;
@@ -187,24 +196,22 @@ body.face-viewer-open #nav-bar {
     left: 0;
     bottom: 0;
     display: inline-block;
-    background:
-      radial-gradient(120% 40% at 0% 0%, var(--color-primary-rgba-10), transparent 60%),
-      var(--color-surface-secondary);
+    background: var(--color-surface-secondary);
     border-top: none;
     border-right: 1px solid var(--color-border);
     box-shadow: none;
     padding-top: 8px;
 
-    // Brand lockup at the top of the rail.
+    // Brand lockup: the board's nameplate — expanded Archivo, flat, no glow.
     &::before {
-      content: "◆ Home Hub";
+      content: "Home Hub";
       display: block;
       padding: 26px 22px 18px;
-      font-size: 1.02rem;
-      font-weight: var(--font-weight-extrabold);
-      letter-spacing: -0.01em;
+      font-size: 1.05rem;
+      font-weight: var(--font-weight-semibold);
+      font-stretch: var(--font-stretch-display);
+      letter-spacing: var(--letter-spacing-tight);
       color: var(--color-text-primary);
-      text-shadow: 0 0 18px var(--color-primary-rgba-40);
     }
 
     .menu-item {
@@ -264,32 +271,36 @@ body.face-viewer-open #nav-bar {
         }
       }
 
-      // Active destination: solid iris pill, dark ink, warm left accent bar.
+      // Active destination: a raised plate with a bougainvillea lamp bar —
+      // selected, not celebrated.
       &.active {
-        background: linear-gradient(100deg, var(--color-primary), var(--color-primary-dark));
-        color: var(--color-on-fill);
-        box-shadow: 0 12px 26px -12px var(--color-primary-rgba-60);
+        background: var(--color-surface-tertiary);
+        color: var(--color-text-primary);
 
         &::before {
           content: "";
           position: absolute;
-          left: -6px;
+          left: 0;
           top: 9px;
           bottom: 9px;
-          width: 4px;
-          border-radius: 4px;
-          background: var(--color-active-warm);
+          width: 3px;
+          border-radius: 0 3px 3px 0;
+          background: var(--color-primary);
         }
 
         .menu-item-icon {
           background: transparent;
-          color: var(--color-on-fill);
+          color: var(--color-primary);
           box-shadow: none;
           transform: none;
+
+          &::after {
+            display: none;
+          }
         }
 
         .menu-item-text {
-          color: var(--color-on-fill);
+          color: var(--color-text-primary);
         }
       }
     }

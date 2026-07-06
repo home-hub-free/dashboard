@@ -1,24 +1,72 @@
-<div class="device-filter" :if="this.hasDevices">
+<!-- ROOM RAIL — the board's signature: switch-plate room tabs with live lamps.
+     One tap jumps to (and expands) that room's section: the findability path on
+     a wall panel or phone — no typing. The trailing key reveals the text filter. -->
+<nav class="room-rail" :if="this.hasDevices">
+    <button
+        class="rail-chip"
+        :foreach="group in this.groups"
+        :key="group.key"
+        :onclick="this.jumpTo(group.key)"
+    >
+        <i class="rail-pin iconoir-star" :if="group.kind === 'pinned'"></i>
+        <i class="rail-pin iconoir-video-camera" :if="group.kind === 'cameras'"></i>
+        <span class="rail-lamp" :if="group.kind === 'zone'" :class:lit="group.lightsOn > 0"></span>
+        <span class="rail-name">${group.label}</span>
+    </button>
+    <button
+        class="rail-chip rail-search"
+        :class:active="this.searchOpen"
+        :onclick="this.toggleSearch()"
+        title="Search devices by name"
+    >
+        <i class="iconoir-search"></i>
+    </button>
+</nav>
+
+<div class="device-filter" :if="this.searchOpen">
     <i class="iconoir-search"></i>
-    <input class="device-filter-input" type="text" placeholder="Filter by name or room…" :oninput="this.onFilter(event)" />
+    <input class="device-filter-input" type="text" placeholder="Device or room name…" :oninput="this.onFilter(event)" />
 </div>
 
-<!-- One collapsible section per zone (cameras get their own group). Collapsing a
-     section removes its tiles from the DOM via :if — which also stops camera streams. -->
+<!-- First load: skeleton plates until the initial resync settles — never flash
+     an empty state before the hub has answered once. -->
+<section class="device-grid" :if="this.loading">
+    <div class="device-tile skeleton"><div class="tile-inner"><div class="sk-icon"></div><div class="sk-line w60"></div><div class="sk-line w35"></div></div></div>
+    <div class="device-tile skeleton"><div class="tile-inner"><div class="sk-icon"></div><div class="sk-line w60"></div><div class="sk-line w35"></div></div></div>
+    <div class="device-tile skeleton"><div class="tile-inner"><div class="sk-icon"></div><div class="sk-line w60"></div><div class="sk-line w35"></div></div></div>
+    <div class="device-tile skeleton"><div class="tile-inner"><div class="sk-icon"></div><div class="sk-line w60"></div><div class="sk-line w35"></div></div></div>
+</section>
+
+<!-- One collapsible section per room (pinned strip first, cameras last). A room
+     header fuses the zone's sensor glance: temp/humidity readout + motion lamp.
+     Collapsing removes tiles from the DOM via :if — which also stops camera streams. -->
 <div
     class="zone-section"
     :foreach="group in this.groups"
     :key="group.key"
+    :id="'zsec-' + group.key"
     :class="'zsec-' + group.kind"
     :class:collapsed="group.collapsed"
 >
-    <button class="zone-head" :onclick="this.toggleGroup(group.key)">
-        <i class="zone-caret iconoir-nav-arrow-down"></i>
-        <span class="zone-name">${group.label}</span>
-        <span class="zone-summary">${group.summary}</span>
-    </button>
+    <div class="zone-row">
+        <button class="zone-head" :onclick="this.toggleGroup(group.key)">
+            <i class="zone-caret iconoir-nav-arrow-down"></i>
+            <span class="zone-name">${group.label}</span>
+            <span class="zone-env" :if="group.envReading">${group.envReading}</span>
+            <span class="zone-motion" :if="group.envMotion !== null && group.envMotion !== undefined" :class:on="group.envMotion" title="Motion in this room"></span>
+            <span class="zone-summary">${group.summary}</span>
+        </button>
+        <button
+            class="zone-off"
+            :class:shown="group.lightsOn > 0"
+            :onclick="this.onLightsOff(event, group.key)"
+            title="Turn off every light in this room"
+        >
+            <i class="iconoir-light-bulb-off"></i> Off
+        </button>
+    </div>
 
-    <section class="device-grid zone-body" :if="!group.collapsed">
+    <section class="device-grid zone-body" :if="!group.collapsed && group.devices.length">
         <div
             class="device-tile"
             :foreach="device in group.devices"
@@ -181,24 +229,16 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Satellite only: what the device's LED ring colors mean (matches the firmware states). -->
-                <div class="led-legend" :if="device.deviceCategory === 'voice-satellite'">
-                    <span class="led-key" title="A reply is on its way — Aura is about to speak"><i class="led-dot amber"></i>about to speak</span>
-                    <span class="led-key" title="Aura is talking through this speaker"><i class="led-dot orange"></i>speaking</span>
-                    <span class="led-key" title="Mic open for your answer — no need to say “Aura”"><i class="led-dot cyan"></i>listening</span>
-                    <span class="led-key" title="Sending your reply to the assistant"><i class="led-dot violet"></i>sending</span>
-                </div>
             </div>
         </div>
     </section>
 </div>
 
-<div class="empty-state" :if="!this.hasDevices">
+<div class="empty-state" :if="!this.loading && !this.hasDevices">
     <i class="iconoir-home-simple-door"></i>
-    <span>No devices detected on your network</span>
+    <span>No devices found. Devices announce themselves — power one on and it appears here.</span>
 </div>
-<div class="empty-state empty-nomatch" :if="this.hasDevices && !this.groups.length">
+<div class="empty-state empty-nomatch" :if="!this.loading && this.hasDevices && !this.groups.length">
     <i class="iconoir-search"></i>
-    <span>No devices match your filter</span>
+    <span>Nothing matches that name. Try the room tabs above.</span>
 </div>

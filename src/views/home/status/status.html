@@ -1,13 +1,18 @@
-<div class="hs-greet">
-    <div class="hs-hello">Good <em>${this.timeOfDay}</em></div>
-    <div class="hs-date">${this.date}</div>
+<div class="hs-day">
+    <span class="hs-date">${this.date}</span>
+</div>
+
+<div class="hs-lights" :class:any-on="this.lightsOn > 0">
+    <span class="hs-lamp"></span>
+    <span class="hs-lights-label">${this.lightsLabel}</span>
+    <button class="hs-alloff" :class:shown="this.lightsOn > 0" :onclick="this.onAllLightsOff()" title="Turn off every light in the house">
+        <i class="iconoir-light-bulb-off"></i> All off
+    </button>
 </div>
 
 <div class="hs-weather" :if="this.hasWeather">
     <i class="hs-wx-icon" :class="this.weatherIcon"></i>
-    <div class="hs-wx-read">
-        <b>${this.temp}</b>
-        <span class="hs-wx-cond">${this.conditions}</span>
-        <span class="hs-wx-range">${this.range}</span>
-    </div>
+    <span class="hs-wx-temp">${this.temp}</span>
+    <span class="hs-wx-cond">${this.conditions}</span>
+    <span class="hs-wx-range">${this.range}</span>
 </div>

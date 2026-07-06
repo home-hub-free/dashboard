@@ -2,6 +2,7 @@ import { getEndPointData } from "./server-handler";
 import { DeviceActions, SensorActions, EffectActions } from "../store/actions";
 import { SensorsService } from "../views/home/sensors/sensors.service";
 import { loadZones } from "./zones.service";
+import { bus } from "../core/bus";
 
 let syncing = false;
 
@@ -41,9 +42,11 @@ export async function syncState(): Promise<boolean> {
       sensors: sensorsData.length,
       effects: effectsData.length,
     });
+    bus.emit("sync:done", { ok: true });
     return true;
   } catch (error) {
     console.error("Failed to sync state:", error);
+    bus.emit("sync:done", { ok: false });
     return false;
   } finally {
     syncing = false;

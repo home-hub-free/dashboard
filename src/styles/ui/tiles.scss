@@ -26,8 +26,9 @@
     grid-column: span 2;
   }
 
+  // Press = a 1px switch throw. No scaling, no lift.
   &:active {
-    transform: scale(0.97);
+    transform: translateY(1px);
   }
 
   // "Locked to manual" reads as a dashed edge (plus the .tile-lock badge).
@@ -36,14 +37,14 @@
   }
 }
 
-// Resting-tile depth (hairline top highlight + soft shadow — not elevation).
+// Resting-tile depth (hairline top highlight only — plates are flat).
 #main-content #tab-content .device-tile {
   box-shadow: var(--shadow-lift);
 }
 
 @media (hover: hover) and (pointer: fine) {
   #main-content #tab-content .device-tile:not(.cat-camera):hover {
-    transform: translateY(-2px);
+    border-color: var(--color-border-light);
   }
 }
 
@@ -84,14 +85,14 @@
 }
 
 .tile-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
   display: grid;
   place-items: center;
   background: var(--color-surface-secondary);
   color: var(--color-text-secondary);
-  font-size: 22px;
+  font-size: 21px;
   transition: all 220ms var(--ease-in-out);
 }
 
@@ -143,7 +144,7 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   font-size: 0.72rem;
   font-weight: var(--font-weight-bold);
   letter-spacing: 0.01em;
@@ -227,7 +228,7 @@
   min-height: 0;
   padding: 8px 14px;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-chip);
   background: var(--color-surface-secondary);
   color: var(--color-text-secondary);
   font-size: 0.9rem;
@@ -270,7 +271,9 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: 0.95rem;
+    font-family: var(--font-family-data);
+    font-feature-settings: "tnum" 1;
+    font-size: 0.92rem;
     color: var(--color-text-secondary);
   }
 
@@ -311,8 +314,10 @@
   line-height: 1.1;
 
   .readout-val {
-    font-size: 1.4rem;
-    font-weight: var(--font-weight-bold);
+    font-family: var(--font-family-data);
+    font-feature-settings: "tnum" 1;
+    font-size: 1.35rem;
+    font-weight: var(--font-weight-medium);
     color: var(--color-text-primary);
 
     &.reached {
@@ -747,6 +752,35 @@
   }
 }
 
+// ---- Skeleton plates (first-load) ------------------------------------------------------------
+// Rendered while the first /get-devices fetch is in flight: same geometry as a
+// real tile, calm opacity pulse (no shimmer sweep). Removed on first data.
+.device-tile.skeleton {
+  pointer-events: none;
+  border-style: solid;
+
+  .sk-icon,
+  .sk-line {
+    background: var(--color-surface-tertiary);
+    border-radius: var(--radius-sm);
+    animation: pulse 1.6s var(--ease-in-out) infinite;
+  }
+
+  .sk-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+  }
+
+  .sk-line {
+    height: 12px;
+    margin-top: auto;
+
+    &.w60 { width: 60%; }
+    &.w35 { width: 35%; margin-top: 8px; }
+  }
+}
+
 // ---- Sensor chip ---------------------------------------------------------------------------
 // Read-only environment reading: boolean sensors show a state dot, value
 // sensors two metrics. Lives in the Home env band / rail (views/home.scss).
@@ -795,8 +829,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 1.05rem;
-    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-family-data);
+    font-feature-settings: "tnum" 1;
+    font-size: 1rem;
+    font-weight: var(--font-weight-medium);
     color: var(--color-text-primary);
 
     .dot {

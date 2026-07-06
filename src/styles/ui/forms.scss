@@ -32,14 +32,13 @@ form {
 }
 
 // ---- Labels -------------------------------------------------------------------
+// Sentence case, quiet weight — a label labels; it doesn't shout.
 label {
   display: block;
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
   line-height: var(--line-height-normal);
-  text-transform: uppercase;
-  letter-spacing: var(--letter-spacing-wide);
   margin-bottom: var(--space-2);
   transition: var(--transition-normal);
 

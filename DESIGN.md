@@ -23,14 +23,21 @@ token so the system stays coherent.
 
 - **Spacing** — 8px base scale (`--space-1`…`--space-20`) plus aliases
   (`--space-xs`…`--space-2xl`) and `--gap-*`.
-- **Typography** — Satoshi (variable) is the body font; `--font-size-*`,
-  `--font-weight-*`, `--line-height-*` ramps are defined.
+- **Typography — two materials.** **Archivo** (variable, local woff2 in
+  `public/Fonts/Tablero/`) is the label/UI face; display text (room names, screen
+  titles, tile names) additionally sets `font-stretch: var(--font-stretch-display)`
+  (≈122% — the width axis is the voice). **IBM Plex Mono**
+  (`--font-family-data`) sets every LIVE VALUE — temps, %, counts, times — with
+  `"tnum" 1`; a reading must be visibly different material from its label. No
+  letterspaced-uppercase eyebrows anywhere; small uppercase mono is allowed only
+  as a *data label* (speaker tags, badges), never as a section header.
 - **Radius** — generic `--radius-xs`…`--radius-full`, plus the semantic geometry the
-  tile dashboard runs on: `--radius-tile` (22px, device tiles + overlay sheet),
-  `--radius-chip` (18px, sensor chips / smaller cards), `--radius-control` (12px,
-  inputs / buttons / toggle segments). Keep surfaces on this rhythm.
-- **Motion** — `--duration-*` (150–500ms) and `--ease-*`. Default transition for
-  state changes is ~200ms `--ease-in-out`. Tile presses use `transform: scale(0.97)`.
+  board runs on: `--radius-tile` (10px, device plates + overlay sheet),
+  `--radius-chip` (8px, chips / smaller cards), `--radius-control` (8px,
+  inputs / buttons / toggle segments). Plates, not blobs.
+- **Motion — mechanical.** `--duration-*` (120–400ms), `--ease-out` default.
+  Press = `transform: translateY(1px)` (a switch throw) — never scale, never a
+  hover lift. Entrances are a quick 200–260ms rise; reduced-motion is honored.
 - **Z-index** — use the `--z-*` scale, never raw numbers.
 - **`--tap-target-min: 44px`** — the WCAG minimum interactive size. Every tappable
   control must meet it (see [Tap targets](#5-tap-targets)).
@@ -39,26 +46,26 @@ token so the system stays coherent.
 
 ## 2. Color semantics
 
-Dark mode, "Ember": near-neutral **warm charcoal** backgrounds (`--color-background`
-#131110), raised surfaces (`--color-surface` #1c1916, `--color-surface-secondary`
-#161311, `--color-surface-tertiary` #262220), warm near-white text
-(`--color-text-primary` #f1ece5). The warmth lives in the **accents**, not the
-walls — saturated brown surfaces read as mud, not home. Lamplight in a dark room.
+Dark mode, **"Tablero"** — a labeled control board on a warm wall. Ink-black page
+(`--color-background` #0f0d0b), warm plates (`--color-surface` #1a1715,
+`--color-surface-secondary` #141210, `--color-surface-tertiary` #23201c), bone
+ink (`--color-text-primary` #ece4d6). The walls are flat — **no ambient gradients,
+no glows, no gradient fills anywhere**. State is shown as INDICATOR LAMPS: a flat
+color fill and/or a small dot. (The `--gradient-*`/`--glow-*` token names survive
+for compat but resolve to flat fills / flat inset rings.)
 
-**Three distinct accent meanings — keep them separate:**
+**Four distinct accent meanings — keep them separate:**
 
 | Meaning | Token | Where |
 |---|---|---|
-| **A light is on** (illumination) | `--gradient-active-warm` (gold) + `--glow-active-warm` | `.cat-light.on`, `.cat-dimmable-light.on` |
-| **Another device is active** (e.g. blinds open) | `--gradient-active-cool` (dusk blue) + `--glow-active-cool` | `.cat-blinds.on` |
-| **Interactive / brand** | `--color-primary` (warm coral) | nav-active, buttons, focus rings, sliders |
+| **A light is on** (illumination) | `--color-active-warm` (flat amber) | `.cat-light.on`, `.cat-dimmable-light.on`, room-rail/house-bar lamps |
+| **Another device is active** (e.g. blinds open) | `--color-active-cool` (flat dusk blue) | `.cat-blinds.on` |
+| **Live / enabled / ok** | `--color-success` (green) | `.switch.on`, boolean chips, motion lamps, WS dot |
+| **Interactive / brand** | `--color-primary` (**bougainvillea** #e0517e) | nav-active lamp bar, buttons, focus rings, sliders |
 
-The gold/dusk-blue/coral split is deliberate: a device-state fill must never
-read the same as an interactive control. Gold and dusk blue are reserved for device
-state; coral is the brand/interaction color. **Do not paint buttons dusk blue
-or device states coral.** Small boolean state chips (cooler fan/water, the
-satellite mic) fill `--color-success` when on — green = enabled/live, same as the
-`.switch`.
+A device-state fill must never read the same as an interactive control. Amber and
+dusk blue are reserved for device state; bougainvillea is the brand/interaction
+color. **Do not paint buttons dusk blue or device states pink.**
 
 State/status colors use the semantic set: `--color-success` (on / detected /
 enabled), `--color-error` (off / danger / remove), `--color-warning`,
@@ -66,8 +73,8 @@ enabled), `--color-error` (off / danger / remove), `--color-warning`,
 
 **Text on filled accent surfaces** uses `--color-on-fill` (warm near-black) and its
 muted variants — verified ≥5.7:1 on the gold, dusk-blue and success fills. The same
-rule covers the coral brand fill via `--color-text-inverse`: **cream text FAILS on
-coral** — filled buttons always use the dark ink.
+rule covers the bougainvillea brand fill via `--color-text-inverse`: **bone text
+FAILS on the brand fill** — filled buttons always use the dark ink.
 
 ### Contrast (WCAG AA)
 Body/status text must clear **4.5:1** on its background. The gotcha: text that
@@ -82,18 +89,46 @@ safe choice for on-surface helper/status copy.
 
 Two tiers, applied consistently:
 
-- **Resting surfaces** (device tiles, sensor chips, automation/assistant cards) are
+- **Resting surfaces** (device plates, sensor chips, automation/assistant cards) are
   **flat: `background: --color-surface` + `1px solid --color-border`, no shadow.**
 - **Floating layers** (detail overlay, toasts) carry a real shadow:
   `--shadow-modal` for the overlay sheet, `--shadow-lg`/`--shadow-md` for transient
   popups.
 
-The gold/cyan **glow** on a lit tile is a *state accent*, not elevation — don't add a
-drop shadow to resting tiles to "match" it.
+A lit tile is a flat lamp fill — never add a glow or drop shadow to signal state.
 
 ---
 
 ## 4. Core patterns
+
+### Room rail + fused room sections (`views/home.scss`, `views/home/devices/`)
+The board's **signature**: a sticky strip of switch-plate room tabs (one per group:
+Pinned → rooms in registry order → Cameras), each with a lamp dot that lights amber
+when the room has lights on. Tap = expand + scroll to that room — the one-tap
+findability path on a wall panel or phone; the text filter hides behind the rail's
+search key. Each room's header **fuses its sensors' ambient glance** (temp/humidity
+mono readout + motion lamp, from the shared store) and carries a "Lights off" action
+while any light in the room is on; zones with only sensors still render as rooms.
+The same jump-rail idiom heads Settings (`.settings-rail`).
+
+### Pinned strip (`views/home/devices/pins.service.ts`)
+Per-member shortcuts: the device sheet's "Pin to the top of Home" switch stores
+device ids in the signed-in user's `prefs.pins` (hub `PATCH /auth/users/:id` —
+NB the hub replaces the whole prefs blob; always spread the existing prefs). The
+Pinned group renders first on the board, per login — the wall panel's login is
+the wall's pin set.
+
+### House bar (`views/home/status/`)
+One slim instrument row atop Home: date · "N lights on" lamp readout with a
+house-wide **All off** · live weather. No greeting, no clock — a control board
+doesn't say good afternoon, it tells you whether the house is settled.
+
+### Load / offline / failure (table stakes)
+First load renders **skeleton plates** (calm opacity pulse, no shimmer) until the
+initial resync settles (`sync:done` on the bus) — never flash an empty state before
+the hub has answered once. While the socket is down, the shell shows the slim
+`.hub-offline` banner (ws:status). Device writes stay optimistic with revert +
+a toast that names what failed.
 
 ### Device tile (`ui/tiles.scss`, `views/home/devices/`)
 The whole tile is the switch for single-actuator devices. Tiles are **channel-driven**:
@@ -131,7 +166,9 @@ overflow the sheet). Header = round icon + title. Form rows are `.form-group`
 ### Buttons
 Primary = filled `--color-primary`. A companion/secondary action is **outlined**
 (transparent bg, `--color-primary-light` text, border) — never two filled primaries
-side by side. All buttons honor `--tap-target-min` and use `scale(0.97)` on press.
+side by side. Full-width on phones only; ≥640px they size to content
+(`align-self: flex-start` inside column-flex panels) — a button is a control, not
+a banner. All buttons honor `--tap-target-min`; press = `translateY(1px)`.
 
 ### Assistant chat panel (`views/assistant/`, `styles/views/assistant.scss`)
 Two panes: conversation history (left) + the open transcript with the composer (right); narrow
@@ -220,5 +257,5 @@ state from the hub; for isolated UI work, run the Vite dev server and drive it h
 with Playwright, stubbing the API routes (`get-devices`, `get-sensors`,
 `get-effects-dynamic`, `get-zones`) with representative fixtures. Screenshot Home
 (mobile + desktop), Automations, Assistant, and an open detail overlay, and check:
-visual hierarchy, the gold/cyan/iris separation, on-surface text contrast, tap-target
+visual hierarchy, the amber/dusk/green/bougainvillea separation, on-surface text contrast, tap-target
 sizes, and transitions.

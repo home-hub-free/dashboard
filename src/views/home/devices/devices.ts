@@ -14,6 +14,8 @@ import {
 } from "../../../utils/server-handler";
 import template from "./devices.html?raw";
 import { Device, DeviceGroup, DevicesTabState } from "./devices.model";
+import { Sensor } from "../sensors/sensors.model";
+import { getPins } from "./pins.service";
 import { Channel, deviceChannels, withChannelValue } from "./channels";
 import { DevicesService, DevicesServiceClass } from "./devices.service";
 import { CAM_NUDGE_MS, CAM_NUDGE_SPEED, openCameraControls, openCameraLive } from "./camera-ctl.service";
@@ -22,6 +24,8 @@ import { startVisionOccupancy, stopVisionOccupancy } from "../../../utils/vision
 // Tiles with no zone set fall under this bucket; cameras get their own group.
 const UNASSIGNED = "_unassigned";
 const CAMERAS = "_cameras";
+// The signed-in member's pinned devices render first (see pins.service).
+const PINNED = "_pinned";
 // Which groups start collapsed when the user has no saved preference. Cameras default
 // to collapsed so Home opens without N live MJPEG streams running (perf + scroll).
 const DEFAULT_COLLAPSED = new Set<string>([CAMERAS]);
@@ -191,7 +195,8 @@ function summariseCamHealth(
   st: VisionCameraStatus | undefined,
 ): { text: string; state: "ok" | "warn" | "down"; title: string } {
   if (!st) {
-    return { text: "no worker", state: "down", title: "vision-service has no worker for this camera (not on roster / no stream URL)" };
+    // Resident-facing word, not infra jargon; the tooltip keeps the real cause.
+    return { text: "offline", state: "down", title: "vision-service has no worker for this camera (not on roster / no stream URL)" };
   }
   const title =
     `frames: ${st.frames_seen} · last frame: ${st.last_frame_age_s ?? "—"}s ago · ` +
@@ -243,18 +248,57 @@ function groupSummary(kind: DeviceGroup["kind"], devices: Device[]): string {
   return `${on} on`;
 }
 
+/** How many light/dimmable tiles in the list are on — gates "Lights off". */
+function countLightsOn(devices: Device[]): number {
+  return devices.filter(
+    (d) => (d.deviceCategory === "light" || d.deviceCategory === "dimmable-light") && d.isOn,
+  ).length;
+}
+
 /**
- * Split the flat device list into the rendered, zone-grouped, optionally-filtered
- * groups. Cameras are pulled into their own group; everything else groups by `zone`
- * (registry order first, then any extra zones, then Unassigned). A non-empty filter
- * matches device name or zone and force-expands every surviving group (you want to see
- * what you searched for); empty groups drop out.
+ * A room's ambient glance, fused from its sensors: one temp/humidity reading
+ * (already formatted by SensorsService — "26 °C"/"40 %" — but parse defensively:
+ * a WS race can still hand us the raw "t:h" string) and a motion state — null
+ * when the room has no boolean sensor at all, so the header shows nothing
+ * rather than a fake "clear".
+ */
+function zoneEnv(sensors: Sensor[], zone: string): { reading?: string; motion: boolean | null } {
+  const inZone = sensors.filter((s) => (s.zone || "").trim() === zone);
+  let reading: string | undefined;
+  const th = inZone.find((s) => s.type === "value" && s.value != null);
+  if (th) {
+    const v: any = th.value;
+    let t = NaN;
+    let h = NaN;
+    if (typeof v === "string" && v.includes(":")) {
+      [t, h] = v.split(":").map(parseFloat);
+    } else if (typeof v === "object") {
+      t = parseFloat(v.temperature);
+      h = parseFloat(v.humidity);
+    }
+    if (Number.isFinite(t)) reading = `${t}°${Number.isFinite(h) ? ` · ${h}%` : ""}`;
+  }
+  const booleans = inZone.filter((s) => s.type === "boolean");
+  const motion = booleans.length ? booleans.some((s) => s.value === true) : null;
+  return { reading, motion };
+}
+
+/**
+ * Split the flat device list into the rendered, room-grouped, optionally-filtered
+ * groups. The signed-in member's PINNED devices render first; cameras keep their
+ * own group; everything else groups by `zone` (registry order first, then any
+ * extra zones, then Unassigned). Each room header fuses in its sensors' ambient
+ * glance (temp/humidity + motion), and zones that have sensors but no devices
+ * still render as rooms (header only). A non-empty filter matches device name or
+ * zone and force-expands every surviving group; empty groups drop out.
  */
 function buildGroups(
   devices: Device[],
   zoneOrder: string[],
   collapsed: Set<string>,
   filter: string,
+  sensors: Sensor[],
+  pins: string[],
 ): DeviceGroup[] {
   const f = filter.trim().toLowerCase();
   const match = (d: Device) =>
@@ -272,24 +316,53 @@ function buildGroups(
     (byZone.get(zone) ?? byZone.set(zone, []).get(zone)!).push(d);
   }
 
-  // Registry order first, then any zones present on devices but not in the registry,
-  // then the Unassigned bucket — so the wall reads in the house's configured order.
+  // Rooms that only have sensors still deserve a header (Outdoor readings).
+  const sensorZones = new Set(
+    sensors.map((s) => (s.zone || "").trim()).filter((z) => z && (!f || z.toLowerCase().includes(f))),
+  );
+
+  // Registry order first, then any zones present on devices/sensors but not in
+  // the registry, then the Unassigned bucket — the house's configured order.
   const ordered: string[] = [];
-  for (const z of zoneOrder) if (byZone.has(z) && z !== UNASSIGNED) ordered.push(z);
+  const wants = (z: string) => byZone.has(z) || sensorZones.has(z);
+  for (const z of zoneOrder) if (wants(z) && z !== UNASSIGNED) ordered.push(z);
   for (const z of byZone.keys()) if (!ordered.includes(z) && z !== UNASSIGNED) ordered.push(z);
+  for (const z of sensorZones) if (!ordered.includes(z) && z !== UNASSIGNED) ordered.push(z);
   if (byZone.has(UNASSIGNED)) ordered.push(UNASSIGNED);
 
-  const groups: DeviceGroup[] = ordered.map((zone) => {
-    const list = byZone.get(zone)!;
-    return {
+  const groups: DeviceGroup[] = [];
+
+  // Pinned strip — the member's own shortcuts, in the order they pinned them.
+  const pinned = pins
+    .map((id) => devices.find((d) => d.id === id))
+    .filter((d): d is Device => !!d && match(d));
+  if (pinned.length) {
+    groups.push({
+      key: PINNED,
+      label: "Pinned",
+      kind: "pinned",
+      devices: pinned,
+      summary: groupSummary("pinned", pinned),
+      collapsed: !f && collapsed.has(PINNED),
+      lightsOn: countLightsOn(pinned),
+    });
+  }
+
+  for (const zone of ordered) {
+    const list = byZone.get(zone) ?? [];
+    const env = zone === UNASSIGNED ? { reading: undefined, motion: null } : zoneEnv(sensors, zone);
+    groups.push({
       key: zone,
       label: zone === UNASSIGNED ? "Unassigned" : zone,
       kind: "zone",
       devices: list,
-      summary: groupSummary("zone", list),
+      summary: list.length ? groupSummary("zone", list) : "",
       collapsed: !f && collapsed.has(zone),
-    };
-  });
+      envReading: env.reading,
+      envMotion: env.motion,
+      lightsOn: countLightsOn(list),
+    });
+  }
 
   if (cams.length) {
     groups.push({
@@ -299,6 +372,7 @@ function buildGroups(
       devices: cams,
       summary: groupSummary("cameras", cams),
       collapsed: !f && collapsed.has(CAMERAS),
+      lightsOn: 0,
     });
   }
   return groups;
@@ -311,6 +385,9 @@ class DevicesTabClass extends Component<DevicesTabState> {
   private unsubscribeOccupancy?: () => void;
   private unsubscribeCameras?: () => void;
   private unsubscribeDevices?: () => void;
+  private unsubscribeSensors?: () => void;
+  private unsubscribePins?: () => void;
+  private unsubscribeSync?: () => void;
   private zoneOccupants: Record<string, ZoneOccupant[]> = {};
   private camStatus: Record<string, VisionCameraStatus> = {};
   private collapsed = loadCollapse();
@@ -330,11 +407,18 @@ class DevicesTabClass extends Component<DevicesTabState> {
     devices.forEach((device) => decorateDevice(device));
   }
 
-  /** Rebuild the zone-grouped view from the flat `devices` array. Cheap + derived, so
+  /** Rebuild the room-grouped view from the flat `devices` array. Cheap + derived, so
    * we recompute (and reassign, to re-render the gated sections) on any structural
-   * change: store sync, declare, zone edit, collapse toggle, filter. */
+   * change: store sync, declare, zone edit, collapse toggle, filter, sensor tick, pins. */
   private groups(): DeviceGroup[] {
-    return buildGroups(this.bind.devices || [], store.get("zones") || [], this.collapsed, this.filterText);
+    return buildGroups(
+      this.bind.devices || [],
+      store.get("zones") || [],
+      this.collapsed,
+      this.filterText,
+      store.get("sensors") || [],
+      getPins(),
+    );
   }
 
   mount() {
@@ -348,8 +432,55 @@ class DevicesTabClass extends Component<DevicesTabState> {
           store.get("zones") || [],
           this.collapsed,
           "",
+          store.get("sensors") || [],
+          getPins(),
         ),
         hasDevices: (store.get("devices") || []).length > 0,
+        // Skeleton plates until the first full resync settles (sync:done) — a
+        // fresh boot has an empty store and we must not flash "no devices".
+        loading: (store.get("devices") || []).length === 0,
+        searchOpen: false,
+
+        // Room-rail tap: make sure the section is expanded, then bring it up.
+        jumpTo: (key: string) => {
+          if (this.collapsed.has(key)) {
+            this.collapsed.delete(key);
+            saveCollapse(this.collapsed);
+            this.bind.groups = this.groups();
+          }
+          requestAnimationFrame(() => {
+            document.getElementById(`zsec-${key}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        },
+
+        // The rail is the primary finder; the text filter hides behind this.
+        toggleSearch: () => {
+          const open = !this.bind.searchOpen;
+          this.bind.searchOpen = open;
+          if (!open && this.filterText) {
+            this.filterText = "";
+            this.bind.groups = this.groups();
+          }
+          if (open) {
+            requestAnimationFrame(() =>
+              (document.querySelector(".device-filter-input") as HTMLInputElement | null)?.focus(),
+            );
+          }
+        },
+
+        // Header action: every light in the room, off — one tap on the way out.
+        onLightsOff: (event: Event, key: string) => {
+          event.stopPropagation();
+          const group = (this.bind.groups || []).find((g) => g.key === key);
+          if (!group) return;
+          for (const device of group.devices) {
+            if (device.deviceCategory !== "light" && device.deviceCategory !== "dimmable-light") continue;
+            const primary = (device.channels || []).find((c) => c.role === "actuator");
+            if (!primary || !device.isOn) continue;
+            this.writeChannel(device, primary, primary.kind === "boolean" ? false : 0);
+          }
+          this.bind.groups = this.groups();
+        },
 
         // Collapse/expand a zone (or the camera group) — persisted across reloads.
         toggleGroup: (key: string) => {
@@ -475,8 +606,25 @@ class DevicesTabClass extends Component<DevicesTabState> {
       // A store sync replaces the array — re-merge the vision-only camera tiles.
       this.syncVisionTiles(this.lastCameras);
       this.bind.hasDevices = this.bind.devices.length > 0;
+      if (this.bind.hasDevices) this.bind.loading = false;
       this.bind.groups = this.groups();
       this.applyOccupancy();
+    });
+
+    // Room headers carry the zone's ambient glance — refresh them on sensor ticks.
+    this.unsubscribeSensors = store.subscribe("sensors", () => {
+      this.bind.groups = this.groups();
+    });
+
+    // The member's pinned strip.
+    this.unsubscribePins = bus.on("pins:changed", () => {
+      this.bind.groups = this.groups();
+    });
+
+    // First full resync settled (either way) → leave the skeleton state. On
+    // failure the empty state + offline banner tell the real story.
+    this.unsubscribeSync = bus.on("sync:done", () => {
+      this.bind.loading = false;
     });
 
     this.unsubscribeDeclare = bus.on("device:declare", (declaredDevice) => {
@@ -507,6 +655,9 @@ class DevicesTabClass extends Component<DevicesTabState> {
 
   unmount() {
     this.unsubscribeDevices?.();
+    this.unsubscribeSensors?.();
+    this.unsubscribePins?.();
+    this.unsubscribeSync?.();
     this.unsubscribeDeclare?.();
     this.unsubscribeUpdate?.();
     this.unsubscribeOccupancy?.();
@@ -522,6 +673,9 @@ class DevicesTabClass extends Component<DevicesTabState> {
       g.summary = g.kind === "cameras"
         ? `${g.devices.length} camera${g.devices.length === 1 ? "" : "s"}`
         : `${g.devices.filter((d) => d.isOn).length} on`;
+      // Leaf mutation: the header lamp / "Lights off" affordance track via
+      // :class bindings (class bindings re-evaluate on leaf ticks; :if doesn't).
+      g.lightsOn = countLightsOn(g.devices);
     });
   }
 
