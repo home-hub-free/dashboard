@@ -202,16 +202,19 @@ body.face-viewer-open #nav-bar {
     box-shadow: none;
     padding-top: 8px;
 
-    // Brand lockup: the board's nameplate — expanded Archivo, flat, no glow.
+    // Brand lockup: the board's nameplate — expanded Archivo, flat, no glow,
+    // finished with a hairline like a stamped panel label.
     &::before {
       content: "Home Hub";
       display: block;
-      padding: 26px 22px 18px;
+      margin: 0 14px 10px;
+      padding: 26px 8px 16px;
       font-size: 1.05rem;
       font-weight: var(--font-weight-semibold);
       font-stretch: var(--font-stretch-display);
       letter-spacing: var(--letter-spacing-tight);
       color: var(--color-text-primary);
+      border-bottom: 1px solid var(--color-border);
     }
 
     .menu-item {

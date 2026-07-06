@@ -119,8 +119,10 @@
 
 .tile-name {
   font-weight: var(--font-weight-semibold);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--letter-spacing-tight);
   color: var(--color-text-primary);
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   line-height: 1.15;
 }
 

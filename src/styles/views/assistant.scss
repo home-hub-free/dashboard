@@ -299,7 +299,9 @@
 
     .bubble-time {
       align-self: flex-end;
-      font-size: 0.68rem;
+      font-family: var(--font-family-data);
+      font-feature-settings: "tnum" 1;
+      font-size: 0.66rem;
       color: var(--color-text-tertiary);
     }
 

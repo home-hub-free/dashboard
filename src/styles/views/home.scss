@@ -42,16 +42,14 @@
 
 // ---- House bar --------------------------------------------------------------------
 // One slim instrument row: date · whole-house lights answer (+ All off) · weather.
+// Deliberately NOT a card — it sits on the wall itself, quiet, above the board.
 .home-status {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 20px;
-  margin: 4px 16px 12px;
-  padding: 10px 14px;
-  border-radius: var(--radius-tile);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
+  margin: 2px 16px 6px;
+  padding: 6px 2px;
 
   .hs-date {
     font-size: 0.85rem;
@@ -119,7 +117,7 @@
 
     .hs-wx-icon {
       font-size: 1.3rem;
-      color: var(--color-text-secondary);
+      color: var(--color-warning); // warm sky glyph — the bar's one warm note
     }
 
     .hs-wx-temp {
@@ -171,16 +169,23 @@
     flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    min-height: 36px;
+    gap: 8px;
+    min-height: 38px;
     min-width: 0;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-control);
     background: var(--color-surface);
     color: var(--color-text-secondary);
     font-size: 0.85rem;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-semibold);
+    font-stretch: var(--font-stretch-display);
+    letter-spacing: var(--letter-spacing-tight);
+
+    &:hover {
+      border-color: var(--color-border-light);
+      color: var(--color-text-primary);
+    }
 
     &:active {
       transform: translateY(1px);
@@ -488,8 +493,8 @@
 
   .home-status {
     margin-top: 0;
-    margin-bottom: 14px;
-    padding: 12px 18px;
+    margin-bottom: 10px;
+    padding: 6px 2px;
   }
 
   .room-rail {

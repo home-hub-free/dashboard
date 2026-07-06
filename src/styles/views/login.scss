@@ -34,25 +34,28 @@
   box-sizing: border-box;
 }
 
+// Nameplate voice: bone ink, expanded Archivo; only the mark is brand-colored.
 .login-brand {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1.25rem;
-  font-weight: var(--font-weight-extrabold);
-  letter-spacing: 0.01em;
-  color: var(--color-primary-dark);
+  font-size: 1.15rem;
+  font-weight: var(--font-weight-semibold);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--color-text-primary);
 
   i {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     color: var(--color-primary);
   }
 }
 
 .login-title {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: var(--font-weight-extrabold);
+  font-size: 1.35rem;
+  font-weight: var(--font-weight-semibold);
+  font-stretch: var(--font-stretch-display);
   letter-spacing: var(--letter-spacing-tight);
   color: var(--color-text-secondary);
 }
@@ -64,20 +67,22 @@
   font-size: 0.85rem;
   color: var(--color-text-secondary);
 
+  // Quiet at rest; the brand color is the focus voice, not the resting border.
   input {
     width: 100%;
     padding: 0.6rem 0.7rem;
     font-size: 1rem;
-    border: 1px solid var(--color-primary-light);
+    border: 1px solid var(--color-border-light);
     border-radius: 8px;
     background: var(--color-background);
     color: var(--color-text-primary);
     font-family: inherit;
     outline: none;
     box-sizing: border-box;
+    transition: border-color var(--duration-fast) var(--ease-out);
 
     &:focus {
-      border-color: var(--color-primary-dark);
+      border-color: var(--color-primary);
     }
   }
 }
@@ -101,7 +106,7 @@
   transition: opacity 150ms ease, transform 120ms ease;
 
   &:active {
-    transform: scale(0.98);
+    transform: translateY(1px);
   }
 
   &.busy {

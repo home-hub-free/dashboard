@@ -116,11 +116,18 @@ $nav-rail-width: 208px;
     }
   }
 
+  // The shell header duplicates what the rail + page-heads already say on
+  // desktop (and rendered hidden behind the fixed rail anyway) — drop it so
+  // content starts at the top instead of below a dead band.
+  #main-content #header {
+    display: none;
+  }
+
   #tab-content {
     margin-left: $nav-rail-width;
     text-align: center;
-    padding: 32px;
-    height: calc(100% - 150px);
+    padding: 24px 32px 32px;
+    height: calc(100% - 56px);
     position: relative;
     overflow: scroll;
 
