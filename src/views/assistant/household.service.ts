@@ -27,10 +27,14 @@ import {
   mergeGuest,
   listMemberClusters,
   detachCluster,
+  listFaceCaptures,
+  deleteFaceCapture,
+  rebuildFaceProfile,
   getFaceThresholds,
   setFaceThresholds,
   type ReviewCard,
   type MemberCluster,
+  type FaceCapture,
   calendarStatus,
   calendarEnrollStart,
   calendarRevoke,
@@ -353,6 +357,66 @@ export class HouseholdServiceClass {
     }
   }
 
+  // ── Photo archive ("re-do the soup") — the capture ledger + delete + rebuild ──
+  // A member's face profile is just the running mean of these archived ingredients
+  // (the vision-service keeps every crop + its exact embedding permanently). Deleting
+  // a photo removes it for good; Rebuild then REPLACES the profile with the mean of
+  // exactly what remains — the recovery path when recognition got polluted, without
+  // re-enrolling from scratch.
+  async togglePhotos(userId: string) {
+    if (this.state.photosOpenFor === userId) {
+      this.state.photosOpenFor = "";
+      this.state.memberCaptures = [];
+      return;
+    }
+    this.state.photosOpenFor = userId;
+    this.state.rebuildArmed = false;
+    this.state.photosBusy = true;
+    this.state.memberCaptures = [];
+    const { total, captures } = await listFaceCaptures(userId);
+    this.state.memberCaptures = captures;
+    this.state.capturesTotal = total;
+    this.state.photosBusy = false;
+  }
+
+  async deleteCaptureAction(id: number) {
+    try {
+      await deleteFaceCapture(id);
+      this.state.memberCaptures = this.state.memberCaptures.filter((c) => c.id !== id);
+      this.state.capturesTotal = Math.max(0, this.state.capturesTotal - 1);
+      this.state.rebuildArmed = false; // the set changed — re-confirm deliberately
+    } catch (err: any) {
+      this.state.peopleMsg = err?.message || "Could not delete that photo";
+    }
+  }
+
+  /** Two-tap confirm: the first tap arms the button, the second replaces the
+   * member's profile with the mean of every photo still archived for them. */
+  async rebuildProfile(userId: string) {
+    if (this.state.rebuildBusy) return;
+    if (!this.state.rebuildArmed) {
+      this.state.rebuildArmed = true;
+      return;
+    }
+    this.state.rebuildBusy = true;
+    try {
+      const member = this.state.households.find((u) => u.id === userId);
+      const samples = await rebuildFaceProfile(userId, member?.displayName);
+      this.state.rebuildArmed = false;
+      showToaster({
+        from: "bottom",
+        message: `Profile rebuilt from ${samples} photo${samples === 1 ? "" : "s"}`,
+        timer: 2200,
+      });
+      await this.refreshPeople();
+      if (userId === this.state.meId) this.state.faceSamples = samples;
+    } catch (err: any) {
+      this.state.peopleMsg = err?.message || "Could not rebuild the profile";
+    } finally {
+      this.state.rebuildBusy = false;
+    }
+  }
+
   // ── Recognition thresholds (view + live-tune the auto-heal ladder) ──────────
   async loadThresholds() {
     this.state.thresholds = await getFaceThresholds();
@@ -492,11 +556,20 @@ export class HouseholdServiceClass {
     ring.style.display = "block";
   }
 
-  // ── Full-image lightbox over the audit collection (paged) ───────────────────
-  // The viewer opens on ONE cluster face but carries the whole member's collection so
-  // you can page through them (← → keys, swipe, or the on-screen arrows) without
-  // closing — each frame shows the full capture (contain) with a ring on THE face.
-  private zoomClusters: MemberCluster[] = [];
+  // ── Full-image lightbox over a photo collection (paged) ─────────────────────
+  // The viewer opens on ONE photo but carries the whole collection so you can page
+  // through (← → keys, swipe, or the on-screen arrows) without closing — each frame
+  // shows the full capture (contain), ringing THE face when its position is known.
+  // Two collections feed it: the audit clusters (CTA = "Not me" detach) and the
+  // capture-ledger photos (CTA = "Delete photo") — one generic item shape.
+  private zoomItems: {
+    url: string;
+    sub: string;
+    faceBox: number[] | null;
+    guestId: string; // set → "Not me" CTA
+    captureId: number; // set → "Delete photo" CTA
+  }[] = [];
+  private zoomNoun = "Photo";
   private zoomGesturesOff: (() => void) | null = null;
 
   /** Open the full-image lightbox on an audit cluster's face — the whole capture
@@ -505,32 +578,61 @@ export class HouseholdServiceClass {
    * when a photo held several faces). Pages through the member's whole collection. */
   openClusterFace(cluster: MemberCluster) {
     if (!cluster?.thumbUrl) return;
-    this.zoomClusters = this.state.memberClusters.filter((c) => c.thumbUrl);
-    const idx = Math.max(0, this.zoomClusters.findIndex((c) => c.guest_id === cluster.guest_id));
+    const list = this.state.memberClusters.filter((c) => c.thumbUrl);
+    this.zoomItems = list.map((c) => ({
+      url: c.thumbUrl || "",
+      sub: c.no_face
+        ? "No clear face found in this capture"
+        : c.score !== null
+          ? `Match ${Math.round(c.score * 100)}% · seen ${c.sightings}×`
+          : `Seen ${c.sightings}×`,
+      faceBox: c.face_box && c.face_box.length === 4 ? c.face_box : null,
+      guestId: c.guest_id,
+      captureId: 0,
+    }));
+    this.zoomNoun = "Auto-matched face";
+    this.openZoomAt(list.findIndex((c) => c.guest_id === cluster.guest_id));
+  }
+
+  /** Open the lightbox on an archived ledger photo (the "re-do the soup" grid) —
+   * big enough to actually judge, with Delete right there. */
+  openCaptureFace(cap: FaceCapture) {
+    if (!cap?.imageUrl) return;
+    const list = this.state.memberCaptures.filter((c) => c.imageUrl);
+    this.zoomItems = list.map((c) => ({
+      url: c.imageUrl || "",
+      sub: `${c.kind}${c.score !== null ? ` · match ${Math.round(c.score * 100)}%` : ""} · ${c.ts.slice(0, 16)}`,
+      faceBox: null,
+      guestId: "",
+      captureId: c.id,
+    }));
+    this.zoomNoun = "Archived photo";
+    this.openZoomAt(list.findIndex((c) => c.id === cap.id));
+  }
+
+  private openZoomAt(index: number) {
+    if (!this.zoomItems.length) return;
     this.state.zoomOpen = true;
     setViewerNavHidden(true); // the phone nav bar can't be out-stacked from here — hide it
-    this.renderZoomAt(idx);
+    this.renderZoomAt(Math.max(0, index));
     this.bindZoomGestures();
   }
 
   private renderZoomAt(index: number) {
-    const list = this.zoomClusters;
+    const list = this.zoomItems;
     if (!list.length) return;
     const i = Math.max(0, Math.min(index, list.length - 1));
-    const c = list[i];
+    const item = list[i];
     this.state.zoomIndex = i;
     this.state.zoomCount = list.length;
     this.state.zoomHasPrev = i > 0;
     this.state.zoomHasNext = i < list.length - 1;
-    this.state.zoomGuestId = c.guest_id; // enables the "Not me" CTA on cluster faces
-    this.state.zoomUrl = c.thumbUrl || "";
-    this.state.zoomLabel = `Auto-matched face ${i + 1} / ${list.length}`;
-    this.state.zoomSub = c.no_face
-      ? "No clear face found in this capture"
-      : c.score !== null
-        ? `Match ${Math.round(c.score * 100)}% · seen ${c.sightings}×`
-        : `Seen ${c.sightings}×`;
-    this.state.zoomFaceBox = c.face_box && c.face_box.length === 4 ? c.face_box : null;
+    this.state.zoomGuestId = item.guestId;
+    this.state.zoomCaptureId = item.captureId;
+    this.state.zoomUrl = item.url;
+    this.state.zoomLabel = `${this.zoomNoun} ${i + 1} / ${list.length}`;
+    this.state.zoomSub = item.sub;
+    this.state.zoomFaceBox = item.faceBox;
     // Re-run ring placement once the (new) image has loaded.
     requestAnimationFrame(() => this.positionZoomRing());
   }
@@ -552,9 +654,10 @@ export class HouseholdServiceClass {
   closeZoom() {
     this.state.zoomOpen = false;
     this.state.zoomGuestId = "";
+    this.state.zoomCaptureId = 0;
     this.zoomGesturesOff?.();
     this.zoomGesturesOff = null;
-    this.zoomClusters = [];
+    this.zoomItems = [];
     setViewerNavHidden(false);
   }
 
@@ -565,12 +668,25 @@ export class HouseholdServiceClass {
     const id = this.state.zoomGuestId;
     if (!id) return;
     await this.detachClusterAction(id); // un-merge + back to review + refresh roster
-    this.zoomClusters = this.zoomClusters.filter((c) => c.guest_id !== id);
-    if (!this.zoomClusters.length) {
+    this.dropZoomItem((item) => item.guestId !== id);
+  }
+
+  /** "Delete photo" from inside the viewer — remove the archived ledger photo
+   * (permanently) and advance, mirroring zoomDetach for the captures collection. */
+  async zoomDeleteCapture() {
+    const id = this.state.zoomCaptureId;
+    if (!id) return;
+    await this.deleteCaptureAction(id);
+    this.dropZoomItem((item) => item.captureId !== id);
+  }
+
+  private dropZoomItem(keep: (item: { guestId: string; captureId: number }) => boolean) {
+    this.zoomItems = this.zoomItems.filter(keep);
+    if (!this.zoomItems.length) {
       this.closeZoom();
       return;
     }
-    this.renderZoomAt(Math.min(this.state.zoomIndex, this.zoomClusters.length - 1));
+    this.renderZoomAt(Math.min(this.state.zoomIndex, this.zoomItems.length - 1));
   }
 
   /** ← / → (and swipe) page through the collection; Esc closes. Listeners live on

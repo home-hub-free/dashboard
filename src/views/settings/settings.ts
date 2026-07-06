@@ -106,6 +106,18 @@ class SettingsContentClass extends Component<SettingsState> {
         memberClusters: [],
         toggleClusters: (userId: string) => this.householdService.toggleClusters(userId),
         detachClusterAction: (guestId: string) => this.householdService.detachClusterAction(guestId),
+        // Photo archive ("re-do the soup") — delete polluted photos, rebuild the profile.
+        photosOpenFor: "",
+        photosBusy: false,
+        memberCaptures: [],
+        capturesTotal: 0,
+        rebuildArmed: false,
+        rebuildBusy: false,
+        togglePhotos: (userId: string) => this.householdService.togglePhotos(userId),
+        deleteCaptureAction: (id: number) => this.householdService.deleteCaptureAction(id),
+        rebuildProfile: (userId: string) => this.householdService.rebuildProfile(userId),
+        openCaptureFace: (cap) => this.householdService.openCaptureFace(cap),
+
         thresholds: [],
         saveThreshold: (key: string, value: string) => this.householdService.saveThreshold(key, value),
         resetThreshold: (key: string) => this.householdService.resetThreshold(key),
@@ -155,9 +167,11 @@ class SettingsContentClass extends Component<SettingsState> {
         zoomHasPrev: false,
         zoomHasNext: false,
         zoomGuestId: "",
+        zoomCaptureId: 0,
         zoomPrev: () => this.householdService.zoomPrev(),
         zoomNext: () => this.householdService.zoomNext(),
         zoomDetach: () => this.householdService.zoomDetach(),
+        zoomDeleteCapture: () => this.householdService.zoomDeleteCapture(),
         openFace: (person: Person) => {
           if (!person?.thumbUrl) return; // nothing captured yet → no-op
           this.householdService.closeZoom(); // drop any prior collection listeners

@@ -730,6 +730,64 @@ export async function detachCluster(guestId: string): Promise<void> {
   if (!res.ok) throw new Error(`Could not detach (${res.status})`);
 }
 
+/** One archived photo from an identity's capture ledger — an INGREDIENT of their
+ * face profile (the vision-service permanently archives the crop + exact embedding
+ * behind every recognition decision). Deleting one removes it for good; a rebuild
+ * then averages exactly what remains. */
+export type FaceCapture = {
+  id: number;
+  ts: string;
+  kind: string; // enroll | match | promoted | healed | cluster | ambiguous
+  score: number | null;
+  reinforced: boolean;
+  imageUrl: string | null;
+};
+export async function listFaceCaptures(
+  ownerId: string
+): Promise<{ total: number; captures: FaceCapture[] }> {
+  try {
+    const res = await fetch(
+      visionServer + `faces/${encodeURIComponent(ownerId)}/captures?limit=500`
+    );
+    if (!res.ok) return { total: 0, captures: [] };
+    const data = await res.json();
+    return {
+      total: data?.total || 0,
+      captures: (data?.captures || []).map((c: any) => ({
+        ...c,
+        imageUrl: c.image ? visionServer + c.image : null,
+      })),
+    };
+  } catch {
+    return { total: 0, captures: [] };
+  }
+}
+
+/** Permanently delete one archived photo (ledger row + file). Admin-gated. */
+export async function deleteFaceCapture(id: number): Promise<void> {
+  const res = await fetch(visionServer + `faces/captures/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`Could not delete photo (${res.status})`);
+}
+
+/** "Re-do the soup": REPLACE a member's face profile with the plain mean of every
+ * photo still archived for them — delete the wrong ones first, then rebuild.
+ * Returns the new sample count. Admin-gated; 409 when nothing is archived yet. */
+export async function rebuildFaceProfile(userId: string, name?: string): Promise<number> {
+  const res = await fetch(visionServer + `faces/${encodeURIComponent(userId)}/rebuild`, {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ name: name || null }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(detail?.detail || `Could not rebuild (${res.status})`);
+  }
+  return (await res.json())?.samples || 0;
+}
+
 /** A tunable recognition threshold (the auto-heal / match / suggest ladder). */
 export type FaceThreshold = { key: string; value: number; default: number; overridden: boolean };
 export async function getFaceThresholds(): Promise<FaceThreshold[]> {

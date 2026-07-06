@@ -1,5 +1,5 @@
 import type { SessionUser } from "../assistant/household.service";
-import type { Person, ReviewCard, MemberCluster, FaceThreshold } from "../../utils/server-handler";
+import type { Person, ReviewCard, MemberCluster, FaceCapture, FaceThreshold } from "../../utils/server-handler";
 
 /**
  * Settings owns everything account/household — relocated out of the Assistant
@@ -114,6 +114,22 @@ export type SettingsState = {
   toggleClusters: (userId: string) => void
   detachClusterAction: (guestId: string) => void
 
+  // Photo archive ("re-do the soup") — every crop the vision-service permanently
+  // archived from a member's recognition, with delete controls. A member's profile
+  // is just the running mean of these ingredients: delete the polluted photos, then
+  // Rebuild REPLACES the profile using only what remains (server keeps the exact
+  // embeddings, so a rebuild needs no face engine and is instant).
+  photosOpenFor: string // user_id whose photo panel is open ("" = none)
+  photosBusy: boolean
+  memberCaptures: FaceCapture[]
+  capturesTotal: number // ledger size (the grid shows the newest 500)
+  rebuildArmed: boolean // two-tap confirm: first tap arms, second rebuilds
+  rebuildBusy: boolean
+  togglePhotos: (userId: string) => void
+  deleteCaptureAction: (id: number) => void
+  rebuildProfile: (userId: string) => void
+  openCaptureFace: (cap: FaceCapture) => void
+
   // Recognition thresholds — the auto-heal/match/suggest levers, viewable + tunable
   // live (persisted server-side, read by the resolver on the next face).
   thresholds: FaceThreshold[]
@@ -172,6 +188,8 @@ export type SettingsState = {
   zoomHasPrev: boolean
   zoomHasNext: boolean
   zoomGuestId: string // current cluster's id ("" for a roster face) → gates the detach CTA
+  zoomCaptureId: number // current archived photo's id (0 otherwise) → gates the delete CTA
+  zoomDeleteCapture: () => void // delete the archived photo from inside the viewer
   zoomPrev: () => void
   zoomNext: () => void
   zoomDetach: () => void // "Not me" from inside the viewer (same as the thumbnail CTA)

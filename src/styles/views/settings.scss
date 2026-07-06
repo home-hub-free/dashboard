@@ -654,7 +654,20 @@
   .cluster-score {
     font-size: 0.72rem;
     color: var(--color-text-secondary);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
+}
+
+// ---- Photo archive ("re-do the soup") — rebuild footer ---------------------------------------
+.rebuild-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  align-items: flex-start; // a button is a control, not a banner (DESIGN §Buttons)
 }
 
 // ---- Recognition thresholds (advanced) ------------------------------------------------------

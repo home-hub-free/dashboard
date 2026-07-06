@@ -335,6 +335,10 @@
                             <i class="iconoir-check-circle"></i>
                             ${this.clustersOpenFor === person.id ? "Hide" : "Recognized faces"}
                         </button>
+                        <button class="btn-quiet btn-inline" :onclick="this.togglePhotos(person.id)">
+                            <i class="iconoir-media-image"></i>
+                            ${this.photosOpenFor === person.id ? "Hide photos" : "Photo archive"}
+                        </button>
                     </div>
                     <div class="person-actions" :if="person.class === 'guest'">
                         <button class="btn-quiet btn-inline" :onclick="this.forgetPerson(person.id)">
@@ -365,6 +369,49 @@
                                 <i class="iconoir-xmark"></i> Not me
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Photo archive ("re-do the soup"): every crop archived from this
+                     member's recognition — the profile's raw ingredients. Delete the
+                     ones that aren't them, then Rebuild replaces the profile using
+                     ONLY the photos that remain. -->
+                <div class="person-audit" :if="this.photosOpenFor === person.id">
+                    <p class="voice-id-hint">
+                        Every photo saved from ${person.label}'s recognition — the ingredients
+                        their profile is built from. Delete any that aren't them, then rebuild:
+                        the profile is replaced using only the photos that remain.
+                    </p>
+                    <p class="person-empty" :if="this.photosBusy">Loading…</p>
+                    <p class="person-empty" :if="!this.photosBusy && !this.memberCaptures.length">
+                        No photos archived yet — they accrue as ${person.label} is recognized
+                        (and each Face ID enrollment photo is kept here too).
+                    </p>
+                    <div class="cluster-grid">
+                        <div class="cluster-cell" :foreach="cap in this.memberCaptures" :key="cap.id">
+                            <img :if="cap.imageUrl" :src="cap.imageUrl" loading="lazy" alt="" class="cluster-thumb tappable" :onclick="this.openCaptureFace(cap)" />
+                            <div :else class="cluster-thumb cluster-thumb-empty"><i class="iconoir-user"></i></div>
+                            <span class="cluster-score">${cap.kind}${cap.score !== null ? " · " + Math.round(cap.score * 100) + "%" : ""}</span>
+                            <button class="btn-quiet btn-inline" :onclick="this.deleteCaptureAction(cap.id)">
+                                <i class="iconoir-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    <p class="voice-id-hint" :if="this.capturesTotal > this.memberCaptures.length">
+                        Showing the newest ${this.memberCaptures.length} of ${this.capturesTotal} photos —
+                        a rebuild still uses every remaining archived photo.
+                    </p>
+                    <div class="rebuild-row" :if="this.memberCaptures.length">
+                        <!-- No :disabled — bindrjs emits the attr even for false (the
+                             :selected gotcha); the handler guards on rebuildBusy. -->
+                        <button class="btn-primary btn-inline" :onclick="this.rebuildProfile(person.id)">
+                            <i class="iconoir-refresh"></i>
+                            ${this.rebuildArmed ? "Tap again to confirm rebuild" : "Rebuild profile from these photos"}
+                        </button>
+                        <p class="voice-id-hint" :if="this.rebuildArmed">
+                            This replaces ${person.label}'s current face profile with ONLY the
+                            archived photos above. Their old profile is discarded.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -590,6 +637,9 @@
                     <span class="face-zoom-hint" :if="this.zoomCount > 1">← → or swipe to move between faces</span>
                 </div>
                 <!-- Same "Not me" correction the thumbnail carries, on cluster faces only. -->
+                <button class="btn-quiet btn-inline face-zoom-cta" :if="this.zoomCaptureId" :onclick="this.zoomDeleteCapture()">
+                    <i class="iconoir-trash"></i> Delete photo
+                </button>
                 <button class="btn-quiet btn-inline face-zoom-cta" :if="this.zoomGuestId" :onclick="this.zoomDetach()">
                     <i class="iconoir-xmark"></i> Not me
                 </button>
