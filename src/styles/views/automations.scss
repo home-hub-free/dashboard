@@ -116,7 +116,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-tile);
   box-shadow: var(--shadow-lift);
-  animation: rd-rise 420ms var(--ease-out) both;
+  animation: rd-rise 420ms var(--ease-out) backwards;
 
   &:nth-of-type(2) {
     animation-delay: 60ms;
@@ -400,7 +400,7 @@
     flex-direction: column;
     gap: var(--space-3);
     color: var(--color-text-primary);
-    animation: rd-rise 260ms var(--ease-out) both;
+    animation: rd-rise 260ms var(--ease-out) backwards;
   }
 
   .discovery-card-top {

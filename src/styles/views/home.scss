@@ -429,15 +429,15 @@
 
 // ---- Entrance motion (regions are stable bind roots — never replays on a tick)
 .home-status {
-  animation: rd-rise 240ms var(--ease-out) both;
+  animation: rd-rise 240ms var(--ease-out) backwards;
 }
 
 #main-content #tab-content #devices {
-  animation: rd-rise 260ms var(--ease-out) 40ms both;
+  animation: rd-rise 260ms var(--ease-out) 40ms backwards;
 }
 
 #main-content #tab-content #sensors.env-band {
-  animation: rd-rise 260ms var(--ease-out) 80ms both;
+  animation: rd-rise 260ms var(--ease-out) 80ms backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {

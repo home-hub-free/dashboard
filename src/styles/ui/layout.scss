@@ -207,8 +207,13 @@ $nav-rail-width: 208px;
 
 // Every view eases in on tab switch (roots mount per navigation, so this never
 // replays on a live data tick). Quick mechanical rise, not a slow fade.
+// Fill is `backwards`, NEVER `both`/`forwards`: a retained transform — even the
+// identity matrix a finished rd-rise leaves — makes this element the containing
+// block for every position:fixed descendant, so full-screen overlays (face review,
+// lightboxes) pin to the scrolled page instead of the viewport. The end keyframe
+// equals the base state, so dropping the forward fill changes nothing visually.
 #main-content #tab-content > div {
-  animation: rd-rise 200ms var(--ease-out) both;
+  animation: rd-rise 200ms var(--ease-out) backwards;
 }
 
 // ---- Page header ---------------------------------------------------------------

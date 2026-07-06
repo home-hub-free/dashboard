@@ -114,7 +114,10 @@ body {
 
 .animated {
   animation-duration: 270ms;
-  animation-fill-mode: forwards;
+  // `backwards`, not `forwards`: the pop ends at scale(1), but a RETAINED identity
+  // transform still creates a containing block that re-bases fixed descendants
+  // (same trap as the rd-rise view entrances — see ui/layout.scss).
+  animation-fill-mode: backwards;
   animation-name: active-menu-item;
 }
 
