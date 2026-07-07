@@ -322,6 +322,18 @@
     border-radius: var(--radius-control);
   }
 
+  // Caption naming each cooler probe ("Room" / "Out air") — the icons alone
+  // read ambiguously (a house-out glyph looks like an outdoor temp).
+  .status-label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-tertiary);
+  }
+
   .status-value {
     display: flex;
     align-items: center;

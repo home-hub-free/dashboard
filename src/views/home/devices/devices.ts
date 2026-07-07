@@ -86,8 +86,9 @@ function decorateDevice(device: Device): Device {
   }
 
   // Cooler: the tile is glanceable, not exhaustive — one hero readout (room temp,
-  // with the setpoint as its label) plus the fan/water chips. Unit temp and the
-  // target stepper are demoted to the detail overlay, which already carries both.
+  // with the setpoint as its label) plus the fan/water chips. The outlet-air temp
+  // (unit-temp — the air blowing out of the unit) and the target stepper are
+  // demoted to the detail overlay, which already carries both.
   if (device.deviceCategory === "evap-cooler") {
     const target = Number((device.value ?? {}).target);
     channels.forEach((c) => {

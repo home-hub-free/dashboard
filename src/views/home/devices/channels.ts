@@ -96,7 +96,7 @@ const LABELS: { [key: string]: string } = {
   water: "Water",
   target: "Target",
   "room-temp": "Room",
-  "unit-temp": "Unit",
+  "unit-temp": "Out air", // the probe sits at the unit's outlet — supply air, NOT outdoor temp
   volume: "Volume",
   mic: "Mic",
   flip: "Flip",
@@ -112,7 +112,7 @@ const ICONS: { [key: string]: string } = {
   water: "iconoir-droplet",
   target: "iconoir-home-temperature-in",
   "room-temp": "iconoir-temperature-high",
-  "unit-temp": "iconoir-temperature-high",
+  "unit-temp": "iconoir-air-conditioner", // air blowing out of the unit (outlet), not an outdoor reading
   volume: "iconoir-sound-high",
   mic: "iconoir-mic",
   flip: "iconoir-flip",

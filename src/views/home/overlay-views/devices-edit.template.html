@@ -125,17 +125,21 @@
             </div>
         </div>
 
+        <!-- Two probes wired to the cooler: the room's air, and the air blowing
+             OUT of the unit (outlet/supply — not an outdoor reading). -->
         <div class="status-group">
             <div class="status-item">
-                <span class="status-value">
-                    ${(this.data.value['unit-temp']).toFixed(1)}°C
-                    <i class="iconoir-home-temperature-out"></i>
-                </span>
-            </div>
-            <div class="status-item">
+                <span class="status-label">Room</span>
                 <span class="status-value">
                     ${(this.data.value['room-temp']).toFixed(1)}°C
                     <i class="iconoir-home-temperature-in"></i>
+                </span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Out air</span>
+                <span class="status-value">
+                    ${(this.data.value['unit-temp']).toFixed(1)}°C
+                    <i class="iconoir-air-conditioner"></i>
                 </span>
             </div>
         </div>
