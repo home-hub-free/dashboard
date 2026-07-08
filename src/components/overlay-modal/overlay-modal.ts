@@ -44,11 +44,13 @@ class OverlayModalClass extends Component<OverlayModalState> {
 export const OverlayModal = new OverlayModalClass();
 
 let startPosition: ModalRectangle | null = null;
+let onCloseHook: (() => void) | null = null;
 
 export function openOverlay(context: ModalContext) {
   if (!OverlayModal.mounted) OverlayModal.mount();
   if (OverlayModal.bind.visible) return;
 
+  onCloseHook = context.onClose || null;
   OverlayModal.bind.template = context.template;
   OverlayModal.bind.data = context.data;
   OverlayModal.bind.actions = context.actions || {};
@@ -70,6 +72,12 @@ export function openOverlay(context: ModalContext) {
 
 export function closeOverlay() {
   if (!OverlayModal.mounted) return;
+  try {
+    onCloseHook?.();
+  } catch {
+    /* teardown must never block the close animation */
+  }
+  onCloseHook = null;
   OverlayModal.bind.closing = true;
   if (startPosition) setRectStyles(startPosition);
   setTimeout(() => {
@@ -84,6 +92,12 @@ export function updateOverlayData(data: any) {
   if (OverlayModal.mounted) {
     OverlayModal.bind.data = data;
   }
+}
+
+/** Current overlay blob — for async callbacks (media errors, timers) that need
+ * to repaint but hold a stale `data` snapshot from when they were registered. */
+export function getOverlayData(): any {
+  return OverlayModal.mounted ? OverlayModal.bind.data : {};
 }
 
 function setRectStyles(rect: ModalRectangle) {

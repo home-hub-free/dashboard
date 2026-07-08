@@ -11,6 +11,7 @@
  * the hub device-edit overlay doesn't apply to them (no hub device row).
  */
 import {
+  getOverlayData,
   openOverlay,
   updateOverlayData,
 } from "../../../components/overlay-modal/overlay-modal";
@@ -28,6 +29,7 @@ import {
   fetchRecordingSegments,
   recordingClipUrl,
   RecordingSegment,
+  visionHlsUrl,
 } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import CameraCtlView from "../overlay-views/camera-ctl.template.html?raw";
@@ -145,6 +147,59 @@ export function openCameraLive(event: any, device: Device) {
   // Seek to apply once the pending clip's metadata loads (timeline taps land
   // mid-segment). Closure state, deliberately outside the bind data (see NB).
   let pendingSeekS = 0;
+
+  // ── Live sound: an hls.js player over the recorder's live tee. Closure-held
+  // (never bind data) and attached imperatively to the :if-created <video> — the
+  // same survival rule as the timeline zoom state (see NB above).
+  let hlsPlayer: { destroy: () => void } | null = null;
+
+  const stopLiveAudio = () => {
+    hlsPlayer?.destroy();
+    hlsPlayer = null;
+    const v = document.querySelector(".cam-live-hls") as HTMLVideoElement | null;
+    if (v) {
+      v.removeAttribute("src"); // native-HLS path (Safari): drop the stream
+      v.load();
+    }
+  };
+
+  const startLiveAudio = async () => {
+    // The <video> is created by the :if that just flipped — normally it's in the
+    // DOM already, but give the render a frame or two before giving up.
+    let v: HTMLVideoElement | null = null;
+    for (let tries = 0; tries < 3 && !v; tries++) {
+      v = document.querySelector(".cam-live-hls") as HTMLVideoElement | null;
+      if (!v) await new Promise((r) => requestAnimationFrame(r));
+    }
+    if (!v) return;
+    const url = visionHlsUrl(device.id);
+    v.muted = false;
+    if (v.canPlayType("application/vnd.apple.mpegurl")) {
+      v.src = url; // iOS/macOS Safari: native HLS (hls.js is unsupported there)
+      v.play().catch(() => undefined);
+      return;
+    }
+    const { default: Hls } = await import("hls.js");
+    if (!Hls.isSupported()) {
+      oops("This browser can't play the sound stream");
+      return;
+    }
+    // Hug the live edge a little tighter than default (2×2s target segments
+    // ≈ 4s behind) — this view trades a few seconds of delay for sound.
+    const hls = new Hls({ liveSyncDurationCount: 2, enableWorker: true });
+    hls.on(Hls.Events.ERROR, (_evt: unknown, info: any) => {
+      if (info?.fatal) {
+        oops("Sound stream dropped — back to the silent view");
+        stopLiveAudio();
+        const live = getOverlayData();
+        if (live?.audio) updateOverlayData({ ...live, audio: false });
+      }
+    });
+    hls.loadSource(url);
+    hls.attachMedia(v);
+    hlsPlayer = hls;
+    v.play().catch(() => undefined);
+  };
 
   // ── Timeline zoom/pan state — closure + imperative DOM, never bind data
   // (re-rendering the blob would restart the playing <video>, see NB). The
@@ -277,6 +332,9 @@ export function openCameraLive(event: any, device: Device) {
       presets: device.presets || [],
       records: !!device.records,
       privacy: !!device.privacy,
+      // Live sound (records-cams only): true = the HLS main-stream view (with
+      // the mic) replaces the silent MJPEG relay.
+      audio: false,
       // ── playback state (mode "rec") ──────────────────────────────────────
       mode: "live",
       dayChips: [] as { day: string; label: string }[],
@@ -310,13 +368,31 @@ export function openCameraLive(event: any, device: Device) {
         if (!(await cameraPtzGoto(data.id, token))) oops("Couldn't recall that view");
       },
 
+      // Sound toggle: flip the blob first (the :if swaps <img> ↔ <video>), then
+      // attach the player to the freshly-created element.
+      audio: (data: any) => {
+        if (data.audio) {
+          stopLiveAudio();
+          updateOverlayData({ ...data, audio: false });
+          return;
+        }
+        updateOverlayData({ ...data, audio: true });
+        startLiveAudio().catch(() => {
+          oops("Couldn't start the sound stream");
+          stopLiveAudio();
+          updateOverlayData({ ...getOverlayData(), audio: false });
+        });
+      },
+
       // ── playback (footage review inside the lightbox) ────────────────────
       recordings: async (data: any) => {
+        stopLiveAudio(); // leaving live view — release the HLS stream
         // Fresh entry — the :if rebuild reset the timeline DOM to its markup
         // defaults (zoom 1, "24 h", zoom-out disabled); match the closure.
         zoom = 1;
         playheadFrac = -1;
         userScrollTs = 0;
+        data = { ...data, audio: false };
         updateOverlayData({ ...data, mode: "rec", recLoading: true, recEmpty: false });
         const cams = await fetchRecordingCameras();
         const days = cams.find((c) => c.id === device.id)?.days || [];
@@ -440,11 +516,13 @@ export function openCameraLive(event: any, device: Device) {
       // The health pill follows along (the poll that normally feeds it is 15s away).
       privacy: async (data: any) => {
         const next = !data.privacy;
+        if (next) stopLiveAudio(); // going dark stops the sound stream too
         const paint = (on: boolean) => {
           device.privacy = on;
           device.privacyClass = on ? "cam-priv--on" : "cam-priv--off";
           updateOverlayData({
             ...data,
+            audio: false,
             privacy: on,
             camHealth: on ? "privacy" : device.camHealth || "",
             camHealthClass: on ? "cam-health--priv" : device.camHealthClass || "",
@@ -457,6 +535,9 @@ export function openCameraLive(event: any, device: Device) {
         }
       },
     },
+    // Every close path (✕, backdrop) must release the HLS stream — a destroyed
+    // overlay can't, and hls.js would keep fetching segments forever.
+    onClose: () => stopLiveAudio(),
     startRect: rect,
     padding: { x: 0, y: 0 },
   });

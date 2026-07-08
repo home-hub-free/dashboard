@@ -213,6 +213,13 @@ export function visionStreamUrl(camId: string): string {
   return `${visionServer}stream/${encodeURIComponent(camId)}`;
 }
 
+/** Live HLS (main RTSP stream tee'd by the recorder — full quality WITH the mic's
+ * audio track). Only recording cameras (`records`) have one. A few seconds behind
+ * the MJPEG relay: this is the "sound on" view, not the reflex view. */
+export function visionHlsUrl(camId: string): string {
+  return `${visionServer}hls/${encodeURIComponent(camId)}/live.m3u8`;
+}
+
 /** Per-zone occupancy/identity snapshot — "who is in which room" (§7 pull surface). */
 export type ZoneOccupant = { track: string; id: string | null; name: string | null; class: string; confidence: number; since: number };
 

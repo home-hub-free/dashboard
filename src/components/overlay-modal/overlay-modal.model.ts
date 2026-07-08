@@ -9,6 +9,9 @@ export type ModalContext = {
   template: string;
   data: any;
   actions?: any;
+  /** Teardown for resources the overlay holds outside bind data (media players,
+   * timers). Runs once on EVERY close path — ✕ button, backdrop, a re-open. */
+  onClose?: () => void;
   startRect: ModalRectangle;
   padding: {
     x: number;

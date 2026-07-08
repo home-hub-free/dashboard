@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "bindrjs": "1.5.0",
+    "hls.js": "^1.6.16",
     "iconoir": "^6.7.0",
     "socket.io-client": "^4.5.2"
   }

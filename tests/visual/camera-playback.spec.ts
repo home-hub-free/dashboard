@@ -250,4 +250,42 @@ test.describe("camera playback", () => {
 
     expect(errors, "no uncaught JS errors").toEqual([]);
   });
+
+  test("sound toggle swaps the silent MJPEG for the HLS view and back", async ({ page }) => {
+    // A minimal empty live playlist — hls.js attaches without frames; the test
+    // asserts the surface swap, not actual decode.
+    await page.route("**/vision/hls/**", (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: "application/vnd.apple.mpegurl",
+        body: "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:2\n#EXT-X-MEDIA-SEQUENCE:0\n",
+      }));
+    const errors = await openLightbox(page);
+    const live = page.locator(".cam-live");
+
+    // Records-cams get the sound button; it starts on the silent (off) glyph.
+    const btn = live.locator(".cam-live-audio");
+    await expect(btn).toBeVisible();
+    await expect(btn).toHaveClass(/cam-audio--off/);
+    await expect(live.locator("img.cam-live-view")).toHaveCount(1);
+
+    await btn.click(); // sound ON → HLS <video> replaces the MJPEG <img>
+    await expect(btn).toHaveClass(/cam-audio--on/);
+    await expect(live.locator("video.cam-live-hls")).toHaveCount(1);
+    await expect(live.locator("img.cam-live-view")).toHaveCount(0);
+
+    await btn.click(); // sound OFF → back to the MJPEG relay
+    await expect(btn).toHaveClass(/cam-audio--off/);
+    await expect(live.locator("video.cam-live-hls")).toHaveCount(0);
+    await expect(live.locator("img.cam-live-view")).toHaveCount(1);
+
+    // Entering playback tears the sound view down too (no leaked player).
+    await btn.click();
+    await expect(live.locator("video.cam-live-hls")).toHaveCount(1);
+    await live.locator("button[title='Watch recordings']").click();
+    await expect(live.locator("video.cam-live-hls")).toHaveCount(0);
+    await expect(live.locator(".cam-rec-video")).toBeVisible();
+
+    expect(errors, "no uncaught JS errors").toEqual([]);
+  });
 });

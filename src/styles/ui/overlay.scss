@@ -574,6 +574,18 @@
     }
   }
 
+  // "Connecting…" overlays the live <img> until its first frame lands — the img's
+  // onload/onerror adds `.is-framed` (plain JS, survives bindrjs re-renders).
+  .cam-live-connecting {
+    position: absolute;
+    inset: 0;
+    justify-content: center;
+  }
+
+  .cam-live-view.is-framed ~ .cam-live-connecting {
+    display: none;
+  }
+
   // Top bar: name · health pill · close. Safe-area padded (notch).
   .cam-live-top {
     position: absolute;
@@ -657,6 +669,18 @@
   .cam-live-priv.cam-priv--on {
     color: var(--color-info-light);
     background: rgba(0, 0, 0, 0.65);
+  }
+
+  // Sound toggle lit while the HLS (audio) view is up — success-green like the
+  // "back to live" affordance: both mean "you're on the live surface".
+  .cam-live-audio.cam-audio--on {
+    color: var(--color-success-light);
+    background: rgba(0, 0, 0, 0.65);
+  }
+
+  // The HLS <video> reuses .cam-live-view sizing; black while buffering.
+  .cam-live-hls {
+    background: #000;
   }
 
   // ── Playback (footage review inside the lightbox) ───────────────────────

@@ -15,14 +15,31 @@
         <i class="iconoir-eye-off"></i>
         <span>Privacy on — not streaming or recording</span>
     </div>
+    <!-- `is-framed` flips on the first MJPEG frame (plain-JS class, the img-dead
+         trick, so bindrjs re-renders can't wipe it) — the sibling "Connecting…"
+         placeholder hides then. An error frame counts as framed too: the dark
+         surface + the health pill tell that story, not a lying "Connecting…". -->
     <img
         class="cam-live-view"
-        :if="this.data.mode === 'live' && !this.data.privacy && this.data.streamUrl"
+        :if="this.data.mode === 'live' && !this.data.privacy && !this.data.audio && this.data.streamUrl"
         :src="this.data.streamUrl"
         alt=""
-        onerror="this.classList.add('img-dead')"
-        onload="this.classList.remove('img-dead')"
+        onerror="this.classList.add('img-dead', 'is-framed')"
+        onload="this.classList.remove('img-dead'); this.classList.add('is-framed')"
     />
+    <div class="cam-live-placeholder cam-live-connecting" :if="this.data.mode === 'live' && !this.data.privacy && !this.data.audio && this.data.streamUrl">
+        <span class="loading-dots"><i></i><i></i><i></i></span>
+        <span>Connecting…</span>
+    </div>
+    <!-- Sound-on live view: the recorder's HLS tee of the MAIN stream (mic audio,
+         in sync, a few seconds behind the MJPEG relay). src is attached
+         IMPERATIVELY (hls.js or native) — no :src, so re-renders can't touch it. -->
+    <video
+        class="cam-live-view cam-live-hls"
+        :if="this.data.mode === 'live' && !this.data.privacy && this.data.audio"
+        autoplay
+        playsinline
+    ></video>
     <div class="cam-live-placeholder" :if="this.data.mode === 'live' && !this.data.privacy && !this.data.streamUrl">
         <i class="iconoir-video-camera-off"></i>
         <span>No signal</span>
@@ -64,6 +81,15 @@
             title="Privacy — stop or resume streaming & recording"
             :onclick="this.actions.privacy(this.data)">
             <i class="iconoir-eye-off"></i>
+        </button>
+        <!-- Sound — swaps the silent MJPEG relay for the main stream's HLS tee
+             (same cams that record: an RTSP main carries the mic). -->
+        <button class="cam-live-rec cam-live-audio" :if="this.data.records && this.data.mode === 'live' && !this.data.privacy"
+            aria-label="Sound" :class="this.data.audio ? 'cam-audio--on' : 'cam-audio--off'"
+            title="Sound — switch to the audio stream (runs a few seconds behind)"
+            :onclick="this.actions.audio(this.data)">
+            <i class="iconoir-sound-high" :if="this.data.audio"></i>
+            <i class="iconoir-sound-off" :if="!this.data.audio"></i>
         </button>
         <!-- Recordings review — IP cams (RTSP main) only; face-ID cams have no footage. -->
         <button class="cam-live-rec" :if="this.data.records && this.data.mode === 'live'" aria-label="Watch recordings"
