@@ -81,6 +81,7 @@ function decorateDevice(device: Device): Device {
       if (c.key === "volume") c.control = "slider";
       if (c.key === "mic") c.control = "chip";
       if (c.key === "flip") c.control = "chip";
+      if (c.key === "eco") c.control = "chip";
       if (c.key === "battery") c.icon = batteryIcon(c.value as number);
     });
   }
@@ -103,6 +104,8 @@ function decorateDevice(device: Device): Device {
   device.channels = channels.filter((c) => {
     if (c.key === "battery") return ((device.value ?? {}).battery ?? -1) >= 0;
     if (c.key === "flip") return (device.value ?? {}).flip !== undefined;
+    // Eco appears once the firmware reports the key (pre-eco satellites don't).
+    if (c.key === "eco") return (device.value ?? {}).eco !== undefined;
     return true;
   });
   device.wide =

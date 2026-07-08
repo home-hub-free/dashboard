@@ -79,6 +79,10 @@ export function channelSchema(category: string | undefined): ChannelSpec[] | nul
         // camera-equipped units report the key; decorateDevice drops the chip when
         // the value blob doesn't carry it (audio-only satellites).
         { key: "flip", role: "setting", kind: "boolean", writable: true, precision: true },
+        // Presence power-save: with the zone's presence sensors reporting it empty
+        // (hub-side grace-debounced), the satellite sheds camera/mic/WiFi/CPU draw.
+        // This is the enable switch; the hub pushes live occupancy separately.
+        { key: "eco", role: "setting", kind: "boolean", writable: true, precision: true },
         // Battery % self-reported by the board (VBAT divider). No range: -1 means
         // "no battery plugged" — decorateDevice drops the readout entirely then.
         { key: "battery", role: "sensor", kind: "number", unit: "%", writable: false },
@@ -100,6 +104,7 @@ const LABELS: { [key: string]: string } = {
   volume: "Volume",
   mic: "Mic",
   flip: "Flip",
+  eco: "Eco",
   battery: "Battery",
   value: "Value",
 };
@@ -116,6 +121,7 @@ const ICONS: { [key: string]: string } = {
   volume: "iconoir-sound-high",
   mic: "iconoir-mic",
   flip: "iconoir-flip",
+  eco: "iconoir-leaf",
   battery: "iconoir-battery-50", // level-accurate icon assigned in decorateDevice
   value: "iconoir-circle",
 };
