@@ -164,6 +164,10 @@ for (const vp of [
       await banner.getByRole("button", { name: /Review/ }).click();
       const overlay = page.locator(".review-overlay");
       await expect(overlay).toBeVisible();
+      // The nav is a fixed sibling of #main-content (its own stacking context), so
+      // the overlay can't out-z-index it — it must be hidden for the overlay's
+      // lifetime (body.face-viewer-open) or the phone bottom bar paints over the CTAs.
+      await expect(page.locator("#nav-bar")).toBeHidden();
       await expect(overlay.locator(".review-progress")).toHaveText("1 / 5");
       await expect(overlay.locator(".review-question")).toContainText("Is this you, David?");
       await expect(overlay.locator(".review-score")).toContainText("41% match");
@@ -221,6 +225,7 @@ for (const vp of [
       await page.screenshot({ path: path.join(OUT, `done-${vp.tag}.png`) });
       await overlay.getByRole("button", { name: "Done" }).click();
       await expect(overlay).toBeHidden();
+      await expect(page.locator("#nav-bar")).toBeVisible(); // nav returns with the overlay gone
 
       // The answers hit the right endpoints, attributed to the right identities.
       expect(posted).toEqual([

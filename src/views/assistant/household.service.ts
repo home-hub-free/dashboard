@@ -471,6 +471,7 @@ export class HouseholdServiceClass {
     this.state.reviewMsg = "";
     this.state.reviewBusy = false;
     this.state.reviewOpen = true;
+    setViewerNavHidden(true); // the phone nav bar can't be out-stacked from here — hide it
     this.presentReviewCard(0);
     this.bindReviewGestures();
   }
@@ -479,6 +480,7 @@ export class HouseholdServiceClass {
     this.reviewGesturesOff?.();
     this.reviewGesturesOff = null;
     this.state.reviewOpen = false;
+    setViewerNavHidden(false);
     await this.refreshPeople(); // answers changed the roster + the queue
     await this.refreshReview();
   }
