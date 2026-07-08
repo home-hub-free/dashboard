@@ -171,6 +171,15 @@
                     </div>
                 </div>
             </div>
+            <!-- Moments — one chip per person-appearance on this day ("David ·
+                 14:03"); tap jumps straight into the clip at that instant. -->
+            <div class="cam-rec-moments" :if="this.data.moments.length">
+                <button class="chip cam-rec-moment"
+                    :foreach="m in this.data.moments"
+                    :key="m.key"
+                    :onclick="this.actions.jumpMoment(this.data, m.ts)"
+                ><span class="cam-rec-moment-dot"></span>${m.name} · ${m.time}</button>
+            </div>
             <div class="cam-rec-now" :if="this.data.activeClip">
                 <i class="iconoir-play"></i>
                 <span>${this.data.activeStart}</span>

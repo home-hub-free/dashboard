@@ -248,15 +248,16 @@ export function openCameraLive(event: any, device: Device) {
       recLoading: true,
       segments: [],
       marks: [],
+      moments: [],
       activeClip: "",
       activeStart: "",
       activeWho: "",
     };
     updateOverlayData(base);
     const { start, end } = dayRange(day);
-    const { segments, marks } = decorateSegments(
+    const { segments, marks, moments } = decorateSegments(
       await fetchRecordingSegments(device.id, start, end), start);
-    const next = { ...base, recLoading: false, segments, marks };
+    const next = { ...base, recLoading: false, segments, marks, moments };
     updateOverlayData(next);
     if (autoplayLatest && segments.length) {
       playSegment(next, segments[segments.length - 1]);
@@ -282,6 +283,7 @@ export function openCameraLive(event: any, device: Device) {
       selectedDay: "",
       segments: [] as DecoratedSegment[],
       marks: [] as TimelineMark[],
+      moments: [] as RecordingMoment[],
       // Hour ruler — ticks live INSIDE the scrolling track so they pan with
       // it; CSS (keyed on [data-zoom]) decides which granularity shows (h6 =
       // 00/06/12/18/24, h2 = other even hours, h1 = the rest). Static data.
@@ -398,6 +400,13 @@ export function openCameraLive(event: any, device: Device) {
       },
       tlHoverEnd: () => hideBubble(),
 
+      // Moment chip → jump straight into the clip at that instant.
+      jumpMoment: (data: any, ts: number) => {
+        const segs: DecoratedSegment[] = data.segments || [];
+        const seg = segs.find((s) => ts >= s.start && ts <= (s.end ?? ts));
+        if (seg) playSegment(data, seg, Math.max(0, ts - seg.start));
+      },
+
       // Auto-advance: a finished clip flows into the next one — re-watching an
       // evening shouldn't take a tap every 5 minutes.
       clipEnded: (data: any) => {
@@ -488,6 +497,10 @@ export type DecoratedSegment = {
 /** An identity moment ("David entered, 14:03") as a tappable dot on the timeline. */
 export type TimelineMark = { key: string; name: string; style: { left: string } };
 
+/** A "moment" chip — one per person-appearance on the selected day (consecutive
+ * sightings within 15 min collapse into the first); tap jumps to that instant. */
+export type RecordingMoment = { key: string; name: string; time: string; ts: number };
+
 const dayPct = (t: number, dayStart: number): string =>
   `${Math.min(100, Math.max(0, ((t - dayStart) / 86_400) * 100)).toFixed(3)}%`;
 
@@ -499,9 +512,10 @@ const dayPct = (t: number, dayStart: number): string =>
 function decorateSegments(
   segs: RecordingSegment[],
   dayStart: number,
-): { segments: DecoratedSegment[]; marks: TimelineMark[] } {
+): { segments: DecoratedSegment[]; marks: TimelineMark[]; moments: RecordingMoment[] } {
   const marks: TimelineMark[] = [];
   const seenMarks = new Set<string>();
+  const sightings: { name: string; ts: number }[] = [];
   const segments = segs.map((seg) => {
     const names = Array.from(
       new Set((seg.events || []).map((e) => e.identity?.name).filter((n): n is string => !!n)),
@@ -509,6 +523,7 @@ function decorateSegments(
     for (const e of seg.events || []) {
       const name = e.identity?.name;
       if (!name) continue;
+      sightings.push({ name, ts: e.ts });
       const key = `${name}@${Math.floor(e.ts / 300)}`;
       if (seenMarks.has(key)) continue;
       seenMarks.add(key);
@@ -527,5 +542,21 @@ function decorateSegments(
       bar: { left: dayPct(seg.start, dayStart), width: `${width.toFixed(3)}%` },
     };
   });
-  return { segments, marks };
+  // Moment chips: a person's sightings sorted by time; a >15 min gap starts a
+  // new appearance (someone home all evening stays ONE chip, not a chip spam).
+  sightings.sort((a, b) => a.ts - b.ts);
+  const lastSeen: Record<string, number> = {};
+  const moments: RecordingMoment[] = [];
+  for (const s of sightings) {
+    if (s.ts - (lastSeen[s.name] ?? -Infinity) > 900) {
+      moments.push({
+        key: `${s.name}@${s.ts}`,
+        name: s.name,
+        time: timeFmt.format(new Date(s.ts * 1000)),
+        ts: s.ts,
+      });
+    }
+    lastSeen[s.name] = s.ts;
+  }
+  return { segments, marks, moments };
 }

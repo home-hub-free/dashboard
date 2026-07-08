@@ -884,6 +884,39 @@
     display: none;
   }
 
+  // Moments — one chip per person-appearance ("David · 14:03"); tap jumps
+  // straight to that instant. One scrollable line, however busy the day.
+  .cam-rec-moments {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cam-rec-moment {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.45);
+      border-color: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cam-rec-moment-dot {
+      flex: 0 0 auto;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--color-success-light);
+    }
+  }
+
   // What's playing: start time · duration, plus who was in the clip.
   .cam-rec-now {
     display: flex;

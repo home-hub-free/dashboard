@@ -213,6 +213,25 @@ test.describe("camera playback", () => {
     expect(errors, "no uncaught JS errors").toEqual([]);
   });
 
+  test("moment chips jump straight to a person's appearance", async ({ page }) => {
+    const errors = await openLightbox(page);
+    const live = page.locator(".cam-live");
+    await live.locator("button[title='Watch recordings']").click();
+    // Newest clip (14:00) auto-plays; the day's one sighting becomes one chip.
+    await expect(live.locator(".cam-rec-video")).toHaveAttribute("src", /clip\/12/);
+    const chip = live.locator(".cam-rec-moment");
+    await expect(chip).toHaveCount(1);
+    await expect(chip).toContainText("David");
+    await expect(chip).toContainText(/10:02/);
+
+    // Tap → the 10:00 clip loads, seeked to the sighting (2 min in).
+    await chip.click();
+    await expect(live.locator(".cam-rec-video")).toHaveAttribute("src", /clip\/11\?token=tok11/);
+    await expect(live.locator(".cam-rec-now")).toContainText("David");
+
+    expect(errors, "no uncaught JS errors").toEqual([]);
+  });
+
   test("hovering the timeline shows the hh:mm bubble; it hides on leave", async ({ page }) => {
     const errors = await openLightbox(page);
     const live = page.locator(".cam-live");
