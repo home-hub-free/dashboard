@@ -105,38 +105,72 @@
             </div>
         </div>
 
-        <!-- rec mode: day chips + the 24h timeline + what's playing -->
+        <!-- rec mode: day chips + the zoomable timeline + what's playing -->
         <div class="cam-rec-bar" :if="this.data.mode === 'rec' && !this.data.recEmpty">
-            <div class="cam-rec-days">
-                <button
-                    class="chip cam-rec-day"
-                    :foreach="chip in this.data.dayChips"
-                    :key="chip.day"
-                    :class:active="chip.day === this.data.selectedDay"
-                    :onclick="this.actions.pickDay(this.data, chip.day)"
-                >
-                    ${chip.label}
-                </button>
+            <div class="cam-rec-days-row">
+                <div class="cam-rec-days">
+                    <button
+                        class="chip cam-rec-day"
+                        :foreach="chip in this.data.dayChips"
+                        :key="chip.day"
+                        :class:active="chip.day === this.data.selectedDay"
+                        :onclick="this.actions.pickDay(this.data, chip.day)"
+                    >
+                        ${chip.label}
+                    </button>
+                </div>
+                <!-- Zoom the timeline window: 24 h → 6 h → 2 h → 30 min. State is
+                     imperative (closure in camera-ctl.service) so zooming never
+                     re-renders — and never restarts — the playing video. -->
+                <div class="cam-tl-zoom" role="group" aria-label="Timeline zoom">
+                    <button class="cam-tl-zoom-out" title="Zoom out" aria-label="Zoom out" disabled
+                        :onclick="this.actions.zoomOut()"><i class="iconoir-minus"></i></button>
+                    <span class="cam-tl-zoom-label">24 h</span>
+                    <button class="cam-tl-zoom-in" title="Zoom in" aria-label="Zoom in"
+                        :onclick="this.actions.zoomIn()"><i class="iconoir-plus"></i></button>
+                </div>
             </div>
-            <!-- 24h of the selected day: segment spans are the recorded stretches,
-                 dots are identity moments; the playhead line tracks the video
-                 (written imperatively — see camera-ctl.service NB). -->
-            <div class="cam-tl" :onclick="this.actions.seekTimeline(this.data)" role="slider" aria-label="Recording timeline">
-                <div class="cam-tl-seg"
-                    :foreach="seg in this.data.segments"
-                    :key="seg.id"
-                    :style="seg.bar"
-                    :class:active="seg.clip === this.data.activeClip"
-                ></div>
-                <div class="cam-tl-mark"
-                    :foreach="mark in this.data.marks"
-                    :key="mark.key"
-                    :style="mark.style"
-                    :title="mark.name"
-                ></div>
-                <div class="cam-tl-playhead"></div>
+            <!-- Timeline viewport: the track inside is `zoom × 100%` wide and
+                 panning is native horizontal scroll — all geometry is % of the
+                 track, so zoom needs no recompute. Segment spans are the recorded
+                 stretches, dots are identity moments, tap seeks (the bubble shows
+                 the exact hh:mm under the pointer); the playhead line tracks the
+                 video (written imperatively — see camera-ctl.service NB). -->
+            <div class="cam-tl-scroll" data-zoom="1" :onscroll="this.actions.tlScrolled()">
+                <div class="cam-tl-track">
+                    <div class="cam-tl" role="slider" aria-label="Recording timeline"
+                        :onclick="this.actions.seekTimeline(this.data)"
+                        :onwheel="this.actions.zoomWheel()"
+                        :onpointerdown="this.actions.tlHover(this.data)"
+                        :onpointermove="this.actions.tlHover(this.data)"
+                        :onpointerup="this.actions.tlHoverEnd()"
+                        :onpointerleave="this.actions.tlHoverEnd()"
+                        :onpointercancel="this.actions.tlHoverEnd()">
+                        <div class="cam-tl-seg"
+                            :foreach="seg in this.data.segments"
+                            :key="seg.id"
+                            :style="seg.bar"
+                            :class:active="seg.clip === this.data.activeClip"
+                        ></div>
+                        <div class="cam-tl-mark"
+                            :foreach="mark in this.data.marks"
+                            :key="mark.key"
+                            :style="mark.style"
+                            :title="mark.name"
+                        ></div>
+                        <div class="cam-tl-playhead"></div>
+                        <div class="cam-tl-bubble"></div>
+                    </div>
+                    <div class="cam-tl-hours">
+                        <span class="cam-tl-hh"
+                            :foreach="tick in this.data.hourTicks"
+                            :key="tick.label"
+                            :class="tick.cls"
+                            :style="tick.style"
+                        >${tick.label}</span>
+                    </div>
+                </div>
             </div>
-            <div class="cam-tl-hours"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
             <div class="cam-rec-now" :if="this.data.activeClip">
                 <i class="iconoir-play"></i>
                 <span>${this.data.activeStart}</span>

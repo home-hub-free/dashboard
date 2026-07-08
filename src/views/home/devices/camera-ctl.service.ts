@@ -43,6 +43,11 @@ const PRESET_LIMIT = 8;
 export const CAM_NUDGE_SPEED = 0.5;
 export const CAM_NUDGE_MS = 400;
 
+/** Timeline zoom steps — how much of the day the viewport spans: a full day
+ * down to 30 minutes (where 1 px ≈ 5 s, precise enough to tap a moment). */
+const TL_ZOOMS = [1, 4, 12, 48];
+const TL_ZOOM_LABELS: Record<number, string> = { 1: "24 h", 4: "6 h", 12: "2 h", 48: "30 min" };
+
 const oops = (message: string) => showToaster({ message, from: "bottom", timer: 2500 });
 
 export type ControlsChanged = (camId: string, ctl: CameraControls) => void;
@@ -141,9 +146,76 @@ export function openCameraLive(event: any, device: Device) {
   // mid-segment). Closure state, deliberately outside the bind data (see NB).
   let pendingSeekS = 0;
 
+  // ── Timeline zoom/pan state — closure + imperative DOM, never bind data
+  // (re-rendering the blob would restart the playing <video>, see NB). The
+  // track is `zoom × 100%` of the viewport; panning is native horizontal
+  // scroll, so the % geometry of segments/marks needs no recompute.
+  let zoom = 1;
+  let playheadFrac = -1; // last known playhead position, as a fraction of the day
+  let userScrollTs = 0; //  last manual pan — pauses playhead auto-follow for a bit
+  let progScrollTs = 0; //  our own scrollLeft writes, ignored by tlScrolled
+
+  const tlScroll = () => document.querySelector(".cam-tl-scroll") as HTMLElement | null;
+  const tlTrack = () => document.querySelector(".cam-tl-track") as HTMLElement | null;
+
   const hidePlayhead = () => {
     const el = document.querySelector(".cam-tl-playhead") as HTMLElement | null;
     if (el) el.style.opacity = "0";
+  };
+
+  const hideBubble = () => {
+    const el = document.querySelector(".cam-tl-bubble") as HTMLElement | null;
+    if (el) el.style.display = "none";
+  };
+
+  const syncZoomUi = () => {
+    const label = document.querySelector(".cam-tl-zoom-label") as HTMLElement | null;
+    if (label) label.textContent = TL_ZOOM_LABELS[zoom];
+    const out = document.querySelector(".cam-tl-zoom-out") as HTMLButtonElement | null;
+    const zin = document.querySelector(".cam-tl-zoom-in") as HTMLButtonElement | null;
+    if (out) out.disabled = zoom === TL_ZOOMS[0];
+    if (zin) zin.disabled = zoom === TL_ZOOMS[TL_ZOOMS.length - 1];
+  };
+
+  /** Re-window the timeline, keeping `anchorFrac` (a day fraction) under the
+   * same viewport x. Defaults to the playhead when it's in view (zooming homes
+   * in on what's playing), else the center of the current window. */
+  const applyZoom = (next: number, anchorFrac?: number, anchorViewX?: number) => {
+    const scroll = tlScroll();
+    const track = tlTrack();
+    if (!scroll || !track || next === zoom) return;
+    const viewW = scroll.clientWidth || 1;
+    let frac = anchorFrac;
+    let viewX = anchorViewX ?? viewW / 2;
+    if (frac === undefined) {
+      const phX = playheadFrac >= 0 ? playheadFrac * viewW * zoom - scroll.scrollLeft : -1;
+      if (phX >= 0 && phX <= viewW) {
+        frac = playheadFrac;
+        viewX = phX;
+      } else {
+        frac = (scroll.scrollLeft + viewW / 2) / (viewW * zoom);
+      }
+    }
+    zoom = next;
+    track.style.width = `${next * 100}%`;
+    scroll.dataset.zoom = String(next);
+    progScrollTs = performance.now();
+    scroll.scrollLeft = Math.max(0, frac * viewW * next - viewX);
+    syncZoomUi();
+  };
+
+  /** Keep the playhead inside the zoomed window while a clip plays — unless
+   * the user panned away recently (they're looking at something else). */
+  const followPlayhead = () => {
+    const scroll = tlScroll();
+    if (!scroll || zoom === 1 || playheadFrac < 0) return;
+    if (performance.now() - userScrollTs < 4000) return;
+    const viewW = scroll.clientWidth || 1;
+    const x = playheadFrac * viewW * zoom;
+    if (x < scroll.scrollLeft || x > scroll.scrollLeft + viewW) {
+      progScrollTs = performance.now();
+      scroll.scrollLeft = Math.max(0, x - viewW * 0.3);
+    }
   };
 
   /** Swap the player to one segment (optionally starting mid-clip). No duration
@@ -152,6 +224,11 @@ export function openCameraLive(event: any, device: Device) {
   const playSegment = (data: any, seg: DecoratedSegment, seekS = 0) => {
     pendingSeekS = seekS;
     hidePlayhead();
+    if (data.selectedDay) {
+      playheadFrac = (seg.start + seekS - dayRange(data.selectedDay).start) / 86_400;
+    }
+    userScrollTs = 0; // the user asked for this moment — let the window jump to it
+    followPlayhead();
     updateOverlayData({
       ...data,
       activeClip: seg.clip,
@@ -163,6 +240,7 @@ export function openCameraLive(event: any, device: Device) {
   /** Load one day's segments (+ timeline geometry); optionally auto-play the
    * newest clip — entering playback means "show me the most recent moment". */
   const loadDay = async (data: any, day: string, autoplayLatest: boolean) => {
+    playheadFrac = -1; // no clip playing until something is picked/auto-played
     const base = {
       ...data,
       mode: "rec",
@@ -204,6 +282,17 @@ export function openCameraLive(event: any, device: Device) {
       selectedDay: "",
       segments: [] as DecoratedSegment[],
       marks: [] as TimelineMark[],
+      // Hour ruler — ticks live INSIDE the scrolling track so they pan with
+      // it; CSS (keyed on [data-zoom]) decides which granularity shows (h6 =
+      // 00/06/12/18/24, h2 = other even hours, h1 = the rest). Static data.
+      hourTicks: Array.from({ length: 25 }, (_, h) => ({
+        label: String(h).padStart(2, "0"),
+        cls: h % 6 === 0 ? "h6" : h % 2 === 0 ? "h2" : "h1",
+        style: {
+          left: `${((h / 24) * 100).toFixed(3)}%`,
+          transform: h === 0 ? "translateX(0)" : h === 24 ? "translateX(-100%)" : "translateX(-50%)",
+        },
+      })),
       activeClip: "",
       activeStart: "",
       activeWho: "",
@@ -221,6 +310,11 @@ export function openCameraLive(event: any, device: Device) {
 
       // ── playback (footage review inside the lightbox) ────────────────────
       recordings: async (data: any) => {
+        // Fresh entry — the :if rebuild reset the timeline DOM to its markup
+        // defaults (zoom 1, "24 h", zoom-out disabled); match the closure.
+        zoom = 1;
+        playheadFrac = -1;
+        userScrollTs = 0;
         updateOverlayData({ ...data, mode: "rec", recLoading: true, recEmpty: false });
         const cams = await fetchRecordingCameras();
         const days = cams.find((c) => c.id === device.id)?.days || [];
@@ -256,6 +350,54 @@ export function openCameraLive(event: any, device: Device) {
         if (after) playSegment(data, after);
       },
 
+      // ── timeline zoom/pan (all imperative — see the closure NB above) ────
+      zoomIn: () => applyZoom(TL_ZOOMS[Math.min(TL_ZOOMS.indexOf(zoom) + 1, TL_ZOOMS.length - 1)]),
+      zoomOut: () => applyZoom(TL_ZOOMS[Math.max(TL_ZOOMS.indexOf(zoom) - 1, 0)]),
+
+      // Wheel / trackpad pinch over the bar zooms about the cursor.
+      zoomWheel: () => {
+        const ev = (window as any).event as WheelEvent | undefined;
+        const scroll = tlScroll();
+        const track = tlTrack();
+        if (!ev || !scroll || !track) return;
+        ev.preventDefault();
+        const i = TL_ZOOMS.indexOf(zoom);
+        const ni = ev.deltaY < 0 ? Math.min(i + 1, TL_ZOOMS.length - 1) : Math.max(i - 1, 0);
+        if (ni === i) return;
+        const box = track.getBoundingClientRect();
+        const frac = Math.min(1, Math.max(0, (ev.clientX - box.left) / box.width));
+        applyZoom(TL_ZOOMS[ni], frac, ev.clientX - scroll.getBoundingClientRect().left);
+      },
+
+      // A pan the user made (not our own scrollLeft writes) pauses auto-follow.
+      tlScrolled: () => {
+        if (performance.now() - progScrollTs < 250) return;
+        userScrollTs = performance.now();
+      },
+
+      // Time bubble — the exact hh:mm under the pointer/finger, so a tap is
+      // trustworthy before it's committed. Positioned in track coordinates,
+      // clamped to the visible window so the pill never hides under an edge.
+      tlHover: (data: any) => {
+        const ev = (window as any).event as PointerEvent | undefined;
+        const track = tlTrack();
+        const scroll = tlScroll();
+        const bubble = document.querySelector(".cam-tl-bubble") as HTMLElement | null;
+        if (!ev || !track || !scroll || !bubble || !data.selectedDay) return;
+        const box = track.getBoundingClientRect();
+        const frac = Math.min(1, Math.max(0, (ev.clientX - box.left) / box.width));
+        const t = dayRange(data.selectedDay).start + frac * 86_400;
+        bubble.textContent = timeFmt.format(new Date(t * 1000));
+        const pad = 26;
+        const x = Math.min(
+          scroll.scrollLeft + (scroll.clientWidth || 0) - pad,
+          Math.max(scroll.scrollLeft + pad, frac * box.width),
+        );
+        bubble.style.left = `${x}px`;
+        bubble.style.display = "block";
+      },
+      tlHoverEnd: () => hideBubble(),
+
       // Auto-advance: a finished clip flows into the next one — re-watching an
       // evening shouldn't take a tap every 5 minutes.
       clipEnded: (data: any) => {
@@ -280,6 +422,8 @@ export function openCameraLive(event: any, device: Device) {
         const frac = (seg.start + v.currentTime - dayRange(data.selectedDay).start) / 86400;
         el.style.left = `${Math.min(100, Math.max(0, frac * 100)).toFixed(3)}%`;
         el.style.opacity = "1";
+        playheadFrac = Math.min(1, Math.max(0, frac));
+        followPlayhead();
       },
 
       // Privacy switch, mirrored from the tile: optimistic flip here AND on the

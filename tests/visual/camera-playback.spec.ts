@@ -164,4 +164,71 @@ test.describe("camera playback", () => {
 
     expect(errors, "no uncaught JS errors").toEqual([]);
   });
+
+  test("timeline zoom: window narrows around the playhead, ruler densifies, pan + tap seeks precisely", async ({ page }) => {
+    const errors = await openLightbox(page);
+    const live = page.locator(".cam-live");
+    await live.locator("button[title='Watch recordings']").click();
+    await expect(live.locator(".cam-rec-video")).toHaveAttribute("src", /clip\/12/);
+
+    const scroll = live.locator(".cam-tl-scroll");
+    const track = live.locator(".cam-tl-track");
+    const zoomIn = live.locator(".cam-tl-zoom-in");
+    const zoomOut = live.locator(".cam-tl-zoom-out");
+
+    // Zoom floor: out disabled, label 24 h, only the 6-hourly ruler ticks show.
+    await expect(zoomOut).toBeDisabled();
+    await expect(live.locator(".cam-tl-zoom-label")).toHaveText("24 h");
+    await expect(live.locator(".cam-tl-hh:visible")).toHaveCount(5);
+
+    const viewW = (await scroll.boundingBox())!.width;
+
+    // Zoom in: the track becomes 4× the viewport and even hours join the ruler.
+    // The stub <video> never plays, so the playhead sits where playSegment left
+    // it (the 14:00 clip start = 14/24 of the day) — the zoom anchors on it:
+    // scrollLeft = frac·4·viewW − frac·viewW = 14/24 · 3 · viewW.
+    await zoomIn.click();
+    await expect(scroll).toHaveAttribute("data-zoom", "4");
+    await expect(live.locator(".cam-tl-zoom-label")).toHaveText("6 h");
+    await expect(zoomOut).toBeEnabled();
+    await expect(live.locator(".cam-tl-hh:visible")).toHaveCount(13);
+    const trackW = (await track.boundingBox())!.width;
+    expect(Math.round(trackW / viewW)).toBe(4);
+    const scrollLeft = await scroll.evaluate((el: HTMLElement) => el.scrollLeft);
+    expect(Math.abs(scrollLeft - (14 / 24) * 3 * viewW)).toBeLessThan(3);
+
+    // Pan to the morning (a user swipe) and tap ~10:06 — at 4× that instant is
+    // unambiguous, and it seeks INTO the 10:00–10:10 clip.
+    await scroll.evaluate((el: HTMLElement) => { el.scrollLeft = el.clientWidth * 1.5; });
+    await live.locator(".cam-tl").click({ position: { x: (10.1 / 24) * trackW, y: 18 } });
+    await expect(live.locator(".cam-rec-video")).toHaveAttribute("src", /clip\/11\?token=tok11/);
+    await expect(live.locator(".cam-rec-now")).toContainText("David");
+
+    // Zoom back out to the floor.
+    await zoomOut.click();
+    await expect(live.locator(".cam-tl-zoom-label")).toHaveText("24 h");
+    await expect(zoomOut).toBeDisabled();
+    await expect(scroll).toHaveAttribute("data-zoom", "1");
+
+    expect(errors, "no uncaught JS errors").toEqual([]);
+  });
+
+  test("hovering the timeline shows the hh:mm bubble; it hides on leave", async ({ page }) => {
+    const errors = await openLightbox(page);
+    const live = page.locator(".cam-live");
+    await live.locator("button[title='Watch recordings']").click();
+    await expect(live.locator(".cam-rec-video")).toBeVisible();
+
+    const bar = live.locator(".cam-tl");
+    const box = (await bar.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    const bubble = live.locator(".cam-tl-bubble");
+    await expect(bubble).toBeVisible();
+    await expect(bubble).toContainText(/12:00/); // midday under the cursor
+
+    await page.mouse.move(box.x + box.width / 2, box.y - 60); // off the bar
+    await expect(bubble).toBeHidden();
+
+    expect(errors, "no uncaught JS errors").toEqual([]);
+  });
 });

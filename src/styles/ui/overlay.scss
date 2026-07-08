@@ -676,8 +676,16 @@
     width: 100%;
   }
 
-  // Day chips — newest first, horizontal scroll on narrow screens.
+  // Day chips (newest first) share a row with the timeline zoom control.
+  .cam-rec-days-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   .cam-rec-days {
+    flex: 1 1 auto;
+    min-width: 0;
     display: flex;
     gap: 8px;
     overflow-x: auto;
@@ -701,9 +709,68 @@
     }
   }
 
-  // The 24h timeline: recorded stretches as honey spans, identity moments as
-  // dots, the playhead as a thin line. Hour ticks come from the gradient (every
-  // 6h stronger) so the bar needs no tick markup.
+  // Zoom the timeline window (24 h → 30 min); the label reads the window span.
+  .cam-tl-zoom {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    button {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      cursor: pointer;
+
+      &:disabled {
+        opacity: 0.35;
+        cursor: default;
+      }
+
+      i {
+        font-size: 16px;
+      }
+    }
+  }
+
+  .cam-tl-zoom-label {
+    min-width: 46px;
+    text-align: center;
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-variant-numeric: tabular-nums;
+  }
+
+  // The timeline viewport: the track inside is `zoom × 100%` wide (written
+  // imperatively) and panning is native horizontal scroll — segment/mark/tick
+  // geometry is % of the track, so zooming recomputes nothing.
+  .cam-tl-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: var(--radius-control);
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .cam-tl-track {
+    position: relative;
+    width: 100%; // zoom × 100%, see camera-ctl.service applyZoom
+  }
+
+  // The timeline bar: recorded stretches as honey spans, identity moments as
+  // dots, the playhead as a thin line. Ticks come from the gradient (their
+  // density follows the zoom, below) so the bar needs no tick markup.
   .cam-tl {
     position: relative;
     height: 36px;
@@ -716,6 +783,25 @@
     overflow: hidden;
     cursor: pointer;
     touch-action: manipulation;
+  }
+
+  // Tick density per zoom: 6 h → 1 h → 30 min → 15 min.
+  .cam-tl-scroll[data-zoom="4"] .cam-tl {
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px calc(100% / 24)),
+      rgba(255, 255, 255, 0.09);
+  }
+
+  .cam-tl-scroll[data-zoom="12"] .cam-tl {
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px calc(100% / 48)),
+      rgba(255, 255, 255, 0.09);
+  }
+
+  .cam-tl-scroll[data-zoom="48"] .cam-tl {
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px calc(100% / 96)),
+      rgba(255, 255, 255, 0.09);
   }
 
   .cam-tl-seg {
@@ -754,12 +840,48 @@
     pointer-events: none;
   }
 
+  // Time bubble — hh:mm under the pointer/finger; imperatively positioned in
+  // track coordinates (camera-ctl.service tlHover), clamped to the viewport.
+  .cam-tl-bubble {
+    display: none;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+    font-size: 0.68rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  // Hour ruler — absolute ticks inside the scrolling track (they pan with it);
+  // which granularity shows depends on the zoom: h6 = 00/06/12/18/24, h2 =
+  // other even hours, h1 = the rest.
   .cam-tl-hours {
-    display: flex;
-    justify-content: space-between;
+    position: relative;
+    height: 15px;
+    margin-top: 2px;
     font-size: 0.68rem;
     color: rgba(255, 255, 255, 0.55);
-    padding: 0 2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cam-tl-hh {
+    position: absolute;
+    top: 0;
+  }
+
+  .cam-tl-scroll[data-zoom="1"] .cam-tl-hh:not(.h6) {
+    display: none;
+  }
+
+  .cam-tl-scroll[data-zoom="4"] .cam-tl-hh.h1 {
+    display: none;
   }
 
   // What's playing: start time · duration, plus who was in the clip.
