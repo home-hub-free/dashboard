@@ -18,8 +18,57 @@
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
 
         <title>HomeHubFree - Dashboard</title>
+
+        <!-- Boot splash: pure inline (no bundle, no tokens) so it paints on the very
+             first frame and holds the screen through version-check → auth → first
+             state sync. main.ts removes it once the login form or the app mounts. -->
+        <style>
+            #boot-splash {
+                position: fixed;
+                inset: 0;
+                z-index: 999;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 18px;
+                background: #0f0d0b; /* --color-background (tokens aren't loaded yet) */
+                color: #9c9181; /* --color-text-tertiary */
+                font-family: system-ui, sans-serif;
+            }
+            #boot-splash .boot-mark {
+                font-size: 15px;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                opacity: 0.85;
+            }
+            #boot-splash .boot-dots {
+                display: flex;
+                gap: 7px;
+            }
+            #boot-splash .boot-dots i {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: currentColor;
+                animation: boot-pulse 1.2s ease-in-out infinite;
+            }
+            #boot-splash .boot-dots i:nth-child(2) { animation-delay: 0.2s; }
+            #boot-splash .boot-dots i:nth-child(3) { animation-delay: 0.4s; }
+            @keyframes boot-pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.35; }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                #boot-splash .boot-dots i { animation: none; opacity: 0.6; }
+            }
+        </style>
     </head>
     <body>
+        <div id="boot-splash">
+            <span class="boot-mark">Home Hub</span>
+            <span class="boot-dots"><i></i><i></i><i></i></span>
+        </div>
         <div id="login-gate"></div>
         <div id="main-content"></div>
         <div id="nav-bar"></div>

@@ -272,6 +272,23 @@ The sheet sits at `--z-modal` — above the fixed phone nav.
 Use `PopupMessage` (`popup-message.ts`) — don't hand-roll; markup renders into
 `#popup-message-container .toaster-container` with `from-top|from-bottom`.
 
+## 10b. Loading states (`ui/loading.scss`)
+
+The rule (DESIGN.md "Load / offline / failure"): **never flash an empty state
+before the backend has answered once.** Pick the primitive by what's waiting:
+
+| Situation | Primitive | Markup |
+|---|---|---|
+| First load of a region (list, grid, thread) | Skeleton shapes, calm pulse | `.sk-rows` + `.sk-row`/`.sk-line w35/w60/w75` (device grid has its richer `.device-tile.skeleton`) |
+| Short in-place wait (refill, agent thinking, count check) | Dot triplet | `<span class="loading-dots"><i></i><i></i><i></i></span>` — inherits `currentColor` |
+| In-flight ACTION | Stays on its trigger | `.busy` on the button (§4) + a label swap |
+| App boot (bundle → auth → first sync) | Inline splash in `index.html` | `#boot-splash`, removed by `main.ts` when the login form or the app mounts |
+
+Wire the skeleton to a `xxxLoading`/`xxxLoaded` bind flag that settles only when
+the data is actually IN (see `chatsLoaded` in `chats.service.ts`), and gate the
+empty state on the same flag. Both primitives go static under
+`prefers-reduced-motion`.
+
 ## 11. Navigation (`ui/nav.scss`)
 
 One component, two shapes: fixed **bottom bar** on phones, **brand rail** on

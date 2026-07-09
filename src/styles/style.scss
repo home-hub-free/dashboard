@@ -22,6 +22,7 @@
 @import "./ui/layout";    // app shell, .page-head, .section-title, .page-col
 @import "./ui/nav";       // bottom bar (phone) / brand rail (desktop)
 @import "./ui/panels";    // .panel, .panel-row, .pill, .icon-bubble, .state-dot
+@import "./ui/loading";   // .loading-dots + .sk-rows list skeleton (first-load states)
 @import "./ui/tiles";     // device tile + channel controls + sensor chip
 @import "./ui/overlay";   // detail overlay sheet + its form patterns
 @import "./ui/toast";     // popup messages

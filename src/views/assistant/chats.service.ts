@@ -65,7 +65,6 @@ export class ChatsServiceClass {
     const liveId = metas.find((m) => !m.closedAt)?.id ?? "";
     this.state.liveChatId = liveId;
     this.state.chatRows = metas.map((m) => toRow(m, liveId, this.state.activeChatId));
-    this.state.chatsLoaded = true;
 
     const activeStillExists = metas.some((m) => m.id === this.state.activeChatId);
     if (selectDefault && (!this.state.activeChatId || !activeStillExists)) {
@@ -74,6 +73,10 @@ export class ChatsServiceClass {
     } else if (activeStillExists && this.state.activeChatId) {
       await this.loadTranscript(this.state.activeChatId);
     }
+    // Only now — with the default transcript in — is the first load settled; the
+    // panel's skeletons key off this, and DESIGN.md says never flash an empty
+    // state ("Nothing yet" / the hello) before the backend has answered once.
+    this.state.chatsLoaded = true;
   }
 
   /** Open one chat's transcript. Empty id = a fresh, not-yet-persisted conversation view. */

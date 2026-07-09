@@ -17,10 +17,17 @@ async function loadInitialData() {
   NavActions.setMenu(activeMenuId);
 }
 
+/** Drop the inline boot splash (index.html) — called the moment real UI exists
+ *  to replace it: the app shell after first sync, or the login form. */
+function removeBootSplash() {
+  document.getElementById("boot-splash")?.remove();
+}
+
 async function startApp() {
   await loadInitialData();
   NavBar.mount();
   MainContent.mount();
+  removeBootSplash();
   initWebSockets();
 }
 
@@ -40,11 +47,16 @@ async function init() {
   if (user) {
     await startApp();
   } else {
+    removeBootSplash(); // the login form is the first real UI on this path
     Login.mount(() => startApp());
   }
 }
 
-init();
+// If boot fails unexpectedly, drop the splash rather than spin forever.
+init().catch((e) => {
+  console.error("boot failed:", e);
+  removeBootSplash();
+});
 
 // Register the service worker after first paint (off the critical path). It runtime-
 // caches the immutable /assets/ bundle so repeat visits and the home-screen (standalone

@@ -325,6 +325,36 @@
     &.pending {
       opacity: 0.85;
     }
+
+    // Aura's typing indicator — dots pulse while the agent turn is in flight.
+    &.thinking .loading-dots {
+      padding: 4px 0 2px;
+      color: var(--color-text-tertiary);
+    }
+
+    // First-load placeholder bubbles (chatsLoaded gates the real thread).
+    &.sk-bubble {
+      width: min(60%, 340px);
+      pointer-events: none;
+
+      .sk-line {
+        height: 12px;
+        border-radius: var(--radius-sm);
+        background: var(--color-surface-tertiary);
+        animation: pulse 1.6s var(--ease-in-out) infinite;
+
+        &.w75 { width: 75%; }
+        &.w60 { width: 60%; }
+        &.w35 { width: 35%; }
+      }
+    }
+  }
+
+  // Wrapper so the skeleton bubbles column-flow like the real thread.
+  .chat-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 
   .voice-chip {

@@ -50,6 +50,7 @@
                 <span class="voice-id-title"><i class="iconoir-voice"></i> Voice ID</span>
                 <span class="voice-id-count" :if="this.voiceSamples > 0">${this.voiceSamples} sample(s)</span>
                 <span class="voice-id-count" :if="this.voiceSamples === 0">not enrolled</span>
+                <span class="voice-id-count loading-dots" :if="this.voiceSamples < 0"><i></i><i></i><i></i></span>
             </div>
 
             <!-- Idle: explain + start the guided session -->
@@ -117,6 +118,7 @@
                 <span class="voice-id-title"><i class="iconoir-face-id"></i> Face ID</span>
                 <span class="voice-id-count" :if="this.faceSamples > 0">${this.faceSamples} sample(s)</span>
                 <span class="voice-id-count" :if="this.faceSamples === 0">not enrolled</span>
+                <span class="voice-id-count loading-dots" :if="this.faceSamples < 0"><i></i><i></i><i></i></span>
             </div>
 
             <!-- Idle: explain + start -->
@@ -179,8 +181,9 @@
         <div class="voice-id" id="set-calendar" :if="this.calendarEnabled">
             <div class="voice-id-head">
                 <span class="voice-id-title"><i class="iconoir-calendar"></i> Google Calendar</span>
-                <span class="voice-id-count" :if="this.calendarMineLinked">connected</span>
-                <span class="voice-id-count" :if="!this.calendarMineLinked">not connected</span>
+                <span class="voice-id-count" :if="!this.calendarChecking && this.calendarMineLinked">connected</span>
+                <span class="voice-id-count" :if="!this.calendarChecking && !this.calendarMineLinked">not connected</span>
+                <span class="voice-id-count loading-dots" :if="this.calendarChecking"><i></i><i></i><i></i></span>
             </div>
 
             <!-- Service-account mode: share calendars with the SA email, then pick them here (no ids) -->
@@ -212,7 +215,10 @@
                     </div>
                 </div>
 
-                <p class="voice-id-hint" :if="!this.calDiscovered.length">
+                <p class="voice-id-hint" :if="this.calendarChecking">
+                    <span class="loading-dots"><i></i><i></i><i></i></span> Checking your calendars with Google…
+                </p>
+                <p class="voice-id-hint" :if="!this.calendarChecking && !this.calDiscovered.length">
                     Add your account emails above — you can add them first and share each with the
                     service account in Google whenever; then hit Recheck and they’ll connect.
                 </p>
@@ -354,7 +360,7 @@
                         These faces were auto-matched into ${person.label}'s profile. A low
                         match % may be a wrong guess — remove it and it goes back to review.
                     </p>
-                    <p class="person-empty" :if="this.clustersBusy">Loading…</p>
+                    <p class="person-empty" :if="this.clustersBusy"><span class="loading-dots"><i></i><i></i><i></i></span> Loading faces…</p>
                     <p class="person-empty" :if="!this.clustersBusy && !this.memberClusters.length">
                         No auto-matched faces — only the ones you enrolled.
                     </p>
@@ -382,7 +388,7 @@
                         their profile is built from. Delete any that aren't them, then rebuild:
                         the profile is replaced using only the photos that remain.
                     </p>
-                    <p class="person-empty" :if="this.photosBusy">Loading…</p>
+                    <p class="person-empty" :if="this.photosBusy"><span class="loading-dots"><i></i><i></i><i></i></span> Loading photos…</p>
                     <p class="person-empty" :if="!this.photosBusy && !this.memberCaptures.length">
                         No photos archived yet — they accrue as ${person.label} is recognized
                         (and each Face ID enrollment photo is kept here too).
@@ -449,6 +455,12 @@
     <section class="assistant-section" id="set-household">
         <p class="section-title">Household members</p>
         <p class="household-error" :if="this.householdError">${this.householdError}</p>
+
+        <!-- First load: member-row skeletons until the roster answers. -->
+        <div class="sk-rows" :if="this.householdsLoading">
+            <div class="sk-row"><span class="sk-line w35"></span><span class="sk-line w75"></span></div>
+            <div class="sk-row"><span class="sk-line w35"></span><span class="sk-line w75"></span></div>
+        </div>
 
         <div class="household-list">
             <div class="household-row" :foreach="user in this.households" :key="user.id">

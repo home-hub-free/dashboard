@@ -11,6 +11,7 @@ export type SettingsState = {
   signedInName: string
   meId: string
   households: SessionUser[]
+  householdsLoading: boolean // roster fetch in flight → skeleton rows, not an empty list
   householdError: string
   newUsername: string
   newDisplayName: string
@@ -31,7 +32,7 @@ export type SettingsState = {
   // mini-conversation: the user reads a request to Aura, a live waveform shows the mic
   // is hearing them, the sample is enrolled, and Aura answers back in her real voice.
   voiceIdEnabled: boolean
-  voiceSamples: number
+  voiceSamples: number // -1 = still checking (don't claim "not enrolled" yet)
   enrollActive: boolean // a guided session is open (gates the waveform/conversation card)
   enrollPhase: "ready" | "recording" | "saving" | "aura" | "done"
   enrollStep: number // 1-based index of the current line
@@ -50,7 +51,7 @@ export type SettingsState = {
   // directions, and each pose is captured as one sample to the vision-service
   // (CAMERA_VISION_PLAN §6). Auto-captures when a face is detected; manual otherwise.
   faceIdEnabled: boolean
-  faceSamples: number
+  faceSamples: number // -1 = still checking (don't claim "not enrolled" yet)
   faceActive: boolean // a guided session is open (gates the live preview)
   facePhase: "preview" | "counting" | "saving" | "done"
   faceStep: number // 1-based index of the current pose
@@ -72,6 +73,7 @@ export type SettingsState = {
   // link it by id) and "oauth" (per-account consent). The null simulation backend has nothing to
   // connect.
   calendarEnabled: boolean
+  calendarChecking: boolean // status+discovery fetch in flight → loading row, not "not connected"
   calendarAuth: "" | "oauth" | "service_account"
   calendarSaEmail: string // the service-account address members share their calendars with (SA mode)
   calendarFamilyId: string // the currently-designated family calendar id (SA mode)

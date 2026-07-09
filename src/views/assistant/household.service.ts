@@ -95,15 +95,23 @@ export class HouseholdServiceClass {
   // email, then link it by id) and "oauth" (per-account consent). The control only appears once a
   // real backend is live; the null simulation backend has nothing to connect.
   async refreshCalendar() {
-    const st = await calendarStatus();
-    this.state.calendarEnabled = st.ok && !!st.auth;
-    this.state.calendarAuth = st.auth;
-    this.state.calendarSaEmail = st.saEmail;
-    this.state.calendarHouseLinked = st.houseLinked;
-    if (st.auth === "service_account") {
-      await this.refreshCalendarDiscovery();
-    } else {
-      this.state.calendarMineLinked = !!this.state.meId && st.enrolled.includes(this.state.meId);
+    // `calendarChecking` covers the WHOLE first pass — status AND the Google
+    // discovery round-trip (the slow part) — so the section shows a loading row
+    // instead of flashing "not connected" + the add-your-emails hint.
+    this.state.calendarChecking = true;
+    try {
+      const st = await calendarStatus();
+      this.state.calendarEnabled = st.ok && !!st.auth;
+      this.state.calendarAuth = st.auth;
+      this.state.calendarSaEmail = st.saEmail;
+      this.state.calendarHouseLinked = st.houseLinked;
+      if (st.auth === "service_account") {
+        await this.refreshCalendarDiscovery();
+      } else {
+        this.state.calendarMineLinked = !!this.state.meId && st.enrolled.includes(this.state.meId);
+      }
+    } finally {
+      this.state.calendarChecking = false;
     }
   }
 
@@ -282,9 +290,9 @@ export class HouseholdServiceClass {
     // feature's on/off switch); skip the sample lookup entirely when it's off.
     this.state.voiceIdEnabled = await speakerAvailable();
     const id = currentUser()?.id;
-    if (this.state.voiceIdEnabled && id) {
-      this.state.voiceSamples = await getVoiceprintSamples(id);
-    }
+    // -1 = "still checking" (the head shows dots, not a false "not enrolled").
+    this.state.voiceSamples =
+      this.state.voiceIdEnabled && id ? await getVoiceprintSamples(id) : 0;
   }
 
   private async refreshFaceSamples() {
@@ -293,9 +301,9 @@ export class HouseholdServiceClass {
     this.state.faceIdEnabled = await visionAvailable();
     this.state.peopleEnabled = this.state.faceIdEnabled;
     const id = currentUser()?.id;
-    if (this.state.faceIdEnabled && id) {
-      this.state.faceSamples = await getFaceSamples(id);
-    }
+    // -1 = "still checking" (the head shows dots, not a false "not enrolled").
+    this.state.faceSamples =
+      this.state.faceIdEnabled && id ? await getFaceSamples(id) : 0;
     if (this.state.peopleEnabled) {
       this.refreshPeople();
       this.refreshReview();
@@ -866,6 +874,8 @@ export class HouseholdServiceClass {
       this.state.households = await listUsers();
     } catch (err: any) {
       this.state.householdError = err?.message || "Could not load household";
+    } finally {
+      this.state.householdsLoading = false;
     }
   }
 

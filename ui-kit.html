@@ -279,6 +279,21 @@
                 <span>No devices detected on your network</span>
             </div>
 
+            <h2>Loading states</h2>
+            <p class="kit-note">
+                First load = skeleton shapes (<code class="sel">.sk-rows</code>, calm pulse — the
+                device grid has its richer <code class="sel">.device-tile.skeleton</code>); short
+                in-place waits = <code class="sel">.loading-dots</code>; in-flight actions stay on
+                their button (<code class="sel">.busy</code>). See UI-LIBRARY.md §10b.
+            </p>
+            <div class="sk-rows" style="max-width: 360px">
+                <div class="sk-row"><span class="sk-line w60"></span><span class="sk-line w35"></span></div>
+                <div class="sk-row"><span class="sk-line w75"></span><span class="sk-line w35"></span></div>
+            </div>
+            <p class="kit-note" style="display: flex; align-items: center; gap: 10px">
+                <span class="loading-dots"><i></i><i></i><i></i></span> Checking your calendars with Google…
+            </p>
+
             <h2>Scoped components</h2>
             <p class="kit-note">
                 Some components are id-scoped to their surface and don't render here: the detail

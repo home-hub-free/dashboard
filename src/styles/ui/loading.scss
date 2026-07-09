@@ -1,0 +1,78 @@
+// ============================================================================
+// LOADING PRIMITIVES — the shared vocabulary for "the data isn't here yet".
+// Conventions (DESIGN.md "Load / offline / failure"):
+//   • First load of a region = skeleton shapes (calm opacity pulse, no shimmer),
+//     never a flash of the empty state before the backend has answered once.
+//   • An in-flight ACTION stays on its trigger (`.busy` on the button).
+//   • A short in-place wait (a list refilling, the assistant thinking) = the
+//     `.loading-dots` triplet.
+// ============================================================================
+
+// ---- Three-dot pulse --------------------------------------------------------
+// <span class="loading-dots"><i></i><i></i><i></i></span>
+// Inherits color from its container (use a *-tertiary text wrapper for hints).
+.loading-dots {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  gap: 5px;
+
+  // Breathing room when followed by inline hint text ("··· Checking…").
+  &:not(:last-child) {
+    margin-right: 7px;
+  }
+
+  i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 1.2s var(--ease-in-out) infinite;
+
+    &:nth-child(2) { animation-delay: 0.2s; }
+    &:nth-child(3) { animation-delay: 0.4s; }
+  }
+}
+
+// ---- Generic list skeleton --------------------------------------------------
+// For list-shaped regions (chat rows, roster rows) waiting on their first fetch.
+// The device grid has its own richer skeleton (`.device-tile.skeleton`, tiles.scss).
+//   <div class="sk-rows">
+//     <div class="sk-row"><span class="sk-line w60"></span><span class="sk-line w35"></span></div>
+//     ...
+//   </div>
+.sk-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+
+  .sk-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--color-surface);
+    border-radius: var(--radius-control);
+  }
+
+  .sk-line {
+    height: 12px;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-tertiary);
+    animation: pulse 1.6s var(--ease-in-out) infinite;
+
+    &.w75 { width: 75%; }
+    &.w60 { width: 60%; }
+    &.w35 { width: 35%; }
+  }
+}
+
+// Motion-sensitive users still get the shapes, just still — the pulse is decorative.
+@media (prefers-reduced-motion: reduce) {
+  .loading-dots i,
+  .sk-rows .sk-line {
+    animation: none;
+    opacity: 0.6;
+  }
+}

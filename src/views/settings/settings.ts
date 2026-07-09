@@ -26,6 +26,7 @@ class SettingsContentClass extends Component<SettingsState> {
         signedInName: currentUser()?.displayName || "",
         meId: "",
         households: [],
+        householdsLoading: true,
         householdError: "",
         newUsername: "",
         newDisplayName: "",
@@ -42,7 +43,8 @@ class SettingsContentClass extends Component<SettingsState> {
         changeOwnPassword: () => this.householdService.changeOwnPassword(),
 
         voiceIdEnabled: false,
-        voiceSamples: 0,
+        voiceSamples: -1, // still checking — resolved by refreshVoiceSamples
+
         enrollActive: false,
         enrollPhase: "ready",
         enrollStep: 0,
@@ -57,7 +59,8 @@ class SettingsContentClass extends Component<SettingsState> {
         forgetVoice: () => this.householdService.forgetVoice(),
 
         faceIdEnabled: false,
-        faceSamples: 0,
+        faceSamples: -1, // still checking — resolved by refreshFaceSamples
+
         faceActive: false,
         facePhase: "preview",
         faceStep: 0,
@@ -75,6 +78,7 @@ class SettingsContentClass extends Component<SettingsState> {
         forgetFace: () => this.householdService.forgetFace(),
 
         calendarEnabled: false,
+        calendarChecking: true,
         calendarAuth: "",
         calendarSaEmail: "",
         calendarFamilyId: "",

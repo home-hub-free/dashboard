@@ -16,6 +16,13 @@
             </div>
             <div class="chat-list-empty error" :if="this.chatsError">${this.chatsError}</div>
 
+            <!-- First load: row-shaped skeletons until the list answers. -->
+            <div class="sk-rows" :if="!this.chatsLoaded && !this.chatsError && !this.chatRows.length">
+                <div class="sk-row"><span class="sk-line w60"></span><span class="sk-line w35"></span></div>
+                <div class="sk-row"><span class="sk-line w75"></span><span class="sk-line w35"></span></div>
+                <div class="sk-row"><span class="sk-line w60"></span><span class="sk-line w35"></span></div>
+            </div>
+
             <div class="chat-rows">
                 <div :foreach="row in this.chatRows"
                      class="chat-row"
@@ -54,7 +61,14 @@
             </div>
 
             <div class="chat-transcript" id="chat-transcript">
-                <div class="chat-hello" :if="!this.activeTurns.length && !this.voiceTranscript">
+                <!-- First load: bubble-shaped skeletons; the hello line must not
+                     flash while history is still on its way. -->
+                <div class="chat-skeleton" :if="!this.chatsLoaded && !this.chatsError">
+                    <div class="chat-bubble you sk-bubble"><span class="sk-line w60"></span></div>
+                    <div class="chat-bubble aura sk-bubble"><span class="sk-line w75"></span><span class="sk-line w35"></span></div>
+                </div>
+
+                <div class="chat-hello" :if="(this.chatsLoaded || this.chatsError) && !this.activeTurns.length && !this.voiceTranscript">
                     Ask for a light, the weather, your day — hold the mic or type below.
                 </div>
 
@@ -72,6 +86,13 @@
                 <div class="chat-bubble you pending" :if="this.voiceTranscript">
                     <span class="bubble-who">You</span>
                     <span class="bubble-text">${this.voiceTranscript}</span>
+                </div>
+                <!-- Aura is thinking: typing-style dots in the thread itself, so the
+                     ~seconds-long agent turn has feedback where the eye already is
+                     (the talk-button label alone is easy to miss while typing). -->
+                <div class="chat-bubble aura pending thinking" :if="this.voiceState === 'thinking' && !this.voiceReply">
+                    <span class="bubble-who">Aura</span>
+                    <span class="loading-dots"><i></i><i></i><i></i></span>
                 </div>
                 <div class="chat-bubble aura pending" :if="this.voiceReply">
                     <span class="bubble-who">Aura</span>
