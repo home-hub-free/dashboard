@@ -50,6 +50,10 @@ export const CAM_NUDGE_MS = 400;
 const TL_ZOOMS = [1, 4, 12, 48];
 const TL_ZOOM_LABELS: Record<number, string> = { 1: "24 h", 4: "6 h", 12: "2 h", 48: "30 min" };
 
+/** Tap-through settle window: while taps keep landing, navigation is pure
+ * still-frames; the real clip only attaches after this long without a tap. */
+const TAP_SETTLE_MS = 350;
+
 const oops = (message: string) => showToaster({ message, from: "bottom", timer: 2500 });
 
 export type ControlsChanged = (camId: string, ctl: CameraControls) => void;
@@ -276,11 +280,19 @@ export function openCameraLive(event: any, device: Device) {
   };
 
   /** A preview frame `atS` seconds into a segment — same signed token as the clip
-   * (the thumb route verifies the identical (seg_id, token) pair). */
+   * (the thumb route verifies the identical (seg_id, token) pair). One rendition
+   * (h=360) everywhere, so a bubble hover warms the exact frame a tap will show. */
   const thumbUrl = (seg: DecoratedSegment, atS = 0): string =>
-    seg.clip.replace("/clip/", "/thumb/") + `&t=${Math.max(0, Math.floor(atS))}`;
+    seg.clip.replace("/clip/", "/thumb/") + `&t=${Math.max(0, Math.floor(atS))}&h=360`;
 
   const recVideo = () => document.querySelector(".cam-rec-video") as HTMLVideoElement | null;
+  // Which clip the <video> actually has attached. Closure-tracked, NOT derived
+  // from v.currentSrc — Chromium keeps a stale currentSrc after
+  // removeAttribute("src") + load(), which made "is it already loaded?" lie
+  // mid-tap-through.
+  let loadedClip = "";
+  const isLoaded = (seg: DecoratedSegment): boolean =>
+    loadedClip === seg.clip && !!recVideo();
 
   // ── Next-segment prefetch: while a clip plays, pull its successor into the
   // browser HTTP cache (clip URLs are token-stable + Cache-Control immutable, so
@@ -291,27 +303,43 @@ export function openCameraLive(event: any, device: Device) {
   const schedulePrefetch = (clip: string) => {
     if (prefetchTimer) clearTimeout(prefetchTimer);
     // A beat after playback starts, so the prefetch never races the current
-    // clip's own buffering for bandwidth.
-    prefetchTimer = window.setTimeout(() => {
+    // clip's own buffering for bandwidth. Next first (auto-advance's need),
+    // then the previous neighbor, sequentially.
+    prefetchTimer = window.setTimeout(async () => {
       const live = getOverlayData();
       if (live?.mode !== "rec") return;
       const segs: DecoratedSegment[] = live.segments || [];
       const i = segs.findIndex((s) => s.clip === clip);
-      const next = i > -1 ? segs[i + 1] : undefined;
-      if (!next || prefetched.has(next.clip)) return;
-      prefetched.add(next.clip);
-      fetch(next.clip)
-        .then((r) => (r.ok ? r.blob() : Promise.reject(r.status))) // drain → cache complete
-        .catch(() => prefetched.delete(next.clip));
+      if (i === -1) return;
+      for (const n of [segs[i + 1], segs[i - 1]]) {
+        if (!n || prefetched.has(n.clip)) continue;
+        prefetched.add(n.clip);
+        try {
+          const r = await fetch(n.clip);
+          if (!r.ok) throw new Error(String(r.status));
+          await r.blob(); // drain → the cache entry is complete + range-servable
+        } catch {
+          prefetched.delete(n.clip);
+        }
+      }
     }, 1500);
   };
+  let attachDebounce: number | null = null;
 
-  /** Swap the player to one segment (optionally starting mid-clip). Same-clip
-   * jumps are pure currentTime seeks — the buffer survives, nothing reloads.
+  /** Swap the player to one segment (optionally starting mid-clip).
+   *
+   * Tap-through (`settle: true` — timeline taps, moment chips) is STILL-FRAME
+   * navigation: the tap instantly shows the target moment's frame (the video's
+   * poster on an unloaded element — same box, same object-fit, no overlay
+   * plumbing) and only after the taps stop for TAP_SETTLE_MS does the real clip
+   * attach. Rapid exploration never waits on the video pipeline at all; the
+   * frame under the pointer is usually pre-warmed by the hover bubble (same
+   * thumb URL). Same-clip jumps skip all of it — pure in-buffer currentTime
+   * seeks. Auto-advance and entry autoplay attach immediately (no settle).
+   *
    * No duration in the readout — the native video controls already show
    * elapsed/length, and two time pairs on one row read as overlapping stamps. */
-  const playSegment = (data: any, seg: DecoratedSegment, seekS = 0) => {
-    const sameClip = data.activeClip === seg.clip;
+  const playSegment = (data: any, seg: DecoratedSegment, seekS = 0, settle = false) => {
     hidePlayhead();
     if (data.selectedDay) {
       playheadFrac = (seg.start + seekS - dayRange(data.selectedDay).start) / 86_400;
@@ -324,11 +352,32 @@ export function openCameraLive(event: any, device: Device) {
       activeStart: seg.startLabel,
       activeWho: seg.whoLabel,
     });
-    attachClip(seg, seekS, sameClip);
-    schedulePrefetch(seg.clip);
+    if (attachDebounce) {
+      clearTimeout(attachDebounce);
+      attachDebounce = null;
+    }
+    if (!settle || isLoaded(seg)) {
+      attachClip(seg, seekS);
+      schedulePrefetch(seg.clip);
+      return;
+    }
+    // Still-frame preview: unload the element (stops the old clip's audio and
+    // buffering immediately) and paint the target frame as its poster.
+    const v = recVideo();
+    if (v) {
+      loadedClip = "";
+      v.removeAttribute("src");
+      v.load();
+      v.poster = thumbUrl(seg, seekS);
+    }
+    attachDebounce = window.setTimeout(() => {
+      attachDebounce = null;
+      attachClip(seg, seekS);
+      schedulePrefetch(seg.clip);
+    }, TAP_SETTLE_MS);
   };
 
-  const attachClip = async (seg: DecoratedSegment, seekS: number, sameClip: boolean) => {
+  const attachClip = async (seg: DecoratedSegment, seekS: number) => {
     // The :if may have just created the element — give the render a frame or two.
     let v = recVideo();
     for (let tries = 0; tries < 3 && !v; tries++) {
@@ -336,13 +385,14 @@ export function openCameraLive(event: any, device: Device) {
       v = recVideo();
     }
     if (!v) return;
-    if (sameClip && v.currentSrc) {
+    if (loadedClip === seg.clip) {
       pendingSeekS = 0;
       v.currentTime = seekS;
       v.play().catch(() => undefined);
       return;
     }
     pendingSeekS = seekS;
+    loadedClip = seg.clip;
     v.poster = thumbUrl(seg, seekS); // instant visual while the bytes arrive
     v.src = seg.clip;
     v.play().catch(() => undefined);
@@ -352,6 +402,7 @@ export function openCameraLive(event: any, device: Device) {
    * newest clip — entering playback means "show me the most recent moment". */
   const loadDay = async (data: any, day: string, autoplayLatest: boolean) => {
     playheadFrac = -1; // no clip playing until something is picked/auto-played
+    loadedClip = ""; //   activeClip resets → the :if unmounts the <video>
     const base = {
       ...data,
       mode: "rec",
@@ -461,6 +512,7 @@ export function openCameraLive(event: any, device: Device) {
       },
 
       backToLive: (data: any) => {
+        loadedClip = ""; // mode flip unmounts the rec <video>
         updateOverlayData({ ...data, mode: "live", activeClip: "" });
       },
 
@@ -479,9 +531,9 @@ export function openCameraLive(event: any, device: Device) {
         const t = dayRange(data.selectedDay).start + frac * 86400;
         const segs: DecoratedSegment[] = data.segments || [];
         const inside = segs.find((s) => t >= s.start && t <= (s.end ?? t));
-        if (inside) return playSegment(data, inside, t - inside.start);
+        if (inside) return playSegment(data, inside, t - inside.start, true);
         const after = segs.find((s) => s.start > t);
-        if (after) playSegment(data, after);
+        if (after) playSegment(data, after, 0, true);
       },
 
       // ── timeline zoom/pan (all imperative — see the closure NB above) ────
@@ -559,7 +611,7 @@ export function openCameraLive(event: any, device: Device) {
       jumpMoment: (data: any, ts: number) => {
         const segs: DecoratedSegment[] = data.segments || [];
         const seg = segs.find((s) => ts >= s.start && ts <= (s.end ?? ts));
-        if (seg) playSegment(data, seg, Math.max(0, ts - seg.start));
+        if (seg) playSegment(data, seg, Math.max(0, ts - seg.start), true);
       },
 
       // Auto-advance: a finished clip flows into the next one — re-watching an
@@ -620,6 +672,7 @@ export function openCameraLive(event: any, device: Device) {
     onClose: () => {
       stopLiveAudio();
       if (prefetchTimer) clearTimeout(prefetchTimer);
+      if (attachDebounce) clearTimeout(attachDebounce);
     },
     startRect: rect,
     padding: { x: 0, y: 0 },

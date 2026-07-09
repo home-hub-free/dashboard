@@ -314,6 +314,48 @@ test.describe("camera playback", () => {
     expect(errors, "no uncaught JS errors").toEqual([]);
   });
 
+  test("tap-through is still-frame navigation: instant frame, video only on settle", async ({ page }) => {
+    let clip11Loads = 0;
+    await page.route("**/vision/recordings/*/clip/11*", (r) => {
+      clip11Loads++;
+      return r.fulfill({ status: 200, contentType: "video/mp4", body: "" });
+    });
+    const errors = await openLightbox(page);
+    const live = page.locator(".cam-live");
+    await live.locator("button[title='Watch recordings']").click();
+
+    const video = live.locator(".cam-rec-video");
+    await expect(video).toHaveAttribute("src", /clip\/12/); // entry autoplay = immediate
+
+    const bar = live.locator(".cam-tl");
+    const box = (await bar.boundingBox())!;
+
+    // Tap into the 10:00 segment: INSTANTLY the element unloads (no src) and
+    // shows the target moment's frame as its poster — no waiting on video.
+    await page.mouse.click(box.x + box.width * (10.03 / 24), box.y + box.height / 2);
+    await expect(video).not.toHaveAttribute("src", /clip/);
+    await expect(video).toHaveAttribute("poster", /thumb\/11\?token=tok11&t=\d+&h=360/);
+
+    // After the settle window the real clip attaches and plays.
+    await expect(video).toHaveAttribute("src", /clip\/11/);
+
+    // Rapid tap-through: 14:02 then straight back to 10:02 — the intermediate
+    // target (clip 12) is never fetched; only stills flip.
+    const before12 = clip11Loads; // (11 already loaded once above)
+    let clip12Loads = 0;
+    await page.route("**/vision/recordings/*/clip/12*", (r) => {
+      clip12Loads++;
+      return r.fulfill({ status: 200, contentType: "video/mp4", body: "" });
+    });
+    await page.mouse.click(box.x + box.width * (14.03 / 24), box.y + box.height / 2);
+    await page.mouse.click(box.x + box.width * (10.03 / 24), box.y + box.height / 2);
+    await expect(video).toHaveAttribute("src", /clip\/11/);
+    expect(clip12Loads).toBe(0);                  // intermediate stop never loaded
+    expect(clip11Loads).toBe(before12 + 1);       // final target loaded once
+
+    expect(errors, "no uncaught JS errors").toEqual([]);
+  });
+
   test("while a clip plays, the next segment is prefetched into the cache", async ({ page }) => {
     const prefetches: string[] = [];
     await page.route("**/vision/recordings/*/clip/12*", (r) => {
