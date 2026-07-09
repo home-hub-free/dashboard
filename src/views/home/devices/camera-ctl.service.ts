@@ -51,8 +51,10 @@ const TL_ZOOMS = [1, 4, 12, 48];
 const TL_ZOOM_LABELS: Record<number, string> = { 1: "24 h", 4: "6 h", 12: "2 h", 48: "30 min" };
 
 /** Tap-through settle window: while taps keep landing, navigation is pure
- * still-frames; the real clip only attaches after this long without a tap. */
-const TAP_SETTLE_MS = 350;
+ * still-frames; the real clip only attaches after this long without a tap.
+ * Only raw timeline taps settle — filmstrip cells and moment chips are
+ * deliberate "go here" gestures and attach immediately. */
+const TAP_SETTLE_MS = 200;
 
 const oops = (message: string) => showToaster({ message, from: "bottom", timer: 2500 });
 
@@ -377,10 +379,11 @@ export function openCameraLive(event: any, device: Device) {
         img.alt = "";
         cell.append(img, label);
         cell.addEventListener("click", () => {
+          // A filmstrip tap is "found it, go" — attach immediately, no settle.
           const now = getOverlayData();
           const cur = (now?.segments || []).find((s: DecoratedSegment) => s.clip === seg.clip);
           if (now?.mode === "rec" && cur) {
-            playSegment(now, cur, Math.max(0, t - cur.start), true);
+            playSegment(now, cur, Math.max(0, t - cur.start));
           }
         });
       } else {
@@ -460,10 +463,14 @@ export function openCameraLive(event: any, device: Device) {
       v.play().catch(() => undefined);
       return;
     }
+    // #t= media fragment: the browser fetches AT the target offset right away,
+    // instead of loading metadata from the head and only then seeking (a whole
+    // round-trip saved on every landing). pendingSeekS stays as belt-and-braces
+    // — applySeek only corrects if the fragment didn't take.
     pendingSeekS = seekS;
     loadedClip = seg.clip;
     v.poster = thumbUrl(seg, seekS); // instant visual while the bytes arrive
-    v.src = seg.clip;
+    v.src = seekS > 0 ? `${seg.clip}#t=${Math.floor(seekS)}` : seg.clip;
     v.play().catch(() => undefined);
   };
 
@@ -679,11 +686,12 @@ export function openCameraLive(event: any, device: Device) {
       },
       tlHoverEnd: () => hideBubble(),
 
-      // Moment chip → jump straight into the clip at that instant.
+      // Moment chip → jump straight into the clip at that instant. A chip is a
+      // deliberate destination — attach immediately, no settle wait.
       jumpMoment: (data: any, ts: number) => {
         const segs: DecoratedSegment[] = data.segments || [];
         const seg = segs.find((s) => ts >= s.start && ts <= (s.end ?? ts));
-        if (seg) playSegment(data, seg, Math.max(0, ts - seg.start), true);
+        if (seg) playSegment(data, seg, Math.max(0, ts - seg.start));
       },
 
       // Auto-advance: a finished clip flows into the next one — re-watching an
@@ -698,7 +706,11 @@ export function openCameraLive(event: any, device: Device) {
       applySeek: () => {
         const v = (window as any).event?.target as HTMLVideoElement | undefined;
         if (v && pendingSeekS > 0) {
-          v.currentTime = pendingSeekS;
+          // The #t= fragment normally lands the start position already — only
+          // correct when it visibly didn't take (e.g. an edge browser).
+          if (Math.abs(v.currentTime - pendingSeekS) > 2) {
+            v.currentTime = pendingSeekS;
+          }
           pendingSeekS = 0;
         }
       },
