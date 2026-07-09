@@ -136,10 +136,11 @@ export function openCameraControls(
  * rec mode the live <img> is REMOVED, so the MJPEG connection drops.
  *
  * NB updateOverlayData replaces the whole data blob and bindrjs's :attr handler
- * re-sets `src` unconditionally — re-setting a <video src> restarts it. So while
- * a clip plays, NOTHING may call updateOverlayData except an action that changes
- * the clip anyway; the timeline playhead is driven imperatively (direct style
- * writes at ontimeupdate), never through bind data.
+ * re-sets bound attributes unconditionally — re-setting a <video src> restarts
+ * it. The rec <video> therefore carries NO :src: playSegment attaches src/poster
+ * imperatively, which also makes a tap inside the playing clip an instant
+ * in-buffer currentTime seek instead of a full reload. The timeline playhead is
+ * likewise driven imperatively (direct style writes at ontimeupdate).
  */
 export function openCameraLive(event: any, device: Device) {
   const rect = getGlobalPosition(event.target);
@@ -209,6 +210,7 @@ export function openCameraLive(event: any, device: Device) {
   let playheadFrac = -1; // last known playhead position, as a fraction of the day
   let userScrollTs = 0; //  last manual pan — pauses playhead auto-follow for a bit
   let progScrollTs = 0; //  our own scrollLeft writes, ignored by tlScrolled
+  let lastThumbAt = 0; //   throttles scrub-bubble preview frames (server grid is 15s)
 
   const tlScroll = () => document.querySelector(".cam-tl-scroll") as HTMLElement | null;
   const tlTrack = () => document.querySelector(".cam-tl-track") as HTMLElement | null;
@@ -273,11 +275,43 @@ export function openCameraLive(event: any, device: Device) {
     }
   };
 
-  /** Swap the player to one segment (optionally starting mid-clip). No duration
-   * in the readout — the native video controls already show elapsed/length, and
-   * two time pairs on one row read as overlapping timestamps. */
+  /** A preview frame `atS` seconds into a segment — same signed token as the clip
+   * (the thumb route verifies the identical (seg_id, token) pair). */
+  const thumbUrl = (seg: DecoratedSegment, atS = 0): string =>
+    seg.clip.replace("/clip/", "/thumb/") + `&t=${Math.max(0, Math.floor(atS))}`;
+
+  const recVideo = () => document.querySelector(".cam-rec-video") as HTMLVideoElement | null;
+
+  // ── Next-segment prefetch: while a clip plays, pull its successor into the
+  // browser HTTP cache (clip URLs are token-stable + Cache-Control immutable, so
+  // the <video> range requests are then served locally) — auto-advance and
+  // forward taps start warm instead of cold.
+  const prefetched = new Set<string>();
+  let prefetchTimer: number | null = null;
+  const schedulePrefetch = (clip: string) => {
+    if (prefetchTimer) clearTimeout(prefetchTimer);
+    // A beat after playback starts, so the prefetch never races the current
+    // clip's own buffering for bandwidth.
+    prefetchTimer = window.setTimeout(() => {
+      const live = getOverlayData();
+      if (live?.mode !== "rec") return;
+      const segs: DecoratedSegment[] = live.segments || [];
+      const i = segs.findIndex((s) => s.clip === clip);
+      const next = i > -1 ? segs[i + 1] : undefined;
+      if (!next || prefetched.has(next.clip)) return;
+      prefetched.add(next.clip);
+      fetch(next.clip)
+        .then((r) => (r.ok ? r.blob() : Promise.reject(r.status))) // drain → cache complete
+        .catch(() => prefetched.delete(next.clip));
+    }, 1500);
+  };
+
+  /** Swap the player to one segment (optionally starting mid-clip). Same-clip
+   * jumps are pure currentTime seeks — the buffer survives, nothing reloads.
+   * No duration in the readout — the native video controls already show
+   * elapsed/length, and two time pairs on one row read as overlapping stamps. */
   const playSegment = (data: any, seg: DecoratedSegment, seekS = 0) => {
-    pendingSeekS = seekS;
+    const sameClip = data.activeClip === seg.clip;
     hidePlayhead();
     if (data.selectedDay) {
       playheadFrac = (seg.start + seekS - dayRange(data.selectedDay).start) / 86_400;
@@ -290,6 +324,28 @@ export function openCameraLive(event: any, device: Device) {
       activeStart: seg.startLabel,
       activeWho: seg.whoLabel,
     });
+    attachClip(seg, seekS, sameClip);
+    schedulePrefetch(seg.clip);
+  };
+
+  const attachClip = async (seg: DecoratedSegment, seekS: number, sameClip: boolean) => {
+    // The :if may have just created the element — give the render a frame or two.
+    let v = recVideo();
+    for (let tries = 0; tries < 3 && !v; tries++) {
+      await new Promise((r) => requestAnimationFrame(r));
+      v = recVideo();
+    }
+    if (!v) return;
+    if (sameClip && v.currentSrc) {
+      pendingSeekS = 0;
+      v.currentTime = seekS;
+      v.play().catch(() => undefined);
+      return;
+    }
+    pendingSeekS = seekS;
+    v.poster = thumbUrl(seg, seekS); // instant visual while the bytes arrive
+    v.src = seg.clip;
+    v.play().catch(() => undefined);
   };
 
   /** Load one day's segments (+ timeline geometry); optionally auto-play the
@@ -453,9 +509,9 @@ export function openCameraLive(event: any, device: Device) {
         userScrollTs = performance.now();
       },
 
-      // Time bubble — the exact hh:mm under the pointer/finger, so a tap is
-      // trustworthy before it's committed. Positioned in track coordinates,
-      // clamped to the visible window so the pill never hides under an edge.
+      // Scrub bubble — a preview frame + the exact hh:mm under the pointer, so a
+      // tap is trustworthy before it's committed. Positioned in track coords,
+      // clamped to the visible window so the card never hides under an edge.
       tlHover: (data: any) => {
         const ev = (window as any).event as PointerEvent | undefined;
         const track = tlTrack();
@@ -465,14 +521,37 @@ export function openCameraLive(event: any, device: Device) {
         const box = track.getBoundingClientRect();
         const frac = Math.min(1, Math.max(0, (ev.clientX - box.left) / box.width));
         const t = dayRange(data.selectedDay).start + frac * 86_400;
-        bubble.textContent = timeFmt.format(new Date(t * 1000));
+        const timeEl = bubble.querySelector(".cam-tl-bubble-time") as HTMLElement | null;
+        if (timeEl) timeEl.textContent = timeFmt.format(new Date(t * 1000));
+        // Preview frame for the segment under the pointer. Throttled — the server
+        // snaps offsets to a 15s grid anyway, so finer updates buy nothing; a gap
+        // under the pointer collapses the card back to the time-only pill.
+        const img = bubble.querySelector(".cam-tl-bubble-img") as HTMLImageElement | null;
+        if (img) {
+          const segs: DecoratedSegment[] = data.segments || [];
+          const seg = segs.find((s) => t >= s.start && t <= (s.end ?? t));
+          if (seg) {
+            const want = thumbUrl(seg, t - seg.start);
+            if (img.dataset.want !== want && performance.now() - lastThumbAt > 150) {
+              lastThumbAt = performance.now();
+              img.dataset.want = want;
+              img.src = want;
+            }
+            bubble.classList.add("has-thumb");
+          } else {
+            bubble.classList.remove("has-thumb");
+          }
+        }
+        // Viewport coordinates: the bubble is a SIBLING of the scroll viewport
+        // (anything above the bar would be clipped inside it), so its x is the
+        // track position minus the pan, clamped into the visible window.
         const pad = 26;
-        const x = Math.min(
-          scroll.scrollLeft + (scroll.clientWidth || 0) - pad,
-          Math.max(scroll.scrollLeft + pad, frac * box.width),
-        );
-        bubble.style.left = `${x}px`;
-        bubble.style.display = "block";
+        const viewW = scroll.clientWidth || 0;
+        const x = Math.min(viewW - pad,
+          Math.max(pad, frac * box.width - scroll.scrollLeft));
+        bubble.style.left = `${scroll.offsetLeft + x}px`;
+        bubble.style.top = `${scroll.offsetTop}px`;
+        bubble.style.display = "flex";
       },
       tlHoverEnd: () => hideBubble(),
 
@@ -536,8 +615,12 @@ export function openCameraLive(event: any, device: Device) {
       },
     },
     // Every close path (✕, backdrop) must release the HLS stream — a destroyed
-    // overlay can't, and hls.js would keep fetching segments forever.
-    onClose: () => stopLiveAudio(),
+    // overlay can't, and hls.js would keep fetching segments forever. A pending
+    // prefetch dies with the overlay too.
+    onClose: () => {
+      stopLiveAudio();
+      if (prefetchTimer) clearTimeout(prefetchTimer);
+    },
     startRect: rect,
     padding: { x: 0, y: 0 },
   });

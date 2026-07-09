@@ -46,13 +46,16 @@
     </div>
 
     <!-- ── PLAYBACK surface ─────────────────────────────────────────────── -->
+    <!-- src/poster are attached IMPERATIVELY (playSegment): a bound :src gets
+         re-set by every re-render, restarting the clip — with it gone, a tap
+         inside the playing clip is an instant in-buffer seek, not a reload. -->
     <video
         class="cam-live-view cam-rec-video"
         :if="this.data.mode === 'rec' && this.data.activeClip"
-        :src="this.data.activeClip"
         controls
         autoplay
         playsinline
+        preload="auto"
         :onloadedmetadata="this.actions.applySeek(this.data)"
         :ontimeupdate="this.actions.onTime(this.data)"
         :onended="this.actions.clipEnded(this.data)"
@@ -185,7 +188,6 @@
                             :title="mark.name"
                         ></div>
                         <div class="cam-tl-playhead"></div>
-                        <div class="cam-tl-bubble"></div>
                     </div>
                     <div class="cam-tl-hours">
                         <span class="cam-tl-hh"
@@ -196,6 +198,16 @@
                         >${tick.label}</span>
                     </div>
                 </div>
+            </div>
+            <!-- Scrub bubble: a preview frame + the exact hh:mm under the pointer —
+                 see where you're going before you tap. Lives OUTSIDE the scroll
+                 viewport (which clips anything above the bar) and is positioned in
+                 viewport coordinates by tlHover. -->
+            <div class="cam-tl-bubble">
+                <img class="cam-tl-bubble-img" alt=""
+                    onerror="this.classList.add('img-dead')"
+                    onload="this.classList.remove('img-dead')" />
+                <span class="cam-tl-bubble-time"></span>
             </div>
             <!-- Moments — one chip per person-appearance on this day ("David ·
                  14:03"); tap jumps straight into the clip at that instant. -->

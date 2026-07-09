@@ -683,6 +683,7 @@
     background: #000;
   }
 
+
   // ── Playback (footage review inside the lightbox) ───────────────────────
   .cam-rec-video {
     background: #000;
@@ -698,6 +699,7 @@
     flex-direction: column;
     gap: 8px;
     width: 100%;
+    position: relative; // anchors the scrub bubble's viewport coordinates
   }
 
   // Day chips (newest first) share a row with the timeline zoom control.
@@ -864,13 +866,18 @@
     pointer-events: none;
   }
 
-  // Time bubble — hh:mm under the pointer/finger; imperatively positioned in
-  // track coordinates (camera-ctl.service tlHover), clamped to the viewport.
+  // Scrub bubble — a preview frame + hh:mm above the pointer/finger; a sibling
+  // of the scroll viewport (which would clip anything rising over the bar),
+  // positioned in viewport coordinates by tlHover. Over a gap (or while the
+  // frame loads/fails) it collapses to the time-only pill; with a frame it's a
+  // small card. Floating ABOVE the bar keeps it readable under a finger.
   .cam-tl-bubble {
-    display: none;
+    display: none; // flipped to flex by tlHover
     position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, calc(-100% - 6px));
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
     padding: 2px 8px;
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.85);
@@ -881,6 +888,23 @@
     white-space: nowrap;
     pointer-events: none;
     z-index: 2;
+
+    .cam-tl-bubble-img {
+      display: none;
+      width: 148px;
+      max-width: 40vw;
+      border-radius: 6px;
+      background: #000;
+    }
+
+    &.has-thumb .cam-tl-bubble-img:not(.img-dead) {
+      display: block;
+    }
+
+    &.has-thumb {
+      padding: 4px;
+      border-radius: 8px;
+    }
   }
 
   // Hour ruler — absolute ticks inside the scrolling track (they pan with it);

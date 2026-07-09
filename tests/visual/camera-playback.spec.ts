@@ -85,6 +85,14 @@ test.describe("camera playback", () => {
 
     await page.route("**/vision/recordings/*/clip/*", (r) =>
       r.fulfill({ status: 200, contentType: "video/mp4", body: "" }));
+
+    // Scrub/poster thumbnails — a real 1x1 JPEG so <img onload> fires.
+    const jpg = Buffer.from(
+      "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0a" +
+      "HBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAA" +
+      "AAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AVN//2Q==", "base64");
+    await page.route("**/vision/recordings/*/thumb/*", (r) =>
+      r.fulfill({ status: 200, contentType: "image/jpeg", body: jpg }));
   });
 
   async function openLightbox(page: any) {
@@ -247,6 +255,85 @@ test.describe("camera playback", () => {
 
     await page.mouse.move(box.x + box.width / 2, box.y - 60); // off the bar
     await expect(bubble).toBeHidden();
+
+    expect(errors, "no uncaught JS errors").toEqual([]);
+  });
+
+  test("hovering a recorded stretch shows a preview frame; gaps stay time-only", async ({ page }) => {
+    const errors = await openLightbox(page);
+    const live = page.locator(".cam-live");
+    await live.locator("button[title='Watch recordings']").click();
+    await expect(live.locator(".cam-rec-video")).toBeVisible();
+
+    const bar = live.locator(".cam-tl");
+    const box = (await bar.boundingBox())!;
+    const bubble = live.locator(".cam-tl-bubble");
+    const img = bubble.locator(".cam-tl-bubble-img");
+
+    // 10:05 — inside the 10:00 segment → the bubble grows a preview frame.
+    await page.mouse.move(box.x + box.width * (10.083 / 24), box.y + box.height / 2);
+    await expect(bubble).toHaveClass(/has-thumb/);
+    await expect(img).toBeVisible();
+    await expect(img).toHaveAttribute("src", /thumb\/11\?token=tok11&t=\d+/);
+
+    // 12:00 — a gap → back to the time-only pill.
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(bubble).not.toHaveClass(/has-thumb/);
+    await expect(img).toBeHidden();
+
+    expect(errors, "no uncaught JS errors").toEqual([]);
+  });
+
+  test("a tap inside the playing clip seeks in place — no video reload", async ({ page }) => {
+    let clipLoads = 0;
+    await page.route("**/vision/recordings/*/clip/12*", (r) => {
+      clipLoads++;
+      return r.fulfill({ status: 200, contentType: "video/mp4", body: "" });
+    });
+    const errors = await openLightbox(page);
+    const live = page.locator(".cam-live");
+    await live.locator("button[title='Watch recordings']").click();
+
+    // Newest clip (14:00, 5 min) auto-plays; poster comes from the thumb route.
+    const video = live.locator(".cam-rec-video");
+    await expect(video).toHaveAttribute("src", /clip\/12/);
+    await expect(video).toHaveAttribute("poster", /thumb\/12/);
+    await video.evaluate((el) => ((el as any).__sameEl = true));
+    const loadsBefore = clipLoads;
+
+    // Tap 14:02 — inside the playing clip.
+    const bar = live.locator(".cam-tl");
+    const box = (await bar.boundingBox())!;
+    await page.mouse.click(box.x + box.width * (14.04 / 24), box.y + box.height / 2);
+
+    // Same element (not rebuilt), same src, and NO refetch of the clip.
+    await expect(video).toHaveAttribute("src", /clip\/12/);
+    expect(await video.evaluate((el) => (el as any).__sameEl)).toBe(true);
+    expect(clipLoads).toBe(loadsBefore);
+
+    expect(errors, "no uncaught JS errors").toEqual([]);
+  });
+
+  test("while a clip plays, the next segment is prefetched into the cache", async ({ page }) => {
+    const prefetches: string[] = [];
+    await page.route("**/vision/recordings/*/clip/12*", (r) => {
+      prefetches.push(r.request().url());
+      return r.fulfill({ status: 200, contentType: "video/mp4", body: "" });
+    });
+    const errors = await openLightbox(page);
+    const live = page.locator(".cam-live");
+    await live.locator("button[title='Watch recordings']").click();
+    await expect(live.locator(".cam-rec-video")).toBeVisible();
+
+    // Jump to the FIRST clip (10:00) — its successor (14:00 = clip 12) should be
+    // fetched in the background a beat later, without being played.
+    const bar = live.locator(".cam-tl");
+    const box = (await bar.boundingBox())!;
+    prefetches.length = 0;
+    await page.mouse.click(box.x + box.width * (10.02 / 24), box.y + box.height / 2);
+    await expect(live.locator(".cam-rec-video")).toHaveAttribute("src", /clip\/11/);
+    await expect.poll(() => prefetches.length, { timeout: 5000 }).toBeGreaterThan(0);
+    await expect(live.locator(".cam-rec-video")).toHaveAttribute("src", /clip\/11/); // still on 11
 
     expect(errors, "no uncaught JS errors").toEqual([]);
   });
