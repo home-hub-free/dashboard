@@ -356,6 +356,34 @@ test.describe("camera playback", () => {
     expect(errors, "no uncaught JS errors").toEqual([]);
   });
 
+  test("filmstrip spans the visible window; a cell tap jumps there; zoom re-windows it", async ({ page }) => {
+    const errors = await openLightbox(page);
+    const live = page.locator(".cam-live");
+    await live.locator("button[title='Watch recordings']").click();
+    await expect(live.locator(".cam-rec-video")).toHaveAttribute("src", /clip\/12/);
+
+    // Full-day window: cells cover 24h — the 10:00 stretch shows a frame from
+    // clip 11, gaps are dimmed placeholders.
+    const strip = live.locator(".cam-tl-strip");
+    const cells = strip.locator(".cam-strip-cell");
+    expect(await cells.count()).toBeGreaterThanOrEqual(4);
+    const seg11Cells = strip.locator(".cam-strip-cell img[src*='thumb/11']");
+    expect(await seg11Cells.count()).toBeGreaterThanOrEqual(1);
+    expect(await strip.locator(".cam-strip-cell.empty").count()).toBeGreaterThanOrEqual(1);
+
+    // Tap the 10:00 frame → still-frame lands there, then the clip attaches.
+    await seg11Cells.first().locator("..").click();
+    await expect(live.locator(".cam-rec-video")).toHaveAttribute("src", /clip\/11/);
+
+    // Zoom in: the strip re-windows around the playhead (denser slice of day).
+    await live.locator(".cam-tl-zoom-in").click();
+    await expect
+      .poll(async () => strip.locator(".cam-strip-cell img[src*='thumb/11']").count())
+      .toBeGreaterThanOrEqual(2);
+
+    expect(errors, "no uncaught JS errors").toEqual([]);
+  });
+
   test("while a clip plays, the next segment is prefetched into the cache", async ({ page }) => {
     const prefetches: string[] = [];
     await page.route("**/vision/recordings/*/clip/12*", (r) => {

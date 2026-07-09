@@ -209,6 +209,11 @@
                     onload="this.classList.remove('img-dead')" />
                 <span class="cam-tl-bubble-time"></span>
             </div>
+            <!-- Filmstrip — frames spanning the VISIBLE timeline window (follows
+                 zoom + pan): see the day, tap what you recognize. Cells are
+                 built imperatively (renderStrip) — no bindings inside, so data
+                 re-renders never touch them. -->
+            <div class="cam-tl-strip"></div>
             <!-- Moments — one chip per person-appearance on this day ("David ·
                  14:03"); tap jumps straight into the clip at that instant. -->
             <div class="cam-rec-moments" :if="this.data.moments.length">

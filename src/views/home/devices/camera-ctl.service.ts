@@ -263,6 +263,7 @@ export function openCameraLive(event: any, device: Device) {
     progScrollTs = performance.now();
     scroll.scrollLeft = Math.max(0, frac * viewW * next - viewX);
     syncZoomUi();
+    scheduleStrip();
   };
 
   /** Keep the playhead inside the zoomed window while a clip plays — unless
@@ -281,9 +282,11 @@ export function openCameraLive(event: any, device: Device) {
 
   /** A preview frame `atS` seconds into a segment — same signed token as the clip
    * (the thumb route verifies the identical (seg_id, token) pair). One rendition
-   * (h=360) everywhere, so a bubble hover warms the exact frame a tap will show. */
+   * (h=360) everywhere and the offset snapped to the server's 15s grid CLIENT-side
+   * too, so bubble, poster and filmstrip all hit the same browser-cache lines. */
   const thumbUrl = (seg: DecoratedSegment, atS = 0): string =>
-    seg.clip.replace("/clip/", "/thumb/") + `&t=${Math.max(0, Math.floor(atS))}&h=360`;
+    seg.clip.replace("/clip/", "/thumb/") +
+    `&t=${Math.max(0, Math.floor(atS / 15) * 15)}&h=360`;
 
   const recVideo = () => document.querySelector(".cam-rec-video") as HTMLVideoElement | null;
   // Which clip the <video> actually has attached. Closure-tracked, NOT derived
@@ -325,6 +328,72 @@ export function openCameraLive(event: any, device: Device) {
     }, 1500);
   };
   let attachDebounce: number | null = null;
+
+  // ── Filmstrip: frames spanning the visible timeline window — the "find it by
+  // looking" surface. Imperative DOM (no bindings inside the container), rebuilt
+  // on day load / zoom / pan; taps land as normal settle-navigation.
+  const tlStrip = () => document.querySelector(".cam-tl-strip") as HTMLElement | null;
+  let stripTimer: number | null = null;
+  const scheduleStrip = (delay = 120) => {
+    if (stripTimer) clearTimeout(stripTimer);
+    stripTimer = window.setTimeout(renderStrip, delay);
+  };
+  const renderStrip = () => {
+    const strip = tlStrip();
+    const scroll = tlScroll();
+    const live = getOverlayData();
+    if (!strip) return;
+    const segs: DecoratedSegment[] = live?.segments || [];
+    if (!scroll || live?.mode !== "rec" || !live.selectedDay || !segs.length) {
+      strip.replaceChildren();
+      return;
+    }
+    const dayStart = dayRange(live.selectedDay).start;
+    const viewW = scroll.clientWidth || 1;
+    const winStart = scroll.scrollLeft / (viewW * zoom); // visible window, day fracs
+    const winSpan = 1 / zoom;
+    const cells = Math.max(4, Math.min(14, Math.floor(viewW / 84)));
+    const frag = document.createDocumentFragment();
+    for (let c = 0; c < cells; c++) {
+      // A cell shows a frame from ANY segment overlapping its slice of the
+      // window (center-clamped into the segment) — a short clip inside a wide
+      // cell still surfaces; truly empty stretches stay placeholders.
+      const cellStart = dayStart + (winStart + winSpan * (c / cells)) * 86_400;
+      const cellEnd = dayStart + (winStart + winSpan * ((c + 1) / cells)) * 86_400;
+      const center = (cellStart + cellEnd) / 2;
+      const seg = segs.find(
+        (s) => s.start < cellEnd && (s.end ?? Number.MAX_SAFE_INTEGER) > cellStart);
+      const t = seg
+        ? Math.max(seg.start, Math.min(center, (seg.end ?? seg.start + 1) - 1))
+        : center;
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "cam-strip-cell";
+      const label = document.createElement("span");
+      label.textContent = timeFmt.format(new Date(t * 1000));
+      if (seg) {
+        const img = document.createElement("img");
+        img.src = thumbUrl(seg, t - seg.start);
+        img.alt = "";
+        cell.append(img, label);
+        cell.addEventListener("click", () => {
+          const now = getOverlayData();
+          const cur = (now?.segments || []).find((s: DecoratedSegment) => s.clip === seg.clip);
+          if (now?.mode === "rec" && cur) {
+            playSegment(now, cur, Math.max(0, t - cur.start), true);
+          }
+        });
+      } else {
+        const ph = document.createElement("i");
+        ph.className = "cam-strip-ph";
+        cell.append(ph, label);
+        cell.classList.add("empty");
+        cell.disabled = true;
+      }
+      frag.append(cell);
+    }
+    strip.replaceChildren(frag);
+  };
 
   /** Swap the player to one segment (optionally starting mid-clip).
    *
@@ -424,6 +493,7 @@ export function openCameraLive(event: any, device: Device) {
     if (autoplayLatest && segments.length) {
       playSegment(next, segments[segments.length - 1]);
     }
+    scheduleStrip(0);
   };
 
   openOverlay({
@@ -556,7 +626,9 @@ export function openCameraLive(event: any, device: Device) {
       },
 
       // A pan the user made (not our own scrollLeft writes) pauses auto-follow.
+      // Either kind re-windows the filmstrip.
       tlScrolled: () => {
+        scheduleStrip(150);
         if (performance.now() - progScrollTs < 250) return;
         userScrollTs = performance.now();
       },
@@ -673,6 +745,7 @@ export function openCameraLive(event: any, device: Device) {
       stopLiveAudio();
       if (prefetchTimer) clearTimeout(prefetchTimer);
       if (attachDebounce) clearTimeout(attachDebounce);
+      if (stripTimer) clearTimeout(stripTimer);
     },
     startRect: rect,
     padding: { x: 0, y: 0 },

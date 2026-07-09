@@ -907,6 +907,54 @@
     }
   }
 
+  // Filmstrip — frames spanning the visible timeline window; tap what you
+  // recognize. Cells are equal-width buttons; a gap in the recording shows a
+  // dimmed placeholder so the row keeps its rhythm.
+  .cam-tl-strip {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+
+    &:empty {
+      display: none;
+    }
+
+    .cam-strip-cell {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 0;
+      border: 0;
+      background: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: rgba(255, 255, 255, 0.65);
+      font-size: 0.62rem;
+      font-variant-numeric: tabular-nums;
+      cursor: pointer;
+
+      img,
+      .cam-strip-ph {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        border-radius: 6px;
+        background: #000;
+      }
+
+      .cam-strip-ph {
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      &.empty {
+        opacity: 0.4;
+        cursor: default;
+      }
+    }
+  }
+
   // Hour ruler — absolute ticks inside the scrolling track (they pan with it);
   // which granularity shows depends on the zoom: h6 = 00/06/12/18/24, h2 =
   // other even hours, h1 = the rest.
