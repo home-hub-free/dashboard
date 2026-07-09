@@ -89,6 +89,26 @@ export class HouseholdServiceClass {
     this.refreshCalendar();
   }
 
+  /** Release everything that lives OUTSIDE the bind when the Settings view
+   * unmounts (tab switch) with a flow still open — the DOM is swapped without
+   * closeReview/closeZoom/cancel* ever running. Left behind, the document-level
+   * gesture listeners survive per occurrence, each retaining the whole dead bind
+   * graph — and the leaked keydown still saw reviewOpen=true, so arrow keys on
+   * OTHER tabs kept firing real promote/reject answers. The nav-hiding body
+   * class and any live mic/camera enrollment session are the same class of
+   * escapee. No network refreshes here — the next attach() refetches anyway. */
+  detach() {
+    this.reviewGesturesOff?.();
+    this.reviewGesturesOff = null;
+    this.zoomGesturesOff?.();
+    this.zoomGesturesOff = null;
+    this.zoomItems = [];
+    this.reviewQueue = [];
+    setViewerNavHidden(false);
+    this.cancelVoiceEnroll();
+    this.cancelFaceEnroll();
+  }
+
   // ── Google Calendar (per-member + family link) ────────────────────────────
   // calendar-service owns the credentials; this reflects connected state + drives linking. Two
   // real auth modes (CALENDAR_PLAN §2/§6): "service_account" (members share a calendar with the SA
@@ -313,12 +333,16 @@ export class HouseholdServiceClass {
 
   // ── People roster (labeling lives in the review flow; the list just shows it) ──
   async refreshPeople() {
-    this.state.people = await listPeople();
+    const all = await listPeople();
     // Named guests are review targets ("It's Abuela") — surfaced in the card's
     // someone-else picker alongside household members.
-    this.state.namedGuests = this.state.people.filter(
-      (p) => p.class === "guest" && p.named
-    );
+    this.state.namedGuests = all.filter((p) => p.class === "guest" && p.named);
+    // The roster shows identities a human has vouched for: household + named
+    // guests. Unnamed clusters ARE the review queue — rendering all ~150 of them
+    // here too (rows + thumb fetches, rebuilt on every refresh) was the main
+    // settings lag at big queue sizes, and rows nobody can act on beyond
+    // "Forget" carried no information the banner count doesn't.
+    this.state.people = all.filter((p) => p.class === "household" || p.named);
   }
 
   /** Forget a labelled guest — the mistake-eraser now that per-row labeling is
@@ -460,6 +484,10 @@ export class HouseholdServiceClass {
   // (promote / merge / reject), so every swipe makes tomorrow's recognition sharper.
   private reviewCursor = 0;
   private reviewGesturesOff: (() => void) | null = null;
+  // The queue lives here as a PLAIN array, never on the bind: the template only
+  // needs the count, and proxying ~150 card objects registered thousands of
+  // reactive paths that made every later state write pay a full-graph scan.
+  private reviewQueue: ReviewCard[] = [];
 
   async refreshReview() {
     const { cards, healed } = await listFaceReview();
@@ -467,15 +495,16 @@ export class HouseholdServiceClass {
       c.suggested?.kind === "member"
         ? c.suggested.id === this.state.meId ? 0 : 3
         : c.suggested ? 1 : 2;
-    this.state.reviewCards = [...cards].sort((a, b) => rank(a) - rank(b));
+    this.reviewQueue = [...cards].sort((a, b) => rank(a) - rank(b));
+    this.state.reviewCount = this.reviewQueue.length;
     this.state.reviewOthers = cards.filter((c) => rank(c) === 3).length;
     this.state.reviewHealed = healed;
     if (healed > 0) this.refreshPeople(); // auto-merges changed the roster
   }
 
   openReview() {
-    if (!this.state.reviewCards.length) return;
-    this.state.reviewTotal = this.state.reviewCards.length;
+    if (!this.reviewQueue.length) return;
+    this.state.reviewTotal = this.reviewQueue.length;
     this.state.reviewMsg = "";
     this.state.reviewBusy = false;
     this.state.reviewOpen = true;
@@ -497,7 +526,7 @@ export class HouseholdServiceClass {
    * primitives re-renders the gated region and is null-safe — lightbox posture). */
   private presentReviewCard(i: number) {
     this.reviewCursor = i;
-    const card: ReviewCard | undefined = this.state.reviewCards[i];
+    const card: ReviewCard | undefined = this.reviewQueue[i];
     this.state.reviewHasCard = !!card;
     this.state.reviewIndex = Math.min(i + 1, this.state.reviewTotal);
     this.state.reviewThumbUrl = card?.thumbUrl || "";
@@ -737,7 +766,7 @@ export class HouseholdServiceClass {
     action: "me" | "yes" | "no" | "skip" | "discard" | "assign" | "nameguest",
     value?: string
   ) {
-    const card = this.state.reviewCards[this.reviewCursor];
+    const card = this.reviewQueue[this.reviewCursor];
     if (!card || this.state.reviewBusy) return;
     this.state.reviewBusy = true;
     try {
@@ -810,6 +839,7 @@ export class HouseholdServiceClass {
    * (no state churn → no re-render per frame); listeners live on document so they
    * survive bindrjs region re-renders. */
   private bindReviewGestures() {
+    this.reviewGesturesOff?.(); // never stack listeners across reopens
     let startX = 0;
     let dragging = false;
     const cardEl = () =>

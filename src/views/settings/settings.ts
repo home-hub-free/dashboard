@@ -128,7 +128,7 @@ class SettingsContentClass extends Component<SettingsState> {
         openClusterFace: (cluster) => this.householdService.openClusterFace(cluster),
 
         // Face review — the "Is this you?" card stack (service-driven).
-        reviewCards: [],
+        reviewCount: 0,
         reviewOthers: 0,
         reviewHealed: 0,
         reviewOpen: false,
@@ -199,6 +199,15 @@ class SettingsContentClass extends Component<SettingsState> {
     });
 
     this.householdService.attach(this.bind);
+  }
+
+  // Tab switches swap the container's id out from under us without any close
+  // handler running, so anything the service put OUTSIDE its bind (document-level
+  // gesture listeners, the nav-hiding body class, live mic/camera sessions) must
+  // be released here or it outlives the view — the leaked keydown handler even
+  // kept answering arrow keys with real promote/reject POSTs.
+  unmount() {
+    this.householdService.detach();
   }
 }
 
