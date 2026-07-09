@@ -1,5 +1,5 @@
 import type { SessionUser } from "../assistant/household.service";
-import type { Person, ReviewCard, MemberCluster, FaceCapture, FaceThreshold } from "../../utils/server-handler";
+import type { Person, MemberCluster, FaceCapture, FaceThreshold } from "../../utils/server-handler";
 
 /**
  * Settings owns everything account/household — relocated out of the Assistant
@@ -144,9 +144,10 @@ export type SettingsState = {
   // never reaches here; `suggest` cards are addressed to ONE member (shown only on
   // that member's login), `unknown` cards go to everyone. The current card is
   // flattened into primitives so the gated overlay is always safe to evaluate
-  // (same posture as the lightbox below).
-  reviewCards: ReviewCard[] // the WHOLE queue, self-identification cards first —
-  // any member answers everything (guests never log in; persisting them is our job)
+  // (same posture as the lightbox below). The queue itself stays a plain array
+  // inside HouseholdService — proxying ~150 card objects onto the bind registered
+  // thousands of reactive paths that taxed EVERY later state write.
+  reviewCount: number // queue size — all the template ever read of the queue
   reviewOthers: number // cards that look like other members (queued last, answerable)
   reviewHealed: number // clusters auto-merged server-side on the last refresh
   reviewOpen: boolean

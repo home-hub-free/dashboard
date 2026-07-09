@@ -299,19 +299,20 @@
     <section class="assistant-section" id="set-people" :if="this.peopleEnabled">
         <p class="section-title">People the cameras have seen</p>
         <p class="voice-id-hint">
-            Every detected person gets a face and a label. New faces are named in the
-            review flow; named guests stay recognised across visits. Forget someone to
-            erase a wrong label — they'll be reviewed again next time they're seen.
+            Household members and the guests you've named. New faces wait in the
+            review queue — claim or name them there and they join this list; named
+            guests stay recognised across visits. Forget someone to erase a wrong
+            label — they'll be reviewed again next time they're seen.
         </p>
 
         <!-- Review banner: the confidence-tiered queue. Sure matches were already
              merged silently (reviewHealed); what's left needs a human — ANY member
              can answer every card (yours come first; guests never log in, so
              persisting them is the household's job). -->
-        <div class="review-banner" :if="this.reviewCards.length > 0">
+        <div class="review-banner" :if="this.reviewCount > 0">
             <div class="review-banner-text">
                 <span class="review-banner-title">
-                    <i class="iconoir-face-id"></i> ${this.reviewCards.length} face(s) to review
+                    <i class="iconoir-face-id"></i> ${this.reviewCount} face(s) to review
                 </span>
                 <span class="review-banner-sub" :if="this.reviewHealed > 0">${this.reviewHealed} recognised and merged automatically</span>
                 <span class="review-banner-sub" :if="this.reviewOthers > 0">${this.reviewOthers} look like other members — you can answer for them</span>
@@ -320,7 +321,7 @@
                 <i class="iconoir-eye-alt"></i> Review
             </button>
         </div>
-        <p class="voice-id-hint" :if="this.reviewCards.length === 0 && this.reviewHealed > 0">
+        <p class="voice-id-hint" :if="this.reviewCount === 0 && this.reviewHealed > 0">
             ${this.reviewHealed} unrecognised face(s) were matched to household members automatically.
         </p>
 
