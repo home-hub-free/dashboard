@@ -164,14 +164,28 @@ export type SettingsState = {
   reviewSuggestKind: "" | "member" | "guest" // what the suggested identity is
   reviewSuggestName: string // the suggested identity's name ("Is this Ana/Abuela?")
   reviewSuggestIsMe: boolean // suggestion is the signed-in member → "Is this you?"
-  // Unknown-tier one-tap answers: the card's top-2 ranked candidates flattened to
-  // primitives (empty id = no button). With a 2-member household that's both
-  // members — a single press assigns; the dropdown stays for the long tail.
-  reviewCand1Id: string
-  reviewCand1Label: string // "It's me" / "It's Ana" — precomputed, display-ready
-  reviewCand2Id: string
-  reviewCand2Label: string
-  reviewCandHasMe: boolean // "It's me" covered by a candidate button (or I already said "not me") → no extra fallback
+  // FIXED one-tap answer slots — the same buttons in the same places on EVERY
+  // card, so a 150-card run can never swap CTAs under muscle memory. Slots come
+  // from the ROSTER (me, then the other members in roster order), NOT from the
+  // per-card ranking; the ranking only moves the `reviewLikelyId` highlight.
+  // A named-guest candidate gets the stable LAST slot when the card has one.
+  // A slot disappears only when that identity was answered "not them" for the
+  // cluster (an answer, not a re-rank).
+  reviewMeShown: boolean // false only when I already said "not me" on this cluster
+  reviewM2Id: string // second/third member slots ('' = none)
+  reviewM2Label: string
+  reviewM3Id: string
+  reviewM3Label: string
+  reviewGuestId: string // named-guest slot ('' = none)
+  reviewGuestLabel: string
+  reviewLikelyId: string // which slot carries the "likely" highlight
+  reviewLikelyScore: number // 0–100 shown on the highlighted slot; 0 hides it
+  // Answer trail — the last recorded answer stays visible in the header (with
+  // Undo when it was a member assign) so a mis-tap is caught immediately, not
+  // ten cards later.
+  reviewLast: string // e.g. "Person 12 → Ana" ('' = nothing answered yet)
+  reviewLastUndoable: boolean
+  reviewUndo: () => void
   reviewBusy: boolean
   reviewMsg: string
   openReview: () => void

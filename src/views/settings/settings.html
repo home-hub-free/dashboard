@@ -539,6 +539,16 @@
             </button>
         </div>
 
+        <!-- Answer trail: the LAST recorded answer stays visible (with Undo for
+             member assigns) — a mis-tap surfaces on the very next card, not ten
+             Anas later. -->
+        <div class="review-trail" :if="this.reviewLast">
+            <span class="review-trail-text">${this.reviewLast}</span>
+            <button class="btn-quiet btn-inline review-trail-undo" :if="this.reviewLastUndoable" :onclick="this.reviewUndo()">
+                <i class="iconoir-clock-rotate-right"></i> Undo
+            </button>
+        </div>
+
         <div class="review-stage" :if="this.reviewHasCard">
             <div class="review-card">
                 <!-- The photo renders contain (never crop-cuts a face out of view);
@@ -553,10 +563,11 @@
                     <span class="review-card-label">${this.reviewLabel}</span>
                     <span class="review-card-sub">seen ${this.reviewSightings}×</span>
                 </div>
+                <!-- Stamps mirror the (tier-independent) gestures: right = the
+                     highlighted answer, left = defer. -->
                 <span class="review-stamp review-stamp-yes" :if="this.reviewTier !== 'suggest' || this.reviewSuggestIsMe">It's me</span>
                 <span class="review-stamp review-stamp-yes" :if="this.reviewTier === 'suggest' && !this.reviewSuggestIsMe">It's ${this.reviewSuggestName}</span>
-                <span class="review-stamp review-stamp-no" :if="this.reviewTier === 'suggest'">Not them</span>
-                <span class="review-stamp review-stamp-no" :if="this.reviewTier === 'unknown'">Not sure</span>
+                <span class="review-stamp review-stamp-no">Not sure</span>
             </div>
 
             <p class="review-question" :if="this.reviewSuggestIsMe">
@@ -576,32 +587,29 @@
                 this person is seen) or discard.
             </p>
 
-            <div class="review-actions" :if="this.reviewTier === 'suggest'">
-                <button class="btn-outline review-btn" :onclick="this.reviewNo()">
-                    <i class="iconoir-cancel"></i> No
-                </button>
-                <button class="btn-primary btn-inline review-btn" :if="this.reviewSuggestIsMe" :onclick="this.reviewYes()">
-                    <i class="iconoir-check"></i> Yes, it's me
-                </button>
-                <button class="btn-primary btn-inline review-btn" :if="!this.reviewSuggestIsMe" :onclick="this.reviewYes()">
-                    <i class="iconoir-check"></i> Yes, it's ${this.reviewSuggestName}
-                </button>
-            </div>
-            <!-- Unknown tier: one-tap answers. The top-2 ranked candidates come from
-                 the server (rejected identities already excluded) — with a 2-member
-                 household that's "It's me" + the other member, so the dropdown below
-                 is only for the long tail. No candidates (older vision-service, or no
-                 profiles yet) falls back to the classic "It's me". -->
-            <div class="review-actions" :if="this.reviewTier === 'unknown'">
+            <!-- ONE action row for every card — same buttons, same places, both
+                 tiers, so a 150-card run never swaps CTAs under muscle memory.
+                 Slots come from the roster (me · other members in roster order ·
+                 the card's named-guest candidate last); the per-card ranking only
+                 moves the `review-likely` highlight + score. A slot disappears
+                 only when that identity was answered "not them" for the cluster. -->
+            <div class="review-actions">
                 <button class="btn-outline review-btn" :onclick="this.reviewSkip()">Not sure</button>
-                <button class="btn-primary btn-inline review-btn" :if="this.reviewCand1Id" :onclick="this.reviewAssign(this.reviewCand1Id)">
-                    <i class="iconoir-check"></i> ${this.reviewCand1Label}
-                </button>
-                <button class="btn-primary btn-inline review-btn" :if="this.reviewCand2Id" :onclick="this.reviewAssign(this.reviewCand2Id)">
-                    <i class="iconoir-check"></i> ${this.reviewCand2Label}
-                </button>
-                <button class="btn-primary btn-inline review-btn" :if="!this.reviewCandHasMe" :onclick="this.reviewMe()">
+                <button class="btn-outline review-btn review-slot" :if="this.reviewMeShown" :class:review-likely="this.reviewLikelyId === this.meId" :onclick="this.reviewMe()">
                     <i class="iconoir-check"></i> It's me
+                    <span class="review-likely-tag" :if="this.reviewLikelyId === this.meId && this.reviewLikelyScore > 0">${this.reviewLikelyScore}%</span>
+                </button>
+                <button class="btn-outline review-btn review-slot" :if="this.reviewM2Id" :class:review-likely="this.reviewLikelyId === this.reviewM2Id" :onclick="this.reviewAssign(this.reviewM2Id)">
+                    <i class="iconoir-check"></i> ${this.reviewM2Label}
+                    <span class="review-likely-tag" :if="this.reviewLikelyId === this.reviewM2Id && this.reviewLikelyScore > 0">${this.reviewLikelyScore}%</span>
+                </button>
+                <button class="btn-outline review-btn review-slot" :if="this.reviewM3Id" :class:review-likely="this.reviewLikelyId === this.reviewM3Id" :onclick="this.reviewAssign(this.reviewM3Id)">
+                    <i class="iconoir-check"></i> ${this.reviewM3Label}
+                    <span class="review-likely-tag" :if="this.reviewLikelyId === this.reviewM3Id && this.reviewLikelyScore > 0">${this.reviewLikelyScore}%</span>
+                </button>
+                <button class="btn-outline review-btn review-slot" :if="this.reviewGuestId" :class:review-likely="this.reviewLikelyId === this.reviewGuestId" :onclick="this.reviewAssign(this.reviewGuestId)">
+                    <i class="iconoir-check"></i> ${this.reviewGuestLabel}
+                    <span class="review-likely-tag" :if="this.reviewLikelyId === this.reviewGuestId && this.reviewLikelyScore > 0">${this.reviewLikelyScore}%</span>
                 </button>
             </div>
 
@@ -617,13 +625,17 @@
                     placeholder="New guest? Name them…"
                     :onchange="this.reviewNameGuest(event.target.value)"
                 />
-                <button class="btn-quiet btn-inline" :if="this.reviewTier === 'suggest'" :onclick="this.reviewSkip()">Skip</button>
+                <!-- A deliberate "that's NOT who you think" — records the rejection
+                     so the identity is never suggested for this cluster again.
+                     ("Not sure" in the main row is just a defer.) -->
+                <button class="btn-quiet btn-inline" :if="this.reviewTier === 'suggest'" :onclick="this.reviewNo()">
+                    <i class="iconoir-cancel"></i> Not ${this.reviewSuggestIsMe ? "me" : this.reviewSuggestName}
+                </button>
                 <button class="btn-quiet btn-inline" :onclick="this.reviewDiscard()">
                     <i class="iconoir-trash"></i> Discard
                 </button>
             </div>
-            <p class="review-swipe-hint" :if="this.reviewTier === 'suggest'">Swipe right = yes · swipe left = no</p>
-            <p class="review-swipe-hint" :if="this.reviewTier === 'unknown'">Swipe right = it's me · swipe left = not sure</p>
+            <p class="review-swipe-hint">Swipe right = ${this.reviewTier === 'suggest' && !this.reviewSuggestIsMe ? "it's " + this.reviewSuggestName : "it's me"} · swipe left = not sure</p>
         </div>
 
         <div class="review-done" :if="!this.reviewHasCard">

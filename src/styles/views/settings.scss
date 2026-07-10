@@ -1036,6 +1036,49 @@
     flex: 1 1 0;
     min-height: 52px; // fat thumb targets — this is a run-through-30-cards flow
   }
+
+  // Identity slots: outline at rest so the ONE the ranking points at can carry
+  // the filled "likely" emphasis — emphasis moves between cards, buttons never do.
+  .review-slot {
+    color: #fff;
+
+    &.review-likely {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+
+    .review-likely-tag {
+      margin-left: 0.3rem;
+      font-size: 0.72rem;
+      font-weight: normal;
+      opacity: 0.85;
+    }
+  }
+}
+
+// Answer trail (overlay head): the last recorded answer + Undo for member
+// assigns — mis-taps surface immediately instead of ten cards later.
+.review-trail {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 30px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+
+  .review-trail-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .review-trail-undo {
+    color: #fff;
+    flex: 0 0 auto;
+  }
 }
 
 .review-alt {
