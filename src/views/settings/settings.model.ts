@@ -164,6 +164,14 @@ export type SettingsState = {
   reviewSuggestKind: "" | "member" | "guest" // what the suggested identity is
   reviewSuggestName: string // the suggested identity's name ("Is this Ana/Abuela?")
   reviewSuggestIsMe: boolean // suggestion is the signed-in member → "Is this you?"
+  // Unknown-tier one-tap answers: the card's top-2 ranked candidates flattened to
+  // primitives (empty id = no button). With a 2-member household that's both
+  // members — a single press assigns; the dropdown stays for the long tail.
+  reviewCand1Id: string
+  reviewCand1Label: string // "It's me" / "It's Ana" — precomputed, display-ready
+  reviewCand2Id: string
+  reviewCand2Label: string
+  reviewCandHasMe: boolean // "It's me" covered by a candidate button (or I already said "not me") → no extra fallback
   reviewBusy: boolean
   reviewMsg: string
   openReview: () => void
