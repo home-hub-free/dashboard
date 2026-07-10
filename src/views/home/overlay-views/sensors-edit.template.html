@@ -81,4 +81,29 @@
             Calibrating ${this.data.calPct || 0}%
         </div>
     </div>
+
+    <!-- Live radar bins (engineering-mode debug view) -->
+    <div :if="this.data.sensorType === 'presence'" class="form-group radar-debug-setting">
+        <label>Radar debug</label>
+
+        <button
+            :if="!this.data.radarDebug"
+            class="calibrate-btn"
+            :onmouseup="this.actions.toggleRadarDebug(this.data)"
+        >
+            <i class="iconoir-antenna-signal"></i> Show live radar bins
+        </button>
+
+        <div :if="this.data.radarDebug" class="radar-live">
+            <canvas :id="'radar_bins_' + this.data.id" class="radar-canvas"></canvas>
+            <p class="radar-hint">
+                Each bar is one 0.7&nbsp;m distance gate (energy in dB). Solid tick =
+                motion threshold, dashed = micro-motion. A bar above its tick is what
+                the radar counts as presence at that distance.
+            </p>
+            <button class="calibrate-btn cancel" :onmouseup="this.actions.toggleRadarDebug(this.data)">
+                Stop live view
+            </button>
+        </div>
+    </div>
 </div>

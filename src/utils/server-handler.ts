@@ -1283,3 +1283,39 @@ export async function calibrateSensor(id: string) {
   }
   return data;
 }
+
+/** Toggle a presence sensor's radar debug (engineering) mode. While on, the
+ * device streams per-gate energies readable via fetchSensorBins. The device
+ * auto-reverts after `secs`, so callers re-arm periodically to keep it live. */
+export async function sensorDebug(id: string, on: boolean, secs = 60) {
+  const res = await authedFetch(server + "sensor-debug", {
+    method: "POST",
+    body: JSON.stringify({ id, on, secs }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.error || `Radar debug failed (${res.status})`);
+  }
+  return data;
+}
+
+/** One radar engineering frame + the per-gate thresholds (raw 10^(dB/10) scale). */
+export type SensorBins = {
+  ok: boolean;
+  debug: boolean;       // engineering mode currently on
+  starting?: boolean;   // mode switch still in progress on the device
+  age_ms: number;       // ms since the frame was read; -1 = none yet
+  dist_mm: number;      // radar-reported target distance (often 0)
+  ot1?: number;         // raw hardware presence line
+  presence: number;     // debounced presence as reported to the hub
+  gate_m: number;       // meters per gate (0.7)
+  bins: number[];
+  thr_motion: number[];
+  thr_micro: number[];
+};
+
+export async function fetchSensorBins(id: string): Promise<SensorBins> {
+  const res = await fetch(server + "sensor-bins?id=" + encodeURIComponent(id));
+  if (!res.ok) throw new Error(`Bins fetch failed (${res.status})`);
+  return res.json();
+}

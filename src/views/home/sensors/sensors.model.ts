@@ -42,4 +42,5 @@ export type SensorCalibrationState = {
   calibrationCountdown?: number;  // seconds left in that pre-start delay
   calibrating?: boolean;          // server reports a pass is running
   calPct?: number;                // live progress 0–100
+  radarDebug?: boolean;           // live radar bins view open (see radar-debug.ts)
 }

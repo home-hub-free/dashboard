@@ -18,6 +18,7 @@ import {
   removeZone as svcRemoveZone,
   zoneOptions,
 } from "../../../utils/zones.service";
+import { startRadarDebug, stopRadarDebug } from "./radar-debug";
 
 // Seconds between confirming calibration and the actual trigger — a slight grace
 // window so the user can step out of the room before the radar reads the baseline.
@@ -64,6 +65,7 @@ class SensorsTabClass extends Component<SensorsTabState> {
     this.unsubscribeSensors?.();
     this.unsubscribeDeclare?.();
     this.unsubscribeUpdate?.();
+    stopRadarDebug();
   }
 
   sensorTouchEnd(event: any, sensor: Sensor) {
@@ -81,6 +83,7 @@ class SensorsTabClass extends Component<SensorsTabState> {
         armCalibration: this.armCalibration.bind(this),
         cancelCalibration: this.cancelCalibration.bind(this),
         startCalibration: this.startCalibration.bind(this),
+        toggleRadarDebug: this.toggleRadarDebug.bind(this),
         saveZone: this.saveZone.bind(this),
         addZone: this.addZone.bind(this),
         removeZone: this.removeZone.bind(this),
@@ -167,6 +170,39 @@ class SensorsTabClass extends Component<SensorsTabState> {
       showToaster({
         from: 'bottom',
         message: error?.message || 'Could not start calibration',
+        timer: 3000,
+      });
+    }
+  }
+
+  // --- Live radar bins (presence debug view) --------------------------------
+
+  /** Toggle the radar engineering-mode live view. The poll/draw loop lives in
+   * radar-debug.ts; its alive() check ends the session (and turns the device's
+   * debug window off) as soon as the overlay closes or leaves this sensor. */
+  private async toggleRadarDebug(data: any) {
+    const id = data?.id;
+    if (!id) return;
+
+    if (data.radarDebug) {
+      stopRadarDebug();
+      this.patchOverlay({ radarDebug: false });
+      return;
+    }
+
+    // Reveal the canvas first so the loop's first frame has somewhere to draw.
+    this.patchOverlay({ radarDebug: true });
+    try {
+      await startRadarDebug(id, () => {
+        const bind: any = OverlayModal.bind;
+        return this.overlayShows(id) && !!bind?.data?.radarDebug;
+      });
+    } catch (error: any) {
+      stopRadarDebug(false);
+      if (this.overlayShows(id)) this.patchOverlay({ radarDebug: false });
+      showToaster({
+        from: 'bottom',
+        message: error?.message || 'Could not start the radar view',
         timer: 3000,
       });
     }
