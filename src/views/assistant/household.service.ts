@@ -542,6 +542,30 @@ export class HouseholdServiceClass {
     this.state.reviewScore = card?.suggested
       ? Math.round(card.suggested.score * 100)
       : 0;
+    // Unknown-tier one-tap answers: the top-2 ranked candidates (server-ranked,
+    // rejected identities already excluded) become direct "It's <name>" buttons.
+    // Members are labelled with their household displayName; a candidate we can't
+    // name is no button at all. reviewAssign already speaks both id kinds.
+    const cands = (card?.candidates || [])
+      .map((c) => {
+        const member = this.state.households.find((u) => u.id === c.id);
+        const name = member?.displayName || c.name || "";
+        return {
+          id: c.id,
+          label: c.id === this.state.meId ? "It's me" : name ? `It's ${name}` : "",
+        };
+      })
+      .filter((c) => c.label)
+      .slice(0, 2);
+    this.state.reviewCand1Id = cands[0]?.id || "";
+    this.state.reviewCand1Label = cands[0]?.label || "";
+    this.state.reviewCand2Id = cands[1]?.id || "";
+    this.state.reviewCand2Label = cands[1]?.label || "";
+    // "It's me" is already covered when I'm one of the buttons — or moot when I
+    // (or another member, for me) already answered "not me" on this cluster.
+    this.state.reviewCandHasMe =
+      cands.some((c) => c.id === this.state.meId) ||
+      (card?.rejected_user_ids || []).includes(this.state.meId);
     this.reviewFaceBox =
       card?.face_box && card.face_box.length === 4 ? card.face_box : null;
     this.state.reviewHasFaceBox = !!this.reviewFaceBox;

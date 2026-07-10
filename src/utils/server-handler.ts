@@ -855,6 +855,11 @@ export type ReviewCard = {
   /** Who the system thinks this is: a household member (card addressed to them
    * only) or a NAMED guest like "Abuela" (anyone can confirm). */
   suggested: { kind: "member" | "guest"; id: string; name: string | null; score: number } | null;
+  /** Ranked one-tap candidates — the top matches even when nothing clears the
+   * suggest bar, so "Who is this?" gets direct "It's <name>" buttons instead of
+   * a dropdown dive. Same id space reviewAssign consumes (member id / guest:N).
+   * Absent on an older vision-service → the card falls back to "It's me". */
+  candidates?: { kind: "member" | "guest"; id: string; name: string | null; score: number }[];
   rejected_user_ids: string[];
   has_thumb: boolean;
   thumbUrl: string | null;

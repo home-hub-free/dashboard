@@ -587,9 +587,20 @@
                     <i class="iconoir-check"></i> Yes, it's ${this.reviewSuggestName}
                 </button>
             </div>
+            <!-- Unknown tier: one-tap answers. The top-2 ranked candidates come from
+                 the server (rejected identities already excluded) — with a 2-member
+                 household that's "It's me" + the other member, so the dropdown below
+                 is only for the long tail. No candidates (older vision-service, or no
+                 profiles yet) falls back to the classic "It's me". -->
             <div class="review-actions" :if="this.reviewTier === 'unknown'">
                 <button class="btn-outline review-btn" :onclick="this.reviewSkip()">Not sure</button>
-                <button class="btn-primary btn-inline review-btn" :onclick="this.reviewMe()">
+                <button class="btn-primary btn-inline review-btn" :if="this.reviewCand1Id" :onclick="this.reviewAssign(this.reviewCand1Id)">
+                    <i class="iconoir-check"></i> ${this.reviewCand1Label}
+                </button>
+                <button class="btn-primary btn-inline review-btn" :if="this.reviewCand2Id" :onclick="this.reviewAssign(this.reviewCand2Id)">
+                    <i class="iconoir-check"></i> ${this.reviewCand2Label}
+                </button>
+                <button class="btn-primary btn-inline review-btn" :if="!this.reviewCandHasMe" :onclick="this.reviewMe()">
                     <i class="iconoir-check"></i> It's me
                 </button>
             </div>
