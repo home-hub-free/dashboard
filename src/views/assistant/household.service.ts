@@ -7,7 +7,6 @@ import {
   deleteUser,
   listUsers,
   logout,
-  updateUser,
 } from "../../utils/auth";
 import {
   enrollVoiceprint,
@@ -74,7 +73,7 @@ const FACE_STEADY_MS = 500;
 
 /**
  * Household roster management for the assistant settings view: list members,
- * add a new one, tweak a member's display name / tone (the prefs the agent
+ * add a new one, tweak a member's display name (the prefs the agent
  * reads), remove a member, and sign out. State lives on the assistant bind so
  * bindrjs re-renders; arrays are reassigned (not mutated) so the proxy notices.
  */
@@ -1024,28 +1023,15 @@ export class HouseholdServiceClass {
         username,
         displayName: (this.state.newDisplayName || "").trim() || undefined,
         password,
-        prefs: { tone: (this.state.newTone || "").trim() || undefined },
       });
       this.state.newUsername = "";
       this.state.newDisplayName = "";
       this.state.newPassword = "";
-      this.state.newTone = "";
       this.state.householdError = "";
       await this.refresh();
       showToaster({ from: "bottom", message: "Member added", timer: 1800 });
     } catch (err: any) {
       this.state.householdError = err?.message || "Could not add member";
-    }
-  }
-
-  /** Persist a tone edit for a member (the agent reads prefs.tone). */
-  async saveTone(id: string, tone: string) {
-    try {
-      await updateUser(id, { prefs: { tone: tone.trim() || undefined } });
-      await this.refresh();
-      showToaster({ from: "bottom", message: "Saved", timer: 1400 });
-    } catch (err: any) {
-      this.state.householdError = err?.message || "Could not save";
     }
   }
 

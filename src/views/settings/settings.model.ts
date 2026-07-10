@@ -16,9 +16,7 @@ export type SettingsState = {
   newUsername: string
   newDisplayName: string
   newPassword: string
-  newTone: string
   addHousehold: () => void
-  saveTone: (id: string, tone: string) => void
   removeHousehold: (id: string) => void
   signOut: () => void
 

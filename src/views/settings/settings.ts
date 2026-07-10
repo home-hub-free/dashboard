@@ -31,9 +31,7 @@ class SettingsContentClass extends Component<SettingsState> {
         newUsername: "",
         newDisplayName: "",
         newPassword: "",
-        newTone: "",
         addHousehold: () => this.householdService.add(),
-        saveTone: (id: string, tone: string) => this.householdService.saveTone(id, tone),
         removeHousehold: (id: string) => this.householdService.remove(id),
         signOut: () => this.householdService.signOut(),
 

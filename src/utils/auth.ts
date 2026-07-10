@@ -10,7 +10,6 @@ import { storageGet, storageSet } from "./utils.service";
  */
 
 export interface UserPrefs {
-  tone?: string;
   [key: string]: unknown;
 }
 

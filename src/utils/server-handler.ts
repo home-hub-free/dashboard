@@ -69,7 +69,6 @@ export type IdentityVia = "login" | "voiceprint" | "declared" | "presence" | "un
 export type AgentUserContext = {
   id: string;
   name: string;
-  tone?: string;
   via: IdentityVia;
   confidence: number;
 };
@@ -996,11 +995,11 @@ export async function deleteAssistantChat(id: string): Promise<void> {
 }
 
 export async function askAgent(text: string, zone?: string): Promise<AgentReply> {
-  // Carry the signed-in member's identity + prefs so the agent knows *who* is
-  // asking and can personalise (greet by name, match tone). The llm-gateway
-  // consumes `data.user` (separate repo); absent when no one is logged in. A
-  // dashboard session is authoritative, so `via:"login"` at full confidence —
-  // the satellite/voice path fills the SAME envelope from a speaker-ID match.
+  // Carry the signed-in member's identity so the agent knows *who* is asking
+  // and can personalise (greet by name). The llm-gateway consumes `data.user`
+  // (separate repo); absent when no one is logged in. A dashboard session is
+  // authoritative, so `via:"login"` at full confidence — the satellite/voice
+  // path fills the SAME envelope from a speaker-ID match.
   const user = currentUser();
   const payload: Record<string, any> = {};
   if (zone) payload.zone = zone;
@@ -1008,7 +1007,6 @@ export async function askAgent(text: string, zone?: string): Promise<AgentReply>
     const userCtx: AgentUserContext = {
       id: user.id,
       name: user.displayName,
-      tone: user.prefs?.tone,
       via: "login",
       confidence: 1,
     };
