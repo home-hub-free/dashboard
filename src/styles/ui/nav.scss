@@ -143,7 +143,10 @@ body.face-viewer-open #nav-bar {
 // ---- Phone bottom bar (< 640px) -----------------------------------------------
 @include mobile-only {
   #nav-bar {
-    height: 84px;
+    // 84px of content + the iOS home-indicator inset (border-box: the base
+    // padding-bottom already adds the same inset, so height must grow with it
+    // or the icons get compressed).
+    height: calc(84px + env(safe-area-inset-bottom, 0px));
     width: 100%;
     left: 0;
     bottom: 0;

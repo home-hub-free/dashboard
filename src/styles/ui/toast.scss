@@ -35,11 +35,11 @@
     }
 
     &.from-top {
-      top: 10px;
+      top: calc(10px + env(safe-area-inset-top, 0px));
     }
 
     &.from-bottom {
-      bottom: 110px;
+      bottom: calc(110px + env(safe-area-inset-bottom, 0px));
     }
   }
 }

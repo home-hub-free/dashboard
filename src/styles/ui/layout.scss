@@ -20,8 +20,10 @@ $nav-rail-width: 208px;
     // a 34px gutter — 17% of a 390px screen.)
     padding: 0;
     box-sizing: border-box;
-    height: calc(100% - 84px); // clear the 84px bottom nav (fallback)
-    height: calc(100dvh - 84px); // dvh tracks the on-screen keyboard
+    // Clear the bottom nav: 84px of content + the iOS home-indicator inset
+    // (nav.scss grows the bar by the same env() amount).
+    height: calc(100% - 84px - env(safe-area-inset-bottom, 0px)); // fallback
+    height: calc(100dvh - 84px - env(safe-area-inset-bottom, 0px)); // dvh tracks the on-screen keyboard
     left: 0;
     top: 0;
     padding-bottom: 0;
