@@ -220,8 +220,12 @@ export function visionHlsUrl(camId: string): string {
   return `${visionServer}hls/${encodeURIComponent(camId)}/live.m3u8`;
 }
 
-/** Per-zone occupancy/identity snapshot — "who is in which room" (§7 pull surface). */
-export type ZoneOccupant = { track: string; id: string | null; name: string | null; class: string; confidence: number; since: number };
+/** Per-zone occupancy/identity snapshot — "who is in which room" (§7 pull surface).
+ *  Read verbatim from the vision-service `/occupancy` snapshot, so keys are snake_case.
+ *  `assumed`/`pending_left` are the SMART_FACE_ID hedges: `assumed` = a still person whose
+ *  track dropped, held by position (name shown hedged, "David?"); `pending_left` = a
+ *  mid-dropout ghost. Both optional/additive — absent from older producers. */
+export type ZoneOccupant = { track: string; id: string | null; name: string | null; class: string; confidence: number; since: number; assumed?: boolean; pending_left?: boolean };
 
 /** Per-camera worker health from the vision-service (`/occupancy.cameras[]`). Answers
  * "is the cam making frames vs detecting presence": `frames_seen`/`connected` = blobs

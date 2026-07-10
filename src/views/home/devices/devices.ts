@@ -179,12 +179,26 @@ function computeStatus(device: Device, actuators: Channel[]): string {
 
 /** The camera tile's "who is here" headline (§6) — the high-value surface. Names the
  * household members present, counts guests, falls back to a neutral count for unknown
- * people, and "Empty" when no one's there. */
+ * people, and "Empty" when no one's there.
+ *
+ * SMART_FACE_ID honesty: a household member whose identity is only ASSUMED (still person
+ * held by position across a track dropout, not a live face read) renders HEDGED ("David?").
+ * And a `guest` only counts as a guest when its confidence clears GUEST_CONF_FLOOR — a
+ * sub-floor guest is a weak/noisy read, folded into the neutral count instead of asserting
+ * "1 guest" (the over-count this whole feature exists to stop). */
+const GUEST_CONF_FLOOR = 0.45;
+
 function summariseOccupants(occ: ZoneOccupant[] | undefined): string {
   if (!occ || occ.length === 0) return "Empty";
-  const names = occ.filter((o) => o.class === "household" && o.name).map((o) => o.name as string);
-  const guests = occ.filter((o) => o.class === "guest").length;
-  const unknown = occ.filter((o) => o.class === "unknown").length;
+  const names = occ
+    .filter((o) => o.class === "household" && o.name)
+    .map((o) => (o.assumed ? `${o.name}?` : (o.name as string)));
+  // A guest is only counted as one when it's a confident read; weaker guest reads fold
+  // into the neutral bucket rather than over-asserting a distinct visitor.
+  const guests = occ.filter((o) => o.class === "guest" && o.confidence >= GUEST_CONF_FLOOR).length;
+  const unknown = occ.filter(
+    (o) => o.class === "unknown" || (o.class === "guest" && o.confidence < GUEST_CONF_FLOOR),
+  ).length;
   const parts: string[] = [];
   if (names.length) parts.push(names.join(", "));
   if (guests) parts.push(`${guests} guest${guests === 1 ? "" : "s"}`);
