@@ -29,6 +29,7 @@ import {
   detachCluster,
   listFaceCaptures,
   deleteFaceCapture,
+  undoPromote,
   rebuildFaceProfile,
   getFaceThresholds,
   setFaceThresholds,
@@ -100,6 +101,7 @@ export class HouseholdServiceClass {
   detach() {
     this.reviewGesturesOff?.();
     this.reviewGesturesOff = null;
+    this.lastAssign = null;
     this.zoomGesturesOff?.();
     this.zoomGesturesOff = null;
     this.zoomItems = [];
@@ -507,6 +509,9 @@ export class HouseholdServiceClass {
     this.state.reviewTotal = this.reviewQueue.length;
     this.state.reviewMsg = "";
     this.state.reviewBusy = false;
+    this.lastAssign = null;
+    this.state.reviewLast = "";
+    this.state.reviewLastUndoable = false;
     this.state.reviewOpen = true;
     setViewerNavHidden(true); // the phone nav bar can't be out-stacked from here — hide it
     this.presentReviewCard(0);
@@ -542,30 +547,32 @@ export class HouseholdServiceClass {
     this.state.reviewScore = card?.suggested
       ? Math.round(card.suggested.score * 100)
       : 0;
-    // Unknown-tier one-tap answers: the top-2 ranked candidates (server-ranked,
-    // rejected identities already excluded) become direct "It's <name>" buttons.
-    // Members are labelled with their household displayName; a candidate we can't
-    // name is no button at all. reviewAssign already speaks both id kinds.
-    const cands = (card?.candidates || [])
-      .map((c) => {
-        const member = this.state.households.find((u) => u.id === c.id);
-        const name = member?.displayName || c.name || "";
-        return {
-          id: c.id,
-          label: c.id === this.state.meId ? "It's me" : name ? `It's ${name}` : "",
-        };
-      })
-      .filter((c) => c.label)
-      .slice(0, 2);
-    this.state.reviewCand1Id = cands[0]?.id || "";
-    this.state.reviewCand1Label = cands[0]?.label || "";
-    this.state.reviewCand2Id = cands[1]?.id || "";
-    this.state.reviewCand2Label = cands[1]?.label || "";
-    // "It's me" is already covered when I'm one of the buttons — or moot when I
-    // (or another member, for me) already answered "not me" on this cluster.
-    this.state.reviewCandHasMe =
-      cands.some((c) => c.id === this.state.meId) ||
-      (card?.rejected_user_ids || []).includes(this.state.meId);
+    // FIXED answer slots: the ROSTER decides which buttons exist and where (me,
+    // then the other members in roster order) so a run of cards never swaps CTAs
+    // under muscle memory. The per-card ranking only moves the `likely` highlight;
+    // a slot disappears only when that identity was answered "not them" for this
+    // cluster. A named-guest candidate takes the stable LAST slot.
+    const rejected = card?.rejected_user_ids || [];
+    this.state.reviewMeShown = !!card && !rejected.includes(this.state.meId);
+    const others = this.state.households.filter(
+      (u) => u.id !== this.state.meId && !rejected.includes(u.id)
+    );
+    const label = (u?: SessionUser) =>
+      u ? `It's ${u.displayName || u.username}` : "";
+    this.state.reviewM2Id = others[0]?.id || "";
+    this.state.reviewM2Label = label(others[0]);
+    this.state.reviewM3Id = others[1]?.id || "";
+    this.state.reviewM3Label = label(others[1]);
+    const guest = (card?.candidates || []).find(
+      (c) => c.kind === "guest" && c.name
+    );
+    this.state.reviewGuestId = guest?.id || "";
+    this.state.reviewGuestLabel = guest ? `It's ${guest.name}` : "";
+    // The highlight: the suggestion when there is one, else the top-ranked
+    // candidate — rendered as emphasis + score ON its slot, never as reordering.
+    const likely = card?.suggested || (card?.candidates || [])[0] || null;
+    this.state.reviewLikelyId = likely?.id || "";
+    this.state.reviewLikelyScore = likely ? Math.round(likely.score * 100) : 0;
     this.reviewFaceBox =
       card?.face_box && card.face_box.length === 4 ? card.face_box : null;
     this.state.reviewHasFaceBox = !!this.reviewFaceBox;
@@ -841,8 +848,75 @@ export class HouseholdServiceClass {
       this.state.reviewBusy = false;
       return;
     }
+    this.recordAnswerTrail(action, card, value);
     this.state.reviewBusy = false;
     this.presentReviewCard(this.reviewCursor + 1);
+  }
+
+  /** Keep the LAST recorded answer visible in the overlay header ("Person 12 →
+   * Ana") — with Undo when it was a member assign — so a mis-tap in a fast run is
+   * noticed on the very next card, not ten Anas later. Skips leave no trail
+   * (nothing was recorded). */
+  private lastAssign: ReviewCard | null = null;
+
+  private recordAnswerTrail(
+    action: "me" | "yes" | "no" | "skip" | "discard" | "assign" | "nameguest",
+    card: ReviewCard,
+    value?: string
+  ) {
+    if (action === "skip") return; // deferred, nothing to undo or regret
+    const memberName = (id: string) => {
+      const u = this.state.households.find((m) => m.id === id);
+      return u ? u.displayName || u.username : id;
+    };
+    let target = "";
+    let assignedTo = ""; // non-empty = a member promote happened (undoable)
+    if (action === "me") {
+      assignedTo = this.state.meId;
+      target = memberName(this.state.meId);
+    } else if (action === "yes") {
+      if (card.suggested?.kind === "member") assignedTo = card.suggested.id;
+      target = card.suggested?.name || (card.suggested ? memberName(card.suggested.id) : "");
+    } else if (action === "assign" && value) {
+      if (!value.startsWith("guest:")) assignedTo = value;
+      target = value.startsWith("guest:")
+        ? this.state.namedGuests.find((g) => g.id === value)?.label || "a guest"
+        : memberName(value);
+    } else if (action === "nameguest") {
+      target = `new guest "${value}"`;
+    } else if (action === "no") {
+      target = `not ${card.suggested?.name || memberName(card.suggested?.id || this.state.meId)}`;
+    } else if (action === "discard") {
+      target = "discarded";
+    }
+    this.lastAssign = assignedTo ? card : null;
+    this.state.reviewLast = `${card.label} → ${target}`;
+    this.state.reviewLastUndoable = !!assignedTo;
+  }
+
+  /** Undo the last member assign: detach the cluster WITHOUT a "not them" brand
+   * (an oops is not a rejection), put the card back under the cursor, and re-ask
+   * it. Only member promotes are cleanly reversible — guest merges fold centroids
+   * and discards delete — so only those get the button. */
+  async reviewUndo() {
+    const card = this.lastAssign;
+    if (!card || this.state.reviewBusy) return;
+    this.state.reviewBusy = true;
+    try {
+      await undoPromote(card.guest_id);
+    } catch (err: any) {
+      this.state.reviewMsg = err?.message || "Could not undo";
+      this.state.reviewBusy = false;
+      return;
+    }
+    this.lastAssign = null;
+    this.state.reviewLast = "";
+    this.state.reviewLastUndoable = false;
+    this.state.reviewMsg = "";
+    this.reviewQueue.splice(this.reviewCursor, 0, card);
+    this.state.reviewCount = this.reviewQueue.length;
+    this.state.reviewBusy = false;
+    this.presentReviewCard(this.reviewCursor); // re-ask the undone card
   }
 
   reviewMe() { this.answerReview("me"); }
@@ -857,21 +931,26 @@ export class HouseholdServiceClass {
     this.answerReview("nameguest", name);
   }
 
-  /** Tinder-style input: swipe right = confirm ("it's me" / "yes, it's Abuela"),
-   * swipe left = "not them" (suggest tier) / "not sure" (unknown tier); ⇄ arrow
-   * keys mirror it, Esc closes. The drag moves the card via direct style writes
-   * (no state churn → no re-render per frame); listeners live on document so they
-   * survive bindrjs region re-renders. */
+  /** Tinder-style input: swipe right = the highlighted answer (the suggestion if
+   * any, else "it's me"), swipe left = "not sure" — identical on every card; ⇄
+   * arrow keys mirror it, Esc closes. The drag moves the card via direct style
+   * writes (no state churn → no re-render per frame); listeners live on document
+   * so they survive bindrjs region re-renders. */
   private bindReviewGestures() {
     this.reviewGesturesOff?.(); // never stack listeners across reopens
     let startX = 0;
     let dragging = false;
     const cardEl = () =>
       document.querySelector<HTMLElement>(".review-card");
-    const swipeLeft = () =>
-      this.state.reviewTier === "suggest" ? this.reviewNo() : this.reviewSkip();
+    // Gestures are the SAME on every card (part of the stable-CTA posture):
+    // left = "not sure" (defer — a deliberate "not them" is the quiet reject
+    // button), right = the highlighted answer (the suggestion when there is one,
+    // else "it's me"; nothing when I already said "not me" on the cluster).
+    const swipeLeft = () => this.reviewSkip();
     const swipeRight = () =>
-      this.state.reviewTier === "suggest" ? this.reviewYes() : this.reviewMe();
+      this.state.reviewTier === "suggest"
+        ? this.reviewYes()
+        : this.state.reviewMeShown ? this.reviewMe() : undefined;
 
     const onStart = (e: TouchEvent) => {
       if (!(e.target as HTMLElement | null)?.closest?.(".review-card")) return;

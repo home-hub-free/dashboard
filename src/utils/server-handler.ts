@@ -737,6 +737,18 @@ export async function detachCluster(guestId: string): Promise<void> {
   if (!res.ok) throw new Error(`Could not detach (${res.status})`);
 }
 
+/** Undo a mis-tapped review assign: detach the cluster WITHOUT branding the member
+ * "not them" (an oops is not a rejection), so the card returns to review with its
+ * suggestion intact. */
+export async function undoPromote(guestId: string): Promise<void> {
+  const res = await fetch(visionServer + `faces/clusters/${encodeURIComponent(guestId)}/detach`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ reject: false }),
+  });
+  if (!res.ok) throw new Error(`Could not undo (${res.status})`);
+}
+
 /** One archived photo from an identity's capture ledger — an INGREDIENT of their
  * face profile (the vision-service permanently archives the crop + exact embedding
  * behind every recognition decision). Deleting one removes it for good; a rebuild
