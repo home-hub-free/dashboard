@@ -66,18 +66,30 @@ function token(name: string, fallback: string): string {
 
 /** Play Aura's reply in her real (Fish TTS) voice; fall back to the browser's own
  *  speech synth if the box TTS is down so the conversation never goes silent. Resolves
- *  when playback finishes (or immediately if nothing can speak). */
+ *  when playback finishes (or immediately if nothing can speak).
+ *
+ *  HARD TIMEOUT: speech here is the payoff, never the contract — the enrollment flow
+ *  awaits this between script lines, and it once hung FOREVER on sentence 1 (Ana,
+ *  2026-07-07: box TTS was 503 → browser speechSynthesis fallback never fired
+ *  onend/onerror on her phone, and this await had no ceiling). Race against a
+ *  text-scaled timer so a mute/hung voice can only ever cost seconds, not the flow. */
 export async function speakAura(text: string): Promise<void> {
-  try {
-    const blob = await synthesizeSpeech(text);
-    if (blob && blob.size > 0) {
-      await playBlob(blob);
-      return;
-    }
-  } catch {
-    /* fall through to the browser voice */
-  }
-  await browserSpeak(text);
+  const ceilingMs = Math.min(12_000, 1500 + text.length * 90);
+  await Promise.race([
+    (async () => {
+      try {
+        const blob = await synthesizeSpeech(text);
+        if (blob && blob.size > 0) {
+          await playBlob(blob);
+          return;
+        }
+      } catch {
+        /* fall through to the browser voice */
+      }
+      await browserSpeak(text);
+    })(),
+    new Promise<void>((resolve) => setTimeout(resolve, ceilingMs)),
+  ]);
 }
 
 function playBlob(blob: Blob): Promise<void> {
