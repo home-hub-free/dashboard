@@ -46,6 +46,15 @@ export const OverlayModal = new OverlayModalClass();
 let startPosition: ModalRectangle | null = null;
 let onCloseHook: (() => void) | null = null;
 
+/** Honor prefers-reduced-motion: the sheet appears/disappears IN PLACE — no
+ * grow-from-rect choreography. Besides a11y, this removes the load-sensitive
+ * window where the sheet sits at its start rect waiting for the deferred
+ * final-position render (overlay.scss zeroes the matching transitions). */
+function prefersReducedMotion(): boolean {
+  return typeof window.matchMedia === "function"
+    && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 export function openOverlay(context: ModalContext) {
   if (!OverlayModal.mounted) OverlayModal.mount();
   if (OverlayModal.bind.visible) return;
@@ -55,10 +64,7 @@ export function openOverlay(context: ModalContext) {
   OverlayModal.bind.data = context.data;
   OverlayModal.bind.actions = context.actions || {};
   OverlayModal.bind.visible = true;
-  OverlayModal.bind.opening = true;
-  setRectStyles(context.startRect);
-  startPosition = context.startRect;
-  setTimeout(() => {
+  const finalRect = () => {
     OverlayModal.bind.position = {
       top: context.padding.y + "px",
       left: context.padding.x + "px",
@@ -66,7 +72,15 @@ export function openOverlay(context: ModalContext) {
       maxHeight: `calc(100% - ${context.padding.y * 2}px)`,
       width: `calc(100% - ${context.padding.x * 2}px)`,
     };
-  });
+  };
+  startPosition = context.startRect;
+  if (prefersReducedMotion()) {
+    finalRect();
+    return;
+  }
+  OverlayModal.bind.opening = true;
+  setRectStyles(context.startRect);
+  setTimeout(finalRect);
   setTimeout(() => (OverlayModal.bind.opening = false), 300);
 }
 
@@ -78,14 +92,19 @@ export function closeOverlay() {
     /* teardown must never block the close animation */
   }
   onCloseHook = null;
-  OverlayModal.bind.closing = true;
-  if (startPosition) setRectStyles(startPosition);
-  setTimeout(() => {
+  const teardown = () => {
     OverlayModal.bind.data = {};
     OverlayModal.bind.actions = {};
     OverlayModal.bind.visible = false;
     OverlayModal.bind.closing = false;
-  }, 300);
+  };
+  if (prefersReducedMotion()) {
+    teardown();
+    return;
+  }
+  OverlayModal.bind.closing = true;
+  if (startPosition) setRectStyles(startPosition);
+  setTimeout(teardown, 300);
 }
 
 export function updateOverlayData(data: any) {

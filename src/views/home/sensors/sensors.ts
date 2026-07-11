@@ -1,8 +1,6 @@
 import { Component } from "../../../core/component";
-import { bus } from "../../../core/bus";
 import { store } from "../../../store/store";
-import template from './sensors.html?raw';
-import { Sensor, SensorUpdateEvent, SensorsTabState } from "./sensors.model";
+import { Sensor, SensorsTabState } from "./sensors.model";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import {
   openOverlay,
@@ -26,8 +24,6 @@ const CAL_START_DELAY_S = 3;
 
 class SensorsTabClass extends Component<SensorsTabState> {
   sensorsService: SensorsServiceClass;
-  private unsubscribeDeclare?: () => void;
-  private unsubscribeUpdate?: () => void;
   private unsubscribeSensors?: () => void;
 
   constructor(sensorsService: SensorsServiceClass) {
@@ -35,36 +31,21 @@ class SensorsTabClass extends Component<SensorsTabState> {
     this.sensorsService = sensorsService;
   }
 
+  // HEADLESS component: the env band is gone — sensor chips render inside each
+  // room card (devices.ts/.html) straight from the store, and ws-handler keeps
+  // the store fresh (SensorActions). This component stays mounted for what it
+  // still owns: the sensor DETAIL overlay (sensorTouchEnd + its calibration /
+  // radar-debug actions) and mirroring live calibration progress into it.
   mount() {
-    this.createBind({
-      id: 'sensors',
-      template,
-      bind: {
-        sensors: store.get('sensors'),
-        sensorTouchEnd: this.sensorTouchEnd.bind(this),
-      },
-    });
-
     this.unsubscribeSensors = store.subscribe('sensors', (sensors) => {
-      this.bind.sensors = sensors;
       // Mirror live calibration progress into the open detail overlay — its
       // `data` is a detached copy of the sensor, so it won't see WS updates.
       this.syncOverlayCalibration(sensors);
-    });
-
-    this.unsubscribeDeclare = bus.on('sensor:declare', (declaredSensor) => {
-      this.onSensorDeclare(declaredSensor);
-    });
-
-    this.unsubscribeUpdate = bus.on('sensor:update', (updatedSensor) => {
-      this.onSensorUpdate(updatedSensor);
     });
   }
 
   unmount() {
     this.unsubscribeSensors?.();
-    this.unsubscribeDeclare?.();
-    this.unsubscribeUpdate?.();
     stopRadarDebug();
   }
 
@@ -238,24 +219,6 @@ class SensorsTabClass extends Component<SensorsTabState> {
     });
   }
 
-  private onSensorDeclare(declaredSensor: Sensor) {
-    if (!this.bind.sensors) this.bind.sensors = [];
-    const sensor = this.bind.sensors.find((s) => s.id === declaredSensor.id);
-    if (!sensor) this.bind.sensors.push(declaredSensor);
-  }
-
-  private onSensorUpdate(updatedSensor: SensorUpdateEvent) {
-    const sensor = this.bind.sensors.find((s) => s.id === updatedSensor.id);
-    if (sensor) {
-      if (updatedSensor.value !== undefined) {
-        sensor.value = updatedSensor.value;
-      }
-      if (updatedSensor.name) {
-        sensor.name = updatedSensor.name || sensor.name;
-      }
-    }
-    if (sensor) this.sensorsService.formatSensorsValues([sensor as Sensor]);
-  }
 }
 
 export const SensorsTab = new SensorsTabClass(SensorsService);

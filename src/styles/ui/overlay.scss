@@ -76,6 +76,18 @@
       opacity: 0;
     }
   }
+
+  // Reduced motion: the sheet appears/disappears in place — no grow-from-rect
+  // choreography (also makes headless geometry assertions deterministic).
+  @media (prefers-reduced-motion: reduce) {
+    &.opening,
+    &.closing,
+    .content.opening,
+    .content.closing,
+    .content * {
+      transition: none !important;
+    }
+  }
 }
 
 // ---- The sheet + its content patterns -----------------------------------------

@@ -8,7 +8,8 @@
 
 @import "./tokens";
 
-$nav-rail-width: 208px;
+// Desktop app bar height (nav.scss builds the bar itself; the shell offsets by it).
+$topbar-height: 54px;
 
 // ---- Phone shell (< 640px) ---------------------------------------------------
 @include mobile-only {
@@ -79,11 +80,20 @@ $nav-rail-width: 208px;
   }
 }
 
-// ---- Desktop shell (>= 640px): content offsets past the left nav rail ---------
+// ---- Desktop shell (>= 640px): full-width content under the fixed app bar ------
 @include desktop-up {
+  #main-content {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: $topbar-height;
+    display: flex;
+    flex-direction: column;
+  }
+
   #tabs {
-    padding-top: 20px;
-    margin-left: $nav-rail-width;
+    padding-top: 0;
 
     .menu-tabs {
       border-bottom: 2px;
@@ -118,20 +128,19 @@ $nav-rail-width: 208px;
     }
   }
 
-  // The shell header duplicates what the rail + page-heads already say on
-  // desktop (and rendered hidden behind the fixed rail anyway) — drop it so
-  // content starts at the top instead of below a dead band.
+  // The shell header duplicates what the app bar + page-heads already say on
+  // desktop — drop it so content starts at the top instead of below a dead band.
   #main-content #header {
     display: none;
   }
 
   #tab-content {
-    margin-left: $nav-rail-width;
+    flex: 1;
+    min-height: 0;
     text-align: center;
-    padding: 24px 32px 32px;
-    height: calc(100% - 56px);
+    padding: 22px 32px 32px;
     position: relative;
-    overflow: scroll;
+    overflow: auto;
 
     & > div {
       height: 100%;

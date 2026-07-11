@@ -1,5 +1,6 @@
 import { Channel } from "./channels";
 import { CameraPreset } from "../../../utils/server-handler";
+import { Sensor } from "../sensors/sensors.model";
 
 export type Device = {
   id: string;
@@ -109,6 +110,9 @@ export type DeviceGroup = {
   label: string;
   kind: "zone" | "cameras" | "pinned";
   devices: Device[];
+  /** The zone's own sensor chips, rendered inside the room card (the room is
+   * the ONE place to find everything about the room). Empty for pinned/cameras. */
+  sensors: Sensor[];
   /** Right-aligned header summary ("2 on", "4 cameras"). */
   summary: string;
   collapsed: boolean;
@@ -141,6 +145,8 @@ export type DevicesTabState = {
   /** Filter tiles by name/zone substring (uncontrolled input → recompute groups). */
   onFilter: (event: Event) => void;
   onTileClick: (device: Device) => void;
+  /** Sensor chip tap (room-card sensor row) → the sensor detail overlay. */
+  onSensorClick: (event: Event, sensorId: string) => void;
   // One channel-addressed write path (Stage 4c). Handlers take primitives
   // (deviceId, channelKey) rather than the loop's `device`/`channel` objects,
   // because bindrjs only substitutes a loop var when it's followed by `.`/`)` —

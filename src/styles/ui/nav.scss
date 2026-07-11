@@ -191,50 +191,59 @@ body.face-viewer-open #nav-bar {
   }
 }
 
-// ---- Desktop brand rail (>= 640px) ----------------------------------------------
+// ---- Desktop app bar (>= 640px) ---------------------------------------------------
+// A slim fixed toolbar: brand nameplate · destination tabs · connection status.
+// The whole viewport width below it belongs to content (layout.scss offsets the
+// shell by $topbar-height).
 @include desktop-up {
   #nav-bar {
-    height: 100%;
-    width: $nav-rail-width;
+    top: 0;
+    bottom: auto;
     left: 0;
-    bottom: 0;
-    display: inline-block;
-    background: var(--color-surface-secondary);
+    height: $topbar-height;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-sizing: border-box;
+    padding: 0 20px;
+    background: var(--color-background);
     border-top: none;
-    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
     box-shadow: none;
-    padding-top: 8px;
 
-    // Brand lockup: the board's nameplate — expanded Archivo, flat, no glow,
-    // finished with a hairline like a stamped panel label.
+    // Brand lockup: the board's nameplate — expanded Archivo, flat, no glow.
     &::before {
       content: "Home Hub";
       display: block;
-      margin: 0 14px 10px;
-      padding: 26px 8px 16px;
-      font-size: 1.05rem;
+      margin-right: 22px;
+      font-size: 1.02rem;
       font-weight: var(--font-weight-semibold);
       font-stretch: var(--font-stretch-display);
       letter-spacing: var(--letter-spacing-tight);
       color: var(--color-text-primary);
-      border-bottom: 1px solid var(--color-border);
+      white-space: nowrap;
     }
 
     .menu-item {
       position: relative;
-      padding: 15px;
-      height: 30px;
-      border-radius: 10px;
-      margin: 5px 10px;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      height: 34px;
+      padding: 0 14px;
+      border-radius: var(--radius-control);
+      margin: 0;
       color: var(--color-text-secondary);
       transition: background var(--duration-fast) var(--ease-in-out),
         color var(--duration-fast) var(--ease-in-out);
 
       &:hover {
-        background-color: var(--color-gray-200);
+        background-color: var(--color-surface);
+        color: var(--color-text-primary);
       }
 
-      // Invisible full-row click target rendered on desktop.
+      // Invisible full-pill click target rendered on desktop.
       .menu-item-desktop {
         position: absolute;
         left: 0;
@@ -243,41 +252,30 @@ body.face-viewer-open #nav-bar {
         width: 100%;
       }
 
-      span {
-        line-height: 30px;
-      }
-
       .menu-item-icon {
         background: transparent;
-        font-size: 1.4em;
+        padding: 0;
+        font-size: 1.2em;
         color: inherit;
         box-shadow: none;
         transform: none;
+        display: inline-flex;
+        align-items: center;
       }
 
       .menu-item-text {
-        font-weight: var(--font-weight-bold);
-        font-size: 0.97rem;
-        margin-left: 20px;
+        font-weight: var(--font-weight-semibold);
+        font-size: 0.92rem;
+        margin-left: 9px;
+        line-height: 1;
+        white-space: nowrap;
       }
 
       .toggle-subitems {
-        margin-right: 10px;
-        flex: 1;
-        text-align: right;
-
-        &.expanded i {
-          transform: rotate(90deg);
-        }
-
-        i {
-          display: inline-block;
-          vertical-align: middle;
-          transition: transform 145ms ease-in-out;
-        }
+        display: none;
       }
 
-      // Active destination: a raised plate with a bougainvillea lamp bar —
+      // Active destination: a raised pill with the iris lamp bar underneath —
       // selected, not celebrated.
       &.active {
         background: var(--color-surface-tertiary);
@@ -286,11 +284,11 @@ body.face-viewer-open #nav-bar {
         &::before {
           content: "";
           position: absolute;
-          left: 0;
-          top: 9px;
-          bottom: 9px;
-          width: 3px;
-          border-radius: 0 3px 3px 0;
+          left: 12px;
+          right: 12px;
+          bottom: -11px;
+          height: 2px;
+          border-radius: 2px 2px 0 0;
           background: var(--color-primary);
         }
 
@@ -313,16 +311,15 @@ body.face-viewer-open #nav-bar {
 
     .item-container {
       flex-direction: row;
+      align-items: center;
+      gap: 0;
     }
 
-    // Refresh pinned to the rail's bottom, de-emphasised.
+    // Connection status keeps the bar's right edge, de-emphasised.
     .nav-refresh {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 12px;
-      margin: 0 14px;
-      padding: 8px 6px;
+      flex: 0 0 auto;
+      margin-left: auto;
+      padding: 0 10px;
 
       .menu-item-icon {
         font-size: 1.05em;
@@ -335,8 +332,14 @@ body.face-viewer-open #nav-bar {
         color: var(--color-text-tertiary);
       }
 
+      .ws-dot {
+        top: -3px;
+        right: -3px;
+        box-shadow: 0 0 0 2px var(--color-background);
+      }
+
       &:hover {
-        background: rgba(255, 255, 255, 0.04);
+        background: var(--color-surface);
       }
     }
   }

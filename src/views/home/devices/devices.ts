@@ -16,6 +16,7 @@ import {
 import template from "./devices.html?raw";
 import { Device, DeviceGroup, DevicesTabState } from "./devices.model";
 import { Sensor } from "../sensors/sensors.model";
+import { SensorsTab } from "../sensors/sensors";
 import { getPins } from "./pins.service";
 import { Channel, deviceChannels, withChannelValue } from "./channels";
 import { DevicesService, DevicesServiceClass } from "./devices.service";
@@ -377,10 +378,15 @@ function buildGroups(
     (byZone.get(zone) ?? byZone.set(zone, []).get(zone)!).push(d);
   }
 
-  // Rooms that only have sensors still deserve a header (Outdoor readings).
-  const sensorZones = new Set(
-    sensors.map((s) => (s.zone || "").trim()).filter((z) => z && (!f || z.toLowerCase().includes(f))),
-  );
+  // Sensors group into their zone's card (empty zone → Unassigned); rooms that
+  // only have sensors still deserve a card (Outdoor readings).
+  const sensorsByZone = new Map<string, Sensor[]>();
+  for (const s of sensors) {
+    const zone = (s.zone || "").trim() || UNASSIGNED;
+    if (f && !zone.toLowerCase().includes(f) && !(s.name || "").toLowerCase().includes(f)) continue;
+    (sensorsByZone.get(zone) ?? sensorsByZone.set(zone, []).get(zone)!).push(s);
+  }
+  const sensorZones = new Set([...sensorsByZone.keys()].filter((z) => z !== UNASSIGNED));
 
   // Registry order first, then any zones present on devices/sensors but not in
   // the registry, then the Unassigned bucket — the house's configured order.
@@ -389,7 +395,7 @@ function buildGroups(
   for (const z of zoneOrder) if (wants(z) && z !== UNASSIGNED) ordered.push(z);
   for (const z of byZone.keys()) if (!ordered.includes(z) && z !== UNASSIGNED) ordered.push(z);
   for (const z of sensorZones) if (!ordered.includes(z) && z !== UNASSIGNED) ordered.push(z);
-  if (byZone.has(UNASSIGNED)) ordered.push(UNASSIGNED);
+  if (byZone.has(UNASSIGNED) || sensorsByZone.has(UNASSIGNED)) ordered.push(UNASSIGNED);
 
   const groups: DeviceGroup[] = [];
 
@@ -403,6 +409,7 @@ function buildGroups(
       label: "Pinned",
       kind: "pinned",
       devices: pinned,
+      sensors: [],
       summary: groupSummary("pinned", pinned),
       collapsed: !f && collapsed.has(PINNED),
       lightsOn: countLightsOn(pinned),
@@ -419,6 +426,7 @@ function buildGroups(
       label: zone === UNASSIGNED ? "Unassigned" : zone,
       kind: "zone",
       devices: list,
+      sensors: sensorsByZone.get(zone) ?? [],
       summary: list.length ? groupSummary("zone", list) : "",
       collapsed: !f && collapsed.has(zone),
       envReading: env.reading,
@@ -433,6 +441,7 @@ function buildGroups(
       label: "Cameras",
       kind: "cameras",
       devices: sortTiles(cams),
+      sensors: [],
       summary: groupSummary("cameras", cams),
       collapsed: !f && collapsed.has(CAMERAS),
       lightsOn: 0,
@@ -617,6 +626,15 @@ class DevicesTabClass extends Component<DevicesTabState> {
         onEditClick: (event: any, device: Device) => {
           event.stopPropagation();
           this.devicesService.editClick(event, device);
+        },
+
+        // Sensor chip (room-card sensor row) → the sensor detail overlay.
+        // Delegates to the headless sensors component, which owns the overlay's
+        // calibration / radar-debug actions.
+        onSensorClick: (event: Event, sensorId: string) => {
+          event.stopPropagation();
+          const sensor = (store.get("sensors") || []).find((s) => s.id === sensorId);
+          if (sensor) SensorsTab.sensorTouchEnd(event, sensor);
         },
 
         // Camera banner tap = the fullscreen live lightbox. Cameras also get here

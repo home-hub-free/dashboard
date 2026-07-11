@@ -46,46 +46,46 @@ token so the system stays coherent.
 
 ## 2. Color semantics
 
-Dark mode, **"Tablero"** — a labeled control board in THIS house: pine and
-handmade wood, brick walls, white walls under warm light, plants everywhere.
-Ink-black page (`--color-background` #0f0d0b), warm plates (`--color-surface`
-#1a1715, `--color-surface-secondary` #141210, `--color-surface-tertiary` #23201c),
-bone ink (`--color-text-primary` #ece4d6). Every accent is a **material from the
-room, desaturated to stay calm**. The walls are flat — **no ambient gradients,
-no glows, no gradient fills anywhere**. State is shown as INDICATOR LAMPS: a flat
-color fill and/or a small dot. (The `--gradient-*`/`--glow-*` token names survive
-for compat but resolve to flat fills / flat inset rings.)
+Dark mode, **"Vesper"** — the house after dark, seen from its control room.
+Deep blue-green night ink as the ground (`--color-background` #0b0f11), cool
+plates (`--color-surface` #151b1f, `--color-surface-secondary` #10161a,
+`--color-surface-tertiary` #1e262c), cool bone ink (`--color-text-primary`
+#e7edf2). The room's lights are the only warmth on the board. The walls are
+flat — **no ambient gradients, no glows, no gradient fills anywhere**. State is
+shown as INDICATOR LAMPS: a flat color fill and/or a small dot. (The
+`--gradient-*`/`--glow-*` token names survive for compat but resolve to flat
+fills / flat inset rings.)
 
 **Four distinct accent meanings — keep them separate:**
 
 | Meaning | Token | Where |
 |---|---|---|
-| **A light is on** (illumination) | `--color-active-warm` (**honey** #e6a959 — lamplight on pine) | `.cat-light.on`, `.cat-dimmable-light.on`, room-rail/house-bar lamps |
-| **Another device is active** (e.g. blinds open) | `--color-active-cool` (**stone blue** #7d9ab5) | `.cat-blinds.on` |
-| **Live / enabled / ok** | `--color-success` (**sage** #74a980 — the plants) | `.switch.on`, boolean chips, motion lamps, WS dot |
-| **Interactive / brand** | `--color-primary` (**clay** #c97a5b — the brick) | nav-active lamp bar, buttons, focus rings, sliders |
+| **A light is on** (illumination) | `--color-active-warm` (**gold** #e3b34f — lamplight in a dark house) | `.cat-light.on`, `.cat-dimmable-light.on`, room-rail/house-bar lamps |
+| **Another device is active** (e.g. blinds open) | `--color-active-cool` (**dusk steel** #6fa0c7) | `.cat-blinds.on` |
+| **Live / enabled / ok** | `--color-success` (**sage** #6cb387 — the plants) | `.switch.on`, boolean chips, motion lamps, WS dot |
+| **Interactive / brand** | `--color-primary` (**iris** #8b96f8) | app-bar active lamp, buttons, focus rings, sliders |
 
-A device-state fill must never read the same as an interactive control. Honey and
-stone blue are reserved for device state; clay is the brand/interaction color.
-**Do not paint buttons stone blue or device states clay.** Clay (muted red-orange)
-and honey (yellow-orange) sit near each other — keep brand ink on *controls* and
-honey on *slabs/lamps* so scale keeps them apart.
+A device-state fill must never read the same as an interactive control. Gold and
+dusk steel are reserved for device state; iris is the brand/interaction color —
+deliberately outside both the warm and cool state families so a control can never
+be misread as state. **Do not paint buttons dusk-steel or device states iris.**
 
 State/status colors use the semantic set: `--color-success` (on / detected /
 enabled), `--color-error` (off / danger / remove), `--color-warning`,
 `--color-info`.
 
-**Text on filled accent surfaces** uses `--color-on-fill` (warm near-black) and its
-muted variants — verified ≥5.7:1 on the gold, dusk-blue and success fills. The same
-rule covers the clay brand fill via `--color-text-inverse`: **bone text
-FAILS on the brand fill** — filled buttons always use the dark ink.
+**Text on filled accent surfaces** uses `--color-on-fill` (near-black night ink)
+and its muted variants — verified ≥6.6:1 on the gold, dusk-steel and success
+fills. The same rule covers the iris brand fill via `--color-text-inverse`:
+**bone text FAILS on the brand fill** — filled buttons always use the dark ink.
 
 ### Contrast (WCAG AA)
 Body/status text must clear **4.5:1** on its background. The gotcha: text that
 passes on the page background can fail on a *raised* surface. `--color-text-tertiary`
-is tuned (#a09788; 6.1:1 on surface, 5.5:1 on the tertiary surface) — if you darken
+is tuned (#94a4b0; 6.8:1 on surface, 6.0:1 on the tertiary surface) — if you darken
 it, re-check on-surface contrast. `--color-text-secondary` (≈10:1 on surface) is the
-safe choice for on-surface helper/status copy.
+safe choice for on-surface helper/status copy. The whole Vesper pair set was
+validated numerically (every text pair ≥4.5, on-fill pairs ≥5.5, non-text UI ≥3).
 
 ---
 
@@ -105,15 +105,27 @@ A lit tile is a flat lamp fill — never add a glow or drop shadow to signal sta
 
 ## 4. Core patterns
 
-### Room rail + fused room sections (`views/home.scss`, `views/home/devices/`)
-The board's **signature**: a sticky strip of switch-plate room tabs (one per group:
-Pinned → rooms in registry order → Cameras), each with a lamp dot that lights amber
-when the room has lights on. Tap = expand + scroll to that room — the one-tap
-findability path on a wall panel or phone; the text filter hides behind the rail's
-search key. Each room's header **fuses its sensors' ambient glance** (temp/humidity
-mono readout + motion lamp, from the shared store) and carries a "Lights off" action
-while any light in the room is on; zones with only sensors still render as rooms.
-The same jump-rail idiom heads Settings (`.settings-rail`).
+### App bar (`ui/nav.scss`, `ui/layout.scss`)
+Desktop (≥640px) chrome is a slim fixed **top bar**: brand nameplate · destination
+pills (active = raised pill + iris lamp bar underneath) · connection status at the
+right edge. The full viewport width below it belongs to content (the shell offsets
+by `$topbar-height`). Phones keep the fixed **bottom bar** (thumb reach).
+
+### Room cards + room rail (`views/home.scss`, `views/home/devices/`)
+The board's **signature**: every room is a bounded CARD — header instruments on
+top (name · temp/humidity mono readout · motion lamp · "N on" · "Lights off"
+while lit), device plates inside, and **the room's own sensor chips along the
+card's foot** (tap = the sensor detail sheet). The room is the ONE place to find
+everything about the room; zones with only sensors still render as cards. On
+≥1000px the cards flow **two-up** (Pinned and Cameras span full width — a 4-up
+shortcut strip and side-by-side live views); phones stack them.
+
+Above the board sits the sticky **room rail** — switch-plate room tabs (Pinned →
+rooms in registry order → Cameras), each with a lamp dot that lights gold when
+the room has lights on. Tap = expand + scroll to that card; the text filter
+hides behind the rail's search key. The same jump-rail idiom heads Settings
+(`.settings-rail`). On phones the header's env readout shows only while the card
+is collapsed (the chips carry it when open) so room names never truncate.
 
 ### Pinned strip (`views/home/devices/pins.service.ts`)
 Per-member shortcuts: the device sheet's "Pin to the top of Home" switch stores
@@ -172,16 +184,23 @@ the cam label** (hub edit sheet, or the tune overlay for vision-only cams) —
 watching is the tile's primary action, matching every other tile where tap = act,
 ⋯ = configure.
 
-### Sensor chip (`ui/tiles.scss`, `views/home/sensors/`)
-Horizontally-scrolling environment band (`#sensors.env-band`). A right-edge mask
-hints there's more off-screen. Boolean sensors show a state dot (`.on` → success +
-glow); temp/humidity show two metrics.
+### Sensor chip (`ui/tiles.scss`, room-card foot in `views/home/devices/`)
+Sensor chips live **inside their room's card** (`.zone-sensors` — slim horizontal
+instruments under a hairline). Boolean sensors show a state dot (`.on` → success);
+temp/humidity show two metrics. Tap = the sensor detail sheet (rename, zone,
+calibration, radar debug) — the sensors component (`views/home/sensors/`) stays
+mounted **headless** to own that sheet and mirror live calibration progress into
+it; the chips render from the store via the devices template. (The old bottom
+`#sensors.env-band` is retired.)
 
 ### Detail overlay (`ui/overlay.scss`, `overlay-modal.ts`)
 A floating sheet that animates open from the tapped element's rect to a near-full
 viewport rect, with `maxHeight` + internal `overflow: scroll` (never let content
 overflow the sheet). Header = round icon + title. Form rows are `.form-group`
 (label + control). Sub-settings sit on a recessed `.device-setting` surface.
+Under `prefers-reduced-motion` the sheet appears/disappears **in place** — no
+grow-from-rect choreography (overlay-modal.ts skips it; overlay.scss zeroes the
+matching transitions) — which also keeps headless geometry tests deterministic.
 
 ### Buttons
 Primary = filled `--color-primary`. A companion/secondary action is **outlined**
@@ -277,5 +296,5 @@ state from the hub; for isolated UI work, run the Vite dev server and drive it h
 with Playwright, stubbing the API routes (`get-devices`, `get-sensors`,
 `get-effects-dynamic`, `get-zones`) with representative fixtures. Screenshot Home
 (mobile + desktop), Automations, Assistant, and an open detail overlay, and check:
-visual hierarchy, the honey/stone/sage/clay separation, on-surface text contrast, tap-target
+visual hierarchy, the gold/dusk/sage/iris separation, on-surface text contrast, tap-target
 sizes, and transitions.

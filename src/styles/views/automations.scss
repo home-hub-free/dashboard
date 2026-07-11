@@ -24,6 +24,10 @@
 
 #automations {
   text-align: left;
+  // Centered reading column under the full-width app bar (the blocks inside
+  // carry the same cap, so everything lines up).
+  max-width: 920px;
+  margin: 0 auto;
 }
 
 // ---- Page CTAs (New Automation / New Dynamic Rule) ------------------------------

@@ -21,7 +21,7 @@ src/styles/
     buttons.scss        neutral <button> base + .btn-* variants, .toggle-button, .switch
     forms.scss          labels, inputs, selects, sliders, .form-group
     layout.scss         app shell, .page-head, .section-title, .page-col, .empty-state
-    nav.scss            bottom bar (phone) / brand rail (desktop)
+    nav.scss            bottom bar (phone) / top app bar (desktop)
     panels.scss         .panel, .panel-row, .pill, .icon-bubble, .state-dot
     tiles.scss          device tile + channel controls + sensor chip
     overlay.scss        detail-overlay sheet + its form patterns
@@ -55,11 +55,11 @@ custom property.
 
 | Group | Tokens | Notes |
 |---|---|---|
-| Brand | `--color-primary(-light/-dark/…)` | clay (the brick) — interactive only |
+| Brand | `--color-primary(-light/-dark/…)` | iris — interactive only, never state |
 | Status | `--color-success/error/warning/info` (+`-light/-dark`, `-rgba-10/40`) | on/off/caution/neutral |
 | Surfaces | `--color-background`, `--color-surface`, `--color-surface-secondary`, `--color-surface-tertiary`, `--color-border(-light)` | ink page → plate → recessed control → raised row |
 | Text | `--color-text-primary/secondary/tertiary/disabled/inverse` | tertiary is AA-tuned for raised surfaces |
-| Device state | `--color-active-warm` (honey), `--color-active-cool` (stone blue), `--color-on-fill(-muted/-faint)` | flat lamp fills — the `--gradient-*`/`--glow-*` names survive but resolve flat; see §2 |
+| Device state | `--color-active-warm` (gold), `--color-active-cool` (dusk steel), `--color-on-fill(-muted/-faint)` | flat lamp fills — the `--gradient-*`/`--glow-*` names survive but resolve flat; see §2 |
 | Geometry | `--radius-tile` 10px · `--radius-chip` 8px · `--radius-control` 8px · `--tap-target-min` 44px | plates, not blobs |
 | Spacing | `--space-1…20` (8px scale), `--gap-*` | |
 | Type | `--font-family-primary` (Archivo) + `--font-stretch-display` for display text · `--font-family-data` (IBM Plex Mono) for every live value · `--font-size-xs…4xl`, `--font-weight-*` | two materials: labels vs readings |
@@ -72,23 +72,25 @@ SCSS breakpoint mixins (media queries can't read custom properties):
 `wall-up` (≥1400). Import via `@use`-style `@import "../ui/tokens";` in any file
 that needs them.
 
-## 2. Color semantics — the four lamps ("Tablero", calm set)
+## 2. Color semantics — the four lamps ("Vesper", the house after dark)
 
-Accents are the house's own materials, desaturated: honey lamplight on pine,
-stone blue, sage like the plants, clay like the brick.
+Deep blue-green night ink as the ground; the room's lights are the only warmth
+on the board: gold lamplight, sage like the plants, dusk steel, iris for the
+hand of the user.
 
 | Meaning | Paint | Where |
 |---|---|---|
-| **A light is on** | `--color-active-warm` flat fill (HONEY #e6a959) | `.device-tile.cat-light.on`, `.cat-dimmable-light.on`, rail/house-bar lamps |
-| **Another device active** | `--color-active-cool` flat fill (STONE BLUE #7d9ab5) | `.device-tile.cat-blinds.on` |
-| **Live / enabled / ok** | `--color-success` (SAGE #74a980) | dots, switches, `.chip.on`, motion lamps |
-| **Interactive / brand** | `--color-primary` (CLAY #c97a5b) | buttons, nav-active, focus, sliders, "you" accents |
+| **A light is on** | `--color-active-warm` flat fill (GOLD #e3b34f) | `.device-tile.cat-light.on`, `.cat-dimmable-light.on`, rail/house-bar lamps |
+| **Another device active** | `--color-active-cool` flat fill (DUSK STEEL #6fa0c7) | `.device-tile.cat-blinds.on` |
+| **Live / enabled / ok** | `--color-success` (SAGE #6cb387) | dots, switches, `.chip.on`, motion lamps |
+| **Interactive / brand** | `--color-primary` (IRIS #8b96f8) | buttons, nav-active, focus, sliders, "you" accents |
 
 State is a lamp: a flat fill and/or a dot — **never a gradient or a glow**.
-Never paint a button honey/stone-blue or a device state clay. Text on any
-filled lamp uses `--color-on-fill` (+`-muted/-faint`); the filled brand uses
-`--color-text-inverse` — bone on clay fails AA. Brick-red (`--color-error`)
-means *fault/destructive*.
+Never paint a button gold/dusk-steel or a device state iris (the brand hue is
+deliberately outside both state families). Text on any filled lamp uses
+`--color-on-fill` (+`-muted/-faint`); the filled brand uses
+`--color-text-inverse` — bone on iris fails AA. Ember (`--color-error`)
+means *fault/destructive*. Every pair is WCAG-validated (DESIGN.md §2).
 
 ## 3. Elevation
 
@@ -236,9 +238,11 @@ renders one control per channel — no per-category layout. Conventions:
   the ⋯ on `.cam-label`. The D-pad/nudge/preset vocabulary (`.cam-dpad`,
   `.cam-nudge`, `.cam-views`) is generic — shared by the tile bar and lightbox.
 - `.sensor-chip` — read-only reading: `.chip-head` + `.chip-reading` (state
-  `.dot`, or `.th` with two `.metric`s).
+  `.dot`, or `.th` with two `.metric`s). Chips render inside their room card's
+  `.zone-sensors` foot (slim horizontal form there); tap = the sensor detail
+  sheet via the headless sensors component.
 
-Home layout (zone sections, bento grid, two-pane ≥1000px, env rail) lives in
+Home layout (room cards, board grid, two-up ≥1000px) lives in
 `views/home.scss` — tiles themselves don't know about the grid.
 
 ## 9. Detail overlay (`ui/overlay.scss`)
@@ -301,18 +305,19 @@ empty state on the same flag. Both primitives go static under
 
 ## 11. Navigation (`ui/nav.scss`)
 
-One component, two shapes: fixed **bottom bar** on phones, **brand rail** on
-desktop (≥640px, 248px wide — content offsets by `$nav-rail-width`). To add a
-destination: add the item in `nav-bar.constants.ts` and a view mount in
-`menu-content.ts`; the nav styles need no changes. `.nav-refresh` is the
-connection-status affordance, not a tab.
+One component, two shapes: fixed **bottom bar** on phones, slim fixed **top app
+bar** on desktop (≥640px — brand nameplate · destination pills with an iris lamp
+bar under the active one · connection status at the right edge; the shell
+offsets by `$topbar-height`). To add a destination: add the item in
+`nav-bar.constants.ts` and a view mount in `menu-content.ts`; the nav styles
+need no changes. `.nav-refresh` is the connection-status affordance, not a tab.
 
 ---
 
 ## 12. Responsive & mobile rules
 
 Mobile-first; base styles are the phone layout. Breakpoints: **640px** (desktop
-shell + rail), **1000px** (Home two-pane), **1400px** (wall density).
+shell + app bar), **1000px** (Home room cards two-up), **1400px** (wall density).
 
 **The shell contributes no side padding on phones** — `#main-content` and
 `#tab-content` are 0; each view owns the single **16px gutter** (home board,

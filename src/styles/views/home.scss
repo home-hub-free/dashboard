@@ -233,7 +233,7 @@
 #main-content #tab-content #devices.device-board {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   padding: 0 16px;
   align-content: start;
 }
@@ -275,8 +275,16 @@
   }
 }
 
+// Each room is a bounded CARD: header instruments on top, device plates inside,
+// the room's own sensor chips along the bottom. The card ground sits below the
+// tile surface so plates read as controls ON the room.
 .zone-section {
   min-width: 0;
+  box-sizing: border-box;
+  padding: 2px 12px 12px;
+  background: var(--color-surface-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
   scroll-margin-top: 62px; // land jumps below the sticky room rail
 }
 
@@ -285,6 +293,45 @@
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid var(--color-border);
+}
+
+// The room's sensor chips — slim horizontal instruments at the card's foot.
+.zone-sensors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 2px 0 2px;
+
+  .sensor-chip {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 8px 12px;
+    background: var(--color-surface);
+
+    .chip-head .chip-name {
+      max-width: 140px;
+    }
+
+    .chip-reading {
+      font-size: 0.9rem;
+
+      &.th {
+        gap: 12px;
+      }
+
+      .metric {
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+// A room with devices separates its sensor foot with a hairline.
+.zone-body + .zone-sensors {
+  border-top: 1px solid var(--color-border);
+  padding-top: 10px;
 }
 
 // Room header: name in the display voice, then the room's ambient instruments
@@ -393,6 +440,15 @@
   transform: rotate(-90deg);
 }
 
+// Phones: the header's env readout only earns its spot while the card is
+// COLLAPSED (the in-card sensor chips carry it when open) — the room name must
+// never truncate for a duplicate reading.
+@include mobile-only {
+  .zone-section:not(.collapsed) .zone-head .zone-env {
+    display: none;
+  }
+}
+
 // Per-section tile grid. Mobile base: two columns.
 #main-content #tab-content #devices .device-grid {
   display: grid;
@@ -409,31 +465,6 @@
   grid-column: 1 / -1;
 }
 
-// ---- Sensors band (bottom): the hardware list, horizontally scrollable ---------------
-#sensors.env-band {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  gap: 10px;
-  overflow-x: auto;
-  padding: 2px 16px 16px;
-  scrollbar-width: none;
-
-  // Right-edge fade hints that the band scrolls horizontally.
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-.env-empty {
-  padding: 4px 16px 16px;
-  color: var(--color-text-tertiary);
-  font-size: 0.9rem;
-}
-
 // ---- Entrance motion (regions are stable bind roots — never replays on a tick)
 .home-status {
   animation: rd-rise 240ms var(--ease-out) backwards;
@@ -443,14 +474,9 @@
   animation: rd-rise 260ms var(--ease-out) 40ms backwards;
 }
 
-#main-content #tab-content #sensors.env-band {
-  animation: rd-rise 260ms var(--ease-out) 80ms backwards;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .home-status,
-  #main-content #tab-content #devices,
-  #main-content #tab-content #sensors.env-band {
+  #main-content #tab-content #devices {
     animation: none !important;
   }
 }
@@ -492,11 +518,10 @@
     padding-bottom: 32px;
   }
 
-  // The board is a centered column on big screens — no side rail to feed.
+  // The board is a centered column on big screens.
   .home-status,
-  .home-board,
-  .home-env {
-    max-width: 1080px;
+  .home-board {
+    max-width: 1120px;
     margin-left: auto;
     margin-right: auto;
   }
@@ -514,19 +539,66 @@
   }
 }
 
-// ---- Wall panel (>= 1400px): three tiles per row ------------------------------
-@include wall-up {
-  #main-content #tab-content #devices .device-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+// ---- Wide board (>= 1000px): room cards flow two-up -----------------------------
+// Rooms become a bento of bounded cards. The rail / filter / skeletons / empty
+// states span the full board; Pinned and Cameras keep full width (shortcuts
+// read as a strip, cameras need the room).
+@include wide-up {
+  #main-content #tab-content #devices.device-board {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    align-items: start;
   }
 
-  #main-content #tab-content #devices .device-tile {
+  #main-content #tab-content #devices.device-board > .room-rail,
+  #main-content #tab-content #devices.device-board > .device-filter,
+  #main-content #tab-content #devices.device-board > .device-grid,
+  #main-content #tab-content #devices.device-board > .empty-state {
+    grid-column: 1 / -1;
+  }
+
+  .zone-section {
+    margin: 0; // the board grid owns the gaps
+  }
+
+  .zone-section.zsec-pinned,
+  .zone-section.zsec-cameras {
+    grid-column: 1 / -1;
+  }
+
+  // Inside a HALF-width card the grid drops to two tracks: compact plates 2-up,
+  // feature devices (cooler / camera / cam-satellite) span the card.
+  #main-content #tab-content #devices .zone-section .device-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #main-content #tab-content #devices .zone-section .device-tile,
+  #main-content #tab-content #devices .zone-section .device-tile.compact {
+    grid-column: span 1;
+  }
+
+  #main-content #tab-content #devices .zone-section .device-tile.wide,
+  #main-content #tab-content #devices .zone-section .device-tile.cat-camera {
+    grid-column: 1 / -1;
+  }
+
+  // Full-width strips get four tracks: Pinned = a 4-up shortcut row; Cameras =
+  // two live views side by side.
+  #main-content #tab-content #devices .zone-section.zsec-pinned .device-grid,
+  #main-content #tab-content #devices .zone-section.zsec-cameras .device-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  #main-content #tab-content #devices .zone-section.zsec-cameras .device-tile.cat-camera {
     grid-column: span 2;
   }
+}
 
+// ---- Wall panel (>= 1400px): the board breathes wider ---------------------------
+@include wall-up {
   .home-status,
-  .home-board,
-  .home-env {
-    max-width: 1280px;
+  .home-board {
+    max-width: 1340px;
   }
 }

@@ -248,6 +248,34 @@
             </div>
         </div>
     </section>
+
+    <!-- The room's own instruments — sensor chips live IN the room card (tap =
+         the sensor detail sheet: rename, zone, calibration, radar debug). -->
+    <div class="zone-sensors" :if="!group.collapsed && group.sensors.length">
+        <div
+            class="sensor-chip"
+            :foreach="sensor in group.sensors"
+            :key="sensor.id"
+            :class:active="sensor.value === true"
+            :onmouseup="this.onSensorClick(event, sensor.id)"
+            oncontextmenu="return false;"
+        >
+            <div class="chip-head">
+                <i :if="sensor.sensorType === 'motion'" class="iconoir-walking"></i>
+                <i :if="sensor.sensorType === 'presence'" class="iconoir-running"></i>
+                <i :if="sensor.sensorType === 'temp/humidity'" class="iconoir-home-temperature-in"></i>
+                <span class="chip-name">${sensor.name}</span>
+            </div>
+            <div :if="sensor.type === 'boolean'" class="chip-reading">
+                <span class="dot" :class:on="sensor.value"></span>
+                ${sensor.value ? 'Detected' : 'Clear'}
+            </div>
+            <div :if="sensor.type === 'value'" class="chip-reading th">
+                <span class="metric"><i class="iconoir-temperature-high"></i> ${sensor.value.temperature}</span>
+                <span class="metric"><i class="iconoir-droplet"></i> ${sensor.value.humidity}</span>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="empty-state" :if="!this.loading && !this.hasDevices">
