@@ -402,6 +402,13 @@
   align-content: start;
 }
 
+// Phone: a compact plate is a full-width switch row — half a 390px column
+// truncates real device names, and a slim row is the natural phone idiom for
+// "the tile is the switch". Desktop re-tiles them 2-up (below).
+#main-content #tab-content #devices .device-grid .device-tile.compact {
+  grid-column: 1 / -1;
+}
+
 // ---- Sensors band (bottom): the hardware list, horizontally scrollable ---------------
 #sensors.env-band {
   display: flex;
@@ -455,11 +462,14 @@
   #main-content #tab-content #devices .device-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-auto-rows: minmax(128px, auto);
+    // Rows size to content — a compact plate must be allowed to stay a
+    // one-row plate (each tile's min-height token is its floor).
+    grid-auto-rows: auto;
     gap: 12px;
   }
 
-  #main-content #tab-content #devices .device-tile {
+  #main-content #tab-content #devices .device-tile,
+  #main-content #tab-content #devices .device-grid .device-tile.compact {
     grid-column: span 2;
   }
 

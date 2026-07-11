@@ -74,6 +74,7 @@
             :id="'tile-' + device.id"
             :class="'cat-' + device.deviceCategory"
             :class:wide="device.wide"
+            :class:compact="device.compact"
             :class:on="device.isOn"
             :class:manual="device.manual"
             :onclick="this.onTileClick(device)"

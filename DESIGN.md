@@ -139,14 +139,30 @@ The whole tile is the switch for single-actuator devices. Tiles are **channel-dr
 `decorateDevice()` projects each device into channels, each tagged with a `control`
 (`chip` / `slider` / `stepper` / `readout` / `none`), and the template renders
 generically — no per-category layout. Lit tiles get the gold/dusk-blue fill + glow +
-the on-fill text treatment. `manual` lock shows as a dashed border. Cooler and camera
-tiles are `wide` (span 2 columns).
+the on-fill text treatment. `manual` lock shows as a dashed border.
+
+**A tile earns its size — three tiers.**
+- **Compact** (`.compact` — light, door, blinds, dimmable, audio satellite): a
+  one-row plate (icon · name+status · ⋯, `--tile-min-height-compact`) that grows
+  an extra row only for a *live* control — a lit dimmable's brightness slider
+  (hidden while off), the satellite's mic chip. On phones a compact plate is a
+  full-width switch row; ≥640px they tile 2-up. The tier is category-stable so a
+  toggle never reshuffles the grid.
+- **Wide** (cooler): a full-width band with the glance hierarchy below.
+- **Media** (camera, camera-equipped satellite): full-width live view.
 
 **A tile is glanceable, not exhaustive.** The cooler is the reference case: one hero
 readout (room temp, with the setpoint as its label), one status line ("Cooling ·
 fan + water"), and the fan/water chips — the unit temp and the target stepper are
-demoted to the detail overlay (`control: "none"` in `decorateDevice`). Follow that
-hierarchy before adding a fourth data point to any tile.
+demoted to the detail overlay (`control: "none"` in `decorateDevice`). The satellite
+follows the same rule: the tile keeps only the mic chip (privacy is immediate) and
+a "Low battery" note when true; volume / camera flip / eco / battery % live in the
+detail sheet's **Controls** section. Follow that hierarchy before adding a fourth
+data point to any tile.
+
+**One scan order in every room** (`sortTiles` in `devices.ts`): lights → blinds →
+doors → climate → speakers → cameras/media last — findability comes from the
+pattern repeating room after room (the Pinned strip keeps the member's own order).
 
 ### Camera tile & lightbox (`ui/tiles.scss`, `ui/overlay.scss`)
 Tap = **fullscreen live lightbox** (`openCameraLive` → `.cam-live`): the stream

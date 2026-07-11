@@ -151,6 +151,61 @@
         <img :src="this.data.value" alt="Camera Feed" />
     </div>
 
+    <!-- Satellite Controls — everything the Home tile deliberately doesn't carry
+         (the tile keeps only the mic chip): volume, camera rotation, eco,
+         battery. All `setting`-role channels — writes never latch the manual
+         lock (server decideWritePolicy). -->
+    <div class="device-setting" :if="this.data.value && this.data.deviceCategory === 'voice-satellite'">
+        <p class="section-title">Controls</p>
+
+        <div class="form-group">
+            <label>Volume</label>
+            <input
+                type="range"
+                min="0"
+                max="100"
+                :value="this.data.value.volume + ''"
+                :onchange="this.actions.setSatChannel(this.data, 'volume', event.target.value)"
+            />
+            <div class="range-value">${this.data.value.volume}%</div>
+        </div>
+
+        <div class="form-group">
+            <label>Microphone</label>
+            <div class="toggle-group">
+                <button class="toggle-button" :class:active="this.data.value.mic" :onclick="this.actions.setSatChannel(this.data, 'mic', true)">On</button>
+                <button class="toggle-button" :class:active="!this.data.value.mic" :onclick="this.actions.setSatChannel(this.data, 'mic', false)">Off</button>
+            </div>
+        </div>
+
+        <!-- Camera-equipped units only (the value blob carries the key). -->
+        <div class="form-group" :if="this.data.value.flip !== undefined">
+            <label>Flip camera 180°</label>
+            <div class="toggle-group">
+                <button class="toggle-button" :class:active="this.data.value.flip" :onclick="this.actions.setSatChannel(this.data, 'flip', true)">On</button>
+                <button class="toggle-button" :class:active="!this.data.value.flip" :onclick="this.actions.setSatChannel(this.data, 'flip', false)">Off</button>
+            </div>
+            <div>For upside-down mounted units — rotates the camera image.</div>
+        </div>
+
+        <!-- Firmware with presence power-save reports the key. -->
+        <div class="form-group" :if="this.data.value.eco !== undefined">
+            <label>Eco mode</label>
+            <div class="toggle-group">
+                <button class="toggle-button" :class:active="this.data.value.eco" :onclick="this.actions.setSatChannel(this.data, 'eco', true)">On</button>
+                <button class="toggle-button" :class:active="!this.data.value.eco" :onclick="this.actions.setSatChannel(this.data, 'eco', false)">Off</button>
+            </div>
+            <div>Powers down the camera and mic while the room is empty.</div>
+        </div>
+
+        <div class="status-group" :if="this.data.value.battery >= 0">
+            <div class="status-item">
+                <span class="status-label">Battery</span>
+                <span class="status-value">${this.data.value.battery}%</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Satellite: what the device's LED ring colors mean (matches the firmware
          states). Reference material — lives here, not on the Home tile. -->
     <div class="device-setting" :if="this.data.deviceCategory === 'voice-satellite'">

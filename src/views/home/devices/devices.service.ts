@@ -93,6 +93,7 @@ export class DevicesServiceClass {
           configureBlinds: this.configureBlinds.bind(this),
           updateEvapCoolerTarget: this.updateEvapCoolerTarget.bind(this),
           setCoolerChannel: this.setCoolerChannel.bind(this),
+          setSatChannel: this.setSatChannel.bind(this),
           saveOperationalRanges: this.saveOperationalRanges.bind(this),
           removeOperationalRange: this.removeOperationalRange.bind(this),
           saveZone: this.saveZone.bind(this),
@@ -197,6 +198,7 @@ export class DevicesServiceClass {
         configureBlinds: this.configureBlinds.bind(this),
         updateEvapCoolerTarget: this.updateEvapCoolerTarget.bind(this),
         setCoolerChannel: this.setCoolerChannel.bind(this),
+        setSatChannel: this.setSatChannel.bind(this),
         saveOperationalRanges: this.saveOperationalRanges.bind(this),
         removeOperationalRange: this.removeOperationalRange.bind(this),
         saveZone: this.saveZone.bind(this),
@@ -252,6 +254,14 @@ export class DevicesServiceClass {
    * could ship a stale/partial value and wipe `target`. */
   setCoolerChannel(device: any, channel: string, value: boolean) {
     return this.writeOverlayChannel(device, channel, value);
+  }
+
+  /** Satellite Controls (detail sheet): volume / mic / flip / eco. The volume
+   * slider hands us its string value — coerce; everything else is boolean. All
+   * are `setting`-role channels, so writes never latch the manual lock. */
+  setSatChannel(device: any, channel: string, value: boolean | string) {
+    const next = typeof value === "string" ? Number(value) : value;
+    return this.writeOverlayChannel(device, channel, next);
   }
 
   /** Channel-addressed write from the detail overlay. Optimistically folds the one

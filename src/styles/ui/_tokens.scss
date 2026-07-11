@@ -118,6 +118,7 @@
   --radius-chip: 8px;      // sensor chips, smaller cards, recessed groups
   --radius-control: 8px;   // inputs, buttons, toggle segments
   --tile-min-height: 116px;
+  --tile-min-height-compact: 60px; // one-row plates (light / door / blinds)
   --tap-target-min: 44px;  // WCAG minimum interactive size
 }
 

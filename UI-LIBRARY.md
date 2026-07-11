@@ -211,9 +211,15 @@ The Home wall. Tiles are **channel-driven**: `decorateDevice()` projects a devic
 into channels tagged `chip | slider | stepper | readout | none`, and the template
 renders one control per channel — no per-category layout. Conventions:
 
-- Root: `.device-tile cat-<category>` (+ `.on`, `.manual`, `.wide`).
+- Root: `.device-tile cat-<category>` (+ `.on`, `.manual`, `.wide`, `.compact`).
 - Anatomy: `.tile-inner > .tile-top (.tile-icon + .tile-edit) + .tile-body
   (.tile-name + .tile-meta) + .tile-controls`.
+- **A tile earns its size** — `.compact` (light / door / blinds / dimmable /
+  audio satellite) is a one-row plate (`--tile-min-height-compact`) that grows an
+  extra row only for a live control: the lit dimmable's slider (hidden while
+  off), the satellite's mic chip. Full-width switch row on phones, 2-up ≥640px.
+  Same markup — the class regrids `.tile-inner` (`.tile-top` → `display:
+  contents`), so `.tile-controls` must stay a direct child of `.tile-inner`.
 - `.tile-lock` — the "Manual" badge; `.manual` also dashes the border.
 - Channel controls: `.chip` (boolean pill — `.on` fills success, never brand),
   `.tile-slider`, `.stepper` with `.step` buttons, `.readout`
@@ -221,6 +227,10 @@ renders one control per channel — no per-category layout. Conventions:
 - **Glanceable, not exhaustive**: the cooler is the reference — hero room-temp
   readout (setpoint as its label) + status line + fan/water chips; unit temp and
   the target stepper are overlay-only (`control: "none"` in `decorateDevice`).
+  Same for the satellite: mic chip only; volume/flip/eco/battery live in the
+  detail sheet's Controls section.
+- In-room tile order is fixed (`sortTiles`): lights → blinds → doors → climate →
+  speakers → cameras/media last — the same scan pattern in every room.
 - Camera tiles are full-bleed: `.cam-wrap > img + .cam-who + .cam-health +
   .cam-label`. **Tap = fullscreen live lightbox** (`.cam-live`, §9); config is
   the ⋯ on `.cam-label`. The D-pad/nudge/preset vocabulary (`.cam-dpad`,

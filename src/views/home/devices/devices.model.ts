@@ -5,6 +5,7 @@ export type Device = {
   id: string;
   deviceCategory:
     | "light"
+    | "door"
     | "evap-cooler"
     | "dimmable-light"
     | "blinds"
@@ -39,6 +40,9 @@ export type Device = {
   icon?: string;
   /** Spans two grid columns (cooler / camera). */
   wide?: boolean;
+  /** One-row plate: the tile is just the switch (light / door / blinds /
+   * dimmable). Sizes to its content — a lit dimmable grows one slider row. */
+  compact?: boolean;
   /** Any actuator channel is on (drives the lit-tile styling). */
   isOn?: boolean;
   /** One-line tile body status ("On", "On · 80%", "Open · 40%"). */

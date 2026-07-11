@@ -178,13 +178,17 @@
 
             <h2>Device tiles</h2>
             <p class="kit-note">
-                The whole tile is the switch. <code class="sel">.cat-&lt;category&gt;</code> +
+                The whole tile is the switch, and a tile earns its size:
+                tap-is-the-whole-story devices (light / door / blinds / dimmable /
+                satellite) add <code class="sel">.compact</code> — a one-row plate that
+                grows an extra row only for a live control (a lit dimmable's slider, the
+                satellite's mic chip). <code class="sel">.cat-&lt;category&gt;</code> +
                 <code class="sel">.on</code> drive the fill: gold = lit light, cyan = other device
                 active. <code class="sel">.manual</code> = dashed border + lock badge. Channel
                 controls: chip / slider / stepper / readout.
             </p>
-            <div class="kit-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr))">
-                <div class="device-tile cat-light on">
+            <div class="kit-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+                <div class="device-tile compact cat-light on">
                     <div class="tile-inner">
                         <div class="tile-top">
                             <span class="tile-icon"><i class="iconoir-light-bulb-on"></i></span>
@@ -194,9 +198,10 @@
                             <div class="tile-name">Ceiling</div>
                             <div class="tile-meta"><span class="tile-status">On</span></div>
                         </div>
+                        <div class="tile-controls"></div>
                     </div>
                 </div>
-                <div class="device-tile cat-light manual">
+                <div class="device-tile compact cat-light manual">
                     <div class="tile-inner">
                         <div class="tile-top">
                             <span class="tile-icon"><i class="iconoir-light-bulb"></i></span>
@@ -209,9 +214,10 @@
                                 <span class="tile-lock"><i class="iconoir-lock"></i> Manual</span>
                             </div>
                         </div>
+                        <div class="tile-controls"></div>
                     </div>
                 </div>
-                <div class="device-tile cat-blinds on">
+                <div class="device-tile compact cat-blinds on">
                     <div class="tile-inner">
                         <div class="tile-top">
                             <span class="tile-icon"><i class="iconoir-windows"></i></span>
@@ -221,9 +227,10 @@
                             <div class="tile-name">Blinds</div>
                             <div class="tile-meta"><span class="tile-status">Open · 80%</span></div>
                         </div>
+                        <div class="tile-controls"></div>
                     </div>
                 </div>
-                <div class="device-tile cat-dimmable-light on">
+                <div class="device-tile compact cat-dimmable-light on">
                     <div class="tile-inner">
                         <div class="tile-top">
                             <span class="tile-icon"><i class="iconoir-light-bulb-on"></i></span>
@@ -232,9 +239,24 @@
                         <div class="tile-body">
                             <div class="tile-name">Reading Lamp</div>
                             <div class="tile-meta"><span class="tile-status">On · 60%</span></div>
-                            <div class="tile-controls">
-                                <input class="tile-slider" type="range" value="60" />
-                            </div>
+                        </div>
+                        <div class="tile-controls">
+                            <input class="tile-slider" type="range" value="60" />
+                        </div>
+                    </div>
+                </div>
+                <div class="device-tile compact cat-voice-satellite">
+                    <div class="tile-inner">
+                        <div class="tile-top">
+                            <span class="tile-icon"><i class="iconoir-sound-high"></i></span>
+                            <i class="tile-edit iconoir-more-horiz"></i>
+                        </div>
+                        <div class="tile-body">
+                            <div class="tile-name">Sala Sat</div>
+                            <div class="tile-meta"><span class="tile-status">Vol 55%</span></div>
+                        </div>
+                        <div class="tile-controls">
+                            <button class="chip on"><i class="iconoir-mic"></i> Mic</button>
                         </div>
                     </div>
                 </div>

@@ -36,6 +36,44 @@ const TILE_ICON_ON: { [cat: string]: string } = {
   light: "iconoir-light-bulb-on",
   "dimmable-light": "iconoir-light-bulb-on",
 };
+
+// Compact tier: tap-is-the-whole-story devices render as a one-row plate — the
+// tile earns extra rows only for a live control (a lit dimmable's brightness
+// slider, the satellite's mic chip). Category-stable so tiles never jump tiers
+// (and reshuffle the grid) when toggled; a camera-equipped satellite is media,
+// never compact (hasCamView gate in decorateDevice).
+const COMPACT_CATEGORIES = new Set([
+  "light",
+  "door",
+  "blinds",
+  "dimmable-light",
+  "voice-satellite",
+]);
+
+// One scan order in every room: act-on-first (lights → blinds → doors), then
+// climate, then speakers, with big media (cameras / camera satellites) sinking
+// to the bottom of the section. Unknown categories sort between.
+const CATEGORY_ORDER: { [cat: string]: number } = {
+  light: 0,
+  "dimmable-light": 1,
+  blinds: 2,
+  door: 3,
+  "evap-cooler": 4,
+  "voice-satellite": 6,
+  camera: 8,
+};
+
+function tileOrder(device: Device): number {
+  const base = CATEGORY_ORDER[device.deviceCategory] ?? 5;
+  return hasCamView(device) ? base + 10 : base;
+}
+
+/** Stable in-room tile order: category tier first, then name. */
+function sortTiles(devices: Device[]): Device[] {
+  return devices
+    .slice()
+    .sort((a, b) => tileOrder(a) - tileOrder(b) || a.name.localeCompare(b.name));
+}
 const TILE_ICON_OFF: { [cat: string]: string } = {
   light: "iconoir-light-bulb",
   "dimmable-light": "iconoir-light-bulb",
@@ -71,18 +109,19 @@ function decorateDevice(device: Device): Device {
     if (c.role === "sensor") c.control = "readout";
     else if (c.role === "setting") c.control = "stepper";
     else if (c.kind === "boolean") c.control = soleActuator ? "none" : "chip";
-    else c.control = c.precision ? "none" : "slider"; // number actuator
+    // Number actuator (dimmable brightness): the slider is on the tile only
+    // while the light is ON — it's the live "how bright" control. Off, the tile
+    // is just the switch (tap restores the last level); setting a level while
+    // off lives in the detail sheet.
+    else c.control = c.precision || (c.value as number) <= 0 ? "none" : "slider";
   });
-  // Satellite settings read better as direct controls than steppers: volume is a
-  // slider, the mic toggle a chip (both are `setting`-role so neither latches the
-  // manual lock — see server decideWritePolicy).
+  // Satellite tile = the glance + the one immediate control: the mic chip
+  // (privacy). Volume / camera flip / eco / battery are occasional or set-once —
+  // they live in the detail sheet's Controls section (control: "none" here).
   if (device.deviceCategory === "voice-satellite") {
     channels.forEach((c) => {
-      if (c.key === "volume") c.control = "slider";
       if (c.key === "mic") c.control = "chip";
-      if (c.key === "flip") c.control = "chip";
-      if (c.key === "eco") c.control = "chip";
-      if (c.key === "battery") c.icon = batteryIcon(c.value as number);
+      else c.control = "none";
     });
   }
 
@@ -110,6 +149,9 @@ function decorateDevice(device: Device): Device {
   });
   device.wide =
     device.deviceCategory === "evap-cooler" || hasCamView(device);
+  // One-row plate for tap-is-the-whole-story devices (a camera-equipped
+  // satellite is media, never compact).
+  device.compact = COMPACT_CATEGORIES.has(device.deviceCategory) && !hasCamView(device);
   // Camera live view comes from the vision-service (annotated MJPEG), never the cam
   // directly nor a relayed blob (§3.2/§6). `who` is filled by the occupancy poller.
   // A camera-equipped satellite gets the identical view (same vision-service worker,
@@ -135,17 +177,6 @@ function decorateDevice(device: Device): Device {
   return device;
 }
 
-/** Level-accurate battery glyph. Literal class names on purpose — the iconoir
- * subset generator scans src/ for `iconoir-*` tokens, so a computed name would
- * silently ship without its glyph. */
-function batteryIcon(pct: number): string {
-  if (pct > 85) return "iconoir-battery-full";
-  if (pct > 60) return "iconoir-battery-75";
-  if (pct > 35) return "iconoir-battery-50";
-  if (pct > 15) return "iconoir-battery-25";
-  return "iconoir-battery-warning";
-}
-
 /** The tile body status line, per category. */
 function computeStatus(device: Device, actuators: Channel[]): string {
   switch (device.deviceCategory) {
@@ -160,9 +191,13 @@ function computeStatus(device: Device, actuators: Channel[]): string {
       return v > 0 ? `Open · ${Math.round(v)}%` : "Closed";
     }
     case "voice-satellite": {
+      // The mic chip shows its own state; the glance is the volume plus the one
+      // battery fact that IS immediate — it's running low. Full % lives in the
+      // detail sheet.
       const vol = device.channels?.find((c) => c.key === "volume")?.value as number;
-      const mic = device.channels?.find((c) => c.key === "mic")?.value === true;
-      return `Vol ${Math.round(vol ?? 0)}% · Mic ${mic ? "on" : "off"}`;
+      const battery = Number((device.value ?? {}).battery ?? -1);
+      const low = battery >= 0 && battery <= 25 ? " · Low battery" : "";
+      return `Vol ${Math.round(vol ?? 0)}%${low}`;
     }
     case "evap-cooler": {
       const fan = actuators.find((c) => c.key === "fan")?.value === true;
@@ -375,7 +410,9 @@ function buildGroups(
   }
 
   for (const zone of ordered) {
-    const list = byZone.get(zone) ?? [];
+    // Same scan order in every room (lights → blinds → doors → climate →
+    // speakers → cameras) — findability comes from the pattern repeating.
+    const list = sortTiles(byZone.get(zone) ?? []);
     const env = zone === UNASSIGNED ? { reading: undefined, motion: null } : zoneEnv(sensors, zone);
     groups.push({
       key: zone,
@@ -395,7 +432,7 @@ function buildGroups(
       key: CAMERAS,
       label: "Cameras",
       kind: "cameras",
-      devices: cams,
+      devices: sortTiles(cams),
       summary: groupSummary("cameras", cams),
       collapsed: !f && collapsed.has(CAMERAS),
       lightsOn: 0,

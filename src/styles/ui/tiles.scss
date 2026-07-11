@@ -78,6 +78,82 @@
   min-height: 94px;
 }
 
+// ---- Compact tile (one-row plate) -----------------------------------------------
+// A tile earns its size: devices whose whole story is "tap = switch" (light /
+// door / blinds / dimmable) render as a single centered row — icon · name+status
+// · ⋯ — and grow ONE extra row only when a live control appears (a lit
+// dimmable's brightness slider). When a grid row pairs a compact plate with a
+// taller neighbour, the row's height wins and the inner row stays centered.
+.device-tile.compact {
+  min-height: var(--tile-min-height-compact);
+  padding: 10px 14px;
+
+  .tile-inner {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    align-content: center;
+    column-gap: 12px;
+  }
+
+  .tile-top {
+    display: contents;
+  }
+
+  .tile-icon {
+    grid-row: 1;
+    grid-column: 1;
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+  }
+
+  .tile-edit {
+    grid-row: 1;
+    grid-column: 3;
+  }
+
+  .tile-body {
+    grid-row: 1;
+    grid-column: 2;
+    margin-top: 0;
+    min-width: 0;
+  }
+
+  .tile-name {
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tile-meta {
+    margin-top: 1px;
+  }
+
+  .tile-status {
+    font-size: 0.8rem;
+  }
+
+  // The (usually empty) controls strip spans the full plate; the dimmable's
+  // slider is its only occupant and carries its own breathing room.
+  .tile-controls {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+
+  .tile-controls .tile-slider {
+    margin: 4px 0 2px;
+  }
+
+  // Chips (the satellite's mic) carry their own breathing room so an EMPTY
+  // controls strip adds zero height (grid row-gap would).
+  .tile-controls .chip {
+    margin: 6px 0 2px;
+  }
+}
+
 .tile-top {
   display: flex;
   align-items: flex-start;
