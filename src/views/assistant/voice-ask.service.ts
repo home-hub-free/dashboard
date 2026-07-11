@@ -35,6 +35,10 @@ export type VoiceState =
  * bind — only the user-visible fields (state, transcript, reply, action) are
  * pushed onto the assistant bind so bindrjs re-renders.
  */
+/** ~50 bytes of silent 16-bit PCM — enough for a real play() that unlocks the Audio element. */
+const SILENT_WAV =
+  "data:audio/wav;base64,UklGRjQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YRAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
 export class VoiceAskServiceClass {
   private state!: AssistantMenuState;
   private recorder?: MediaRecorder;
@@ -54,12 +58,40 @@ export class VoiceAskServiceClass {
     this.state = state;
   }
 
+  /**
+   * Unlock the shared Audio element while we still hold the user's gesture. The agent round-trip
+   * can take ~20s — longer than the browser's transient-activation window — after which a cold
+   * `audio.play()` is rejected as autoplay and the reply is silently dropped (voice-turn beacons
+   * showed playback=14ms for a 3s clip). Playing a real (silent) clip NOW, inside the gesture,
+   * keeps this element allowed to play later. Must be called synchronously from the gesture
+   * handler's stack (before any await).
+   */
+  private primeAudio() {
+    try {
+      this.audio.muted = true;
+      this.audio.src = SILENT_WAV;
+      const p = this.audio.play();
+      p?.then(
+        () => {
+          this.audio.pause();
+          this.audio.muted = false;
+        },
+        () => {
+          this.audio.muted = false;
+        },
+      );
+    } catch {
+      this.audio.muted = false;
+    }
+  }
+
   /** pointer-down on the talk button. */
   async start() {
     if (!this.state || this.state.voiceState !== "idle") return;
     if (!navigator.mediaDevices?.getUserMedia) {
       return this.fail("Microphone needs a secure (https) connection");
     }
+    this.primeAudio(); // still inside the press gesture — before the getUserMedia await
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
@@ -101,6 +133,7 @@ export class VoiceAskServiceClass {
     const msg = (text || "").trim();
     if (!this.state || !msg) return;
     if (this.state.voiceState !== "idle") return; // a turn is already in flight
+    this.primeAudio(); // still inside the submit gesture — before any await
 
     const turnId = newTurnId();
     const stages: VoiceTurnStages = {};
@@ -261,14 +294,26 @@ export class VoiceAskServiceClass {
   private play(blob: Blob): Promise<void> {
     return new Promise((resolve) => {
       const url = URL.createObjectURL(blob);
+      this.audio.muted = false; // defensive: never inherit the prime's muted state
       this.audio.src = url;
+      let settled = false;
       const done = () => {
+        if (settled) return;
+        settled = true;
         URL.revokeObjectURL(url);
         resolve();
       };
+      // A blocked/failed play used to resolve silently (playback=14ms in the beacons) — the reply
+      // text is on screen, so keep resolving, but TELL the user the audio didn't come out.
+      const failed = () => {
+        if (!settled) {
+          showToaster({ from: "bottom", message: "El navegador bloqueó el audio de la respuesta", timer: 2500 });
+        }
+        done();
+      };
       this.audio.onended = done;
-      this.audio.onerror = done;
-      this.audio.play().catch(done);
+      this.audio.onerror = failed;
+      this.audio.play().catch(failed);
     });
   }
 
