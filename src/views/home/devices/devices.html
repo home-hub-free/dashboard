@@ -256,6 +256,7 @@
             class="sensor-chip"
             :foreach="sensor in group.sensors"
             :key="sensor.id"
+            :id="'chip-' + sensor.id"
             :class:active="sensor.value === true"
             :onmouseup="this.onSensorClick(event, sensor.id)"
             oncontextmenu="return false;"

@@ -22,6 +22,7 @@ import { Channel, deviceChannels, withChannelValue } from "./channels";
 import { DevicesService, DevicesServiceClass } from "./devices.service";
 import { CAM_NUDGE_MS, CAM_NUDGE_SPEED, openCameraControls, openCameraLive } from "./camera-ctl.service";
 import { startVisionOccupancy, stopVisionOccupancy } from "../../../utils/vision-handler";
+import { markSelfWrite } from "../../../utils/live-motion";
 
 // Tiles with no zone set fall under this bucket; cameras get their own group.
 const UNASSIGNED = "_unassigned";
@@ -922,6 +923,10 @@ class DevicesTabClass extends Component<DevicesTabState> {
   /** The single channel-addressed write path: optimistically fold the value into
    * the blob + re-decorate, post {id, channel, value}, and revert on failure. */
   private writeChannel(device: Device, channel: Channel, value: boolean | number) {
+    // Silence the live-motion flare for the echo of our OWN write — the hub
+    // broadcasts every dashboard action back over WS, and you don't announce a
+    // change to the person who just made it (live-motion.ts).
+    markSelfWrite(device.id);
     const previous = device.value;
     device.value = withChannelValue(device.deviceCategory, device.value, channel.key, value);
     decorateDevice(device);

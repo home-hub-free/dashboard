@@ -4,6 +4,24 @@ import { DeviceActions, SensorActions } from "../store/actions";
 import { SensorsService } from "../views/home/sensors/sensors.service";
 import { syncState } from "./sync";
 import { bus } from "../core/bus";
+import { store } from "../store/store";
+import {
+  entranceTile,
+  entranceChip,
+  flareTile,
+  reseatReadout,
+  reseatChip,
+  wasSelfWrite,
+} from "./live-motion";
+
+/** The cooler tile's one live on-plate number — its outlet/room air temperature.
+ * Returns a stable comparable (or null for non-coolers) so the handler can tell a
+ * genuine reading tick from an unrelated blob patch (manual lock, name, ranges). */
+function coolerReadout(device: { deviceCategory?: string; value?: any } | undefined): string | null {
+  if (!device || device.deviceCategory !== "evap-cooler") return null;
+  const t = (device.value ?? {})["room-temp"];
+  return t == null ? null : String(t);
+}
 
 // `server` is a same-origin path prefix ("/api/") behind nginx (and via the Vite dev
 // proxy), or an absolute URL when VITE_SERVER_URL is set for direct dev. Socket.IO reads
@@ -63,20 +81,54 @@ export function initWebSockets() {
   });
 
   socket.on('device-declare', (device) => {
+    const isNew = !store.get('devices').some((d) => d.id === device.id);
     DeviceActions.declare(device);
+    // A genuinely-new device rises in; a device merely re-declaring on boot/ping
+    // (already known) must not replay an entrance.
+    if (isNew) entranceTile(device.id);
   });
 
   socket.on('device-update', (device) => {
+    // Snapshot the pre-update reading — the store holds DECORATED devices, so
+    // `isOn` is already computed — then apply the patch (which re-decorates
+    // synchronously via the store subscription) and read the settled state back.
+    const before = store.get('devices').find((d) => d.id === device.id);
+    const prevOn = before?.isOn;
+    const prevReadout = coolerReadout(before);
     DeviceActions.update(device);
+    const after = store.get('devices').find((d) => d.id === device.id);
+    if (!after) return;
+
+    // A light/actuator flipped without us → announce it. Our own taps echo back
+    // over WS; those stay silent (the CSS fill transition is feedback enough).
+    if (prevOn !== undefined && prevOn !== after.isOn && !wasSelfWrite(device.id)) {
+      flareTile(device.id, after.isOn === true);
+    }
+    // The cooler's hero reading ticked → reseat the digits (a live instrument).
+    const nextReadout = coolerReadout(after);
+    if (nextReadout !== null && prevReadout !== null && nextReadout !== prevReadout) {
+      reseatReadout(device.id);
+    }
   });
 
   socket.on('sensor-declare', (sensor) => {
+    const isNew = !store.get('sensors').some((s) => s.id === sensor.id);
     SensorActions.declare(sensor);
+    if (isNew) entranceChip(sensor.id);
   });
 
   socket.on('sensor-update', (sensor) => {
+    // Compare the formatted reading before/after so a periodic report with an
+    // unchanged value doesn't flash. (SensorActions.update mutates the stored
+    // object in place, so capture the snapshot as a string first.)
+    const before = store.get('sensors').find((s) => s.id === sensor.id);
+    const prev = before ? JSON.stringify(before.value) : null;
     SensorActions.update(sensor);
     SensorsService.formatSensorsValues([sensor]);
+    const after = store.get('sensors').find((s) => s.id === sensor.id);
+    if (after && prev !== null && JSON.stringify(after.value) !== prev) {
+      reseatChip(sensor.id);
+    }
   });
 }
 
