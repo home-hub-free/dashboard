@@ -1,4 +1,25 @@
+---
+title: Dashboard Design System
+summary: Source of truth for the dashboard UI *principles* — four-lamp color semantics, elevation, core patterns, tap targets, SCSS architecture, bindrjs gotchas. Component catalog lives in UI-LIBRARY.md.
+status: LIVE
+owner: dashboard
+updated: 2026-07-11
+tags: [dashboard, design, ui]
+---
+
 # Dashboard Design System
+
+## Index
+
+- [1. Tokens](#1-tokens) — the CSS custom properties (color, space, type, radius)
+- [2. Color semantics](#2-color-semantics) — the four-lamp palette and what each hue means
+- [3. Elevation](#3-elevation) — the surface layers and shadow scale
+- [4. Core patterns](#4-core-patterns) — every screen region, tile, and overlay, with source files
+- [5. Tap targets](#5-tap-targets) — the 44px minimum hit-area rule
+- [6. SCSS architecture & specificity caveats](#6-scss-architecture--specificity-caveats) — where styles live and how the cascade bites
+- [7. bindrjs reactivity gotchas](#7-bindrjs-reactivity-gotchas) — the reactive-render traps stylists hit
+- [8. Component file convention](#8-component-file-convention) — the .ts/.html/.model.ts triple
+- [Validating changes](#validating-changes) — the Playwright screenshot workflow before you ship
 
 Source of truth for the Home Hub dashboard UI **principles**. The component
 catalog — every reusable class with markup snippets, plus the recipe for adding
@@ -22,7 +43,12 @@ All design tokens live in `src/styles/ui/_tokens.scss` as CSS custom properties 
 token so the system stays coherent.
 
 - **Spacing** — 8px base scale (`--space-1`…`--space-20`) plus aliases
-  (`--space-xs`…`--space-2xl`) and `--gap-*`.
+  (`--space-xs`…`--space-2xl`) and `--gap-*`. The board's rhythm is three steps:
+  `--space-2` WITHIN a group (tiles in a grid, instruments in a header),
+  `--space-3` BETWEEN siblings (sensor/rail chips, board gap), `--space-4/5`
+  BETWEEN room cards — the card boundary always gets the biggest gap. Icon↔label
+  inside one control uses `--gap-icon` (6px, the only sub-scale gap). Raw px is
+  allowed only for 1–3px optical nudges and derived constants (commented inline).
 - **Typography — two materials.** **Archivo** (variable, local woff2 in
   `public/Fonts/Tablero/`) is the label/UI face; display text (room names, screen
   titles, tile names) additionally sets `font-stretch: var(--font-stretch-display)`
@@ -118,13 +144,20 @@ while lit), device plates inside, and **the room's own sensor chips along the
 card's foot** (tap = the sensor detail sheet). The room is the ONE place to find
 everything about the room; zones with only sensors still render as cards. On
 ≥1000px the cards flow **two-up** (Pinned and Cameras span full width — a 4-up
-shortcut strip and side-by-side live views); phones stack them.
+shortcut strip and side-by-side live views); phones stack them. On the wall panel
+(≥1400px) the board doesn't just widen: the **glance tier** steps up — room and
+tile names, live readouts and the cooler hero grow a size, one-row plates get
+taller (`--tile-min-height-compact` 68px) and the between-card gap steps to
+`--space-5` (see the `wall-up` block in `views/home.scss`).
 
 Above the board sits the sticky **room rail** — switch-plate room tabs (Pinned →
 rooms in registry order → Cameras), each with a lamp dot that lights gold when
 the room has lights on. Tap = expand + scroll to that card; the text filter
 hides behind the rail's search key. The same jump-rail idiom heads Settings
-(`.settings-rail`). On phones the header's env readout shows only while the card
+(`.settings-rail`); both rails compose the shared `.rail-chip` plate
+(`ui/nav.scss` — geometry, plate look, 44px touch expansion), while type voice
+stays per-view (Home's chips carry room names → display voice; Settings chips
+are quiet labels). On phones the header's env readout shows only while the card
 is collapsed (the chips carry it when open) so room names never truncate.
 
 ### Pinned strip (`views/home/devices/pins.service.ts`)

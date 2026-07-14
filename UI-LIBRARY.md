@@ -1,4 +1,34 @@
+---
+title: Home Hub UI Library
+summary: The dashboard component catalog — every reusable class with markup snippets, plus the recipe for adding a new screen. Principles live in DESIGN.md; live gallery at /ui-kit.html.
+status: LIVE
+owner: dashboard
+updated: 2026-07-11
+tags: [dashboard, ui, components]
+---
+
 # Home Hub UI Library
+
+## Index
+
+- [0. Architecture — where styles live](#0-architecture--where-styles-live) — the ui/ vs views/ layering
+- [1. Tokens (`ui/_tokens.scss`)](#1-tokens-uitokensscss) — the design tokens the whole kit reads
+- [2. Color semantics — the four lamps ("Vesper", the house after dark)](#2-color-semantics--the-four-lamps-vesper-the-house-after-dark) — what each accent means
+- [3. Elevation](#3-elevation) — the surface + shadow scale
+- [4. Buttons (`ui/buttons.scss`)](#4-buttons-uibuttonsscss) — button variants and states
+- [5. Forms (`ui/forms.scss`)](#5-forms-uiformsscss) — inputs, selects, toggles
+- [6. Page scaffolding (`ui/layout.scss`)](#6-page-scaffolding-uilayoutscss) — app bar, page, content columns
+- [7. Panels, rows, pills (`ui/panels.scss`)](#7-panels-rows-pills-uipanelsscss) — the grouping primitives
+- [8. Device tiles & sensor chips (`ui/tiles.scss`)](#8-device-tiles--sensor-chips-uitilesscss) — the glance-surface tiles
+- [9. Detail overlay (`ui/overlay.scss`)](#9-detail-overlay-uioverlayscss) — the per-device detail sheet
+- [10. Toasts (`ui/toast.scss`)](#10-toasts-uitoastscss) — transient notifications
+- [10b. Loading states (`ui/loading.scss`)](#10b-loading-states-uiloadingscss) — skeletons + spinners
+- [11. Navigation (`ui/nav.scss`)](#11-navigation-uinavscss) — sidebar + bottom nav
+- [12. Responsive & mobile rules](#12-responsive--mobile-rules) — breakpoints + phone layout
+- [13. Motion](#13-motion) — the motion scale + reduced-motion
+- [14. bindrjs gotchas (the ones that bite stylists)](#14-bindrjs-gotchas-the-ones-that-bite-stylists) — reactive-render traps
+- [15. Recipe: adding a new screen/tab](#15-recipe-adding-a-new-screentab) — the step-by-step for a new view
+- [16. Do / Don't](#16-do--dont) — the quick rules
 
 The component catalog for the dashboard. **Read this before building any new
 screen, tab, or component** — everything you need already exists as a documented
