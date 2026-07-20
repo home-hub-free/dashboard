@@ -12,7 +12,7 @@
   position: relative;
   min-height: var(--tile-min-height);
   box-sizing: border-box;
-  padding: 14px;
+  padding: var(--space-3);
   border-radius: var(--radius-tile);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -86,7 +86,7 @@
 // taller neighbour, the row's height wins and the inner row stays centered.
 .device-tile.compact {
   min-height: var(--tile-min-height-compact);
-  padding: 10px 14px;
+  padding: var(--space-2) var(--space-3);
 
   .tile-inner {
     min-height: 0;
@@ -94,7 +94,7 @@
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     align-content: center;
-    column-gap: 12px;
+    column-gap: var(--space-3);
   }
 
   .tile-top {
@@ -144,13 +144,13 @@
   }
 
   .tile-controls .tile-slider {
-    margin: 4px 0 2px;
+    margin: var(--space-1) 0 2px;
   }
 
   // Chips (the satellite's mic) carry their own breathing room so an EMPTY
   // controls strip adds zero height (grid row-gap would).
   .tile-controls .chip {
-    margin: 6px 0 2px;
+    margin: var(--space-2) 0 2px;
   }
 }
 
@@ -203,11 +203,11 @@
 }
 
 .tile-meta {
-  margin-top: 3px;
+  margin-top: 3px; // optical: status hugs its name
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .tile-status {
@@ -220,8 +220,8 @@
 .tile-lock {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
   border-radius: var(--radius-sm);
   font-size: 0.72rem;
   font-weight: var(--font-weight-bold);
@@ -251,8 +251,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-top: 10px;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .channel-control {
@@ -265,7 +265,7 @@
   appearance: none;
   width: 100%;
   height: 6px;
-  margin-top: 12px;
+  margin-top: var(--space-3);
   border-radius: 999px;
   background: var(--color-surface-secondary);
   outline: none;
@@ -291,7 +291,7 @@
 
 .tile-controls .tile-slider {
   flex: 1 1 100%;
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 // Boolean channel → pill chip (cooler fan/water). Content-width, state-colored.
@@ -299,12 +299,12 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--gap-icon);
   flex: 0 0 auto;
   width: auto;
   min-width: 0;
   min-height: 0;
-  padding: 8px 14px;
+  padding: var(--space-2) var(--space-3);
   border: none;
   border-radius: var(--radius-chip);
   background: var(--color-surface-secondary);
@@ -343,12 +343,12 @@
 .stepper {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--gap-icon);
 
   .stepper-readout {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--space-1);
     font-family: var(--font-family-data);
     font-feature-settings: "tnum" 1;
     font-size: 0.92rem;
@@ -464,11 +464,11 @@
 // label), name + one status line, then the fan/water chips. Unit temp and the
 // target stepper live in the detail overlay (control: "none" — decorateDevice).
 .device-tile.cat-evap-cooler {
-  padding: 14px 16px;
+  padding: var(--space-3) var(--space-4);
 
   .tile-controls .readout {
     position: absolute;
-    top: 14px;
+    top: var(--space-3);
     right: 48px; // clear the ⋯ edit affordance
     align-items: flex-end;
     text-align: right;
@@ -519,7 +519,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: var(--space-2);
     color: var(--color-text-tertiary);
     background: var(--color-surface-secondary);
 
@@ -545,8 +545,8 @@
     right: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 14px;
+    gap: var(--space-2);
+    padding: var(--space-3);
     color: #fff;
     font-weight: var(--font-weight-semibold);
     background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent);
@@ -596,8 +596,8 @@
     bottom: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 14px;
+    gap: var(--space-2);
+    padding: var(--space-3);
     color: #fff;
     font-size: 1.05rem;
     font-weight: var(--font-weight-semibold);
@@ -616,13 +616,13 @@
   // satellite's own .cam-health block keeps top/right: 8px — no label row there).
   .cam-health {
     position: absolute;
-    top: 46px;
-    right: 12px;
+    top: 46px; // below the label row (12 + 18 glyph + 12 + air)
+    right: var(--space-3);
     z-index: 2;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 9px;
+    gap: var(--gap-icon);
+    padding: var(--space-1) var(--space-2);
     border-radius: 999px;
     font-size: 0.72rem;
     font-weight: var(--font-weight-semibold);
@@ -669,7 +669,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    padding: 10px 12px;
+    padding: var(--space-2) var(--space-3);
     background: var(--color-surface);
     border-top: 1px solid var(--color-border);
   }
@@ -688,7 +688,7 @@
 // .cam-ctrl bar AND the fullscreen lightbox (.cam-live-ctrl, ui/overlay.scss).
 .cam-dpad {
   display: flex;
-  gap: 6px;
+  gap: var(--gap-icon);
   flex: 0 0 auto;
 }
 
@@ -728,7 +728,7 @@
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   flex: 1;
   min-width: 0;
 
@@ -747,11 +747,12 @@
 // view as the room cams, but as a bounded banner at the TOP of an otherwise-normal
 // tile — its audio/battery controls (.tile-inner) keep their body below. So, unlike
 // .cat-camera, we do NOT blank the tile to a full-bleed black frame: only .cam-wrap is
-// styled, and it bleeds out over the tile's 14px padding to reach the edges.
+// styled, and it bleeds out over the tile's --space-3 padding to reach the edges.
 .device-tile.cat-voice-satellite {
   .cam-wrap {
     position: relative;
-    margin: -14px -14px 12px;  // cancel the tile padding so the banner is edge-to-edge
+    // Cancel the tile's --space-3 padding so the banner is edge-to-edge.
+    margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-3)) var(--space-3);
     // Slim preview on purpose: the satellite cam is a VGA visual aid, not a room
     // camera — the banner is a peek, the lightbox (banner tap) is the real view.
     height: 110px;
@@ -772,8 +773,8 @@
   // corner. Pure affordance: the tap is handled by the banner itself.
   .cam-expand {
     position: absolute;
-    top: 8px;
-    left: 8px;
+    top: var(--space-2);
+    left: var(--space-2);
     z-index: 2;
     display: flex;
     align-items: center;
@@ -812,7 +813,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: var(--space-2);
     color: var(--color-text-tertiary);
     background: var(--color-surface-secondary);
 
@@ -827,8 +828,8 @@
     bottom: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 12px;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
     color: #fff;
     font-size: 0.95rem;
     font-weight: var(--font-weight-semibold);
@@ -839,13 +840,13 @@
 
   .cam-health {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: var(--space-2);
+    right: var(--space-2);
     z-index: 2;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 3px 8px;
+    gap: var(--gap-icon);
+    padding: 3px var(--space-2);
     border-radius: 999px;
     font-size: 0.68rem;
     font-weight: var(--font-weight-semibold);
@@ -896,7 +897,7 @@
     margin-top: auto;
 
     &.w60 { width: 60%; }
-    &.w35 { width: 35%; margin-top: 8px; }
+    &.w35 { width: 35%; margin-top: var(--space-2); }
   }
 }
 
@@ -909,10 +910,10 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-chip);
-  padding: 12px 14px;
+  padding: var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-2);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: border-color 200ms var(--ease-in-out), transform 120ms ease;
@@ -928,7 +929,7 @@
   .chip-head {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     color: var(--color-text-secondary);
     font-size: 0.8rem;
 
@@ -947,7 +948,7 @@
   .chip-reading {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     font-family: var(--font-family-data);
     font-feature-settings: "tnum" 1;
     font-size: 1rem;
@@ -968,13 +969,13 @@
     }
 
     &.th {
-      gap: 16px;
+      gap: var(--space-4);
     }
 
     .metric {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: var(--gap-icon);
       font-size: 0.98rem;
 
       i {

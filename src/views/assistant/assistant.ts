@@ -79,8 +79,11 @@ class VAssistantContentClass extends Component<AssistantMenuState> {
     this.voiceAskService.attach(this.bind);
     this.chatsService.attach(this.bind);
     // A finished composer turn was appended to the LIVE thread by the gateway — sync the panel
-    // (list order, the transcript, and focus if the user was reading an old chat).
-    this.voiceAskService.onTurnComplete = () => void this.chatsService.onTurnComplete();
+    // (list order, the transcript, and focus if the user was reading an old chat). Must return
+    // the promise: syncChats() awaits it before deciding whether the stored transcript already
+    // carries the turn — discarding it (`void`) made that check run early, so the pending
+    // bubbles never cleared and every exchange showed twice.
+    this.voiceAskService.onTurnComplete = () => this.chatsService.onTurnComplete();
 
     void this.chatsService.refresh();
     this.chatsService.startAutoRefresh();

@@ -1,17 +1,60 @@
 // ============================================================================
 // VIEW · HOME — "Tablero"
 // Composition of the Home board: the house bar (date · lights answer · weather),
-// the ROOM RAIL (switch-plate room tabs with live lamps = the jump nav), the
-// room-grouped device board with sensor-fused headers, and the compact Sensors
-// band at the bottom. Tile/chip COMPONENTS live in ui/tiles.scss.
+// the ROOM RAIL (switch-plate room tabs with live lamps = the jump nav), and the
+// room CARDS (header instruments · device plates · sensor chips at the foot).
+// Tile/chip COMPONENTS live in ui/tiles.scss.
+//
+// Spacing rhythm (all from the token scale — see DESIGN.md §1):
+//   --space-2 (8px)  WITHIN a group  (instruments in a header, tiles in a grid)
+//   --space-3 (12px) BETWEEN siblings (sensor chips, rail chips, board gap)
+//   --space-4+ (16px/20px) BETWEEN room cards (wide/wall) — the boundary wins
 //
 // Responsive shape:
-//   < 640px   one column: house bar → rail → board (2-col grid) → sensors band
-//   ≥ 640px   4 tracks, wide devices become full-width bands
-//   ≥ 1400px  wall panel: 6 tracks (three tiles per row)
+//   < 640px   one column: house bar → rail → room cards stacked
+//   ≥ 640px   centered column; 4-track grids, wide devices = full-width bands
+//   ≥ 1000px  room cards flow two-up (Pinned / Cameras keep full width)
+//   ≥ 1400px  wall panel: wider board + the glance type/plate step-up
 // ============================================================================
 
 @import "../ui/tokens";
+
+// One shared "lights off" control — the house bar's All-off and each room's
+// Off are the same role and must read identically.
+@mixin lights-off-btn {
+  position: relative;
+  display: none;
+  align-items: center;
+  gap: var(--gap-icon);
+  min-height: 32px;
+  min-width: 0;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-semibold);
+
+  &.shown {
+    display: inline-flex;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  // 32px visual, 44px touch target (invisible expansion — no layout shift).
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -6px 0;
+  }
+
+  i {
+    font-size: 15px;
+  }
+}
 
 // Home must fill width and flow naturally (the legacy shell centers + clips).
 #main-content #tab-content > #home {
@@ -30,16 +73,6 @@
   padding-bottom: 104px; // clear the fixed bottom nav
 }
 
-// ---- Section label (Sensors) ---------------------------------------------------
-.home-sectit {
-  margin: 20px 16px 10px;
-  font-size: 0.95rem;
-  font-weight: var(--font-weight-semibold);
-  font-stretch: var(--font-stretch-display);
-  letter-spacing: var(--letter-spacing-tight);
-  color: var(--color-text-secondary);
-}
-
 // ---- House bar --------------------------------------------------------------------
 // One slim instrument row: date · whole-house lights answer (+ All off) · weather.
 // Deliberately NOT a card — it sits on the wall itself, quiet, above the board.
@@ -47,9 +80,11 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 20px;
-  margin: 2px 16px 6px;
-  padding: 6px 2px;
+  // Tight within an instrument group, generous between groups — the bar's
+  // date / lights / weather must read as three separate answers.
+  gap: var(--space-2) var(--space-5);
+  margin: 2px var(--space-4) var(--space-2);
+  padding: var(--space-1) 2px;
 
   .hs-date {
     font-size: 0.85rem;
@@ -59,11 +94,11 @@
   .hs-lights {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
 
     .hs-lamp {
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background: var(--color-gray-600);
       transition: background var(--duration-normal) var(--ease-out);
@@ -73,45 +108,26 @@
       background: var(--color-active-warm);
     }
 
+    // The board's headline: the whole-house answer reads at instrument scale
+    // and full ink so "what's on" leads the glance — the date beside it stays
+    // the quiet timestamp (weight contrast, not a second loud element).
     .hs-lights-label {
       font-family: var(--font-family-data);
       font-feature-settings: "tnum" 1;
-      font-size: 0.85rem;
-      color: var(--color-text-secondary);
+      font-size: 1.15rem;
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
     }
 
     .hs-alloff {
-      display: none;
-      align-items: center;
-      gap: 5px;
-      min-height: 32px;
-      min-width: 0;
-      padding: 4px 10px;
-      border: 1px solid var(--color-border-light);
-      border-radius: var(--radius-control);
-      background: var(--color-surface-secondary);
-      color: var(--color-text-secondary);
-      font-size: 0.8rem;
-      font-weight: var(--font-weight-semibold);
-
-      &.shown {
-        display: inline-flex;
-      }
-
-      &:active {
-        transform: translateY(1px);
-      }
-
-      i {
-        font-size: 15px;
-      }
+      @include lights-off-btn;
     }
   }
 
   .hs-weather {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     margin-left: auto;
     min-width: 0;
 
@@ -153,9 +169,11 @@
   z-index: var(--z-sticky);
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 -16px 10px;
-  padding: 8px 16px;
+  // Between-chip gap must beat the chip's INTERNAL gap (--space-2) so each
+  // switch plate reads as one unit at a glance.
+  gap: var(--space-3);
+  margin: 0 calc(-1 * var(--space-4)) var(--space-3);
+  padding: var(--space-2) var(--space-4);
   overflow-x: auto;
   scrollbar-width: none;
   background: var(--color-background);
@@ -165,31 +183,13 @@
     display: none;
   }
 
+  // Chip base (plate look, 44px touch expansion) is the shared .rail-chip in
+  // ui/nav.scss — the room rail adds the display voice (chips carry room
+  // names) and its extras (lamp, pin, search).
   .rail-chip {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 38px;
-    min-width: 0;
-    padding: 6px 14px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-control);
-    background: var(--color-surface);
-    color: var(--color-text-secondary);
-    font-size: 0.85rem;
     font-weight: var(--font-weight-semibold);
     font-stretch: var(--font-stretch-display);
     letter-spacing: var(--letter-spacing-tight);
-
-    &:hover {
-      border-color: var(--color-border-light);
-      color: var(--color-text-primary);
-    }
-
-    &:active {
-      transform: translateY(1px);
-    }
 
     .rail-lamp {
       width: 7px;
@@ -214,7 +214,7 @@
 
     &.rail-search {
       margin-left: auto;
-      padding: 6px 10px;
+      padding: var(--space-1) var(--space-2);
 
       i {
         font-size: 16px;
@@ -233,8 +233,8 @@
 #main-content #tab-content #devices.device-board {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 0 16px;
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
   align-content: start;
 }
 
@@ -242,11 +242,11 @@
   position: relative;
   display: flex;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 
   > i {
     position: absolute;
-    left: 12px;
+    left: var(--space-3);
     font-size: 1rem;
     color: var(--color-text-tertiary);
     pointer-events: none;
@@ -256,7 +256,7 @@
     width: 100%;
     box-sizing: border-box;
     height: 40px;
-    padding: 0 14px 0 34px;
+    padding: 0 var(--space-4) 0 34px; // 34 = icon left (12) + glyph (16) + 6
     border-radius: var(--radius-control);
     border: 1px solid var(--color-border);
     background: var(--color-surface);
@@ -281,17 +281,18 @@
 .zone-section {
   min-width: 0;
   box-sizing: border-box;
-  padding: 2px 12px 12px;
+  padding: 2px var(--space-3) var(--space-3);
   background: var(--color-surface-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
-  scroll-margin-top: 62px; // land jumps below the sticky room rail
+  // Land jumps below the sticky rail: chip 38 + rail padding 2×8 + border 1, +7 air.
+  scroll-margin-top: 62px;
 }
 
 .zone-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -299,15 +300,18 @@
 .zone-sensors {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  // Chips are discrete instruments: the gap BETWEEN chips (--space-3) must beat
+  // each chip's internal icon↔reading gap (--space-2), or the row blurs into
+  // one strip at a glance.
+  gap: var(--space-3);
   padding: 2px 0 2px;
 
   .sensor-chip {
     flex-direction: row;
     align-items: center;
-    gap: 12px;
+    gap: var(--space-2);
     min-width: 0;
-    padding: 8px 12px;
+    padding: var(--space-2) var(--space-3);
     background: var(--color-surface);
 
     .chip-head .chip-name {
@@ -318,7 +322,7 @@
       font-size: 0.9rem;
 
       &.th {
-        gap: 12px;
+        gap: var(--space-3);
       }
 
       .metric {
@@ -331,7 +335,7 @@
 // A room with devices separates its sensor foot with a hairline.
 .zone-body + .zone-sensors {
   border-top: 1px solid var(--color-border);
-  padding-top: 10px;
+  padding-top: var(--space-3);
 }
 
 // Room header: name in the display voice, then the room's ambient instruments
@@ -340,11 +344,11 @@
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2);
   min-width: 0;
   box-sizing: border-box;
   margin: 0;
-  padding: 10px 6px;
+  padding: var(--space-3) var(--space-2);
   background: transparent;
   border: none;
   border-radius: 0;
@@ -365,7 +369,9 @@
   }
 
   .zone-name {
-    font-size: 1rem;
+    // The room's identity is the glance anchor — it must survive the squint
+    // test above the tile names (which sit at ~0.95–1.02rem).
+    font-size: 1.05rem;
     font-weight: var(--font-weight-semibold);
     font-stretch: var(--font-stretch-display);
     letter-spacing: var(--letter-spacing-tight);
@@ -375,11 +381,13 @@
     text-overflow: ellipsis;
   }
 
+  // The room's live climate — a key across-room datum, so it reads as data,
+  // not a footnote: instrument-secondary rather than tertiary-gray-tiny.
   .zone-env {
     font-family: var(--font-family-data);
     font-feature-settings: "tnum" 1;
-    font-size: 0.8rem;
-    color: var(--color-text-tertiary);
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
     white-space: nowrap;
   }
 
@@ -396,43 +404,23 @@
     }
   }
 
+  // "N on" — the room's activity count. Legible secondary + medium weight so it
+  // holds its own at the header's right edge, without competing with the name.
   .zone-summary {
     margin-left: auto;
     font-family: var(--font-family-data);
     font-feature-settings: "tnum" 1;
-    font-size: 0.75rem;
-    color: var(--color-text-tertiary);
+    font-size: 0.82rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
     white-space: nowrap;
   }
 }
 
 // Room "Lights off" — appears only while the room has lit lights.
 #main-content #tab-content #devices .zone-off {
-  display: none;
-  align-items: center;
-  gap: 5px;
+  @include lights-off-btn;
   flex: 0 0 auto;
-  min-height: 32px;
-  min-width: 0;
-  padding: 4px 10px;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-control);
-  background: var(--color-surface-secondary);
-  color: var(--color-text-secondary);
-  font-size: 0.78rem;
-  font-weight: var(--font-weight-semibold);
-
-  &.shown {
-    display: inline-flex;
-  }
-
-  &:active {
-    transform: translateY(1px);
-  }
-
-  i {
-    font-size: 14px;
-  }
 }
 
 // Collapsed: caret points right (the body is removed from the DOM via :if).
@@ -453,8 +441,10 @@
 #main-content #tab-content #devices .device-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  padding: 10px 0 6px;
+  // Tiles WITHIN a room sit tight (--space-2); the room boundary gets the
+  // bigger gap (board --space-3/4) so cards win the squint test.
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
   align-content: start;
 }
 
@@ -491,7 +481,6 @@
     // Rows size to content — a compact plate must be allowed to stay a
     // one-row plate (each tile's min-height token is its floor).
     grid-auto-rows: auto;
-    gap: 12px;
   }
 
   #main-content #tab-content #devices .device-tile,
@@ -515,7 +504,7 @@
   }
 
   .home-dash {
-    padding-bottom: 32px;
+    padding-bottom: var(--space-8);
   }
 
   // The board is a centered column on big screens.
@@ -528,13 +517,13 @@
 
   .home-status {
     margin-top: 0;
-    margin-bottom: 10px;
-    padding: 6px 2px;
+    margin-bottom: var(--space-2);
+    padding: var(--space-1) 2px;
   }
 
   .room-rail {
-    margin: 0 0 12px;
-    padding: 8px 2px;
+    margin: 0 0 var(--space-3);
+    padding: var(--space-2) 2px;
     border-radius: 0;
   }
 }
@@ -547,7 +536,9 @@
   #main-content #tab-content #devices.device-board {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
+    // Cards sit side by side here: the between-card gap steps UP so the room
+    // boundary stays the strongest line on the board.
+    gap: var(--space-4);
     align-items: start;
   }
 
@@ -595,10 +586,84 @@
   }
 }
 
-// ---- Wall panel (>= 1400px): the board breathes wider ---------------------------
+// ---- Wall panel (>= 1400px): the glance tier -------------------------------------
+// The wall is the PRIMARY surface, read from across the room. The board doesn't
+// just widen: the glance layer — room names, device names, live readouts — steps
+// up a size, one-row plates get taller, and the card boundary gets more air.
 @include wall-up {
   .home-status,
   .home-board {
-    max-width: 1340px;
+    max-width: 1480px;
+  }
+
+  .home-status {
+    .hs-date {
+      font-size: 0.95rem;
+    }
+
+    // At panel distance the house answer commands the bar — it's the datum you
+    // read from the doorway.
+    .hs-lights {
+      .hs-lamp {
+        width: 12px;
+        height: 12px;
+      }
+
+      .hs-lights-label {
+        font-size: 1.5rem;
+      }
+    }
+
+    .hs-weather .hs-wx-temp {
+      font-size: 1.2rem;
+    }
+  }
+
+  .room-rail .rail-chip {
+    font-size: 0.95rem;
+  }
+
+  #main-content #tab-content #devices.device-board {
+    gap: var(--space-5);
+    // Taller one-row plates: same geometry, more presence at distance.
+    --tile-min-height-compact: 68px;
+  }
+
+  #main-content #tab-content #devices .zone-head {
+    .zone-name {
+      font-size: 1.2rem;
+    }
+
+    .zone-env {
+      font-size: 1.05rem;
+    }
+
+    .zone-summary {
+      font-size: 0.95rem;
+    }
+  }
+
+  #main-content #tab-content #devices .device-tile {
+    .tile-name {
+      font-size: 1.12rem;
+    }
+
+    .tile-status {
+      font-size: 0.9rem;
+    }
+  }
+
+  #main-content #tab-content #devices .device-tile.compact .tile-name {
+    font-size: 1.05rem;
+  }
+
+  // The cooler's hero readout is the board's biggest number — scale with it.
+  #main-content #tab-content #devices .device-tile.cat-evap-cooler .tile-controls .readout .readout-val {
+    font-size: 2.4rem;
+  }
+
+  #main-content #tab-content #devices .zone-sensors .sensor-chip .chip-reading,
+  #main-content #tab-content #devices .zone-sensors .sensor-chip .chip-reading .metric {
+    font-size: 1rem;
   }
 }

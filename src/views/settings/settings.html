@@ -430,7 +430,10 @@
              fold it away. Raising auto-heal makes merges stricter (fewer wrong guesses,
              more faces to review by hand); lowering it merges more eagerly. -->
         <details class="disclosure" :if="this.thresholds.length">
-            <summary>Recognition thresholds (advanced)</summary>
+            <summary>
+                <span>Recognition thresholds (advanced)</span>
+                <i class="iconoir-nav-arrow-down adv-chevron"></i>
+            </summary>
             <p class="voice-id-hint">
                 Higher = stricter. If the cameras keep mis-labeling people as each other,
                 raise <em>face_autoheal_threshold</em>. Blank a field and blur to reset it.

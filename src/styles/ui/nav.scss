@@ -81,7 +81,7 @@ body.face-viewer-open #nav-bar {
     background: transparent;
     padding: 0.5rem;
     border-radius: 50%;
-    transition: all 200ms cubic-bezier(0.66, 0.18, 0.59, 1.17);
+    transition: all 200ms var(--ease-out); // mechanical, no overshoot (DESIGN.md §1 Motion)
   }
 
   .menu-item-text {
@@ -342,5 +342,47 @@ body.face-viewer-open #nav-bar {
         background: var(--color-surface);
       }
     }
+  }
+}
+
+// ---- Rail chip (jump-rail plate) ---------------------------------------------
+// The switch-plate chip both jump rails share (Home's room rail, Settings'
+// section rail): one geometry, one touch target, one plate look. TYPE VOICE is
+// the view's call — Home's chips carry room NAMES so its rail layers the
+// display voice (semibold + font-stretch) on top; Settings chips are plain
+// section labels and stay in the quiet label voice (which also lets all four
+// fit a phone without scrolling). Extras (lamp dot, pin, search) live in the
+// view file too.
+.rail-chip {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 38px;
+  min-width: 0;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+
+  // 38px visual plate, 44px touch target (invisible expansion — no layout shift).
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -3px 0;
+  }
+
+  &:hover {
+    border-color: var(--color-border-light);
+    color: var(--color-text-primary);
+  }
+
+  &:active {
+    transform: translateY(1px);
   }
 }

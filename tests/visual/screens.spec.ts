@@ -11,6 +11,8 @@ fs.mkdirSync(OUT, { recursive: true });
 const VIEWPORTS = [
   { tag: "desktop", width: 1280, height: 800 },
   { tag: "mobile", width: 390, height: 844 },
+  // The wall panel is the PRIMARY surface (>= $bp-wall triggers wall density).
+  { tag: "wall", width: 1680, height: 1050 },
 ];
 
 async function shot(page: Page, name: string, tag: string, fullPage = true) {

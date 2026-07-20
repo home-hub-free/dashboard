@@ -17,7 +17,7 @@
   padding: var(--space-5);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
   box-shadow: var(--shadow-lift);
   // Panels are flex items of .page-col — never let one child's intrinsic width
   // (a wide <select>, an unbroken string) push the panel past the column.
@@ -44,7 +44,7 @@
 .household-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-control);
   background: var(--color-surface-tertiary);
@@ -55,8 +55,8 @@
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
+  gap: var(--gap-icon);
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-full);
   font-size: 0.74rem;
   font-weight: var(--font-weight-semibold);

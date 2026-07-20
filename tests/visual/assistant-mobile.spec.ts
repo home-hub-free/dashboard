@@ -4,10 +4,13 @@
  *   2. the transcript opens PINNED to the newest turn and stays pinned through a typed turn;
  *   3. a typed turn's pending bubbles persist until the stored transcript carries the exchange
  *      (with stubbed fixtures it never does — locking the no-vanishing-message guarantee);
- *   4. list-pane roundtrip: back → pick a voice thread → its room shows in the header.
+ *   4. …and the flip side: once the refreshed transcript DOES carry the exchange, the pending
+ *      bubbles clear and each message shows exactly once (the duplicate-bubble regression);
+ *   5. list-pane roundtrip: back → pick a voice thread → its room shows in the header.
  */
 import { test, expect } from "@playwright/test";
 import { seedSession, stubBackend } from "./stub";
+import * as fx from "./fixtures";
 
 const SHOTS = "/opt/home-hub-free/designs/dashboard-redesign/screens/after";
 
@@ -53,6 +56,31 @@ for (const vp of [
       );
       expect(pinned).toBe(true);
       await page.screenshot({ path: `${SHOTS}/assistant-turn-${vp.tag}.png` });
+    });
+
+    test("typed turn: pending bubbles clear once the store carries it — no duplicates", async ({ page }) => {
+      const sent = "enciende la luz de la sala";
+      // Once this turn lands, the store answers WITH the exchange (registered last = wins),
+      // so the post-turn re-sync must swap the pending bubbles for the stored ones.
+      const stored = {
+        ...fx.chatFull["c-live"],
+        turns: [
+          ...fx.chatFull["c-live"].turns,
+          { role: "user", content: sent, ts: "2026-07-02T09:05:00Z", speakerName: "David" },
+          { role: "assistant", content: "Sure — done.", ts: "2026-07-02T09:05:04Z" },
+        ],
+      };
+      await page.route("**/api/assistant/chats/c-live", (r) =>
+        r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, chat: stored }) }));
+
+      await page.locator("#prompt").fill(sent);
+      await page.locator(".chat-send").click();
+
+      // The in-flight bubbles must clear (not linger next to the stored copy)…
+      await expect(page.locator(".chat-bubble.pending")).toHaveCount(0, { timeout: 10000 });
+      // …leaving the request and the reply each exactly once.
+      await expect(page.locator(".chat-bubble .bubble-text", { hasText: sent })).toHaveCount(1);
+      await expect(page.locator(".chat-bubble .bubble-text", { hasText: "Sure — done." })).toHaveCount(1);
     });
 
     test("list pane roundtrip", async ({ page }) => {

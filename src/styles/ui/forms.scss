@@ -166,7 +166,7 @@ input[type="range"]::-webkit-slider-thumb {
   cursor: pointer;
   border: 2px solid var(--color-surface);
   box-shadow: var(--shadow-sm);
-  margin-top: -7px;
+  margin-top: -7px; // derived: (6px track − 20px thumb) / 2 centers the thumb
   transition: var(--transition-normal);
 }
 

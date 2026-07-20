@@ -17,10 +17,20 @@
 }
 
 // ---- Section jump-rail (same idiom as Home's room rail) -------------------------
+// The chip itself is the shared .rail-chip plate (ui/nav.scss) — same control
+// as Home's room rail, so the two rails read as one idiom. Chips here are
+// plain text (no lamp/icon inside), so the between-chip gap has no internal
+// gap to beat — --space-2 keeps all four sections on a phone screen.
 .settings-rail {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
+  // A flex-column child won't shrink below its content (min-width: auto) —
+  // without this floor reset the rail sizes to its chips and bleeds the
+  // viewport instead of scrolling.
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   overflow-x: auto;
   scrollbar-width: none;
   margin-bottom: var(--space-2);
@@ -28,39 +38,21 @@
   &::-webkit-scrollbar {
     display: none;
   }
-
-  .rail-chip {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    min-height: 36px;
-    min-width: 0;
-    padding: 6px 12px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-control);
-    background: var(--color-surface);
-    color: var(--color-text-secondary);
-    font-size: 0.85rem;
-    font-weight: var(--font-weight-medium);
-    white-space: nowrap;
-
-    &:active {
-      transform: translateY(1px);
-    }
-  }
 }
 
 // Jumps land below the top of the scroll container, clear of the shell header.
 .settings-view .assistant-section,
 .settings-view .voice-id {
-  scroll-margin-top: 12px;
+  scroll-margin-top: var(--space-3);
 }
 
 // ---- Household members --------------------------------------------------------
+// Member rows are independent RECORDS: --space-3 between them beats the
+// --space-2 used inside each row, so the roster scans row by row.
 .household-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-3);
 }
 
 // Fixed columns (name | tone | trash slot) so rows align whatever the name
@@ -69,12 +61,12 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 132px 34px;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--space-2);
 
   .household-name {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     min-width: 0;
 
     .household-display {
@@ -87,10 +79,22 @@
     .household-you {
       flex: none;
       font-size: 0.72rem;
-      padding: 1px 7px;
-      border-radius: 999px;
+      padding: 1px var(--space-2);
+      border-radius: var(--radius-full);
       background: var(--color-primary);
       color: var(--color-text-inverse);
+    }
+  }
+
+  // 34px visual trash slot, 44px touch target (the row gap keeps the expansion
+  // clear of the tone select) — a mis-tap here removes a member.
+  .remove-btn {
+    position: relative;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -5px;
     }
   }
 
@@ -98,10 +102,10 @@
   select {
     width: 100%;
     box-sizing: border-box;
-    padding: 0.4rem 0.5rem;
+    padding: var(--space-2);
     font-size: 0.9rem;
     border: 1px solid var(--color-border-light);
-    border-radius: 6px;
+    border-radius: var(--radius-control);
     background: var(--color-surface);
     color: var(--color-text-primary);
     font-family: inherit;
@@ -116,16 +120,16 @@
 .household-add {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 
   input {
     flex: 1;
     min-width: 120px;
-    padding: 0.5rem 0.6rem;
+    padding: var(--space-2);
     font-size: 0.95rem;
     border: 1px solid var(--color-primary-light);
-    border-radius: 6px;
+    border-radius: var(--radius-control);
     background: var(--color-background);
     color: var(--color-text-primary);
     font-family: inherit;
@@ -143,7 +147,7 @@
 .signed-in-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
 
   .signed-in-who {
     flex: 1;
@@ -158,10 +162,12 @@
 // ---- Identity cards (Voice ID / Face ID / Calendar) ------------------------------
 // A recessed sub-card inside the account panel.
 .voice-id {
-  margin-top: 0.75rem;
+  // + the section's --space-3 gap = --space-4 (16px) above a sub-card: a
+  // sub-card earns more separation than the form fields around it.
+  margin-top: var(--space-1);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
   background: var(--color-surface-tertiary);
   border-radius: var(--radius-chip);
   padding: var(--space-4);
@@ -169,7 +175,7 @@
   .voice-id-head {
     display: flex;
     align-items: baseline;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   .voice-id-title {
@@ -194,7 +200,7 @@
   .voice-id-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--space-2);
     align-items: center;
     // Flex containers refuse to shrink below content by default; 0 lets the
     // row (and the card) narrow to the viewport.
@@ -207,7 +213,7 @@
   .cal-row-label {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--gap-icon);
     font-size: 0.9rem;
     font-weight: 600;
     min-width: 0;
@@ -220,12 +226,12 @@
   .cal-add {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2);
 
     input {
       width: 100%;
       box-sizing: border-box;
-      padding: 0.5rem 0.6rem;
+      padding: var(--space-2);
       font-size: 0.95rem;
       border: 1px solid var(--color-border-light);
       border-radius: var(--radius-control);
@@ -242,7 +248,7 @@
     .cal-add-actions {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: var(--space-2);
     }
   }
 
@@ -252,25 +258,26 @@
     min-width: 0;
   }
 
+  // Calendars are records too: --space-3 between rows, --space-2 inside one.
   .cal-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-3);
   }
 
   // One recessed row per calendar: name + status line, actions line under it.
   .cal-row {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
-    padding: 0.6rem 0.7rem;
+    gap: var(--space-2);
+    padding: var(--space-3);
     border-radius: var(--radius-control);
     background: var(--color-surface-secondary);
 
     .cal-row-main {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: var(--space-2);
       min-width: 0;
 
       .cal-row-label {
@@ -287,7 +294,7 @@
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 0.5rem;
+      gap: var(--space-2);
 
       &:empty {
         display: none;
@@ -313,7 +320,8 @@
 // <video> live here and must NOT be torn down by per-phase updates — bindrjs
 // only re-renders the gated :if/interpolation nodes around them.
 .enroll-card {
-  margin-top: 0.75rem;
+  // + the section's --space-3 gap = --space-4 above the card (same rule as .voice-id).
+  margin-top: var(--space-1);
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
@@ -339,11 +347,11 @@
 
 // Chat-style bubbles: the line the user reads, and Aura's spoken reply.
 .enroll-bubble {
-  padding: 0.6rem 0.8rem;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-control);
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: var(--space-1);
 
   .enroll-bubble-who {
     font-family: var(--font-family-data);
@@ -354,7 +362,7 @@
     color: var(--color-text-tertiary);
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: var(--gap-icon);
   }
 
   .enroll-say {
@@ -415,7 +423,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 
   .busy {
     opacity: 0.6;
@@ -427,7 +435,7 @@
     color: var(--color-text-secondary);
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--gap-icon);
     margin-right: auto;
   }
 }
@@ -484,8 +492,8 @@
 
   .face-ok {
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
+    top: var(--space-2);
+    right: var(--space-2);
     width: 30px;
     height: 30px;
     display: grid;
@@ -508,25 +516,26 @@
   }
 
   .face-pose-hint {
-    margin: 0.15rem 0 0;
+    margin: 2px 0 0; // optical: the hint hugs its pose label
     font-size: 0.85rem;
     color: var(--color-text-secondary);
   }
 }
 
 // ---- People the cameras have seen ------------------------------------------------------
+// People are records: --space-3 between rows (the row's own air stays tight).
 .people-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
 }
 
 .person-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.4rem 0;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
   flex-wrap: wrap;
 }
 
@@ -576,14 +585,14 @@
 
 .person-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
   align-items: center;
   margin-left: auto;
   flex-wrap: wrap;
 }
 
 .person-promote {
-  padding: 0.35rem 0.5rem;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
@@ -597,7 +606,7 @@
 }
 
 .person-empty {
-  margin: 0.25rem 0 0;
+  margin: var(--space-1) 0 0;
   font-size: 0.85rem;
   color: var(--color-text-tertiary);
 }
@@ -609,23 +618,25 @@
 }
 
 .person-audit {
-  margin: 0.25rem 0 0.75rem 3.75rem; // indent under the member's face
-  padding-left: 0.75rem;
-  border-left: 2px solid var(--color-border);
+  // 60px indent = face 48px + the row's --space-3 gap, so the audit thread
+  // hangs under the member's text column.
+  margin: var(--space-1) 0 var(--space-3) 60px;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--color-border); // thread guide (muted, structural)
 }
 
 .cluster-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
 }
 
 .cluster-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--space-1);
   width: 84px;
 
   .cluster-thumb {
@@ -665,8 +676,8 @@
 .rebuild-row {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
   align-items: flex-start; // a button is a control, not a banner (DESIGN §Buttons)
 }
 
@@ -674,18 +685,18 @@
 .threshold-list {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
 .threshold-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 
   .threshold-key {
     flex: 1 1 auto;
-    font-family: var(--font-mono, monospace);
+    font-family: var(--font-family-mono);
     font-size: 0.8rem;
   }
 
@@ -714,7 +725,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--space-6);
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(2px);
 }
@@ -780,16 +791,16 @@
     cursor: default;
   }
 
-  &.face-zoom-prev { left: 8px; }
-  &.face-zoom-next { right: 8px; }
+  &.face-zoom-prev { left: var(--space-2); }
+  &.face-zoom-next { right: var(--space-2); }
 }
 
 .face-zoom-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 12px 16px 14px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
 
   .face-zoom-metatext {
     display: flex;
@@ -815,8 +826,8 @@
 
 .face-zoom-close {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: var(--space-2);
+  right: var(--space-2);
   width: 36px;
   height: 36px;
   min-width: 0;
@@ -838,10 +849,10 @@
 .review-banner {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   flex-wrap: wrap;
-  margin: 0.5rem 0 0.75rem;
-  padding: 0.75rem 1rem;
+  margin: var(--space-2) 0 var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-primary-rgba-40, var(--color-border));
   background: var(--color-primary-rgba-10, var(--color-surface-secondary));
@@ -871,10 +882,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px;
+  padding: var(--space-4);
   // The nav bar is hidden for the overlay's lifetime (body.face-viewer-open),
   // so the bottom CTAs only need to clear the phone's home-indicator strip.
-  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
   background: rgba(0, 0, 0, 0.82);
   backdrop-filter: blur(3px);
   overflow-y: auto;
@@ -906,8 +917,8 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.75rem;
-  margin-top: 4px;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
 }
 
 .review-card {
@@ -961,8 +972,8 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 0.5rem;
-    padding: 10px 14px 12px;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
 
     .review-card-label {
       font-weight: var(--font-weight-bold);
@@ -979,8 +990,8 @@
   // gesture handler; no re-render mid-drag).
   .review-stamp {
     position: absolute;
-    top: 18px;
-    padding: 4px 12px;
+    top: var(--space-4);
+    padding: var(--space-1) var(--space-3);
     border-radius: var(--radius-sm);
     border: 2px solid;
     font-weight: var(--font-weight-bold);
@@ -993,14 +1004,14 @@
   }
 
   .review-stamp-yes {
-    left: 14px;
+    left: var(--space-4);
     color: var(--color-success);
     border-color: var(--color-success);
     transform: rotate(-8deg);
   }
 
   .review-stamp-no {
-    right: 14px;
+    right: var(--space-4);
     color: var(--color-error);
     border-color: var(--color-error);
     transform: rotate(8deg);
@@ -1030,7 +1041,9 @@
 
 .review-actions {
   display: flex;
-  gap: 0.6rem;
+  // Yes / No are opposite verdicts: a full --space-3 between the fat targets
+  // keeps a rushed thumb from crossing the line.
+  gap: var(--space-3);
 
   .review-btn {
     flex: 1 1 0;
@@ -1048,7 +1061,7 @@
     }
 
     .review-likely-tag {
-      margin-left: 0.3rem;
+      margin-left: var(--gap-icon);
       font-size: 0.72rem;
       font-weight: normal;
       opacity: 0.85;
@@ -1064,7 +1077,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   min-height: 30px;
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.7);
@@ -1085,7 +1098,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   flex-wrap: wrap;
 
   .review-name-input {
@@ -1100,14 +1113,14 @@
 }
 
 .review-ring-hint {
-  margin: -0.35rem 0 0;
+  margin: -4px 0 0; // optical pull-up: the hint belongs to the card above
   text-align: center;
   font-size: 0.8rem;
   color: var(--color-primary);
 }
 
 .review-noface-hint {
-  margin: -0.35rem 0 0;
+  margin: -4px 0 0; // optical pull-up: same as .review-ring-hint
   text-align: center;
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.65);
@@ -1124,7 +1137,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   margin: auto 0;
   text-align: center;
   color: #fff;

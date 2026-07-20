@@ -1,13 +1,16 @@
-<div class="hs-day">
-    <span class="hs-date">${this.date}</span>
-</div>
-
+<!-- The board opens with STATE, not the date: the whole-house lights answer is
+     the one-second glance ("is the house settled?"), so it leads as the headline.
+     The date follows as a quiet timestamp. -->
 <div class="hs-lights" :class:any-on="this.lightsOn > 0">
     <span class="hs-lamp"></span>
     <span class="hs-lights-label">${this.lightsLabel}</span>
     <button class="hs-alloff" :class:shown="this.lightsOn > 0" :onclick="this.onAllLightsOff()" title="Turn off every light in the house">
         <i class="iconoir-light-bulb-off"></i> All off
     </button>
+</div>
+
+<div class="hs-day">
+    <span class="hs-date">${this.date}</span>
 </div>
 
 <div class="hs-weather" :if="this.hasWeather">
