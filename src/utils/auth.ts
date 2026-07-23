@@ -64,9 +64,16 @@ export async function fetchMe(): Promise<SessionUser | null> {
   if (!token) return null;
   try {
     const res = await fetch(server + "auth/me", { headers: authHeaders() });
-    if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      // The hub itself rejected the token — the session is genuinely dead.
       clearSession();
       return null;
+    }
+    if (!res.ok) {
+      // Any other failure (e.g. nginx 502 while the hub restarts mid-deploy) says
+      // nothing about the token — sessions never expire server-side, so keep the
+      // cached session instead of logging the user out.
+      return currentUser();
     }
     const data = await res.json();
     storageSet(USER_KEY, data.user);
