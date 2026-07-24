@@ -35,5 +35,13 @@
             <span :if="!this.busy">Sign in</span>
             <span :if="this.busy">Signing in…</span>
         </button>
+
+        <!-- New-device TLS trust: navigating (not downloading) /ca.crt lets Safari
+             offer the configuration-profile install; open in Safari, then enable the
+             CA under Settings → General → About → Certificate Trust Settings. -->
+        <a class="login-ca-link" href="/ca.crt" target="_blank" rel="noopener">
+            <i class="iconoir-shield-check"></i>
+            <span>New device? Install the security certificate</span>
+        </a>
     </form>
 </div>

@@ -93,6 +93,28 @@
   color: var(--color-error);
 }
 
+// Quiet footer utility: the mkcert root-CA download for enrolling a new device
+// (served by nginx at /ca.crt). Muted at rest — setup plumbing, not a CTA.
+.login-ca-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+
+  i {
+    font-size: 1rem;
+  }
+
+  &:hover {
+    color: var(--color-text-primary);
+    text-decoration: underline;
+  }
+}
+
 .login-submit {
   margin-top: 0.25rem;
   padding: 0.7rem 1rem;
