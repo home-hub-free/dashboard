@@ -1149,16 +1149,40 @@ export function getDeviceProgrammableActions(id: string) {
     });
 }
 
-export function saveEffect(effect: any) {
-  return authedFetch(server + "set-effect", {
+/**
+ * Thrown by `saveEffect` when the hub rejects a create as a structural duplicate of an
+ * existing rule — 409 `{ok:false, duplicate:true, existingId}` (D2, EFFECT_CREATION_REPAIR
+ * Phase 2). Callers distinguish this from any other save failure so they can show "That
+ * automation already exists" instead of a generic error toast (Phase 3 step 3.1);
+ * `existingId` is the row id of the rule it collides with, or null if the response body
+ * didn't carry one (defensive — the hub always sends it today).
+ */
+export class DuplicateEffectError extends Error {
+  existingId: number | null;
+  constructor(existingId: number | null) {
+    super("duplicate effect");
+    this.name = "DuplicateEffectError";
+    this.existingId = existingId;
+  }
+}
+
+export async function saveEffect(effect: any) {
+  const res = await authedFetch(server + "set-effect", {
     method: "POST",
     body: JSON.stringify({ effect }),
-  }).then((res) => {
-    // authedFetch only special-cases 401 — a 4xx/5xx otherwise resolved like success,
-    // leaving the caller's .then chain to run with nothing to catch (EFFECT_CREATION_REPAIR B11).
-    if (!res.ok) throw new Error(`Save failed (${res.status})`);
-    return res;
   });
+  // A 409 is a distinct, expected outcome (D2 duplicate guard) — surfaced as its own error
+  // type so callers can show the "already exists" toast instead of the generic failure one
+  // (EFFECT_CREATION_REPAIR 3.1), rather than falling into the `!res.ok` branch below and
+  // reading like any other server error.
+  if (res.status === 409) {
+    const data = await res.json().catch(() => ({}));
+    throw new DuplicateEffectError(typeof data?.existingId === "number" ? data.existingId : null);
+  }
+  // authedFetch only special-cases 401 — a 4xx/5xx otherwise resolved like success,
+  // leaving the caller's .then chain to run with nothing to catch (EFFECT_CREATION_REPAIR B11).
+  if (!res.ok) throw new Error(`Save failed (${res.status})`);
+  return res;
 }
 
 /** Replace one rule in place by its row id (hub /update-effect). Keeps the rule's id +

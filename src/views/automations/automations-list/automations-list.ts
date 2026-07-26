@@ -1,7 +1,7 @@
 import { Component } from "../../../core/component";
 import { store } from "../../../store/store";
 import template from './automations-list.html?raw';
-import { deleteEffect, getEndPointData, saveEffect, setEffectEnabled, updateEffect } from "../../../utils/server-handler";
+import { DuplicateEffectError, deleteEffect, getEndPointData, saveEffect, setEffectEnabled, updateEffect } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import { closeOverlay, openOverlay } from "../../../components/overlay-modal/overlay-modal";
 import NewAutomationOverlay from "../overlay-views/new-automation-overlay.html?raw";
@@ -13,6 +13,7 @@ import {
   Arm, ArmCondition, CurrentArm, EditEffect, Effect, EffectOp, NewArmGuard, NewEffect,
   NewMultiArmEffect, SetAction, StagedArm, Trigger,
 } from "../automations.model";
+import { findDuplicateEffect } from "../effect-canonical";
 import { AutomationsListTabService, AutomationsListTabServiceClass } from "./automations-list.service";
 import { Device } from "../../home/devices/devices.model";
 import { Sensor } from "../../home/sensors/sensors.model";
@@ -234,13 +235,21 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
 
   private saveNewEffect(effect: NewEffect) {
     if (effect.saving) return; // in-flight guard (D5) — a double-tap can't fire a second create
+    const built = buildDynamicEffect(effect);
+    // Client pre-check (D2/3.2): catch the common case (re-tapping Save, or authoring a rule
+    // that already exists) instantly, with zero round-trip — the server 409 below stays as the
+    // belt for state the client's local store hasn't caught up with yet.
+    if (findDuplicateEffect(built, store.get('effects'))) {
+      showToaster({ from: 'bottom', message: 'That automation already exists', timer: 2500 });
+      return; // no POST; the modal stays open, `saving` was never set
+    }
     effect.saving = true;
     // Stage 4b: the write path posts the dynamic `trigger + arms` contract (the hub parses
     // it natively). Optimistic close (D5): the POST resolving IS the save — close + confirm
     // immediately, then re-pull the dynamic server view in the background so the list reflects
     // the canonical, server-assigned form (including any multi-arm rules). A refresh failure
     // there only warns; it must never re-open the modal or read as the save having failed.
-    saveEffect(buildDynamicEffect(effect))
+    saveEffect(built)
       .then(() => {
         closeOverlay();
         showToaster({ from: 'bottom', message: 'Saved automation', timer: 2000 });
@@ -251,7 +260,13 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
       })
       .catch((err) => {
         effect.saving = false;
-        showToaster({ from: 'bottom', message: "Couldn't save the automation", timer: 2500 });
+        if (err instanceof DuplicateEffectError) {
+          // Belt case: the client pre-check above missed it (stale local `effects`) but the
+          // server's own D2 guard still caught it — same message, modal stays open either way.
+          showToaster({ from: 'bottom', message: 'That automation already exists', timer: 2500 });
+        } else {
+          showToaster({ from: 'bottom', message: "Couldn't save the automation", timer: 2500 });
+        }
         console.warn('automations-list: saveNewEffect failed', err);
       });
   }
@@ -326,9 +341,16 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
       showToaster({ from: 'bottom', message: 'Set a trigger and add at least one arm', timer: 2500 });
       return;
     }
+    const built = buildMultiArmEffect(e);
+    // Client pre-check (D2/3.2) — see saveNewEffect for the rationale; the server 409 below
+    // is the belt for state the client's local store hasn't caught up with yet.
+    if (findDuplicateEffect(built, store.get('effects'))) {
+      showToaster({ from: 'bottom', message: 'That automation already exists', timer: 2500 });
+      return; // no POST; the modal stays open, `saving` was never set
+    }
     e.saving = true;
     // Optimistic close (D5) — see saveNewEffect for the rationale.
-    saveEffect(buildMultiArmEffect(e))
+    saveEffect(built)
       .then(() => {
         closeOverlay();
         showToaster({ from: 'bottom', message: 'Saved automation', timer: 2000 });
@@ -339,7 +361,11 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
       })
       .catch((err) => {
         e.saving = false;
-        showToaster({ from: 'bottom', message: "Couldn't save the automation", timer: 2500 });
+        if (err instanceof DuplicateEffectError) {
+          showToaster({ from: 'bottom', message: 'That automation already exists', timer: 2500 });
+        } else {
+          showToaster({ from: 'bottom', message: "Couldn't save the automation", timer: 2500 });
+        }
         console.warn('automations-list: saveMaRule failed', err);
       });
   }

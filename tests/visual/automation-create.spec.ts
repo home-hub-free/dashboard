@@ -169,8 +169,11 @@ test.describe("automation creation — feedback & failure paths", () => {
     await page.locator(".effects-actions .add-range-btn", { hasText: "Add automation" }).click();
     await page.waitForSelector("#new-automation", { timeout: 10_000 });
 
+    // "Do: Turn off" (not "true", like fx.effects[0]'s dev-ceiling/sen-motion rule) — the
+    // D2 client pre-check (3.2) would otherwise flag this as a pre-existing duplicate and
+    // block the POST this test exists to exercise.
     await page.locator("#new-automation select").first().selectOption("dev-ceiling");
-    await page.locator("#new-automation select", { hasText: "Do:" }).selectOption("true");
+    await page.locator("#new-automation select", { hasText: "Do:" }).selectOption("false");
     await page.locator("#new-automation select", { hasText: "Time of day" }).selectOption("sensor");
     await page.locator("#new-automation select", { hasText: "Select sensor:" }).selectOption("sen-motion");
     await page.locator("#new-automation select", { hasText: "Is:" }).selectOption("true");
@@ -206,8 +209,9 @@ test.describe("automation creation — feedback & failure paths", () => {
     await page.locator(".effects-actions .add-range-btn", { hasText: "Add automation" }).click();
     await page.waitForSelector("#new-automation", { timeout: 10_000 });
 
+    // "Do: Turn off" — see the previous test for why this must not match fx.effects[0].
     await page.locator("#new-automation select").first().selectOption("dev-ceiling");
-    await page.locator("#new-automation select", { hasText: "Do:" }).selectOption("true");
+    await page.locator("#new-automation select", { hasText: "Do:" }).selectOption("false");
     await page.locator("#new-automation select", { hasText: "Time of day" }).selectOption("sensor");
     await page.locator("#new-automation select", { hasText: "Select sensor:" }).selectOption("sen-motion");
     await page.locator("#new-automation select", { hasText: "Is:" }).selectOption("true");
@@ -270,5 +274,77 @@ test.describe("automation creation — feedback & failure paths", () => {
     await expect(page.locator("#new-automation")).toBeVisible({ timeout: 5000 });
     await expect(page.locator("#multi-arm-automation")).toHaveCount(0);
     expect(errors).toEqual([]);
+  });
+
+  // ── Duplicate UX (EFFECT_CREATION_REPAIR Phase 3 / D2) ──────────────────────────────────
+  // Two cases: the client-side pre-check (findDuplicateEffect against store.get('effects'))
+  // catches an exact duplicate before any network call; a stubbed 409 proves the server-side
+  // belt still produces the identical user-facing outcome for state the client hasn't caught
+  // up with yet. Both must leave the modal open — this is a rejected save, not a completed one.
+
+  test("saving an exact duplicate of an existing rule shows 'already exists' and posts nothing (3.2 pre-check)", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    const posts: string[] = [];
+    page.on("request", (r) => {
+      if (r.method() === "POST" && r.url().includes("/api/set-effect")) posts.push(r.url());
+    });
+
+    await page.goto("/");
+    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
+    await page.locator(".menu-item", { hasText: "Automations" }).first().click();
+    await page.locator(".effects-actions .add-range-btn", { hasText: "Add automation" }).click();
+    await page.waitForSelector("#new-automation", { timeout: 10_000 });
+
+    // Recreate fx.effects[0] verbatim via the simple form: sen-motion (presence, true) ->
+    // dev-ceiling power = true. Structurally identical to the already-loaded rule, so the
+    // client pre-check must catch it before saveEffect() ever fires a POST.
+    await page.locator("#new-automation select").first().selectOption("dev-ceiling");
+    await page.locator("#new-automation select", { hasText: "Do:" }).selectOption("true");
+    await page.locator("#new-automation select", { hasText: "Time of day" }).selectOption("sensor");
+    await page.locator("#new-automation select", { hasText: "Select sensor:" }).selectOption("sen-motion");
+    await page.locator("#new-automation select", { hasText: "Is:" }).selectOption("true");
+
+    await page.locator("#new-automation .add-range-btn").click();
+
+    const toast = page.locator("#popup-message-container .toaster-container");
+    await expect(toast).toBeVisible();
+    await expect(toast).toContainText("That automation already exists");
+    await expect(page.locator("#new-automation")).toBeVisible(); // rejected save — modal stays open
+    expect(posts.length).toBe(0); // the pre-check blocked it before any request reached the network
+    expect(errors).toEqual([]);
+  });
+
+  test("a stubbed 409 from the server shows the same 'already exists' toast and keeps the modal open (3.2 belt case)", async ({ page }) => {
+    await page.route("**/api/set-effect", (route) =>
+      route.fulfill({ status: 409, contentType: "application/json", body: JSON.stringify({ ok: false, duplicate: true, existingId: 1 }) }),
+    );
+    const posts: string[] = [];
+    page.on("request", (r) => {
+      if (r.method() === "POST" && r.url().includes("/api/set-effect")) posts.push(r.url());
+    });
+
+    await page.goto("/");
+    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
+    await page.locator(".menu-item", { hasText: "Automations" }).first().click();
+    await page.locator(".effects-actions .add-range-btn", { hasText: "Add automation" }).click();
+    await page.waitForSelector("#new-automation", { timeout: 10_000 });
+
+    // dev-kitchen / sen-presence has no match anywhere in fx.effects, so the CLIENT pre-check
+    // finds nothing and lets the POST through — this isolates the server-409 handling path
+    // (DuplicateEffectError) from the pre-check exercised by the previous test.
+    await page.locator("#new-automation select").first().selectOption("dev-kitchen");
+    await page.locator("#new-automation select", { hasText: "Do:" }).selectOption("true");
+    await page.locator("#new-automation select", { hasText: "Time of day" }).selectOption("sensor");
+    await page.locator("#new-automation select", { hasText: "Select sensor:" }).selectOption("sen-presence");
+    await page.locator("#new-automation select", { hasText: "Is:" }).selectOption("true");
+
+    await page.locator("#new-automation .add-range-btn").click();
+
+    const toast = page.locator("#popup-message-container .toaster-container");
+    await expect(toast).toBeVisible();
+    await expect(toast).toContainText("That automation already exists");
+    await expect(page.locator("#new-automation")).toBeVisible(); // rejected save — modal stays open
+    expect(posts.length).toBe(1); // this time the request DID reach the (stubbed) server
   });
 });
