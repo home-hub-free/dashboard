@@ -116,20 +116,21 @@ test.describe("functionality intact", () => {
     await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
     await page.locator(".menu-item", { hasText: "Automations" }).first().click();
     await page.locator(".effects-actions .add-range-btn", { hasText: "Add automation" }).click();
-    await page.waitForSelector("#new-automation", { timeout: 10_000 });
+    const ov = page.locator("#create-automation");
+    await expect(ov).toBeVisible({ timeout: 10_000 });
 
-    // Walk the cascading form: dimmable target → numeric value → a temp/humidity sensor → LOWER than.
-    await page.locator("#new-automation select").first().selectOption("dev-bedroom");
-    await page.locator('#new-automation input[type="number"][max="100"]').fill("40");
-    await page.locator("#new-automation select", { hasText: "Time of day" }).selectOption("sensor");
-    await page.locator("#new-automation select", { hasText: "Select sensor:" }).selectOption("sen-th2");
-    await page.locator("#new-automation #check-value").selectOption("temp");
-    await page.locator("#new-automation #comparison").selectOption("lower-than");
-    await page.locator('#new-automation input[name="temp/humidity-input"]').fill("22");
+    // Walk the unified form: a temp/humidity sensor trigger → LOWER than → dimmable target.
+    await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
+    await ov.locator("select").first().selectOption("sen-th2");
+    await ov.locator(".toggle-button", { hasText: "Temperature" }).click();
+    await ov.locator(".toggle-button", { hasText: "Lower than" }).click();
+    await ov.locator("#ca-threshold-input").fill("22");
+    await ov.locator("#ca-device-select").selectOption("dev-bedroom");
+    await ov.locator("#ca-setto-input").fill("40");
 
     const [req] = await Promise.all([
       page.waitForRequest((r) => r.url().includes("/api/set-effect") && r.method() === "POST"),
-      page.locator("#new-automation .add-range-btn", { hasText: "Save Automation" }).click(),
+      ov.locator("button.btn-primary", { hasText: "Save automation" }).click(),
     ]);
     // The chosen comparison must reach the stored rule — the bug wrote it to a field the
     // builder never read, so every value-sensor rule defaulted to op 'eq'.

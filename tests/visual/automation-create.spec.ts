@@ -3,24 +3,27 @@ import { seedSession, stubBackend } from "./stub";
 import * as fx from "./fixtures";
 
 // Permanent regression coverage for the effect-creation E2E repair
-// (docs/plans/EFFECT_CREATION_REPAIR.md Phase 1). Supersedes the temporary
-// zz-freeze-repro.spec.ts / zz-freeze-repro2.spec.ts diagnostics written during
-// the audit — the audit found the flow does NOT hard-freeze the JS thread; two
-// structural defects produced every reported symptom instead:
+// (docs/plans/EFFECT_CREATION_REPAIR.md). Phases 1-4 fixed the feedback/failure paths of the
+// OLD two-fork flow ("Add automation" / "Advanced rule" — new-automation-overlay.html /
+// multi-arm-overlay.html); Phase 5 REPLACED that flow outright with ONE progressive-disclosure
+// overlay (#create-automation, create-automation.ts) per D1 — this file is rewritten against
+// the new selectors, but every Phase 1/3 behavior it protects (visible feedback, optimistic
+// close, unwedgeable overlays, one-POST-per-save, duplicate pre-check + 409) is preserved
+// verbatim, plus the new Phase-5 capabilities (time-trigger creation, D4 target filtering/
+// disambiguation, D8 staged-arm editing, the wrapped-guard round-trip).
 //   B1 — toasts rendered UNDER the overlay modal (invisible feedback)
 //   B2 — an unprotected save→reload→close chain: any rejection left the modal
 //        open with zero feedback while the rule was already saved
 //   B3 — a stuck-visible overlay made openOverlay() silently no-op app-wide
-// This file keeps the real-hub data shapes from zz-freeze-repro2.spec.ts
-// (duplicate "Cocina" name across a camera and a dimmable light, cameras in the
-// device roster, presence-only sensors) per the plan's Handoff notes.
+//   B5 — the old simple flow had NO Save button for a time trigger at all
 
 const json = (data: any) => ({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
 
 // ── Real hub data shapes (ported from the audit's zz-freeze-repro2.spec.ts) ────────────────
-// Cameras stay in the device roster on purpose — B10 (target-picker pollution) isn't fixed
-// until a later phase, and this spec must not silently start depending on a fix that hasn't
-// landed. "Cocina" is deliberately ambiguous (a camera AND a dimmable light share the name).
+// Cameras stay in the device roster — the target list must filter them out itself (D4), not
+// rely on the fixture omitting them. "Cocina" is deliberately ambiguous three ways: a camera
+// (excluded from targets entirely) and TWO actuatable devices (a dimmable light and a plain
+// light, same zone) — the only way anything is left to disambiguate is D4's category suffix.
 const realDevices = [
   { id: "5187202", name: "Lampara", value: false, type: "boolean", deviceCategory: "light", manual: false, operationalRanges: [], zone: "sala", channels: [{ key: "power", role: "actuator", kind: "boolean", writable: true }], channelAware: false },
   { id: "mc200", name: "Entrada principal", value: null, type: "value", deviceCategory: "camera", manual: false, operationalRanges: [], zone: "entrada" },
@@ -28,6 +31,7 @@ const realDevices = [
   { id: "c110-6946", name: "Cocina", value: null, type: "value", deviceCategory: "camera", manual: false, operationalRanges: [], zone: "cocina" },
   { id: "10260975", name: "Aire oficina", value: { fan: false, water: false, target: 24, "room-temp": 26, "unit-temp": 19 }, type: "value", deviceCategory: "evap-cooler", manual: false, operationalRanges: [], zone: "oficina" },
   { id: "10039254", name: "Cocina", value: 0, type: "value", deviceCategory: "dimmable-light", manual: false, operationalRanges: [], zone: "cocina" },
+  { id: "cocina-light", name: "Cocina", value: false, type: "boolean", deviceCategory: "light", manual: false, operationalRanges: [], zone: "cocina" },
 ];
 const realSensors = [
   { id: "10192655", type: "boolean", name: "Cocina", value: true, sensorType: "presence", ip: "192.168.1.252", zone: "cocina" },
@@ -57,7 +61,18 @@ test.describe("automation creation — real hub data shapes (phone)", () => {
     await page.route("**/api/get-zones", (r) => r.fulfill(json(["sala", "cocina", "comedor", "oficina", "entrada"])));
   });
 
-  test("multi-arm happy path: presence -> dimmable brightness arms, one POST, modal closes", async ({ page }) => {
+  async function openCreateOverlay(page: import("@playwright/test").Page) {
+    await page.goto("/");
+    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
+    await page.locator(".menu-item", { hasText: "Automations" }).first().click();
+    await expect(page.locator(".effects-list")).toBeVisible();
+    await page.locator(".effects-actions .add-range-btn", { hasText: "Add automation" }).click();
+    const ov = page.locator("#create-automation");
+    await expect(ov).toBeVisible();
+    return ov;
+  }
+
+  test("multi-arm happy path: presence -> dimmable brightness arms, one POST, modal closes (D7 byte-identical)", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     const posts: any[] = [];
@@ -65,35 +80,32 @@ test.describe("automation creation — real hub data shapes (phone)", () => {
       if (r.method() === "POST" && /\/api\/set-effect$/.test(r.url())) posts.push(r.postDataJSON());
     });
 
-    await page.goto("/");
-    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
-    await page.locator(".menu-item", { hasText: "Automations" }).first().click();
-    await expect(page.locator(".effects-list")).toBeVisible();
-    await page.locator(".fx-advanced").click();
-    const ov = page.locator("#multi-arm-automation");
-    await expect(ov).toBeVisible();
+    const ov = await openCreateOverlay(page);
 
-    await ov.locator("select").nth(0).selectOption("sensor");
-    await ov.locator(".ma-section").nth(0).locator("select").nth(1).selectOption("10192655");
+    await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
+    await ov.locator("select").first().selectOption("10192655"); // presence "Cocina"
 
-    const armEditor = ov.locator(".ma-section", { hasText: "Add an arm" });
-    // arm 1: dimmable "Cocina" (the light, NOT the camera of the same name) -> 50 -> 07:00-11:00
-    await armEditor.locator("select").nth(0).selectOption("10039254");
-    await armEditor.locator('input[type="number"]').fill("50");
-    await armEditor.locator(".ma-guard select").nth(0).selectOption("time");
-    await armEditor.locator(".ma-guard select").nth(1).selectOption("between");
-    await armEditor.locator('input[type="time"]').nth(0).fill("07:00");
-    await armEditor.locator('input[type="time"]').nth(1).fill("11:00");
-    await ov.locator(".add-range-btn", { hasText: "Add arm" }).click();
-    await expect(ov.locator(".ma-arm-row")).toHaveCount(1, { timeout: 5000 });
+    // arm 1: dimmable "Cocina" (the light, NOT the camera or the plain light of the same
+    // name) -> 50 -> 07:00-11:00
+    await ov.locator("#ca-device-select").selectOption("10039254");
+    await ov.locator("#ca-setto-input").fill("50");
+    await ov.locator(".toggle-button", { hasText: "Time of day" }).nth(1).click(); // guard type
+    await ov.locator(".toggle-button", { hasText: /^Between$/ }).click();
+    await page.waitForSelector("#ca-guard-time-mount .tt-input", { timeout: 5000 });
+    await ov.locator('#ca-guard-time-mount input[data-kind="from"]').fill("07:00");
+    await ov.locator('#ca-guard-time-mount input[data-kind="from"]').dispatchEvent("change");
+    await ov.locator('#ca-guard-time-mount input[data-kind="to"]').fill("11:00");
+    await ov.locator('#ca-guard-time-mount input[data-kind="to"]').dispatchEvent("change");
+    await ov.locator("button", { hasText: "Add another action" }).click();
+    await expect(ov.locator(".ca-arm-row")).toHaveCount(1, { timeout: 5000 });
 
     // arm 2: SAME device, value 10, no guard (the else/default arm)
-    await armEditor.locator("select").nth(0).selectOption("10039254");
-    await armEditor.locator('input[type="number"]').fill("10");
-    await ov.locator(".add-range-btn", { hasText: "Add arm" }).click();
-    await expect(ov.locator(".ma-arm-row")).toHaveCount(2, { timeout: 5000 });
+    await ov.locator("#ca-device-select").selectOption("10039254");
+    await ov.locator("#ca-setto-input").fill("10");
+    await ov.locator("button", { hasText: "Add another action" }).click();
+    await expect(ov.locator(".ca-arm-row")).toHaveCount(2, { timeout: 5000 });
 
-    await ov.locator(".ma-save").click();
+    await ov.locator("button.btn-primary", { hasText: "Save automation" }).click();
     await expect(page.locator(".overlay-modal-content")).toBeHidden({ timeout: 5000 });
 
     expect(errors).toEqual([]);
@@ -103,6 +115,147 @@ test.describe("automation creation — real hub data shapes (phone)", () => {
     expect(body.arms).toHaveLength(2);
     expect(body.arms[0]).toEqual({ when: [{ kind: "time", op: "between", from: "07:00", to: "11:00" }], set: { nodeId: "10039254", channel: "brightness", value: 50 } });
     expect(body.arms[1]).toEqual({ when: [], set: { nodeId: "10039254", channel: "brightness", value: 10 } });
+  });
+
+  test("cameras never appear as targets; duplicate 'Cocina' names disambiguate by category (D4)", async ({ page }) => {
+    const ov = await openCreateOverlay(page);
+    await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
+    await ov.locator("select").first().selectOption("10192655");
+
+    const options = await ov.locator("#ca-device-select option").allTextContents();
+    expect(options.some((t) => t.includes("Entrada principal"))).toBe(false); // camera
+    expect(options.some((t) => t === "Sala — sala")).toBe(false); // camera named "Sala" absent…
+    expect(options.some((t) => t.includes("Aire oficina"))).toBe(true); // …but the real cooler survives
+    expect(options.some((t) => t === "Cocina — cocina (dimmable)")).toBe(true);
+    expect(options.some((t) => t === "Cocina — cocina (light)")).toBe(true);
+    expect(options.some((t) => t === "Cocina — cocina")).toBe(false); // never the bare, ambiguous form
+  });
+
+  test("a time-trigger rule is creatable and saveable (kills B5)", async ({ page }) => {
+    const posts: any[] = [];
+    page.on("request", (r) => {
+      if (r.method() === "POST" && /\/api\/set-effect$/.test(r.url())) posts.push(r.postDataJSON());
+    });
+    const ov = await openCreateOverlay(page);
+
+    await ov.locator(".toggle-button", { hasText: "Time of day" }).first().click();
+    await page.waitForSelector("#ca-when-time-mount .tt-input", { timeout: 5000 });
+    await ov.locator('#ca-when-time-mount input[data-kind="at"]').fill("22:30");
+    await ov.locator('#ca-when-time-mount input[data-kind="at"]').dispatchEvent("change");
+    await ov.locator("#ca-device-select").selectOption("5187202"); // Lampara
+    await ov.locator(".toggle-button", { hasText: "Turn on" }).click();
+
+    await ov.locator("button.btn-primary", { hasText: "Save automation" }).click();
+    await expect(page.locator(".overlay-modal-content")).toBeHidden({ timeout: 5000 });
+    expect(posts.length).toBe(1);
+    const body = posts[0]?.effect;
+    expect(body.trigger).toEqual({ source: "time", at: "22:30" });
+    expect(body.arms).toEqual([{ when: [], set: { nodeId: "5187202", channel: "power", value: true } }]);
+  });
+
+  test("a single-arm rule keeps BOTH the sensor predicate AND a configured guard (no silent drop)", async ({ page }) => {
+    // A real gap the unified builder had to get right: the "Only when" guard is offered
+    // regardless of arm count, so a rule that never goes multi-arm must not have it vanish.
+    const posts: any[] = [];
+    page.on("request", (r) => {
+      if (r.method() === "POST" && /\/api\/set-effect$/.test(r.url())) posts.push(r.postDataJSON());
+    });
+    const ov = await openCreateOverlay(page);
+
+    await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
+    await ov.locator("select").first().selectOption("10192655");
+    await ov.locator(".toggle-button", { hasText: /^Active$/ }).click();
+    await ov.locator("#ca-device-select").selectOption("cocina-light");
+    await ov.locator(".toggle-button", { hasText: "Turn on" }).click();
+    await ov.locator(".toggle-button", { hasText: "Time of day" }).nth(1).click();
+    await ov.locator(".toggle-button", { hasText: /^After$/ }).click();
+    await page.waitForSelector("#ca-guard-time-mount .tt-input", { timeout: 5000 });
+    await ov.locator('#ca-guard-time-mount input[data-kind="at"]').fill("18:00");
+    await ov.locator('#ca-guard-time-mount input[data-kind="at"]').dispatchEvent("change");
+
+    // Never staged via "Add another action" — this stays a single-arm rule.
+    await ov.locator("button.btn-primary", { hasText: "Save automation" }).click();
+    await expect(page.locator(".overlay-modal-content")).toBeHidden({ timeout: 5000 });
+    expect(posts.length).toBe(1);
+    const body = posts[0]?.effect;
+    expect(body.arms).toHaveLength(1);
+    expect(body.arms[0].when).toEqual([
+      { kind: "sensor", nodeId: "10192655", channel: "presence", op: "eq", value: true },
+      { kind: "time", op: "after", from: "18:00" },
+    ]);
+  });
+
+  test("a wrapped 'between' guard (22:00 -> 06:00) round-trips through stage/edit unchanged", async ({ page }) => {
+    const posts: any[] = [];
+    page.on("request", (r) => {
+      if (r.method() === "POST" && /\/api\/set-effect$/.test(r.url())) posts.push(r.postDataJSON());
+    });
+    const ov = await openCreateOverlay(page);
+
+    await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
+    await ov.locator("select").first().selectOption("10192655");
+    await ov.locator(".toggle-button", { hasText: /^Active$/ }).click();
+    await ov.locator("#ca-device-select").selectOption("5187202");
+    await ov.locator(".toggle-button", { hasText: "Turn on" }).click();
+    await ov.locator(".toggle-button", { hasText: "Time of day" }).nth(1).click();
+    await ov.locator(".toggle-button", { hasText: /^Between$/ }).click();
+    await page.waitForSelector("#ca-guard-time-mount .tt-input", { timeout: 5000 });
+    await ov.locator('#ca-guard-time-mount input[data-kind="from"]').fill("22:00");
+    await ov.locator('#ca-guard-time-mount input[data-kind="from"]').dispatchEvent("change");
+    await ov.locator('#ca-guard-time-mount input[data-kind="to"]').fill("06:00");
+    await ov.locator('#ca-guard-time-mount input[data-kind="to"]').dispatchEvent("change");
+
+    // The wrap renders as two fill segments (Phase 4 D3) even inside the create flow's mount.
+    await expect(ov.locator('#ca-guard-time-mount .tt-fill[data-seg="a"]')).toBeVisible();
+    await expect(ov.locator('#ca-guard-time-mount .tt-fill[data-seg="b"]')).toBeVisible();
+
+    await ov.locator("button", { hasText: "Add another action" }).click();
+    await expect(ov.locator(".ca-arm-row")).toHaveCount(1);
+
+    // Tap-to-edit (D8): reload the staged arm and confirm the wrap survives the round-trip.
+    await ov.locator(".ca-arm-edit").first().click();
+    await expect(ov.locator("button", { hasText: "Save arm" })).toBeVisible();
+    await expect(ov.locator('#ca-guard-time-mount input[data-kind="from"]')).toHaveValue("22:00");
+    await expect(ov.locator('#ca-guard-time-mount input[data-kind="to"]')).toHaveValue("06:00");
+    await expect(ov.locator('#ca-guard-time-mount .tt-fill[data-seg="a"]')).toBeVisible();
+    await expect(ov.locator('#ca-guard-time-mount .tt-fill[data-seg="b"]')).toBeVisible();
+    await ov.locator("button", { hasText: "Save arm" }).click();
+    await expect(ov.locator(".ca-arm-row")).toHaveCount(1); // replaced in place, not duplicated
+
+    await ov.locator("button.btn-primary", { hasText: "Save automation" }).click();
+    await expect(page.locator(".overlay-modal-content")).toBeHidden({ timeout: 5000 });
+    expect(posts.length).toBe(1);
+    const arm = posts[0]?.effect?.arms[0];
+    expect(arm.when).toEqual([{ kind: "time", op: "between", from: "22:00", to: "06:00" }]);
+  });
+
+  test("Save stays reachable by scrolling inside the sheet with 3 staged arms (phone)", async ({ page }) => {
+    const posts: any[] = [];
+    page.on("request", (r) => {
+      if (r.method() === "POST" && /\/api\/set-effect$/.test(r.url())) posts.push(r.postDataJSON());
+    });
+    const ov = await openCreateOverlay(page);
+
+    await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
+    await ov.locator("select").first().selectOption("10192655");
+    await ov.locator(".toggle-button", { hasText: /^Active$/ }).click();
+
+    for (const value of [30, 60, 90]) {
+      await ov.locator("#ca-device-select").selectOption("10039254");
+      await ov.locator("#ca-setto-input").fill(String(value));
+      await ov.locator("button", { hasText: "Add another action" }).click();
+    }
+    await expect(ov.locator(".ca-arm-row")).toHaveCount(3);
+
+    const sheet = page.locator(".overlay-modal-content .content");
+    await sheet.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+    const saveBtn = ov.locator("button.btn-primary", { hasText: "Save automation" });
+    await expect(saveBtn).toBeInViewport();
+    await saveBtn.click();
+
+    await expect(page.locator(".overlay-modal-content")).toBeHidden({ timeout: 5000 });
+    expect(posts.length).toBe(1);
+    expect(posts[0]?.effect?.arms).toHaveLength(3);
   });
 });
 
@@ -114,29 +267,36 @@ test.describe("automation creation — feedback & failure paths", () => {
     await stubBackend(page);
   });
 
-  test("a validation toast renders visibly above the open modal (B1 / 1.1)", async ({ page }) => {
+  async function openCreateOverlay(page: import("@playwright/test").Page) {
     await page.goto("/");
     await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
     await page.locator(".menu-item", { hasText: "Automations" }).first().click();
-    await page.locator(".fx-advanced").click();
-    const ov = page.locator("#multi-arm-automation");
+    await page.locator(".effects-actions .add-range-btn", { hasText: "Add automation" }).click();
+    const ov = page.locator("#create-automation");
     await expect(ov).toBeVisible();
+    return ov;
+  }
 
-    // trigger = sensor, but never pick WHICH sensor — with an arm staged, arms.length > 0
-    // already satisfies the Save button's own :if, so this is the only way left to reach
-    // saveMaRule's "no sensor chosen" validation branch.
-    await ov.locator("select").nth(0).selectOption("sensor");
-    const armEditor = ov.locator(".ma-section", { hasText: "Add an arm" });
-    await armEditor.locator("select").nth(0).selectOption({ index: 1 });
-    await armEditor.locator("select").nth(1).selectOption("true");
-    await ov.locator(".add-range-btn", { hasText: "Add arm" }).click();
-    await expect(ov.locator(".ma-arm-row")).toHaveCount(1);
+  test("an 'already staged' toast renders visibly above the open modal (B1 / 1.1, D8)", async ({ page }) => {
+    const ov = await openCreateOverlay(page);
+    await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
+    await ov.locator("select").first().selectOption({ index: 1 });
+    await ov.locator(".toggle-button", { hasText: /^Active$/ }).click();
+    await ov.locator("#ca-device-select").selectOption({ index: 1 });
+    await ov.locator(".toggle-button", { hasText: "Turn on" }).click();
+    await ov.locator("button", { hasText: "Add another action" }).click();
+    await expect(ov.locator(".ca-arm-row")).toHaveCount(1);
 
-    await ov.locator(".ma-save").click();
+    // Re-fill the SAME device/value/guard and try to stage it again — D8 blocks an exact
+    // duplicate arm with a toast rather than silently staging (or silently dropping) it.
+    await ov.locator("#ca-device-select").selectOption({ index: 1 });
+    await ov.locator(".toggle-button", { hasText: "Turn on" }).click();
+    await ov.locator("button", { hasText: "Add another action" }).click();
+
     const toast = page.locator("#popup-message-container .toaster-container");
     await expect(toast).toBeVisible();
-    await expect(toast).toContainText("Set a trigger and add at least one arm");
-    await expect(ov).toBeVisible(); // validation, not a save — the overlay stays open
+    await expect(toast).toContainText("already in this rule");
+    await expect(ov.locator(".ca-arm-row")).toHaveCount(1); // not staged twice
 
     const stacksAboveModal = await page.evaluate(() => {
       const t = document.querySelector("#popup-message-container .toaster-container") as HTMLElement | null;
@@ -163,22 +323,17 @@ test.describe("automation creation — feedback & failure paths", () => {
       if (r.method() === "POST" && r.url().includes("/api/set-effect")) posts.push(r.url());
     });
 
-    await page.goto("/");
-    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
-    await page.locator(".menu-item", { hasText: "Automations" }).first().click();
-    await page.locator(".effects-actions .add-range-btn", { hasText: "Add automation" }).click();
-    await page.waitForSelector("#new-automation", { timeout: 10_000 });
+    const ov = await openCreateOverlay(page);
+    // "Turn off" (not "true", like fx.effects[0]'s dev-ceiling/sen-motion rule) — the D2
+    // client pre-check would otherwise flag this as a pre-existing duplicate and block the
+    // POST this test exists to exercise.
+    await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
+    await ov.locator("select").first().selectOption("sen-motion");
+    await ov.locator(".toggle-button", { hasText: /^Active$/ }).click();
+    await ov.locator("#ca-device-select").selectOption("dev-ceiling");
+    await ov.locator(".toggle-button", { hasText: "Turn off" }).click();
 
-    // "Do: Turn off" (not "true", like fx.effects[0]'s dev-ceiling/sen-motion rule) — the
-    // D2 client pre-check (3.2) would otherwise flag this as a pre-existing duplicate and
-    // block the POST this test exists to exercise.
-    await page.locator("#new-automation select").first().selectOption("dev-ceiling");
-    await page.locator("#new-automation select", { hasText: "Do:" }).selectOption("false");
-    await page.locator("#new-automation select", { hasText: "Time of day" }).selectOption("sensor");
-    await page.locator("#new-automation select", { hasText: "Select sensor:" }).selectOption("sen-motion");
-    await page.locator("#new-automation select", { hasText: "Is:" }).selectOption("true");
-
-    await page.locator("#new-automation .add-range-btn").click();
+    await ov.locator("button.btn-primary", { hasText: "Save automation" }).click();
 
     // Closes on the strength of the POST alone (D5 optimistic close) — a broken background
     // refresh must not re-open the modal, wedge the app, or read as a save failure.
@@ -188,8 +343,8 @@ test.describe("automation creation — feedback & failure paths", () => {
     expect(posts.length).toBe(1);
 
     // The app stays usable — a fresh overlay still opens normally afterward.
-    await page.locator(".fx-advanced").click();
-    await expect(page.locator("#multi-arm-automation")).toBeVisible();
+    await page.locator(".effects-actions .add-range-btn", { hasText: "Add automation" }).click();
+    await expect(page.locator("#create-automation")).toBeVisible();
   });
 
   test("double-tapping Save while the request is pending still posts once (1.3)", async ({ page }) => {
@@ -203,27 +358,23 @@ test.describe("automation creation — feedback & failure paths", () => {
       if (r.method() === "POST" && r.url().includes("/api/set-effect")) posts.push(r.url());
     });
 
-    await page.goto("/");
-    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
-    await page.locator(".menu-item", { hasText: "Automations" }).first().click();
-    await page.locator(".effects-actions .add-range-btn", { hasText: "Add automation" }).click();
-    await page.waitForSelector("#new-automation", { timeout: 10_000 });
+    const ov = await openCreateOverlay(page);
+    await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
+    await ov.locator("select").first().selectOption("sen-motion");
+    await ov.locator(".toggle-button", { hasText: /^Active$/ }).click();
+    await ov.locator("#ca-device-select").selectOption("dev-ceiling");
+    await ov.locator(".toggle-button", { hasText: "Turn off" }).click();
 
-    // "Do: Turn off" — see the previous test for why this must not match fx.effects[0].
-    await page.locator("#new-automation select").first().selectOption("dev-ceiling");
-    await page.locator("#new-automation select", { hasText: "Do:" }).selectOption("false");
-    await page.locator("#new-automation select", { hasText: "Time of day" }).selectOption("sensor");
-    await page.locator("#new-automation select", { hasText: "Select sensor:" }).selectOption("sen-motion");
-    await page.locator("#new-automation select", { hasText: "Is:" }).selectOption("true");
-
-    const saveBtn = page.locator("#new-automation .add-range-btn");
+    const saveBtn = ov.locator("button.btn-primary", { hasText: "Save automation" });
     await saveBtn.click();
     // The first tap already latches `saving` + the .busy (pointer-events:none) class, so a real
     // second tap couldn't even land on the button. Dispatch the second click programmatically —
     // this is what actually proves the JS-level guard (the authoritative one per D5), not just
     // the CSS affordance that stops a normal double-tap from reaching the handler at all.
     await page.evaluate(() => {
-      document.querySelector<HTMLButtonElement>("#new-automation .add-range-btn")?.click();
+      const btn = Array.from(document.querySelectorAll<HTMLButtonElement>("#create-automation button.btn-primary"))
+        .find((b) => b.textContent?.includes("Save"));
+      btn?.click();
     });
     await page.waitForTimeout(150);
     expect(posts.length).toBe(1); // the guard blocked the second tap before any second request
@@ -233,46 +384,35 @@ test.describe("automation creation — feedback & failure paths", () => {
     expect(posts.length).toBe(1);
   });
 
-  test("a stuck-open modal (e.g. a hung save) doesn't block the next overlay from opening (B3 / 1.4)", async ({ page }) => {
+  test("a stuck-open modal (e.g. a hung save) doesn't block a totally different overlay from opening (B3 / 1.4)", async ({ page }) => {
     await page.route("**/api/set-effect", () => {}); // never resolves — a genuinely wedged overlay
 
-    await page.goto("/");
-    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
-    await page.locator(".menu-item", { hasText: "Automations" }).first().click();
-    await page.locator(".fx-advanced").click();
-    const ma = page.locator("#multi-arm-automation");
-    await expect(ma).toBeVisible();
-
-    await ma.locator("select").nth(0).selectOption("sensor");
-    await ma.locator(".ma-section").nth(0).locator("select").nth(1).selectOption({ index: 1 });
-    const armEditor = ma.locator(".ma-section", { hasText: "Add an arm" });
-    await armEditor.locator("select").nth(0).selectOption({ index: 1 });
-    await armEditor.locator("select").nth(1).selectOption("true");
-    await ma.locator(".add-range-btn", { hasText: "Add arm" }).click();
-    await expect(ma.locator(".ma-arm-row")).toHaveCount(1);
-
-    await ma.locator(".ma-save").click();
+    const ov = await openCreateOverlay(page);
+    await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
+    await ov.locator("select").first().selectOption("sen-motion");
+    await ov.locator(".toggle-button", { hasText: /^Active$/ }).click();
+    await ov.locator("#ca-device-select").selectOption("dev-kitchen"); // not fx.effects[0]'s target
+    await ov.locator(".toggle-button", { hasText: "Turn on" }).click();
+    await ov.locator("button.btn-primary", { hasText: "Save automation" }).click();
     await page.waitForTimeout(300);
-    await expect(page.locator("#multi-arm-automation")).toBeVisible(); // still open — the save never resolved
+    await expect(page.locator("#create-automation")).toBeVisible(); // still open — the save never resolved
 
-    // Regression guard: tearing down the stale overlay used to race its own exit animation —
-    // reopening before the old one's data/template were actually cleared made bindrjs
-    // re-evaluate the OUTGOING template's bindings (e.g. the arms list) against the fresh,
-    // differently-shaped data, which threw.
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
 
-    // The "Add automation" CTA is legitimately covered by the open overlay's full-screen
-    // backdrop — that's expected (this isn't a hit-testing test). Dispatch its click
-    // programmatically to invoke the SAME openOverlay() call a second legitimate trigger
-    // would make, and prove it no longer silently no-ops against the stuck overlay.
+    // A DIFFERENT overlay template entirely (the per-row focused edit sheet, #edit-automation,
+    // opened from an EXISTING rule's ✎ — fx.effects[0] is a simple single-arm rule so it's
+    // editable) — proves the fix is generic, not something specific to create-automation
+    // reopening itself. (A device tile's overlay would make an even stronger cross-VIEW case,
+    // but Home's tiles aren't mounted at all here — switching tabs is a separate concern from
+    // what B3/1.4 guards.) The row's ✎ is legitimately covered by the open overlay's
+    // full-screen backdrop (expected — this isn't a hit-testing test), so dispatch the click
+    // programmatically, same as the CTA in the tests above.
     await page.evaluate(() => {
-      const btn = Array.from(document.querySelectorAll<HTMLButtonElement>(".effects-actions .add-range-btn"))
-        .find((b) => b.textContent?.includes("Add automation"));
-      btn?.click();
+      document.querySelector<HTMLButtonElement>(".effect-row .effect-edit")?.click();
     });
-    await expect(page.locator("#new-automation")).toBeVisible({ timeout: 5000 });
-    await expect(page.locator("#multi-arm-automation")).toHaveCount(0);
+    await expect(page.locator("#edit-automation")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("#create-automation")).toHaveCount(0);
     expect(errors).toEqual([]);
   });
 
@@ -290,27 +430,22 @@ test.describe("automation creation — feedback & failure paths", () => {
       if (r.method() === "POST" && r.url().includes("/api/set-effect")) posts.push(r.url());
     });
 
-    await page.goto("/");
-    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
-    await page.locator(".menu-item", { hasText: "Automations" }).first().click();
-    await page.locator(".effects-actions .add-range-btn", { hasText: "Add automation" }).click();
-    await page.waitForSelector("#new-automation", { timeout: 10_000 });
+    const ov = await openCreateOverlay(page);
+    // Recreate fx.effects[0] verbatim: sen-motion (presence, true) -> dev-ceiling power = true.
+    // Structurally identical to the already-loaded rule, so the client pre-check must catch
+    // it before saveEffect() ever fires a POST.
+    await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
+    await ov.locator("select").first().selectOption("sen-motion");
+    await ov.locator(".toggle-button", { hasText: /^Active$/ }).click();
+    await ov.locator("#ca-device-select").selectOption("dev-ceiling");
+    await ov.locator(".toggle-button", { hasText: "Turn on" }).click();
 
-    // Recreate fx.effects[0] verbatim via the simple form: sen-motion (presence, true) ->
-    // dev-ceiling power = true. Structurally identical to the already-loaded rule, so the
-    // client pre-check must catch it before saveEffect() ever fires a POST.
-    await page.locator("#new-automation select").first().selectOption("dev-ceiling");
-    await page.locator("#new-automation select", { hasText: "Do:" }).selectOption("true");
-    await page.locator("#new-automation select", { hasText: "Time of day" }).selectOption("sensor");
-    await page.locator("#new-automation select", { hasText: "Select sensor:" }).selectOption("sen-motion");
-    await page.locator("#new-automation select", { hasText: "Is:" }).selectOption("true");
-
-    await page.locator("#new-automation .add-range-btn").click();
+    await ov.locator("button.btn-primary", { hasText: "Save automation" }).click();
 
     const toast = page.locator("#popup-message-container .toaster-container");
     await expect(toast).toBeVisible();
     await expect(toast).toContainText("That automation already exists");
-    await expect(page.locator("#new-automation")).toBeVisible(); // rejected save — modal stays open
+    await expect(page.locator("#create-automation")).toBeVisible(); // rejected save — modal stays open
     expect(posts.length).toBe(0); // the pre-check blocked it before any request reached the network
     expect(errors).toEqual([]);
   });
@@ -324,27 +459,22 @@ test.describe("automation creation — feedback & failure paths", () => {
       if (r.method() === "POST" && r.url().includes("/api/set-effect")) posts.push(r.url());
     });
 
-    await page.goto("/");
-    await page.waitForSelector("#devices .device-tile", { timeout: 30_000 });
-    await page.locator(".menu-item", { hasText: "Automations" }).first().click();
-    await page.locator(".effects-actions .add-range-btn", { hasText: "Add automation" }).click();
-    await page.waitForSelector("#new-automation", { timeout: 10_000 });
-
+    const ov = await openCreateOverlay(page);
     // dev-kitchen / sen-presence has no match anywhere in fx.effects, so the CLIENT pre-check
     // finds nothing and lets the POST through — this isolates the server-409 handling path
     // (DuplicateEffectError) from the pre-check exercised by the previous test.
-    await page.locator("#new-automation select").first().selectOption("dev-kitchen");
-    await page.locator("#new-automation select", { hasText: "Do:" }).selectOption("true");
-    await page.locator("#new-automation select", { hasText: "Time of day" }).selectOption("sensor");
-    await page.locator("#new-automation select", { hasText: "Select sensor:" }).selectOption("sen-presence");
-    await page.locator("#new-automation select", { hasText: "Is:" }).selectOption("true");
+    await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
+    await ov.locator("select").first().selectOption("sen-presence");
+    await ov.locator(".toggle-button", { hasText: /^Active$/ }).click();
+    await ov.locator("#ca-device-select").selectOption("dev-kitchen");
+    await ov.locator(".toggle-button", { hasText: "Turn on" }).click();
 
-    await page.locator("#new-automation .add-range-btn").click();
+    await ov.locator("button.btn-primary", { hasText: "Save automation" }).click();
 
     const toast = page.locator("#popup-message-container .toaster-container");
     await expect(toast).toBeVisible();
     await expect(toast).toContainText("That automation already exists");
-    await expect(page.locator("#new-automation")).toBeVisible(); // rejected save — modal stays open
+    await expect(page.locator("#create-automation")).toBeVisible(); // rejected save — modal stays open
     expect(posts.length).toBe(1); // this time the request DID reach the (stubbed) server
   });
 });

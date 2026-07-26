@@ -34,7 +34,7 @@
     <div class="edit-section">
         <div class="edit-section" :if="this.data.triggerKind === 'time'">
             <div class="edit-label">At time</div>
-            <input class="edit-time" type="time" :value="this.data.time" :oninput="this.data.time = event.target.value" />
+            <div class="time-track-mount" id="edit-time-track-mount"></div>
         </div>
 
         <div :if="this.data.triggerKind === 'sensorBool'">

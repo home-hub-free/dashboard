@@ -3,7 +3,7 @@ title: Dashboard Design System
 summary: Source of truth for the dashboard UI *principles* — four-lamp color semantics, elevation, core patterns, tap targets, SCSS architecture, bindrjs gotchas. Component catalog lives in UI-LIBRARY.md.
 status: LIVE
 owner: dashboard
-updated: 2026-07-11
+updated: 2026-07-26
 tags: [dashboard, design, ui]
 ---
 
@@ -311,6 +311,41 @@ strings with `{{ }}`/`${ }` interpolation and `:`-prefixed directives). Watch fo
 - **Reassign to re-render gated branches.** A child that gates rendering must be
   *reassigned* (`obj.current = {…}`), not mutated in place, for the dependent template
   region to re-render. Leaf inputs that gate nothing can mutate in place.
+- **A template expression must read every field it might need UNCONDITIONALLY, before
+  any branching.** bindrjs tracks a binding's dependencies by recording whichever
+  reactive properties actually got read the last time it was evaluated — it does not
+  accumulate across evaluations, and a `state.device && isValid(state)`-style
+  short-circuit means `isValid`'s reads (and thus that dependency) never register while
+  `device` is still falsy. The bug this produces is specific and easy to miss: the
+  binding updates correctly the FIRST time each branch is taken, then goes stale for
+  exactly the field it skipped reading on an earlier pass. Fix: read every field the
+  function could ever touch into a local *before* any `if`, so the Proxy `get` (and the
+  dependency it records) always happens, regardless of which branch runs. See
+  `create-automation.ts`'s `computeHint`/`computePreview`/`isSetToValid` — caught live via
+  a screenshot of the staged-arms flow (EFFECT_CREATION_REPAIR Phase 5), not a failing
+  assertion.
+- **`:innerHTML="expr"` computes exactly ONCE and never reacts again** — unlike `:if`,
+  `:class`, `:attr`, and `${}` text interpolation (which all run through the same
+  tracked recompute path), bindrjs's innerHTML handler is invoked directly from its
+  constructor, outside the dependency-collection wrapper, so it never gets ANY
+  dependencies recorded. It still paints the right value the first time (so nothing
+  *looks* broken in a quick check) — it just never updates again for the lifetime of
+  that element, even while a `:foreach` row right next to it updates fine. Reserve
+  `:innerHTML` for content that's genuinely fixed once rendered (or that only lives
+  inside a `:foreach` row, which gets recreated wholesale — a fresh one-time compute —
+  whenever the underlying array element changes); use plain `${}` interpolation for
+  anything that must stay live (plain text only — no nested markup). See
+  `create-automation.ts`'s `computePreview` doc comment for the live repro.
+- **A native `<select>`/`<input>`'s `:value="expr"` only ever calls `setAttribute`,
+  which the BROWSER stops honoring once the control is "dirtied"** (the user has
+  interacted with it, or it's been set via `.value=` at all) — a later reactive update
+  meant to clear/reset the field lands on the attribute but never shows on screen. This
+  only bites controls a handler resets WHILE THEY STAY MOUNTED (a `<select>` reused
+  across picks, a number input reused after "stage this arm" clears it) — a control that
+  only ever gets set once, at creation, never hits it. Fix: give the control an `id` and
+  set its live `.value` PROPERTY directly from the resetting handler (`create-automation.ts`'s
+  `syncNativeControls`), the same "reach into the DOM" pattern `TimeRangeTrack`/
+  `media-enroll.ts` already use for what bindrjs can't drive.
 
 ---
 

@@ -1,0 +1,178 @@
+<div id="create-automation" class="edit-container">
+    <div class="overlay-header">
+        <span class="oh-icon"><i class="iconoir-flash"></i></span>
+        <span class="oh-title">New automation</span>
+    </div>
+
+    <!-- 1 · WHEN — the trigger. A time trigger needs only a time; a sensor trigger also asks
+         for the sensor's own predicate WHILE the rule might still end up single-arm (once an
+         action is staged via "Add another action", the predicate stops applying — a staged
+         multi-arm rule branches by guard alone, not by the trigger's own value). -->
+    <div class="ca-section">
+        <p class="section-title">1 · When</p>
+
+        <div class="form-group">
+            <label>Based on</label>
+            <div class="toggle-group">
+                <button class="toggle-button" :class:active="this.data.triggerMode === 'sensor'" :onclick="this.actions.setTriggerMode('sensor', this.data)">Sensor</button>
+                <button class="toggle-button" :class:active="this.data.triggerMode === 'time'" :onclick="this.actions.setTriggerMode('time', this.data)">Time of day</button>
+            </div>
+        </div>
+
+        <div class="form-group" :if="this.data.triggerMode === 'time'">
+            <label>At</label>
+            <div class="time-track-mount" id="ca-when-time-mount"></div>
+        </div>
+
+        <div class="form-group" :if="this.data.triggerMode === 'sensor'">
+            <label>Sensor</label>
+            <select class="dropdown" :oninput="this.actions.setSensor(event.target.value, this.data)">
+                <option value="null">Select sensor…</option>
+                <option :foreach="opt in this.data.sensorOptions" :key="opt.sensor.id" :value="opt.sensor.id">${opt.label}</option>
+            </select>
+        </div>
+
+        <div :if="this.data.triggerMode === 'sensor' && this.data.sensor">
+            <div class="form-group" :if="this.data.sensor.type === 'boolean' && this.data.arms.length === 0">
+                <label>Is</label>
+                <div class="toggle-group">
+                    <button class="toggle-button" :class:active="this.data.sensorBool === true" :onclick="this.actions.setSensorBool(true, this.data)">Active</button>
+                    <button class="toggle-button" :class:active="this.data.sensorBool === false" :onclick="this.actions.setSensorBool(false, this.data)">Inactive</button>
+                </div>
+            </div>
+
+            <div :if="this.data.sensor.type === 'value' && this.data.arms.length === 0">
+                <div class="form-group" :if="this.data.sensor.sensorType === 'temp/humidity'">
+                    <label>Value to check</label>
+                    <div class="toggle-group">
+                        <button class="toggle-button" :class:active="this.data.valueToCheck === 'temp'" :onclick="this.actions.setValueToCheck('temp', this.data)">Temperature</button>
+                        <button class="toggle-button" :class:active="this.data.valueToCheck === 'humidity'" :onclick="this.actions.setValueToCheck('humidity', this.data)">Humidity</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Comparison</label>
+                    <div class="toggle-group">
+                        <button class="toggle-button" :class:active="this.data.comparison === 'higher-than'" :onclick="this.actions.setComparison('higher-than', this.data)">Higher than</button>
+                        <button class="toggle-button" :class:active="this.data.comparison === 'lower-than'" :onclick="this.actions.setComparison('lower-than', this.data)">Lower than</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Value</label>
+                    <input id="ca-threshold-input" type="number" placeholder="e.g. 28" :value="this.data.threshold" :oninput="this.data.threshold = event.target.value" />
+                </div>
+            </div>
+
+            <p class="section-hint" :if="this.data.arms.length > 0">This trigger fires on any change — each action below applies based on its own guard.</p>
+        </div>
+    </div>
+
+    <!-- 2 · DO — the action. Target list is actuatable-only (D4): cameras and voice
+         satellites are excluded and never appear here. -->
+    <div class="ca-section" :if="this.data.triggerMode">
+        <p class="section-title">2 · Do</p>
+
+        <div class="form-group">
+            <label>Device</label>
+            <select id="ca-device-select" class="dropdown" :oninput="this.actions.setDevice(event.target.value, this.data)">
+                <option value="null">Select device…</option>
+                <option :foreach="opt in this.data.targets" :key="opt.device.id" :value="opt.device.id">${opt.label}</option>
+            </select>
+        </div>
+
+        <div :if="this.data.device">
+            <div class="form-group" :if="this.data.device.type === 'boolean'">
+                <label>Do</label>
+                <div class="toggle-group">
+                    <button class="toggle-button" :class:active="this.data.setTo === true" :onclick="this.actions.setBool(true, this.data)">Turn on</button>
+                    <button class="toggle-button" :class:active="this.data.setTo === false" :onclick="this.actions.setBool(false, this.data)">Turn off</button>
+                </div>
+            </div>
+
+            <div :if="this.data.device.type === 'value' && this.data.device.deviceCategory === 'evap-cooler'">
+                <div class="form-group">
+                    <label>Channel</label>
+                    <div class="toggle-group">
+                        <button class="toggle-button" :class:active="this.data.valueToSet === 'fan'" :onclick="this.actions.setChannel('fan', this.data)">Fan</button>
+                        <button class="toggle-button" :class:active="this.data.valueToSet === 'water'" :onclick="this.actions.setChannel('water', this.data)">Water pump</button>
+                    </div>
+                </div>
+                <div class="form-group" :if="this.data.valueToSet">
+                    <label>Do</label>
+                    <div class="toggle-group">
+                        <button class="toggle-button" :class:active="this.data.setTo === true" :onclick="this.actions.setBool(true, this.data)">On</button>
+                        <button class="toggle-button" :class:active="this.data.setTo === false" :onclick="this.actions.setBool(false, this.data)">Off</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" :if="this.data.device.type === 'value' && this.data.device.deviceCategory !== 'evap-cooler'">
+                <label>Set to</label>
+                <div class="ca-num-row">
+                    <input id="ca-setto-input" type="number" min="0" max="100" placeholder="value" :value="this.data.setTo" :oninput="this.data.setTo = event.target.value" />
+                    <span class="ca-unit">${this.data.device.deviceCategory === 'blinds' ? '% open' : '%'}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3 · ONLY WHEN — optional guard on the arm currently being composed. -->
+    <div class="device-setting ca-guard" :if="this.data.device">
+        <p class="section-title">3 · Only when <span class="ca-optional">(optional)</span></p>
+        <div class="toggle-group">
+            <button class="toggle-button" :class:active="this.data.guardType === 'none'" :onclick="this.actions.setGuardType('none', this.data)">Always</button>
+            <button class="toggle-button" :class:active="this.data.guardType === 'time'" :onclick="this.actions.setGuardType('time', this.data)">Time of day</button>
+            <button class="toggle-button" :class:active="this.data.guardType === 'dow'" :onclick="this.actions.setGuardType('dow', this.data)">Day of week</button>
+        </div>
+
+        <div :if="this.data.guardType === 'time'">
+            <div class="toggle-group">
+                <button class="toggle-button" :class:active="this.data.timeOp === 'before'" :onclick="this.actions.setTimeOp('before', this.data)">Before</button>
+                <button class="toggle-button" :class:active="this.data.timeOp === 'after'" :onclick="this.actions.setTimeOp('after', this.data)">After</button>
+                <button class="toggle-button" :class:active="this.data.timeOp === 'between'" :onclick="this.actions.setTimeOp('between', this.data)">Between</button>
+            </div>
+            <div class="time-track-mount" id="ca-guard-time-mount" :if="this.data.timeOp"></div>
+        </div>
+
+        <div class="form-group" :if="this.data.guardType === 'dow'">
+            <div class="toggle-group">
+                <button class="toggle-button" :class:active="this.data.dow === 'weekday'" :onclick="this.actions.setDow('weekday', this.data)">Weekdays</button>
+                <button class="toggle-button" :class:active="this.data.dow === 'weekend'" :onclick="this.actions.setDow('weekend', this.data)">Weekends</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staged arms (D8): index-keyed, tap to reload into the editor above, ✕ removes by
+         index. Only appears once at least one action has been staged. -->
+    <div class="device-setting ca-arms" :if="this.data.arms.length">
+        <p class="section-title">Actions <span class="ca-optional">(first match wins)</span></p>
+        <div :foreach="arm in this.data.arms" :index class="ca-arm-row" :class:editing="this.data.editingIndex === :index">
+            <span class="ca-arm-label" :innerHTML="arm.label"></span>
+            <button class="ca-arm-edit" :onclick="this.actions.editArm(:index, this.data)" aria-label="Edit action"><i class="iconoir-edit-pencil"></i></button>
+            <button class="ca-arm-remove" :onclick="this.actions.removeArm(:index, this.data)" aria-label="Remove action"><i class="iconoir-cancel"></i></button>
+        </div>
+    </div>
+
+    <div class="ca-stage-row" :if="this.data.device">
+        <p class="ca-editing-note" :if="this.data.editingIndex !== null">Editing action ${this.data.editingIndex + 1} of ${this.data.arms.length}</p>
+        <button class="btn-outline" :class:busy="!this.actions.canStageArm(this.data)" :onclick="this.actions.stageArm(this.data)">
+            ${this.data.editingIndex !== null ? 'Save arm' : 'Add another action'}
+        </button>
+        <button class="btn-quiet" :if="this.data.editingIndex !== null" :onclick="this.actions.cancelArmEdit(this.data)">Cancel</button>
+    </div>
+
+    <!-- 4 · REVIEW & SAVE — a live one-line preview when ready; an inline hint (Save
+         disabled) otherwise. Never a toast for this — 5.2/D9/D10. -->
+    <div class="ca-section ca-save-section">
+        <p class="section-title">4 · Review &amp; save</p>
+        <p class="ca-preview" :if="!this.actions.computeHint(this.data)">${this.actions.computePreview(this.data)}</p>
+        <p class="ca-hint" :if="this.actions.computeHint(this.data)">${this.actions.computeHint(this.data)}</p>
+        <button
+            class="btn-primary"
+            :class:busy="this.data.saving || !!this.actions.computeHint(this.data)"
+            :onclick="this.actions.save(this.data)"
+        >
+            <span :if="!this.data.saving">Save automation</span>
+            <span :if="this.data.saving">Saving…</span>
+        </button>
+    </div>
+</div>

@@ -130,6 +130,13 @@ button {
   &:active:not(:disabled) {
     background: var(--color-surface-secondary);
   }
+
+  // In-flight/invalid convention (bindrjs can't bind :disabled — UI-LIBRARY.md §10),
+  // same treatment as .btn-primary's own .busy above.
+  &.busy {
+    opacity: 0.6;
+    pointer-events: none;
+  }
 }
 
 // ---- Filled destructive -----------------------------------------------------
@@ -203,7 +210,14 @@ button {
   transition: var(--transition-normal);
   min-height: 40px;
 
-  &:hover:not(:disabled) {
+  // :not(.active) — otherwise `:hover:not(:disabled)` (0,3,0) outranks `.active` alone
+  // (0,2,0) on plain specificity, and an ALREADY-selected segmented option would visibly
+  // lose its filled/active look the instant the pointer sits on it (caught via a desktop
+  // Playwright screenshot on EFFECT_CREATION_REPAIR's toggle-heavy creation flow — invisible
+  // on the touch-first phone/wall-panel target, since touch has no sustained :hover, but a
+  // real bug for anyone on a mouse). Hovering an already-active option has nothing useful to
+  // preview anyway — it's already the selected state.
+  &:hover:not(:disabled):not(.active) {
     background-color: var(--color-surface-tertiary);
     box-shadow: var(--shadow-sm);
   }

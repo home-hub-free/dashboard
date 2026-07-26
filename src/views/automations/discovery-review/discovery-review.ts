@@ -182,8 +182,9 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
    * Translate a candidate into the hub's dynamic `trigger + arms` contract. The candidate's trigger
    * carries the antecedent VALUE (e.g. presence=true); the hub's trigger does not, and an arm with an
    * empty `when` fires on EVERY sensor edge (dynamic-evaluate `armHolds`). So we restate the trigger
-   * value as a sensor guard on each arm — mirroring the dashboard's own buildDynamicEffect — so the
-   * rule fires on that edge only (e.g. presence=true), not on its inverse.
+   * value as a sensor guard on each arm — mirroring the dashboard's own single-arm effect builder
+   * (create-automation.ts's buildCreateEffect) — so the rule fires on that edge only (e.g.
+   * presence=true), not on its inverse.
    */
   private toEffect(c: Candidate): Effect {
     const channel = this.realChannel(c.trigger.nodeId, c.trigger.channel);

@@ -2,9 +2,9 @@
 // VIEW · AUTOMATIONS
 // The rules screen: page CTAs, one card per target device with its rules as
 // recessed rows (live dot + switch + edit/delete), the "Suggested for you"
-// pattern-discovery cards, and the three authoring overlays (#new-automation,
-// #edit-automation, #multi-arm-automation — they render inside the detail
-// overlay sheet). Uses ui/ primitives: panel-like cards, pills, buttons.
+// pattern-discovery cards, and the two authoring overlays (#create-automation,
+// #edit-automation — they render inside the detail overlay sheet). Uses ui/
+// primitives: panel-like cards, pills, buttons, toggle-group, device-setting.
 // ============================================================================
 
 @import "../ui/tokens";
@@ -30,7 +30,7 @@
   margin: 0 auto;
 }
 
-// ---- Page CTAs (New Automation / New Dynamic Rule) ------------------------------
+// ---- Page CTA (Add automation) --------------------------------------------------
 .effects-actions {
   display: flex;
   flex-wrap: wrap;
@@ -41,8 +41,8 @@
   margin-bottom: var(--space-5);
 }
 
-// One primary Add; the multi-arm builder is power-user tooling and reads as a
-// quiet text-level action beside it — not a second banner.
+// One entry point (EFFECT_CREATION_REPAIR D1) — the unified overlay discloses
+// multi-arm authoring itself ("Add another action"), so there is no second CTA here.
 #automations .add-range-btn {
   display: inline-flex;
   align-items: center;
@@ -62,27 +62,6 @@
 
   i {
     font-size: 1.1em;
-  }
-
-  &:active {
-    transform: translateY(1px);
-  }
-}
-
-#automations .fx-advanced {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: var(--tap-target-min);
-  padding-inline: var(--space-3);
-  border: none;
-  background: transparent;
-  color: var(--color-text-tertiary);
-  font-size: 0.88rem;
-  font-weight: var(--font-weight-medium);
-
-  &:hover {
-    color: var(--color-text-secondary);
   }
 
   &:active {
@@ -698,9 +677,11 @@
     gap: var(--space-2);
   }
 
-  .edit-num,
-  .edit-time {
+  // The time-trigger field is now the mounted TimeRangeTrack (Phase 5.3, .time-track-mount);
+  // .edit-num stays for the value-sensor threshold's plain numeric input.
+  .edit-num {
     min-height: var(--tap-target-min);
+    width: 7rem;
     padding: 0 var(--space-3);
     border-radius: var(--radius-control);
     border: 1px solid var(--color-border-light);
@@ -708,10 +689,6 @@
     color: var(--color-text-primary);
     font-family: inherit;
     font-size: 1rem;
-  }
-
-  .edit-num {
-    width: 7rem;
   }
 
   .edit-unit {
@@ -760,69 +737,137 @@
   }
 }
 
-// ---- New-automation overlay ---------------------------------------------------------
-#new-automation {
-  padding: 1rem;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-// ---- Multi-arm (dynamic rule) authoring overlay ----------------------------------------
-#multi-arm-automation {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  text-align: left;
-
-  .ma-title {
-    margin: 0 0 var(--space-1);
-  }
-
-  .ma-section {
+// ---- Unified automation-creation overlay (EFFECT_CREATION_REPAIR Phase 5) --------------
+// Progressive disclosure: When -> Do -> Only when (optional) -> staged actions -> Save.
+// Built from ui/overlay.scss's `.edit-container` (column + header) plus the shared
+// .form-group / .toggle-group / .device-setting / .section-title primitives already
+// scoped under #overlay-modal — this block only adds the bits unique to this flow.
+#create-automation {
+  .ca-section {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
 
-    > label {
-      font-weight: 600;
+    & + .ca-section {
+      margin-top: var(--space-2);
     }
   }
 
-  .ma-guard {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    padding-left: var(--space-2);
-    border-left: 2px solid var(--color-border);
+  .ca-optional {
+    font-weight: var(--font-weight-medium);
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--color-text-tertiary);
   }
 
-  .ma-arm-row {
+  .ca-num-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: var(--space-2);
-    padding: var(--space-2);
-    border-radius: var(--radius-md);
-    background-color: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+
+    input {
+      max-width: 10rem;
+    }
   }
 
-  .ma-arm-label {
+  .ca-unit {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  // Staged actions — one recessed row per arm; tap the row to reload it into the
+  // editor above (D8), ✕ removes it by index.
+  .ca-arm-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+
+    & + .ca-arm-row {
+      margin-top: var(--space-2);
+    }
+
+    &.editing {
+      border-color: var(--color-primary);
+      background: var(--color-primary-rgba-10);
+    }
+  }
+
+  .ca-arm-label {
     flex: 1;
+    min-width: 0;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    color: var(--color-text-secondary);
+
+    strong {
+      color: var(--color-text-primary);
+    }
   }
 
-  .ma-remove {
-    cursor: pointer;
-    color: var(--color-error);
-    background: none;
+  // 44px — DESIGN.md §5's tap-target minimum (a visibly smaller glyph would need the
+  // invisible ::before inset-expansion trick instead; at this size it just needs to BE 44px).
+  .ca-arm-edit,
+  .ca-arm-remove {
+    display: grid;
+    place-items: center;
+    width: var(--tap-target-min);
+    height: var(--tap-target-min);
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
     border: none;
-    font-size: 1rem;
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    flex: none;
 
     &:hover {
-      color: var(--color-error-dark);
+      color: var(--color-text-primary);
+      background: var(--color-surface-tertiary);
     }
+  }
+
+  .ca-arm-remove:hover {
+    color: var(--color-error);
+    background: var(--color-error-rgba-10);
+  }
+
+  .ca-stage-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .ca-editing-note {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-text-tertiary);
+  }
+
+  .ca-save-section {
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .ca-preview {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    color: var(--color-text-secondary);
+
+    strong {
+      color: var(--color-text-primary);
+    }
+  }
+
+  .ca-hint {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--color-warning);
   }
 }

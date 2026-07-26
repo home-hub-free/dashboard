@@ -66,67 +66,6 @@ export type Effect = {
   editable?: boolean;
 };
 
-export type NewEffect = {
-  device: Device;
-  // For multi value devices
-  valueToSet?: any;
-  setTo: any;
-  trigger: 'time' | 'sensor';
-  sensor?: Sensor;
-  sensorState?: boolean | string;
-  valueToCheck?: string; // For multi value type sensors
-  comparison?: 'higher-than' | 'lower-than' // For value based sensors: which way to compare the reading
-  time?: Date
-  /** In-flight guard for the Save button (D5) — set while the POST is pending so a
-   *  double-tap can't fire a second create; cleared only on failure (success closes
-   *  the overlay, discarding this state anyway). */
-  saving?: boolean
-}
-
-// ── Multi-arm authoring (EFFECTS_DYNAMIC §9 / DISCOVERY D4) ──────────────────────────────
-// The agent and Discovery already create context-conditioned multi-arm rules; this is the
-// hand-authoring counterpart. A rule = one master trigger + an ordered list of arms (first
-// arm whose guards ALL hold wins; an arm with no guard is the else/default). The UI composes
-// one arm at a time into `arms`, mirroring the dynamic `Effect` contract above. v1 supports
-// the time-of-day / day-type guards Discovery emits (sensor/state guards are a follow-on).
-
-/** A guard the authoring UI can attach to an arm — the subset Discovery produces. */
-export type NewArmGuard =
-  | { kind: 'time'; op: 'before' | 'after' | 'between'; from: string; to?: string }
-  | { kind: 'dow'; days: number[] };
-
-/** The per-arm editor's working state (same shallow shape as the single-arm form). */
-export type CurrentArm = {
-  device: Device | null;
-  valueToSet?: string;            // evap-cooler sub-channel (fan/water)
-  setTo: any;
-  guardType: 'none' | 'time' | 'dow';
-  timeOp?: 'before' | 'after' | 'between';
-  timeFrom?: string;
-  timeTo?: string;
-  dow?: 'weekday' | 'weekend';
-};
-
-/** An arm already staged into the rule, with a human label for the staged list. */
-export type StagedArm = {
-  device: Device;
-  valueToSet?: string;
-  setTo: any;
-  guards: NewArmGuard[];
-  label: string;
-};
-
-export type NewMultiArmEffect = {
-  trigger: 'sensor' | 'time' | null;
-  sensor?: Sensor;
-  sensorChannel?: string;         // presence | temperature | humidity (value sensors)
-  time?: string;
-  current: CurrentArm;
-  arms: StagedArm[];
-  /** In-flight guard for the Save button (D5) — same contract as NewEffect.saving. */
-  saving?: boolean;
-};
-
 // ── Focused single-arm edit (the per-row ✎) ─────────────────────────────────────────────
 // Editing reopens a *focused* surface rather than the cascading new-automation form: the
 // rule's device + sensor identity are fixed (changing those = a different rule, made via

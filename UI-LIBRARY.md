@@ -22,6 +22,7 @@ tags: [dashboard, ui, components]
 - [8. Device tiles & sensor chips (`ui/tiles.scss`)](#8-device-tiles--sensor-chips-uitilesscss) — the glance-surface tiles
 - [9. Detail overlay (`ui/overlay.scss`)](#9-detail-overlay-uioverlayscss) — the per-device detail sheet
 - [9b. Time track (`ui/time-track.scss`)](#9b-time-track-uitime-trackscss) — the direct-manipulation 24h range/point picker
+- [9c. Progressive creation overlay](#9c-progressive-creation-overlay) — the multi-step "When → Do → Only when → Save" recipe
 - [10. Toasts (`ui/toast.scss`)](#10-toasts-uitoastscss) — transient notifications
 - [10b. Loading states (`ui/loading.scss`)](#10b-loading-states-uiloadingscss) — skeletons + spinners
 - [11. Navigation (`ui/nav.scss`)](#11-navigation-uinavscss) — sidebar + bottom nav
@@ -166,6 +167,14 @@ Segmented choice (2–4 exclusive options):
   <button class="toggle-button">Manual</button>
 </div>
 ```
+
+`.toggle-button.active` keeps its filled/iris look even while the pointer is still resting on
+it right after a click — the hover rule is scoped `:hover:not(:disabled):not(.active)` so it
+never outranks `.active` on specificity (a plain `.toggle-button.active` and
+`.toggle-button:hover:not(:disabled)` tie on class count; `:not(.active)` breaks that tie in
+`.active`'s favor). Invisible on touch (no sustained `:hover` there) but a real, previously-
+unnoticed bug on a mouse — caught building the automation-creation flow (§9c), which is the
+heaviest user of this primitive in the app.
 
 On/off switch (success = enabled):
 
@@ -348,6 +357,64 @@ new TimeRangeTrack(mountEl, {
   `destroy()` (clears the mount; there is no document-level listener to unhook, since dragging uses
   `setPointerCapture` on the handle/fill itself).
 - Demo: `/ui-kit.html` "Time track" section (range, point, and a wrapped 22:00→06:00 example).
+
+## 9c. Progressive creation overlay
+
+The recipe behind the automation-creation overlay (`create-automation-overlay.html` +
+`create-automation.ts`, EFFECT_CREATION_REPAIR Phase 5 / D1) for any "compose one thing out of
+several small choices, then save" flow — merging what used to be two separate CTAs/forks into
+one:
+
+```
+<div id="my-flow" class="edit-container">
+  <div class="overlay-header"> … </div>
+
+  <div class="ca-section">                    <!-- one numbered step -->
+    <p class="section-title">1 · When</p>
+    <div class="form-group">
+      <label>Based on</label>
+      <div class="toggle-group">               <!-- segmented choice, not a <select> -->
+        <button class="toggle-button" :class:active="…" :onclick="…">Sensor</button>
+        <button class="toggle-button" :class:active="…" :onclick="…">Time of day</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="device-setting"> … "Only when" (optional) …</div>  <!-- recessed sub-group -->
+
+  <p class="ca-hint" :if="this.actions.computeHint(this.data)">${this.actions.computeHint(this.data)}</p>
+  <button class="btn-primary" :class:busy="this.data.saving || !!this.actions.computeHint(this.data)"
+    :onclick="this.actions.save(this.data)">Save</button>
+</div>
+```
+
+- **One entry point, progressive disclosure.** Every step renders from the start (`.ca-section`
+  → `.section-title` numbered headers give the step order); later steps just have nothing to act
+  on yet. Gate a step's BODY on the previous step's answer with plain `:if` — don't invent a
+  second CTA for "the advanced version" of the same thing.
+- **Segmented `.toggle-group`/`.toggle-button` for every choice**, never a `<select>` for a
+  handful of options — sidesteps the `:selected` limitation entirely (§14) and reads at a
+  glance (see §4 for the `.active`-vs-hover specificity fix this flow's heavy use of the
+  primitive surfaced).
+- **Inline hint + `.busy` Save, not a toast, for "form incomplete."** A pure function
+  (`computeHint(state)`) returns `''` when ready or the ONE sentence to show; drive `:if` on
+  both the hint `<p>` and its sibling "preview" `<p>` from the SAME function so they're always
+  mutually exclusive. Toasts stay reserved for a completed ACTION's result (saved / duplicate /
+  "already staged") — see §10.
+- **An imperative widget (a `TimeRangeTrack`, a map, anything bindrjs can't drive) mounts into
+  an empty container div AFTER its gate reveals it**, from the SAME handler that flips the gate,
+  on a `setTimeout(0)`, always `destroy()`-ing any previous instance first. Give the widget's
+  own instance a MODULE-LEVEL (non-reactive) home, never a property on the bindrjs state object
+  — DESIGN.md §7 explains why (a class instance is a plain object; bindrjs would recursively
+  Proxy it, including whatever raw DOM elements it holds).
+- **A "stage one, add another" list** (here: arms) is index-keyed, not keyed by a derived label
+  string (two staged items can share a label) — `:foreach` without an explicit `:key` falls back
+  to comparing the array's own object references, which is correct as long as every structural
+  change (stage/remove/replace) reassigns the whole array.
+- Read DESIGN.md §7 in full before writing one of these — the three newest gotchas there
+  (unconditional reads for anything computed via a function call, `:innerHTML`'s one-shot
+  compute, native-control resync) were all found building this exact overlay, and are easy to
+  reintroduce in a similar flow.
 
 ## 10. Toasts (`ui/toast.scss`)
 

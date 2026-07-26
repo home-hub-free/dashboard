@@ -4,16 +4,19 @@ import template from './automations-list.html?raw';
 import { DuplicateEffectError, deleteEffect, getEndPointData, saveEffect, setEffectEnabled, updateEffect } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import { closeOverlay, openOverlay } from "../../../components/overlay-modal/overlay-modal";
-import NewAutomationOverlay from "../overlay-views/new-automation-overlay.html?raw";
-import MultiArmOverlay from "../overlay-views/multi-arm-overlay.html?raw";
+import { TimeRangeTrack, type TimeRangeTrackPointValue } from "../../../components/time-range-track/time-range-track";
+import CreateAutomationOverlay from "../overlay-views/create-automation-overlay.html?raw";
 import EditAutomationOverlay from "../overlay-views/edit-automation-overlay.html?raw";
 import { showToaster } from "../../../components/popup-message/popup-message";
 import { EffectActions } from "../../../store/actions";
-import {
-  Arm, ArmCondition, CurrentArm, EditEffect, Effect, EffectOp, NewArmGuard, NewEffect,
-  NewMultiArmEffect, SetAction, StagedArm, Trigger,
-} from "../automations.model";
+import { ArmCondition, EditEffect, Effect, SetAction } from "../automations.model";
 import { findDuplicateEffect } from "../effect-canonical";
+import {
+  CreateAutomationState, buildCreateEffect, cancelArmEdit, canStageArm, computeHint, computePreview,
+  destroyCreateAutomationTracks, editArm, emptyCreateAutomationState, removeArm, setBool, setChannel,
+  setComparison, setDevice, setDow, setGuardType, setSensor, setSensorBool, setTimeOp, setTriggerMode,
+  setValueToCheck, stageArm,
+} from "./create-automation";
 import { AutomationsListTabService, AutomationsListTabServiceClass } from "./automations-list.service";
 import { Device } from "../../home/devices/devices.model";
 import { Sensor } from "../../home/sensors/sensors.model";
@@ -166,9 +169,16 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
         saveEdit: (e: EditEffect) => this.saveEditedEffect(e),
         cancelEdit: () => closeOverlay(),
       },
+      onClose: () => destroyEditTimeTrack(),
       startRect: rect,
       padding: { x: 10, y: 140 },
     });
+    // Trigger identity (time vs sensor) is fixed for the life of this overlay (only the
+    // predicate/value is editable), so this is the only mount this session ever needs —
+    // no re-mount path like the create-flow's (Phase 5.3).
+    if (edit.triggerKind === 'time') {
+      setTimeout(() => mountEditTimeTrack(edit), 0);
+    }
     event.stopImmediatePropagation();
     event.preventDefault();
   }
@@ -193,27 +203,27 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
       });
   }
 
-  // Public: the "New Automation" / "New Dynamic Rule" CTAs live in the parent view header
-  // (so they sit above the rule list, not buried under it) and delegate here.
-  newAutomation(event: MouseEvent) {
-    const rect = getGlobalPosition(event.target as HTMLElement);
+  // ── Unified creation flow (EFFECT_CREATION_REPAIR Phase 5 / D1) ──────────────────────
+  // ONE progressive-disclosure overlay replaces the old parallel "Add automation" / "Advanced
+  // rule" forms — see create-automation.ts for the field handlers + `trigger + arms` builder.
+  // This class keeps ownership of open/close + the actual save (POST + optimistic-close +
+  // duplicate pre-check), exactly like the two flows it replaces did.
 
+  // Public: the single "Add automation" CTA lives in the parent view header (so it sits above
+  // the rule list, not buried under it) and delegates here.
+  openCreateAutomation(event: MouseEvent) {
+    const rect = getGlobalPosition(event.target as HTMLElement);
+    const state = emptyCreateAutomationState(store.get('devices') || [], store.get('sensors') || []);
     openOverlay({
-      template: NewAutomationOverlay,
-      data: {
-        newEffect: {
-          device: null,
-          setTo: null,
-          trigger: null,
-        },
-        devices: store.get('devices'),
-        sensors: store.get('sensors'),
-      },
+      template: CreateAutomationOverlay,
+      data: state,
       actions: {
-        setNewEffectDevice: this.setNewEffectDevice.bind(this),
-        setNewEffectSensor: this.setNewEffectSensor.bind(this),
-        saveNewEffect: this.saveNewEffect.bind(this),
+        setTriggerMode, setSensor, setSensorBool, setValueToCheck, setComparison,
+        setDevice, setBool, setChannel, setGuardType, setTimeOp, setDow,
+        stageArm, editArm, removeArm, cancelArmEdit, canStageArm, computeHint, computePreview,
+        save: (s: CreateAutomationState) => this.saveCreateEffect(s),
       },
+      onClose: () => destroyCreateAutomationTracks(),
       startRect: rect,
       padding: { x: 10, y: 140 },
     });
@@ -221,21 +231,9 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
     event.preventDefault();
   }
 
-  private setNewEffectDevice(deviceId: string, newEffect: NewEffect) {
-    const device: Device = store.get('devices').find((device: Device) => device.id === deviceId) as Device;
-    newEffect.device = device;
-  }
-
-  private setNewEffectSensor(sensorId: string, newEffect: NewEffect) {
-    const sensor = store.get('sensors').find((s: Sensor) => s.id === sensorId);
-    if (sensor) {
-      newEffect.sensor = sensor;
-    }
-  }
-
-  private saveNewEffect(effect: NewEffect) {
-    if (effect.saving) return; // in-flight guard (D5) — a double-tap can't fire a second create
-    const built = buildDynamicEffect(effect);
+  private saveCreateEffect(state: CreateAutomationState) {
+    if (state.saving) return; // in-flight guard (D5) — a double-tap can't fire a second create
+    const built = buildCreateEffect(state);
     // Client pre-check (D2/3.2): catch the common case (re-tapping Save, or authoring a rule
     // that already exists) instantly, with zero round-trip — the server 409 below stays as the
     // belt for state the client's local store hasn't caught up with yet.
@@ -243,12 +241,11 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
       showToaster({ from: 'bottom', message: 'That automation already exists', timer: 2500 });
       return; // no POST; the modal stays open, `saving` was never set
     }
-    effect.saving = true;
-    // Stage 4b: the write path posts the dynamic `trigger + arms` contract (the hub parses
-    // it natively). Optimistic close (D5): the POST resolving IS the save — close + confirm
-    // immediately, then re-pull the dynamic server view in the background so the list reflects
-    // the canonical, server-assigned form (including any multi-arm rules). A refresh failure
-    // there only warns; it must never re-open the modal or read as the save having failed.
+    state.saving = true;
+    // Optimistic close (D5): the POST resolving IS the save — close + confirm immediately,
+    // then re-pull the dynamic server view in the background so the list reflects the
+    // canonical, server-assigned form. A refresh failure there only warns; it must never
+    // re-open the modal or read as the save having failed.
     saveEffect(built)
       .then(() => {
         closeOverlay();
@@ -259,7 +256,7 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
         });
       })
       .catch((err) => {
-        effect.saving = false;
+        state.saving = false;
         if (err instanceof DuplicateEffectError) {
           // Belt case: the client pre-check above missed it (stale local `effects`) but the
           // server's own D2 guard still caught it — same message, modal stays open either way.
@@ -267,119 +264,45 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
         } else {
           showToaster({ from: 'bottom', message: "Couldn't save the automation", timer: 2500 });
         }
-        console.warn('automations-list: saveNewEffect failed', err);
-      });
-  }
-
-  // ── Multi-arm authoring (EFFECTS_DYNAMIC §9 / DISCOVERY D4) ──────────────────────────
-  // Compose one arm at a time into an ordered list, then save the whole `trigger + arms`
-  // rule. Every handler that gates dependent rendering REASSIGNS the object it touches
-  // (`newEffect.current` / `newEffect.arms`) so bindrjs re-renders — leaf inputs that gate
-  // nothing (timeFrom/timeTo/setTo/dow) mutate in place and are read at add-arm time.
-
-  newMultiArmAutomation(event: MouseEvent) {
-    const rect = getGlobalPosition(event.target as HTMLElement);
-    openOverlay({
-      template: MultiArmOverlay,
-      data: {
-        newEffect: emptyMultiArm(),
-        devices: store.get('devices'),
-        sensors: store.get('sensors'),
-      },
-      actions: {
-        setTrigger: (v: string, e: NewMultiArmEffect) => { e.trigger = v === 'null' ? null : (v as 'sensor' | 'time'); },
-        setTriggerSensor: (id: string, e: NewMultiArmEffect) => this.setMaSensor(id, e),
-        setArmDevice: (id: string, e: NewMultiArmEffect) => this.setMaArmDevice(id, e),
-        setArmChannel: (v: string, e: NewMultiArmEffect) => { e.current = { ...e.current, valueToSet: v === 'null' ? undefined : v, setTo: null }; },
-        setGuardType: (v: string, e: NewMultiArmEffect) => { e.current = { ...e.current, guardType: (v as CurrentArm['guardType']), timeOp: undefined, timeFrom: '', timeTo: '', dow: undefined }; },
-        setTimeOp: (v: string, e: NewMultiArmEffect) => { e.current = { ...e.current, timeOp: v === 'null' ? undefined : (v as NonNullable<CurrentArm['timeOp']>) }; },
-        addArm: (e: NewMultiArmEffect) => this.addMaArm(e),
-        removeArm: (label: string, e: NewMultiArmEffect) => { e.arms = e.arms.filter((a) => a.label !== label); },
-        saveRule: (e: NewMultiArmEffect) => this.saveMaRule(e),
-      },
-      startRect: rect,
-      padding: { x: 10, y: 140 },
-    });
-    event.stopImmediatePropagation();
-    event.preventDefault();
-  }
-
-  private setMaSensor(id: string, e: NewMultiArmEffect) {
-    const sensor = store.get('sensors').find((s: Sensor) => s.id === id);
-    if (sensor) {
-      e.sensor = sensor;
-      e.sensorChannel = sensor.type === 'value' ? 'temperature' : 'presence';
-    }
-  }
-
-  private setMaArmDevice(id: string, e: NewMultiArmEffect) {
-    const device = store.get('devices').find((d: Device) => d.id === id) as Device;
-    e.current = { ...e.current, device: device ?? null, setTo: null, valueToSet: undefined };
-  }
-
-  private addMaArm(e: NewMultiArmEffect) {
-    const c = e.current;
-    if (!c.device || c.setTo === null || c.setTo === undefined || c.setTo === 'null') {
-      showToaster({ from: 'bottom', message: 'Pick a device and a value first', timer: 2000 });
-      return;
-    }
-    const guards = currentArmGuards(c);
-    const staged: StagedArm = {
-      device: c.device,
-      valueToSet: c.valueToSet,
-      setTo: c.setTo,
-      guards,
-      label: stagedArmLabel(c.device, c.valueToSet, c.setTo, guards),
-    };
-    e.arms = [...e.arms, staged];                                  // reassign → re-render staged list
-    e.current = { device: null, setTo: null, guardType: 'none' };  // reset the editor
-  }
-
-  private saveMaRule(e: NewMultiArmEffect) {
-    if (e.saving) return; // in-flight guard (D5) — a double-tap can't fire a second create
-    if (!e.trigger || (e.trigger === 'sensor' && !e.sensor) || e.arms.length === 0) {
-      showToaster({ from: 'bottom', message: 'Set a trigger and add at least one arm', timer: 2500 });
-      return;
-    }
-    const built = buildMultiArmEffect(e);
-    // Client pre-check (D2/3.2) — see saveNewEffect for the rationale; the server 409 below
-    // is the belt for state the client's local store hasn't caught up with yet.
-    if (findDuplicateEffect(built, store.get('effects'))) {
-      showToaster({ from: 'bottom', message: 'That automation already exists', timer: 2500 });
-      return; // no POST; the modal stays open, `saving` was never set
-    }
-    e.saving = true;
-    // Optimistic close (D5) — see saveNewEffect for the rationale.
-    saveEffect(built)
-      .then(() => {
-        closeOverlay();
-        showToaster({ from: 'bottom', message: 'Saved automation', timer: 2000 });
-        return this.reloadEffects().catch((err) => {
-          showToaster({ from: 'bottom', message: "Saved, but the list didn't refresh — pull to reload", timer: 3000 });
-          console.warn('automations-list: post-save refresh failed', err);
-        });
-      })
-      .catch((err) => {
-        e.saving = false;
-        if (err instanceof DuplicateEffectError) {
-          showToaster({ from: 'bottom', message: 'That automation already exists', timer: 2500 });
-        } else {
-          showToaster({ from: 'bottom', message: "Couldn't save the automation", timer: 2500 });
-        }
-        console.warn('automations-list: saveMaRule failed', err);
+        console.warn('automations-list: saveCreateEffect failed', err);
       });
   }
 }
 export const AutomationsList = new AutomationsListClass(AutomationsListTabService);
 
 // ---------------------------------------------------------------------------
-// Dynamic-effect construction (EFFECTS_DYNAMIC Stage 4b). The new-automation form
-// authors a single-arm rule in the `trigger + arms` contract: the sensor edge is the
-// trigger, and its value predicate becomes the arm's sensor condition (re-checked
-// against live state at fire time — exactly the flat semantics). Multi-arm authoring
-// (context-conditioned rules) is a follow-on; the agent/Discovery already create them
-// and they now display correctly here.
+// Focused single-arm edit (the per-row ✎). Editable = one arm whose trigger/guard is the simple
+// new-automation shape; the overlay edits only the action value + trigger predicate and saves the
+// rebuilt rule in place via /update-effect.
 // ---------------------------------------------------------------------------
+
+// Module-level (non-reactive) registry for the edit overlay's own time-track (Phase 5.3) —
+// same rationale as create-automation.ts's `tracks`: a TimeRangeTrack instance can't live on
+// the (bindrjs-Proxied) `EditEffect` data object without its internal DOM refs getting
+// recursively wrapped too.
+let editTimeTrack: TimeRangeTrack | null = null;
+
+function mountEditTimeTrack(edit: EditEffect): void {
+  const el = document.getElementById('edit-time-track-mount');
+  if (!el) return;
+  editTimeTrack?.destroy();
+  // A stale non-"HH:MM" value (e.g. a pre-D10 "sunset" rule authored before the picker
+  // existed) falls back to a plain default rather than handing the track an unparsable seed.
+  const seed = /^\d{2}:\d{2}$/.test(edit.time || '') ? edit.time! : '08:00';
+  editTimeTrack = new TimeRangeTrack(el, {
+    mode: 'point',
+    value: { at: seed },
+    onChange: (v) => {
+      edit.time = (v as TimeRangeTrackPointValue).at;
+    },
+  });
+}
+
+/** Overlay `onClose` — every close path (Save, Cancel, backdrop, a superseding overlay). */
+function destroyEditTimeTrack(): void {
+  editTimeTrack?.destroy();
+  editTimeTrack = null;
+}
 
 /** Tile-style iconoir glyph for a rule's target device (mirrors the home tiles). */
 function deviceIcon(device: Device | undefined): string {
@@ -398,35 +321,9 @@ function deviceIcon(device: Device | undefined): string {
   }
 }
 
-/** Primary actuator channel for a single-value device category. */
-function primaryChannel(category: string | undefined): string {
-  switch (category) {
-    case 'light':
-    case 'door':
-      return 'power';
-    case 'dimmable-light':
-      return 'brightness';
-    case 'blinds':
-      return 'position';
-    case 'evap-cooler':
-      return 'fan'; // multi-channel; real cooler rules carry valueToSet
-    default:
-      return 'value';
-  }
-}
-
-/** The channel a temp/humidity sensor field maps to. */
-function valueChannel(field: string | undefined): string {
-  if (field === 'temp') return 'temperature';
-  if (field === 'humidity') return 'humidity';
-  return field || 'value';
-}
-
-function comparisonToOp(comparison: string | undefined): EffectOp {
-  return comparison === 'higher-than' ? 'gt' : comparison === 'lower-than' ? 'lt' : 'eq';
-}
-
-/** Coerce a form value (often a string) to the typed boolean | number. */
+/** Coerce a form value (often a string) to the typed boolean | number. Still needed here for
+ *  the focused-edit builder below (buildEditedEffect); the create-flow's own copy lives in
+ *  create-automation.ts — see that file's header for why the two aren't shared. */
 function coerce(v: any): boolean | number {
   if (typeof v === 'boolean' || typeof v === 'number') return v;
   if (v === 'true') return true;
@@ -435,110 +332,9 @@ function coerce(v: any): boolean | number {
   return isNaN(n) ? (v as any) : n;
 }
 
-export function buildDynamicEffect(newEffect: NewEffect): Effect {
-  const channel = newEffect.valueToSet || primaryChannel(newEffect.device.deviceCategory);
-  const set = { nodeId: newEffect.device.id, channel, value: coerce(newEffect.setTo) };
-
-  if (newEffect.trigger === 'time') {
-    // A clock trigger with one unconditional arm ("at <time>, do X").
-    const trigger: Trigger = { source: 'time', at: String(newEffect.time ?? '') };
-    return { trigger, arms: [{ when: [], set }], enabled: true };
-  }
-
-  const sensor = newEffect.sensor!;
-  const field = sensor.sensorType === 'temp/humidity' ? newEffect.valueToCheck : undefined;
-  const sensorChannel = sensor.type === 'value' ? valueChannel(field) : 'presence';
-  const op: EffectOp = sensor.type === 'value' ? comparisonToOp(newEffect.comparison) : 'eq';
-
-  const trigger: Trigger = { source: 'sensor', nodeId: sensor.id, channel: sensorChannel };
-  // The sensor edge wakes the rule; the value predicate becomes the arm's guard.
-  const condition: ArmCondition = {
-    kind: 'sensor',
-    nodeId: sensor.id,
-    channel: sensorChannel,
-    op,
-    value: coerce(newEffect.sensorState),
-  };
-  const arm: Arm = { when: [condition], set };
-  return { trigger, arms: [arm], enabled: true };
-}
-
-// ---------------------------------------------------------------------------
-// Multi-arm construction (EFFECTS_DYNAMIC §9). Builds the `trigger + arms` contract from the
-// staged authoring state — the same shape the agent/Discovery emit, so a hand-authored
-// dynamic rule is indistinguishable from a discovered one once saved.
-// ---------------------------------------------------------------------------
-
-export function emptyMultiArm(): NewMultiArmEffect {
-  return { trigger: null, arms: [], current: { device: null, setTo: null, guardType: 'none' } };
-}
-
-/** Derive an arm's dynamic guards from the current-arm editor (time-of-day / day-type — the
- *  subset Discovery produces; an empty list makes this the else/default arm). */
-function currentArmGuards(c: CurrentArm): NewArmGuard[] {
-  if (c.guardType === 'time' && c.timeOp) {
-    return c.timeOp === 'between'
-      ? [{ kind: 'time', op: 'between', from: c.timeFrom || '', to: c.timeTo || '' }]
-      : [{ kind: 'time', op: c.timeOp, from: c.timeFrom || '' }];
-  }
-  if (c.guardType === 'dow') {
-    return [{ kind: 'dow', days: c.dow === 'weekend' ? [0, 6] : [1, 2, 3, 4, 5] }];
-  }
-  return [];
-}
-
-function guardToArmCondition(g: NewArmGuard): ArmCondition {
-  if (g.kind === 'time') {
-    return g.op === 'between'
-      ? { kind: 'time', op: 'between', from: g.from, to: g.to }
-      : { kind: 'time', op: g.op, from: g.from };
-  }
-  return { kind: 'dow', days: g.days };
-}
-
-export function buildMultiArmEffect(e: NewMultiArmEffect): Effect {
-  const trigger: Trigger =
-    e.trigger === 'time'
-      ? { source: 'time', at: String(e.time ?? '') }
-      : { source: 'sensor', nodeId: e.sensor!.id, channel: e.sensorChannel || 'presence' };
-
-  const arms: Arm[] = e.arms.map((a) => {
-    const channel = a.valueToSet || primaryChannel(a.device.deviceCategory);
-    const set: SetAction = { nodeId: a.device.id, channel, value: coerce(a.setTo) };
-    return { when: a.guards.map(guardToArmCondition), set };
-  });
-  return { trigger, arms, enabled: true };
-}
-
-/** Human label for a staged arm, shown in the ordered arms list. */
-function stagedArmLabel(device: Device, valueToSet: string | undefined, setTo: any, guards: NewArmGuard[]): string {
-  const where = guards.length ? guards.map(guardPhrase).join(' and ') : 'default (else)';
-  return `${device.name}: ${valuePhrase(valueToSet, setTo)} — ${where}`;
-}
-
-function valuePhrase(valueToSet: string | undefined, setTo: any): string {
-  if (valueToSet) return `${valueToSet} = ${setTo}`;
-  if (setTo === true || setTo === 'true') return 'on';
-  if (setTo === false || setTo === 'false') return 'off';
-  return `to ${setTo}`;
-}
-
-function guardPhrase(g: NewArmGuard): string {
-  if (g.kind === 'dow') {
-    return g.days.length === 2 && g.days.includes(0) && g.days.includes(6) ? 'on weekends' : 'on weekdays';
-  }
-  return g.op === 'between' ? `between ${g.from} and ${g.to ?? '?'}` : `${g.op} ${g.from}`;
-}
-
-// ---------------------------------------------------------------------------
-// Focused single-arm edit (the per-row ✎). Editable = one arm whose trigger/guard is the simple
-// new-automation shape; the overlay edits only the action value + trigger predicate and saves the
-// rebuilt rule in place via /update-effect.
-// ---------------------------------------------------------------------------
-
 /** True for a rule the focused edit overlay can round-trip: one arm, and either a time trigger with
  *  no guard or a sensor trigger whose sole guard restates that sensor edge. Multi-arm / conditioned
- *  rules (time-of-day, day-of-week, state guards) are authored via "New Dynamic Rule", not edited here. */
+ *  rules (time-of-day, day-of-week, state guards) are authored via the unified overlay, not edited here. */
 function isSimpleEditable(effect: Effect): boolean {
   if (effect.arms.length !== 1) return false;
   const arm = effect.arms[0];
@@ -603,8 +399,9 @@ function buildEditState(effect: Effect, devices: Device[], sensors: Sensor[]): E
 }
 
 /** Inverse of buildEditState: reassemble the dynamic `trigger + arms` rule from the edited state.
- *  Mirrors buildDynamicEffect's single-arm shape, so an edited rule is indistinguishable from a
- *  freshly authored one (only the values changed). `enabled` is carried through unchanged. */
+ *  Mirrors the single-arm shape create-automation.ts's buildCreateEffect also produces, so an
+ *  edited rule is indistinguishable from a freshly authored one (only the values changed).
+ *  `enabled` is carried through unchanged. */
 export function buildEditedEffect(e: EditEffect): Effect {
   const set: SetAction = { nodeId: e.device.id, channel: e.channel, value: coerce(e.setTo) };
 
