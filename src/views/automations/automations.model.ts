@@ -77,6 +77,10 @@ export type NewEffect = {
   valueToCheck?: string; // For multi value type sensors
   comparison?: 'higher-than' | 'lower-than' // For value based sensors: which way to compare the reading
   time?: Date
+  /** In-flight guard for the Save button (D5) — set while the POST is pending so a
+   *  double-tap can't fire a second create; cleared only on failure (success closes
+   *  the overlay, discarding this state anyway). */
+  saving?: boolean
 }
 
 // ── Multi-arm authoring (EFFECTS_DYNAMIC §9 / DISCOVERY D4) ──────────────────────────────
@@ -119,6 +123,8 @@ export type NewMultiArmEffect = {
   time?: string;
   current: CurrentArm;
   arms: StagedArm[];
+  /** In-flight guard for the Save button (D5) — same contract as NewEffect.saving. */
+  saving?: boolean;
 };
 
 // ── Focused single-arm edit (the per-row ✎) ─────────────────────────────────────────────

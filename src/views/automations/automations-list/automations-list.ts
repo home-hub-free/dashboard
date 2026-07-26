@@ -93,13 +93,23 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
     });
   }
 
-  /** Reversibly flip a rule on/off. */
+  /** Reversibly flip a rule on/off. The toggle itself is confirmed as soon as it succeeds;
+   *  a failed background refresh only warns (it must not read as "the toggle failed"). */
   private toggleEffect(effect: Effect) {
     if (effect.id == null) return; // a just-created rule with no id yet — a resync will fix it
     const next = effect.enabled === false; // currently off → turn on, and vice-versa
     setEffectEnabled(effect.id, next)
-      .then(() => this.reloadEffects())
-      .then(() => showToaster({ from: 'bottom', message: next ? 'Automation on' : 'Automation off', timer: 1600 }));
+      .then(() => {
+        showToaster({ from: 'bottom', message: next ? 'Automation on' : 'Automation off', timer: 1600 });
+        return this.reloadEffects().catch((err) => {
+          showToaster({ from: 'bottom', message: "Updated, but the list didn't refresh — pull to reload", timer: 3000 });
+          console.warn('automations-list: post-toggle refresh failed', err);
+        });
+      })
+      .catch((err) => {
+        showToaster({ from: 'bottom', message: "Couldn't update the automation", timer: 2500 });
+        console.warn('automations-list: toggle failed', err);
+      });
   }
 
   /** First tap on the trash — arm an inline "Delete?" confirm (avoids one-tap data loss). */
@@ -111,13 +121,23 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
     this.bind.pendingDeleteId = null;
   }
 
-  /** Second tap — actually remove the rule. */
+  /** Second tap — actually remove the rule. Same split as toggleEffect: the delete is
+   *  confirmed once it succeeds; a refresh hiccup afterward only warns. */
   private confirmDelete(effect: Effect) {
     this.bind.pendingDeleteId = null;
     if (effect.id == null) return;
     deleteEffect(effect.id)
-      .then(() => this.reloadEffects())
-      .then(() => showToaster({ from: 'bottom', message: 'Automation deleted', timer: 1800 }));
+      .then(() => {
+        showToaster({ from: 'bottom', message: 'Automation deleted', timer: 1800 });
+        return this.reloadEffects().catch((err) => {
+          showToaster({ from: 'bottom', message: "Deleted, but the list didn't refresh — pull to reload", timer: 3000 });
+          console.warn('automations-list: post-delete refresh failed', err);
+        });
+      })
+      .catch((err) => {
+        showToaster({ from: 'bottom', message: "Couldn't delete the automation", timer: 2500 });
+        console.warn('automations-list: delete failed', err);
+      });
   }
 
   // ── Edit a simple single-arm rule (the per-row ✎) ────────────────────────────────────
@@ -153,12 +173,18 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
   }
 
   private saveEditedEffect(e: EditEffect) {
+    // Optimistic close (D5): the update POST resolving IS the save — close + confirm right
+    // away rather than gating on a second round-trip that has nothing to do with whether the
+    // edit itself succeeded (the old chain kept the modal open, and blamed the edit, on a
+    // refresh failure alone).
     updateEffect(e.id, buildEditedEffect(e))
-      .then(() => getEndPointData('get-effects-dynamic'))
-      .then((effects: Effect[]) => {
-        EffectActions.load(effects || []);
+      .then(() => {
         closeOverlay();
         showToaster({ from: 'bottom', message: 'Automation updated', timer: 2000 });
+        return this.reloadEffects().catch((err) => {
+          showToaster({ from: 'bottom', message: "Updated, but the list didn't refresh — pull to reload", timer: 3000 });
+          console.warn('automations-list: post-edit refresh failed', err);
+        });
       })
       .catch((err) => {
         showToaster({ from: 'bottom', message: "Couldn't update the automation", timer: 2500 });
@@ -207,19 +233,26 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
   }
 
   private saveNewEffect(effect: NewEffect) {
+    if (effect.saving) return; // in-flight guard (D5) — a double-tap can't fire a second create
+    effect.saving = true;
     // Stage 4b: the write path posts the dynamic `trigger + arms` contract (the hub parses
-    // it natively). We re-pull the dynamic server view afterwards so the list reflects the
-    // canonical, server-assigned form — including any multi-arm rules.
+    // it natively). Optimistic close (D5): the POST resolving IS the save — close + confirm
+    // immediately, then re-pull the dynamic server view in the background so the list reflects
+    // the canonical, server-assigned form (including any multi-arm rules). A refresh failure
+    // there only warns; it must never re-open the modal or read as the save having failed.
     saveEffect(buildDynamicEffect(effect))
-      .then(() => getEndPointData('get-effects-dynamic'))
-      .then((effects: Effect[]) => {
-        EffectActions.load(effects || []);
+      .then(() => {
         closeOverlay();
-        showToaster({
-          from: 'bottom',
-          message: 'Saved automation',
-          timer: 2000
+        showToaster({ from: 'bottom', message: 'Saved automation', timer: 2000 });
+        return this.reloadEffects().catch((err) => {
+          showToaster({ from: 'bottom', message: "Saved, but the list didn't refresh — pull to reload", timer: 3000 });
+          console.warn('automations-list: post-save refresh failed', err);
         });
+      })
+      .catch((err) => {
+        effect.saving = false;
+        showToaster({ from: 'bottom', message: "Couldn't save the automation", timer: 2500 });
+        console.warn('automations-list: saveNewEffect failed', err);
       });
   }
 
@@ -288,16 +321,26 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
   }
 
   private saveMaRule(e: NewMultiArmEffect) {
+    if (e.saving) return; // in-flight guard (D5) — a double-tap can't fire a second create
     if (!e.trigger || (e.trigger === 'sensor' && !e.sensor) || e.arms.length === 0) {
       showToaster({ from: 'bottom', message: 'Set a trigger and add at least one arm', timer: 2500 });
       return;
     }
+    e.saving = true;
+    // Optimistic close (D5) — see saveNewEffect for the rationale.
     saveEffect(buildMultiArmEffect(e))
-      .then(() => getEndPointData('get-effects-dynamic'))
-      .then((effects: Effect[]) => {
-        EffectActions.load(effects || []);
+      .then(() => {
         closeOverlay();
         showToaster({ from: 'bottom', message: 'Saved automation', timer: 2000 });
+        return this.reloadEffects().catch((err) => {
+          showToaster({ from: 'bottom', message: "Saved, but the list didn't refresh — pull to reload", timer: 3000 });
+          console.warn('automations-list: post-save refresh failed', err);
+        });
+      })
+      .catch((err) => {
+        e.saving = false;
+        showToaster({ from: 'bottom', message: "Couldn't save the automation", timer: 2500 });
+        console.warn('automations-list: saveMaRule failed', err);
       });
   }
 }

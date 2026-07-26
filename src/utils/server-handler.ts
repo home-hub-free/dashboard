@@ -1072,7 +1072,12 @@ interface ServerResponse {
 export function getEndPointData(endpoint: string) {
   return fetch(server + endpoint, {
     method: "GET",
-  }).then((data) => data.json());
+  }).then((res) => {
+    // A 4xx/5xx used to resolve straight into .json() (or silently succeed on a body
+    // shaped like an error) — reject so callers' .catch actually fires (EFFECT_CREATION_REPAIR B11).
+    if (!res.ok) throw new Error(`${endpoint} failed (${res.status})`);
+    return res.json();
+  });
 }
 
 export function toggleServerDevice(device: any): Promise<ServerResponse> {
@@ -1148,6 +1153,11 @@ export function saveEffect(effect: any) {
   return authedFetch(server + "set-effect", {
     method: "POST",
     body: JSON.stringify({ effect }),
+  }).then((res) => {
+    // authedFetch only special-cases 401 — a 4xx/5xx otherwise resolved like success,
+    // leaving the caller's .then chain to run with nothing to catch (EFFECT_CREATION_REPAIR B11).
+    if (!res.ok) throw new Error(`Save failed (${res.status})`);
+    return res;
   });
 }
 

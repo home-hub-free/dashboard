@@ -255,6 +255,11 @@
   --z-fixed: 300;
   --z-modal-backdrop: 900;
   --z-modal: 1000;
+  // Toasts must always render above an open overlay (EFFECT_CREATION_REPAIR B1):
+  // validation/confirmation feedback fired while a modal is open was invisible
+  // at the old `z-index: 5` in toast.scss. Toasts and tooltips don't co-occur,
+  // so sharing 1100 with --z-tooltip is fine.
+  --z-toast: 1100;
   --z-tooltip: 1100;
   --z-notification: 1200;
 }

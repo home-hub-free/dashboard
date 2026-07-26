@@ -125,8 +125,13 @@
         </div>
 
         <div :if="this.data.newEffect.sensorState !== undefined">
-            <button class="add-range-btn" :onclick="this.actions.saveNewEffect(this.data.newEffect)">
-                Save Automation
+            <button
+                class="add-range-btn"
+                :class:busy="this.data.newEffect.saving"
+                :onclick="this.actions.saveNewEffect(this.data.newEffect)"
+            >
+                <span :if="!this.data.newEffect.saving">Save Automation</span>
+                <span :if="this.data.newEffect.saving">Saving…</span>
             </button>
         </div>
     </div>

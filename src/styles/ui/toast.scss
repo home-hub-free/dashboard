@@ -16,7 +16,9 @@
     width: max-content;
     transform: translateY(0) translateX(-50%) scale(1);
     box-shadow: var(--shadow-lg);
-    z-index: 5;
+    // Above --z-modal (1000): a toast fired while an overlay is open must stay
+    // visible (EFFECT_CREATION_REPAIR B1) — see the token comment in _tokens.scss.
+    z-index: var(--z-toast);
 
     span,
     i {

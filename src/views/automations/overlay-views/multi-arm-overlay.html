@@ -110,6 +110,13 @@
 
     <!-- Save the whole rule -->
     <div class="ma-section" :if="this.data.newEffect.arms.length">
-        <button class="add-range-btn ma-save" :onclick="this.actions.saveRule(this.data.newEffect)">Save rule</button>
+        <button
+            class="add-range-btn ma-save"
+            :class:busy="this.data.newEffect.saving"
+            :onclick="this.actions.saveRule(this.data.newEffect)"
+        >
+            <span :if="!this.data.newEffect.saving">Save rule</span>
+            <span :if="this.data.newEffect.saving">Saving…</span>
+        </button>
     </div>
 </div>
