@@ -1,0 +1,133 @@
+// ============================================================================
+// UI LIBRARY · TIME TRACK
+// The direct-manipulation 24h time rail behind `TimeRangeTrack`
+// (src/components/time-range-track/time-range-track.ts) — an imperative
+// widget, NOT a bindrjs template (see that file's header for why). Two modes:
+// "range" (two handles + a filled window, wrapping past midnight as two
+// segments) and "point" (one handle, no fill — before/after/at). Paired
+// native `type="time"` inputs sit below as the precise/keyboard/a11y path.
+// See UI-LIBRARY.md §9b + the /ui-kit.html "Time track" demo.
+// ============================================================================
+
+.time-track {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.tt-rail {
+  position: relative;
+  height: 44px; // the rail doubles as the window-drag tap target (--tap-target-min)
+}
+
+// The clipped inner layer: hour ticks + fill(s). Handles live OUTSIDE this (as
+// siblings on .tt-rail, not children of .tt-track) so they can protrude past
+// the pill's rounded ends like a normal slider thumb, instead of being
+// clipped along with the fill.
+.tt-track {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background: var(--color-surface-secondary);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  // One tick per hour (24 gaps) — same idiom as .time-bar.day-bar in ui/overlay.scss.
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent,
+    transparent calc(100% / 24 - 1px),
+    var(--color-border) calc(100% / 24 - 1px),
+    var(--color-border) calc(100% / 24)
+  );
+}
+
+.tt-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: var(--color-primary);
+  cursor: grab;
+  touch-action: none; // this element owns horizontal drag; don't let the browser pan/scroll it
+  transition: left var(--duration-fast) var(--ease-out), width var(--duration-fast) var(--ease-out);
+
+  &.dragging {
+    cursor: grabbing;
+    transition: none; // 1:1 tracking while actively dragged — never lag the pointer
+  }
+}
+
+.tt-handle {
+  position: absolute;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  margin-left: -12px; // center the dot on its `left` percentage
+  transform: translateY(-50%);
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  border: 2px solid var(--color-on-fill);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: left var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+
+  &.dragging {
+    cursor: grabbing;
+    box-shadow: var(--shadow-md);
+    transition: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-light);
+    outline-offset: 3px;
+  }
+
+  // Enlarge the HIT area, not the glyph (DESIGN.md §5) — the visual dot stays
+  // a precise 24px; the tappable area still clears --tap-target-min.
+  &::before {
+    content: "";
+    position: absolute;
+    inset: calc((24px - var(--tap-target-min)) / 2);
+  }
+}
+
+.tt-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 8px;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-tertiary);
+  color: var(--color-text-primary);
+  // Every LIVE VALUE (times included) is IBM Plex Mono w/ tabular figures —
+  // DESIGN.md §1.
+  font-family: var(--font-family-data);
+  font-feature-settings: "tnum" 1;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  pointer-events: none; // never steal the drag/click meant for the handle beneath it
+  box-shadow: var(--shadow-sm);
+}
+
+.tt-inputs {
+  display: flex;
+  gap: var(--space-3);
+
+  .form-group {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tt-fill,
+  .tt-handle {
+    transition: none !important;
+  }
+}

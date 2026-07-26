@@ -316,6 +316,27 @@
                 <span class="loading-dots"><i></i><i></i><i></i></span> Checking your calendars with Google…
             </p>
 
+            <h2>Time track</h2>
+            <p class="kit-note">
+                <code class="sel">TimeRangeTrack</code>
+                (<code class="sel">src/components/time-range-track/</code>) — an imperative,
+                non-bindrjs 24-hour rail: drag either handle, or (range mode) the filled window
+                itself; 15-minute snap. A range where "from" lands after "to" wraps past midnight
+                and renders as two fill segments. Point mode (one handle, no fill) serves
+                before/after/at. Paired native <code class="sel">type="time"</code> inputs stay in
+                sync both ways (the precise/keyboard/a11y path). Mount with
+                <code class="sel">new TimeRangeTrack(el, { mode, value, onChange })</code>; see
+                UI-LIBRARY.md.
+            </p>
+            <div id="kit-time-track-demos" style="max-width: 560px">
+                <p class="section-title">Range: drag a handle or the window</p>
+                <div id="kit-time-track-range" style="margin-bottom: var(--space-6)"></div>
+                <p class="section-title">Point: before / after / at</p>
+                <div id="kit-time-track-point" style="margin-bottom: var(--space-6)"></div>
+                <p class="section-title">Wrapped past midnight (22:00 → 06:00)</p>
+                <div id="kit-time-track-wrap"></div>
+            </div>
+
             <h2>Scoped components</h2>
             <p class="kit-note">
                 Some components are id-scoped to their surface and don't render here: the detail

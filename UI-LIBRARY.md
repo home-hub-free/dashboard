@@ -3,7 +3,7 @@ title: Home Hub UI Library
 summary: The dashboard component catalog — every reusable class with markup snippets, plus the recipe for adding a new screen. Principles live in DESIGN.md; live gallery at /ui-kit.html.
 status: LIVE
 owner: dashboard
-updated: 2026-07-11
+updated: 2026-07-26
 tags: [dashboard, ui, components]
 ---
 
@@ -21,6 +21,7 @@ tags: [dashboard, ui, components]
 - [7. Panels, rows, pills (`ui/panels.scss`)](#7-panels-rows-pills-uipanelsscss) — the grouping primitives
 - [8. Device tiles & sensor chips (`ui/tiles.scss`)](#8-device-tiles--sensor-chips-uitilesscss) — the glance-surface tiles
 - [9. Detail overlay (`ui/overlay.scss`)](#9-detail-overlay-uioverlayscss) — the per-device detail sheet
+- [9b. Time track (`ui/time-track.scss`)](#9b-time-track-uitime-trackscss) — the direct-manipulation 24h range/point picker
 - [10. Toasts (`ui/toast.scss`)](#10-toasts-uitoastscss) — transient notifications
 - [10b. Loading states (`ui/loading.scss`)](#10b-loading-states-uiloadingscss) — skeletons + spinners
 - [11. Navigation (`ui/nav.scss`)](#11-navigation-uinavscss) — sidebar + bottom nav
@@ -56,6 +57,7 @@ src/styles/
     tiles.scss          device tile + channel controls + sensor chip
     overlay.scss        detail-overlay sheet + its form patterns
     toast.scss          popup messages
+    time-track.scss     TimeRangeTrack: imperative 24h drag rail (range/point)
   views/              ← screen-specific composition (one file per screen)
     home.scss  automations.scss  assistant.scss  settings.scss  login.scss
 ```
@@ -310,6 +312,42 @@ sheet to the full viewport (`padding: {x:0, y:0}`); a `> .cam-live` root strips
 the sheet chrome (black, no radius) and lays out stream + top bar (name ·
 health · `.cam-live-close`) + bottom bar (who · PTZ controls), safe-area padded.
 The sheet sits at `--z-modal` — above the fixed phone nav.
+
+## 9b. Time track (`ui/time-track.scss`)
+
+An imperative, non-bindrjs 24-hour rail (`src/components/time-range-track/time-range-track.ts`)
+for the automation "between"/"before"/"after"/"at" time guard (`EFFECT_CREATION_REPAIR` D3). It is
+**not** a bindrjs template component — a drag needs to paint on every `pointermove`, which a
+Proxy-triggered template re-render can't do smoothly; see the file's header for the full reasoning
+(the same "own a stable DOM subtree" pattern `media-enroll.ts` uses for its live
+`<canvas>`/`<video>`, so none of DESIGN.md §7's re-render gotchas apply — there's no re-render).
+
+```ts
+import { TimeRangeTrack } from "../components/time-range-track/time-range-track";
+
+new TimeRangeTrack(mountEl, {
+  mode: "range", // or "point"
+  value: { from: "07:00", to: "11:00" }, // "point" mode: { at: "21:30" }
+  onChange: (v) => { /* v: {from,to} in range mode, {at} in point mode — "HH:MM" */ },
+});
+```
+
+- Drag either handle, or (range mode) the filled window itself, to move the range. 15-minute snap
+  applies on every path: pointer drag, `ArrowLeft`/`ArrowRight` on a focused handle (±15 min), and
+  a typed native `type="time"` value all land on the same grid.
+- A range where `from` lands after `to` wraps past midnight and renders as two fill segments
+  (`.tt-fill[data-seg="a"]` + `[data-seg="b"]`, `.tt-fill--wrap`) — no special-case branch, it
+  falls straight out of the `from > to` comparison.
+- `role="slider"` handles carry `aria-valuemin/valuemax/valuenow` + `aria-valuetext` (the `HH:MM`
+  label, not the raw minutes) and are keyboard-operable. The paired native `type="time"` inputs
+  below the rail are the precise/keyboard/screen-reader path — kept in sync both ways.
+- `onChange` fires only on commit (a pointerup, an arrow-key step, or a committed input change) —
+  never on every pixel of a drag, so a consumer that saves on change is never spammed mid-gesture.
+- Public surface beyond the constructor: `setValue(value)` (a programmatic update — e.g. loading a
+  different staged arm into the same mounted editor — that does not itself fire `onChange`) and
+  `destroy()` (clears the mount; there is no document-level listener to unhook, since dragging uses
+  `setPointerCapture` on the handle/fill itself).
+- Demo: `/ui-kit.html` "Time track" section (range, point, and a wrapped 22:00→06:00 example).
 
 ## 10. Toasts (`ui/toast.scss`)
 

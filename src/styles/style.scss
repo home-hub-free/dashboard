@@ -26,6 +26,7 @@
 @import "./ui/tiles";     // device tile + channel controls + sensor chip
 @import "./ui/overlay";   // detail overlay sheet + its form patterns
 @import "./ui/toast";     // popup messages
+@import "./ui/time-track"; // TimeRangeTrack — imperative 24h drag rail (EFFECT_CREATION_REPAIR D3)
 
 // ---- Views --------------------------------------------------------------------
 @import "./views/home";
