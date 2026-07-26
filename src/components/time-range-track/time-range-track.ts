@@ -79,6 +79,17 @@ function formatHHMM(minutes: number): string {
   return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
+/** Forward (never-negative, wrap-aware) distance from `from` to `to` around the
+ * 24h clock — 0 when equal, growing toward (but never reaching) 1440 "the long
+ * way around." This is the same quantity `paintPositions` branches on to decide
+ * whether a range wraps past midnight (there, `a <= b` is just `forwardDistance
+ * (a, b) === b - a`) — so a valid wrapped window and this distance are the same
+ * concept measured two ways. EFFECT_CREATION_FOLLOWUPS.md 1.3's min-gap guard is
+ * simply "this must be >= SNAP_MINUTES." */
+function forwardDistance(from: number, to: number): number {
+  return normalize(to - from);
+}
+
 const RANGE_TEMPLATE = `
   <div class="tt-rail">
     <div class="tt-track" aria-hidden="true">
@@ -141,8 +152,14 @@ export class TimeRangeTrack {
 
     if (this.mode === "range") {
       const v = options.value as TimeRangeTrackRangeValue;
-      this.aMinutes = parseHHMM(v.from) ?? 0;
-      this.bMinutes = parseHHMM(v.to) ?? 0;
+      // clampPair (1.3): a caller could in principle hand in an already-degenerate
+      // {from,to} (e.g. a legacy stored effect saved before this guard existed) —
+      // the widget must never DISPLAY a from===to window, not just refuse to
+      // produce a new one, so the initial value is enforced the same as every
+      // other entry point.
+      const initial = this.clampPair(parseHHMM(v.from) ?? 0, parseHHMM(v.to) ?? 0);
+      this.aMinutes = initial.a;
+      this.bMinutes = initial.b;
     } else {
       const v = options.value as TimeRangeTrackPointValue;
       this.aMinutes = parseHHMM(v.at) ?? 0;
@@ -161,8 +178,9 @@ export class TimeRangeTrack {
   setValue(value: TimeRangeTrackValue): void {
     if (this.mode === "range") {
       const v = value as TimeRangeTrackRangeValue;
-      this.aMinutes = parseHHMM(v.from) ?? this.aMinutes;
-      this.bMinutes = parseHHMM(v.to) ?? this.bMinutes;
+      const next = this.clampPair(parseHHMM(v.from) ?? this.aMinutes, parseHHMM(v.to) ?? this.bMinutes);
+      this.aMinutes = next.a;
+      this.bMinutes = next.b;
     } else {
       const v = value as TimeRangeTrackPointValue;
       this.aMinutes = parseHHMM(v.at) ?? this.aMinutes;
@@ -189,6 +207,47 @@ export class TimeRangeTrack {
     this.onChangeCb(this.currentValue());
   }
 
+  // ---- min-gap invariant (EFFECT_CREATION_FOLLOWUPS.md 1.3) -----------------
+  //
+  // Range mode only: `from` and `to` must stay >= SNAP_MINUTES apart by
+  // forwardDistance (the same forward/wrapped measure `paintPositions` already
+  // renders by), so a window that wraps past midnight (e.g. 23:45 -> 00:00, a
+  // valid 15-min window) is untouched — `from === to` (forwardDistance 0) is
+  // the one state this forbids, since it is the sole degenerate case: the
+  // server's `between` evaluator (`dynamic-evaluate.ts`) can never match an
+  // equal-endpoint window, making it a silently dead rule. Point mode has no
+  // second endpoint to compare against and is always passed through unchanged.
+  //
+  // Every clamp here moves the endpoint TOWARD its own last valid position —
+  // never swaps which value is `from` vs `to`. Once the gap sits at its floor,
+  // further movement toward the other handle simply has no further effect
+  // (like an ordinary min-gap range slider refusing to compress past its
+  // minimum) rather than letting one handle leapfrog its partner.
+
+  /** Clamp a candidate `from` against a FIXED `to` — used wherever `from` is
+   * the endpoint actively moving (its own drag/keyboard/input path). */
+  private clampA(candidateA: number, fixedB: number): number {
+    if (this.mode !== "range") return candidateA;
+    return forwardDistance(candidateA, fixedB) < SNAP_MINUTES ? normalize(fixedB - SNAP_MINUTES) : candidateA;
+  }
+
+  /** Clamp a candidate `to` against a FIXED `from` — used wherever `to` is the
+   * endpoint actively moving. */
+  private clampB(fixedA: number, candidateB: number): number {
+    if (this.mode !== "range") return candidateB;
+    return forwardDistance(fixedA, candidateB) < SNAP_MINUTES ? normalize(fixedA + SNAP_MINUTES) : candidateB;
+  }
+
+  /** Used only where `from`/`to` arrive TOGETHER as a fresh pair (the
+   * constructor's initial value, `setValue`'s programmatic update) rather than
+   * one endpoint moving against a fixed partner. `from` is treated as the
+   * anchor (it's the mode's primary handle — `primaryKind`) and `to` is pulled
+   * forward to close the gap if the incoming pair itself violates it, e.g. a
+   * legacy stored effect that predates this guard. */
+  private clampPair(a: number, b: number): { a: number; b: number } {
+    return { a, b: this.clampB(a, b) };
+  }
+
   // ---- initial DOM + wiring -------------------------------------------------
 
   private paintDom(): void {
@@ -213,9 +272,12 @@ export class TimeRangeTrack {
 
   private wireHandle(handle: HTMLElement, kind: HandleKind): void {
     const get = () => (kind === "to" ? this.bMinutes : this.aMinutes);
+    // Shared by BOTH the pointermove and keydown listeners below — the min-gap
+    // clamp (1.3) lands in both the drag and the keyboard-arrow mutation paths
+    // from this one spot.
     const set = (m: number) => {
-      if (kind === "to") this.bMinutes = m;
-      else this.aMinutes = m;
+      if (kind === "to") this.bMinutes = this.clampB(this.aMinutes, m);
+      else this.aMinutes = this.clampA(m, this.bMinutes);
     };
 
     handle.addEventListener("pointerdown", (e) => {
@@ -267,6 +329,14 @@ export class TimeRangeTrack {
       fill.addEventListener("pointermove", (e) => {
         if (this.dragging !== "window") return;
         const deltaMin = snap((this.fracFromClientX(e.clientX) - this.windowDragStart.frac) * MINUTES_PER_DAY);
+        // No min-gap clamp needed here (1.3): shifting both endpoints by the
+        // IDENTICAL delta mod 1440 leaves forwardDistance(a, b) exactly
+        // unchanged (both sides of the subtraction shift by the same amount),
+        // so a window that was already valid when the drag started — guaranteed,
+        // since every OTHER mutation path (handle drag/keyboard, native input,
+        // setValue, the constructor) enforces the floor — cannot become invalid
+        // here. Preserving duration exactly is also this gesture's whole
+        // contract: "shifts both handles... preserving the window's duration."
         this.aMinutes = normalize(this.windowDragStart.a + deltaMin);
         this.bMinutes = normalize(this.windowDragStart.b + deltaMin);
         this.paintPositions();
@@ -304,8 +374,11 @@ export class TimeRangeTrack {
         return;
       }
       const snapped = snap(parsed); // keep the 15-min grid honest from BOTH entry paths
-      if (kind === "to") this.bMinutes = snapped;
-      else this.aMinutes = snapped;
+      // Min-gap clamp (1.3): a committed value that would collapse the window
+      // below the floor snaps back to the nearest legal one — the input then
+      // shows that clamped value (via syncInputs below), not what was typed.
+      if (kind === "to") this.bMinutes = this.clampB(this.aMinutes, snapped);
+      else this.aMinutes = this.clampA(snapped, this.bMinutes);
       this.paintPositions();
       this.syncInputs();
       this.commit();

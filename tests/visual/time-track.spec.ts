@@ -123,4 +123,44 @@ test.describe("time track (ui-kit)", () => {
     await expect(page.locator("#kit-time-track-demos")).toBeVisible();
     await page.locator("#kit-time-track-demos").screenshot({ path: path.join(OUT, "time-track-demos.png") });
   });
+
+  // EFFECT_CREATION_FOLLOWUPS.md 1.3: range mode must keep `from`/`to` at least
+  // one snap step (15 min) apart by forward/wrapped distance — `from === to` is
+  // a silently dead rule server-side (dynamic-evaluate.ts's `between` can never
+  // match an equal-endpoint window), so the widget itself must refuse it.
+  test("typing `to` onto `from` (or vice versa) clamps to the 15-minute floor instead of collapsing the window", async ({ page }) => {
+    const demo = page.locator("#kit-time-track-range");
+    const fromInput = demo.locator('.tt-input[data-kind="from"]');
+    const toInput = demo.locator('.tt-input[data-kind="to"]');
+
+    await expect(fromInput).toHaveValue("07:00");
+    await expect(toInput).toHaveValue("11:00");
+
+    // Typing `to` onto `from`'s exact value must not collapse the window to
+    // zero-length — it clamps FORWARD to the 15-min floor instead (`to` is the
+    // endpoint moving here; `from` is left untouched).
+    await toInput.fill("07:00");
+    await toInput.dispatchEvent("change");
+    await expect(toInput).toHaveValue("07:15");
+    await expect(fromInput).toHaveValue("07:00");
+
+    // Symmetric case: typing `from` onto the (now 07:15) `to` value clamps
+    // `from` BACKWARD to the floor — the clamp always moves the endpoint that's
+    // actually changing; it never swaps which value is `from` vs `to`.
+    await fromInput.fill("07:15");
+    await fromInput.dispatchEvent("change");
+    await expect(fromInput).toHaveValue("07:00");
+    await expect(toInput).toHaveValue("07:15");
+
+    // The wrapped boundary case from the plan's own ruling stays legal: a
+    // window landing on EXACTLY the 15-min floor the wrapped way (23:45 ->
+    // 00:00) is a valid window, not the forbidden equal-endpoint case, and must
+    // NOT be clamped.
+    await fromInput.fill("23:45");
+    await fromInput.dispatchEvent("change");
+    await toInput.fill("00:00");
+    await toInput.dispatchEvent("change");
+    await expect(fromInput).toHaveValue("23:45");
+    await expect(toInput).toHaveValue("00:00");
+  });
 });

@@ -347,6 +347,15 @@ new TimeRangeTrack(mountEl, {
 - A range where `from` lands after `to` wraps past midnight and renders as two fill segments
   (`.tt-fill[data-seg="a"]` + `[data-seg="b"]`, `.tt-fill--wrap`) — no special-case branch, it
   falls straight out of the `from > to` comparison.
+- **Range mode enforces a minimum gap** (`EFFECT_CREATION_FOLLOWUPS.md` 1.3): `from`/`to` must
+  stay at least one snap step (15 min) apart, measured the same forward/wrapped way the fill
+  segments render by — a window landing exactly on that floor the wrapped way (e.g. `23:45 →
+  00:00`) is legal, but `from === to` is not (the server's `between` evaluator,
+  `dynamic-evaluate.ts`, can never match an equal-endpoint window — a silently dead rule). Every
+  mutation path (handle drag, window-body drag, keyboard arrows, the native `type="time"` inputs,
+  `setValue()`, the constructor's initial value) clamps whichever endpoint is actually moving
+  toward its own last valid position — it never swaps which value is `from` vs `to`. Point mode
+  has no second endpoint and is unaffected.
 - `role="slider"` handles carry `aria-valuemin/valuemax/valuenow` + `aria-valuetext` (the `HH:MM`
   label, not the raw minutes) and are keyboard-operable. The paired native `type="time"` inputs
   below the rail are the precise/keyboard/screen-reader path — kept in sync both ways.

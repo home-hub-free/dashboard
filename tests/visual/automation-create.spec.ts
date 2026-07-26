@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { seedSession, stubBackend } from "./stub";
+import { expectOverlayScrollSane } from "./scroll-checks";
 import * as fx from "./fixtures";
 
 // Permanent regression coverage for the effect-creation E2E repair
@@ -247,8 +248,10 @@ test.describe("automation creation — real hub data shapes (phone)", () => {
     }
     await expect(ov.locator(".ca-arm-row")).toHaveCount(3);
 
-    const sheet = page.locator(".overlay-modal-content .content");
-    await sheet.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+    // Standing scroll-sanity coverage (EFFECT_CREATION_FOLLOWUPS 1.1/1.2): no
+    // horizontal overflow, the sheet itself scrolls, and its last control
+    // (Save, in DOM order) is reachable + actionable once scrolled to.
+    await expectOverlayScrollSane(page);
     const saveBtn = ov.locator("button.btn-primary", { hasText: "Save automation" });
     await expect(saveBtn).toBeInViewport();
     await saveBtn.click();
@@ -279,6 +282,9 @@ test.describe("automation creation — feedback & failure paths", () => {
 
   test("an 'already staged' toast renders visibly above the open modal (B1 / 1.1, D8)", async ({ page }) => {
     const ov = await openCreateOverlay(page);
+    // Standing scroll-sanity coverage on the freshly opened, still-empty
+    // builder (desktop viewport) — EFFECT_CREATION_FOLLOWUPS 1.1/1.2.
+    await expectOverlayScrollSane(page);
     await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
     await ov.locator("select").first().selectOption({ index: 1 });
     await ov.locator(".toggle-button", { hasText: /^Active$/ }).click();

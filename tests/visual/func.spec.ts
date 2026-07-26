@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { seedSession, stubBackend } from "./stub";
+import { expectOverlayScrollSane } from "./scroll-checks";
 
 // Functional smoke: the redesign is CSS/markup-only, so every interaction must
 // still work. These guard the highest-value paths after the restyle.
@@ -172,6 +173,10 @@ test.describe("functionality intact", () => {
     // must render the single 24h timeline without error.
     await page.locator(".overlay-advanced > summary").click();
     await expect(page.locator(".time-bar.day-bar")).toBeVisible();
+
+    // Standing scroll-sanity coverage (EFFECT_CREATION_FOLLOWUPS 1.1/1.2), run
+    // with Advanced expanded so the overlay is at its fullest content.
+    await expectOverlayScrollSane(page);
     expect(errors, "no uncaught JS errors").toEqual([]);
   });
 });
