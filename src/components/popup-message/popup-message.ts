@@ -21,7 +21,10 @@ class PopupMessageClass extends Component<PopupMessageState> {
   }
 
   private onChange(changes: DataChanges) {
-    if (changes.property === 'message') {
+    // showMessage assigns the whole `toasterOptions` object (there is no write to
+    // a `message` property, which the old check matched — the pop-in never fired,
+    // audit D21). Pop only on a real toast, not on hideToaster's null reset.
+    if (changes.property === 'toasterOptions' && changes.newValue) {
       this.bind.popToast = true;
       setTimeout(() => {
         this.bind.popToast = false;

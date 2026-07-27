@@ -5,7 +5,12 @@ export abstract class Component<T extends object> {
 
   abstract mount(): void;
 
-  unmount(): void {}
+  /** Subclass unmounts MUST end with `super.unmount()`: dropping `_bind` releases
+   * the Bind (and its handler references to the detached DOM) and makes the
+   * `mounted` guards in async callbacks actually trip after a view unmounts. */
+  unmount(): void {
+    this._bind = undefined;
+  }
 
   get bind(): T {
     if (!this._bind) throw new Error(`${this.constructor.name}.mount() has not been called`);

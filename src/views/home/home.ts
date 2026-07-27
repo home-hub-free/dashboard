@@ -28,6 +28,7 @@ class HomeContentClass extends Component<HomeMenuState> {
     HomeStatus.unmount();
     SensorsTab.unmount();
     DevicesTab.unmount();
+    super.unmount();
   }
 }
 export const HomeContent = new HomeContentClass();

@@ -1,5 +1,6 @@
 import { Component } from "../../../core/component";
 import { bus } from "../../../core/bus";
+import { plainData } from "../../../core/plain-data";
 import { store } from "../../../store/store";
 import { showToaster } from "../../../components/popup-message/popup-message";
 import {
@@ -97,12 +98,18 @@ export function hasCamView(device: Device): boolean {
 }
 
 /**
- * Decorate a raw device with the display-time fields the generic template renders
+ * Decorate a device CLONE with the display-time fields the generic template renders
  * from: its channel projection (each tagged with the widget that renders it), the
- * lit/wide flags, the tile icon, and a one-line status. Mutates in place so the
- * same object the store/bind hold gets refreshed reactively.
+ * lit/wide flags, the tile icon, and a one-line status. Only ever called on the
+ * plain clones this view binds (never on the store's objects — sharing one object
+ * between the store and a bind is the bindrjs in-place-proxification leak, audit
+ * D1). Primitive fields write-if-changed so re-decorating a BOUND device (the
+ * leaf-patch path) doesn't fire a change pipeline per untouched field.
  */
 function decorateDevice(device: Device): Device {
+  const put = <K extends keyof Device>(key: K, val: Device[K]) => {
+    if (device[key] !== val) device[key] = val;
+  };
   const channels = deviceChannels(device);
   const actuators = channels.filter((c) => c.role === "actuator");
   const soleActuator = actuators.length === 1;
@@ -149,33 +156,32 @@ function decorateDevice(device: Device): Device {
     if (c.key === "eco") return (device.value ?? {}).eco !== undefined;
     return true;
   });
-  device.wide =
-    device.deviceCategory === "evap-cooler" || hasCamView(device);
+  put("wide", device.deviceCategory === "evap-cooler" || hasCamView(device));
   // One-row plate for tap-is-the-whole-story devices (a camera-equipped
   // satellite is media, never compact).
-  device.compact = COMPACT_CATEGORIES.has(device.deviceCategory) && !hasCamView(device);
+  put("compact", COMPACT_CATEGORIES.has(device.deviceCategory) && !hasCamView(device));
   // Camera live view comes from the vision-service (annotated MJPEG), never the cam
   // directly nor a relayed blob (§3.2/§6). `who` is filled by the occupancy poller.
   // A camera-equipped satellite gets the identical view (same vision-service worker,
   // keyed by device id) stacked above its normal audio/battery controls.
-  device.hasCamView = hasCamView(device);
+  put("hasCamView", hasCamView(device));
   if (device.hasCamView) {
-    device.streamUrl = visionStreamUrl(device.id);
+    put("streamUrl", visionStreamUrl(device.id));
     // The control-bar :foreach must never see undefined — bindrjs renders the
     // region the instant `ptz` flips true, before the controls fetch lands.
     if (!device.presets) device.presets = [];
     // Privacy fields must be concrete before first render (:class needs ONE real
     // token); the occupancy poll + the toggle keep them fresh afterwards.
-    device.privacy = !!device.privacy;
-    device.privacyClass = device.privacy ? "cam-priv--on" : "cam-priv--off";
+    put("privacy", !!device.privacy);
+    put("privacyClass", device.privacy ? "cam-priv--on" : "cam-priv--off");
   }
-  device.isOn = actuators.some((c) =>
+  put("isOn", actuators.some((c) =>
     c.kind === "boolean" ? c.value === true : (c.value as number) > 0,
-  );
-  device.icon = (device.isOn ? TILE_ICON_ON : TILE_ICON_OFF)[device.deviceCategory]
+  ));
+  put("icon", (device.isOn ? TILE_ICON_ON : TILE_ICON_OFF)[device.deviceCategory]
     ?? TILE_ICON_OFF[device.deviceCategory]
-    ?? "iconoir-circle";
-  device.status = computeStatus(device, actuators);
+    ?? "iconoir-circle");
+  put("status", computeStatus(device, actuators));
   return device;
 }
 
@@ -453,7 +459,6 @@ function buildGroups(
 
 class DevicesTabClass extends Component<DevicesTabState> {
   devicesService: DevicesServiceClass;
-  private unsubscribeDeclare?: () => void;
   private unsubscribeUpdate?: () => void;
   private unsubscribeOccupancy?: () => void;
   private unsubscribeCameras?: () => void;
@@ -472,46 +477,63 @@ class DevicesTabClass extends Component<DevicesTabState> {
   // fetched once per camera when the poll first shows it is ONVIF-capable.
   private camControls: Record<string, CameraControls> = {};
   private camCtlRequested = new Set<string>();
+  // Identity snapshots of the last store arrays this view fully processed. A
+  // per-item update re-`set`s the SAME array (store/actions.ts), so reference
+  // equality is the discriminator between "one item changed" (cheap leaf path —
+  // bus `device:update` / refreshZoneEnv) and a structural replacement (full
+  // sync / declare) that needs the whole-tree rebuild.
+  private lastDevicesRef?: Device[];
+  private lastSensorsRef?: Sensor[];
 
   constructor(devicesService: DevicesServiceClass) {
     super();
     this.devicesService = devicesService;
-    const devices = store.get("devices");
-    devices.forEach((device) => decorateDevice(device));
+  }
+
+  /** Plain clones of the store's sensors — everything bound (or embedded in the
+   * bound groups) must be a fresh copy, never the store's own objects (audit D1). */
+  private sensorsSnapshot(): Sensor[] {
+    return (store.get("sensors") || []).map(plainData);
   }
 
   /** Rebuild the room-grouped view from the flat `devices` array. Cheap + derived, so
    * we recompute (and reassign, to re-render the gated sections) on any structural
-   * change: store sync, declare, zone edit, collapse toggle, filter, sensor tick, pins. */
+   * change: store sync, declare, zone edit, collapse toggle, filter, pins. Per-report
+   * sensor ticks take the refreshZoneEnv leaf path instead. */
   private groups(): DeviceGroup[] {
     return buildGroups(
       this.bind.devices || [],
       store.get("zones") || [],
       this.collapsed,
       this.filterText,
-      store.get("sensors") || [],
+      this.sensorsSnapshot(),
       getPins(),
     );
   }
 
   mount() {
+    // ONE decorated clone set feeds both the flat list and the groups — the
+    // store's own objects never enter the bind (audit D1).
+    const initial = (store.get("devices") || []).map((d) => decorateDevice(plainData(d)));
+    this.lastDevicesRef = store.get("devices");
+    this.lastSensorsRef = store.get("sensors");
     this.createBind({
       id: "devices",
       template,
       bind: {
-        devices: store.get("devices").map(decorateDevice),
+        devices: initial,
         groups: buildGroups(
-          store.get("devices").map(decorateDevice),
+          initial,
           store.get("zones") || [],
           this.collapsed,
           "",
-          store.get("sensors") || [],
+          this.sensorsSnapshot(),
           getPins(),
         ),
-        hasDevices: (store.get("devices") || []).length > 0,
+        hasDevices: initial.length > 0,
         // Skeleton plates until the first full resync settles (sync:done) — a
         // fresh boot has an empty store and we must not flash "no devices".
-        loading: (store.get("devices") || []).length === 0,
+        loading: initial.length === 0,
         searchOpen: false,
 
         // Room-rail tap: make sure the section is expanded, then bring it up.
@@ -690,17 +712,23 @@ class DevicesTabClass extends Component<DevicesTabState> {
     });
 
     this.unsubscribeDevices = store.subscribe("devices", (devices) => {
-      this.bind.devices = devices.map(decorateDevice);
-      // A store sync replaces the array — re-merge the vision-only camera tiles.
-      this.syncVisionTiles(this.lastCameras);
-      this.bind.hasDevices = this.bind.devices.length > 0;
-      if (this.bind.hasDevices) this.bind.loading = false;
-      this.bind.groups = this.groups();
-      this.applyOccupancy();
+      // Same array reference = a per-device update tick — that delta already
+      // arrived as the bus `device:update` leaf-patch; only a structural
+      // replacement (full sync, declare) pays for the whole-tree rebuild.
+      if (devices === this.lastDevicesRef) return;
+      this.lastDevicesRef = devices;
+      this.rebuildFromStore(devices);
     });
 
-    // Room headers carry the zone's ambient glance — refresh them on sensor ticks.
-    this.unsubscribeSensors = store.subscribe("sensors", () => {
+    // Room headers carry the zone's ambient glance — leaf-refresh them on
+    // per-report sensor ticks; rebuild the groups only when the roster itself
+    // changed (declare / full sync = new array).
+    this.unsubscribeSensors = store.subscribe("sensors", (sensors) => {
+      if (sensors === this.lastSensorsRef) {
+        this.refreshZoneEnv();
+        return;
+      }
+      this.lastSensorsRef = sensors;
       this.bind.groups = this.groups();
     });
 
@@ -713,10 +741,6 @@ class DevicesTabClass extends Component<DevicesTabState> {
     // failure the empty state + offline banner tell the real story.
     this.unsubscribeSync = bus.on("sync:done", () => {
       this.bind.loading = false;
-    });
-
-    this.unsubscribeDeclare = bus.on("device:declare", (declaredDevice) => {
-      this.onDeviceDeclare(declaredDevice);
     });
 
     this.unsubscribeUpdate = bus.on("device:update", (updatedDevice) => {
@@ -746,24 +770,61 @@ class DevicesTabClass extends Component<DevicesTabState> {
     this.unsubscribeSensors?.();
     this.unsubscribePins?.();
     this.unsubscribeSync?.();
-    this.unsubscribeDeclare?.();
     this.unsubscribeUpdate?.();
     this.unsubscribeOccupancy?.();
     this.unsubscribeCameras?.();
     stopVisionOccupancy();
+    super.unmount();
+  }
+
+  /** Full rebuild from a structurally-new store array: decorate fresh clones,
+   * re-merge vision-only tiles, rebuild the groups. */
+  private rebuildFromStore(devices: Device[]) {
+    if (!this.mounted) return;
+    this.bind.devices = devices.map((d) => decorateDevice(plainData(d)));
+    // A store sync replaces the array — re-merge the vision-only camera tiles.
+    this.syncVisionTiles(this.lastCameras);
+    this.bind.hasDevices = this.bind.devices.length > 0;
+    if (this.bind.hasDevices) this.bind.loading = false;
+    this.bind.groups = this.groups();
+    this.applyOccupancy();
+  }
+
+  /** Leaf-refresh every zone header's ambient glance (reading + motion lamp) and
+   * the room-card sensor chips from the store, without rebuilding the groups.
+   * Write-if-changed so an unchanged periodic report costs near nothing. */
+  private refreshZoneEnv() {
+    if (!this.mounted) return;
+    const sensors = store.get("sensors") || [];
+    (this.bind.groups || []).forEach((g) => {
+      g.sensors?.forEach((chip) => {
+        const src = sensors.find((s) => s.id === chip.id);
+        if (!src) return;
+        if (JSON.stringify(chip.value) !== JSON.stringify(src.value)) {
+          chip.value = plainData(src.value);
+        }
+      });
+      if (g.kind !== "zone" || g.key === UNASSIGNED) return;
+      const env = zoneEnv(sensors, g.key);
+      if (g.envReading !== env.reading) g.envReading = env.reading;
+      if (g.envMotion !== env.motion) g.envMotion = env.motion;
+    });
   }
 
   /** Recompute each group's header summary in place (leaf mutation → just the header
    * text repaints) so "2 on" tracks live toggles without rebuilding/re-rendering every
    * tile. group.devices share refs with bind.devices, so isOn is already fresh. */
   private refreshSummaries() {
+    if (!this.mounted) return;
     (this.bind.groups || []).forEach((g) => {
-      g.summary = g.kind === "cameras"
+      const summary = g.kind === "cameras"
         ? `${g.devices.length} camera${g.devices.length === 1 ? "" : "s"}`
         : `${g.devices.filter((d) => d.isOn).length} on`;
+      if (g.summary !== summary) g.summary = summary;
       // Leaf mutation: the header lamp / "Lights off" affordance track via
       // :class bindings (class bindings re-evaluate on leaf ticks; :if doesn't).
-      g.lightsOn = countLightsOn(g.devices);
+      const lightsOn = countLightsOn(g.devices);
+      if (g.lightsOn !== lightsOn) g.lightsOn = lightsOn;
     });
   }
 
@@ -775,6 +836,7 @@ class DevicesTabClass extends Component<DevicesTabState> {
    * a structural change (the poll runs every 15s). */
   private syncVisionTiles(cameras: VisionCameraStatus[]) {
     this.lastCameras = cameras;
+    if (!this.mounted) return;
     const current: Device[] = this.bind.devices || [];
     const wanted = new Map(cameras.map((c) => [c.id, c]));
     let changed = false;
@@ -834,11 +896,32 @@ class DevicesTabClass extends Component<DevicesTabState> {
     }
   }
 
+  /** The RENDERED reference for each device — the entry inside `bind.groups`,
+   * which is the proxy layer the tile templates actually read through. Leaf
+   * writes MUST go through this layer: writes through the flat `bind.devices`
+   * layer update the shared data but empirically do not re-render the grouped
+   * tiles (they only reliably subscribe to the groups-layer paths — the old code
+   * never noticed because every tick rebuilt the whole groups tree). Falls back
+   * to the flat entry for devices currently filtered out of the groups (data
+   * stays fresh; the next rebuild renders it). */
+  private renderedDevices(): Device[] {
+    const seen = new Map<string, Device>();
+    (this.bind.groups || []).forEach((g) =>
+      (g.devices || []).forEach((d) => {
+        if (!seen.has(d.id)) seen.set(d.id, d);
+      }),
+    );
+    (this.bind.devices || []).forEach((d) => {
+      if (!seen.has(d.id)) seen.set(d.id, d);
+    });
+    return [...seen.values()];
+  }
+
   /** Every tile with a live view — `camera` nodes (hub-declared + vision-only) plus
    * camera-equipped satellites — so occupancy/health enrichment reaches them all.
    * Satellites carry no ONVIF caps, so the PTZ/imaging fields stay false for them. */
   private cameraTiles(): Device[] {
-    return (this.bind.devices || []).filter(hasCamView);
+    return this.renderedDevices().filter(hasCamView);
   }
 
   private findCamera(deviceId: string): Device | undefined {
@@ -864,29 +947,40 @@ class DevicesTabClass extends Component<DevicesTabState> {
   }
 
   /** Push the latest per-zone occupancy + worker health + ONVIF control state onto
-   * each camera tile (hub-declared and vision-only alike). */
+   * each camera tile (hub-declared and vision-only alike). Every write is guarded
+   * on change — bindrjs runs the full pipeline on identical writes, and this used
+   * to rewrite ~10 fields per camera per poll regardless (audit D4/D19). */
   private applyOccupancy() {
+    if (!this.mounted) return;
     this.cameraTiles().forEach((device) => {
-      device.who = summariseOccupants(this.zoneOccupants[device.zone || "_"]);
+      const put = <K extends keyof Device>(key: K, val: Device[K]) => {
+        if (device[key] !== val) device[key] = val;
+      };
+      put("who", summariseOccupants(this.zoneOccupants[device.zone || "_"]));
       const health = summariseCamHealth(this.camStatus[device.id]);
-      device.camHealth = health.text;
+      put("camHealth", health.text);
       // Single token — bindrjs :class add/removes ONE class (multi-word throws in
       // DOMTokenList.add and aborts the whole rebind pass, blanking the tile).
-      device.camHealthClass = `cam-health--${health.state}`;
-      device.camHealthTitle = health.title;
+      put("camHealthClass", `cam-health--${health.state}`);
+      put("camHealthTitle", health.title);
       // Which controls the tile draws (fixed cams: no D-pad; ESP32-CAMs: nothing).
       // Order matters: presets BEFORE the ptz flag — flipping `ptz` re-renders the
       // control bar immediately and its :foreach must already have a real array.
       const caps = this.camControls[device.id]?.onvif ?? this.camStatus[device.id]?.onvif ?? null;
-      device.presets = this.camControls[device.id]?.presets || device.presets || [];
-      device.onvifCaps = caps;
-      device.ptz = !!caps?.ptz;
-      device.imagingCaps = !!caps?.imaging;
+      const presets = this.camControls[device.id]?.presets || device.presets || [];
+      if (JSON.stringify(device.presets) !== JSON.stringify(presets)) {
+        device.presets = plainData(presets);
+      }
+      if (JSON.stringify(device.onvifCaps) !== JSON.stringify(caps)) {
+        device.onvifCaps = plainData(caps);
+      }
+      put("ptz", !!caps?.ptz);
+      put("imagingCaps", !!caps?.imaging);
       // Only the IP-cam fleet archives footage → only they get a Recordings entry point.
-      device.records = !!this.camStatus[device.id]?.records;
+      put("records", !!this.camStatus[device.id]?.records);
       // Privacy mode: gates the tile's stream <img> off and lights the toggle.
-      device.privacy = !!this.camStatus[device.id]?.privacy;
-      device.privacyClass = device.privacy ? "cam-priv--on" : "cam-priv--off";
+      put("privacy", !!this.camStatus[device.id]?.privacy);
+      put("privacyClass", device.privacy ? "cam-priv--on" : "cam-priv--off");
     });
   }
 
@@ -913,9 +1007,10 @@ class DevicesTabClass extends Component<DevicesTabState> {
     });
   }
 
-  /** Resolve a (deviceId, channelKey) pair to the live bound device + channel. */
+  /** Resolve a (deviceId, channelKey) pair to the live RENDERED device + channel
+   * (writes through the groups layer so the tile repaints — see renderedDevices). */
   private find(deviceId: string, channelKey: string): { device: Device; channel: Channel } | null {
-    const device = this.bind.devices.find((d) => d.id === deviceId);
+    const device = this.renderedDevices().find((d) => d.id === deviceId);
     const channel = device?.channels?.find((c) => c.key === channelKey);
     return device && channel ? { device, channel } : null;
   }
@@ -927,7 +1022,9 @@ class DevicesTabClass extends Component<DevicesTabState> {
     // broadcasts every dashboard action back over WS, and you don't announce a
     // change to the person who just made it (live-motion.ts).
     markSelfWrite(device.id);
-    const previous = device.value;
+    // Plain snapshot: `device.value` is a bind proxy; re-assigning it verbatim on
+    // revert would make bindrjs re-wrap its own proxy (audit L1).
+    const previous = plainData(device.value);
     device.value = withChannelValue(device.deviceCategory, device.value, channel.key, value);
     decorateDevice(device);
     this.refreshSummaries();
@@ -940,6 +1037,7 @@ class DevicesTabClass extends Component<DevicesTabState> {
   }
 
   private revertChannel(device: Device, previous: any, message: string) {
+    if (!this.mounted) return;
     device.value = previous;
     decorateDevice(device);
     this.refreshSummaries();
@@ -955,35 +1053,30 @@ class DevicesTabClass extends Component<DevicesTabState> {
       || (document.getElementById("devices") as HTMLElement);
   }
 
-  private onDeviceDeclare(declaredDevice: Device) {
-    if (!this.bind.devices) this.bind.devices = [];
-    const device = this.bind.devices.find((d) => d.id === declaredDevice.id);
-    if (!device) {
-      this.bind.devices.push(decorateDevice(declaredDevice));
-      this.bind.hasDevices = true;
-      this.bind.groups = this.groups(); // structural — a new tile/zone may appear
-    }
-    // A newly-declared camera picks up its live view (visionStreamUrl in decorate)
-    // + its "who" headline (next occupancy poll) automatically — no per-cam subscribe.
-  }
-
+  /** Per-device leaf patch (bus `device:update` — emitted by ws-handler after the
+   * store merge). `updatedDevice` is the STORE's object: copy values off it as
+   * plain clones, never the objects themselves (audit D1). A device the bind
+   * doesn't know yet (declare race) falls back to the full rebuild. */
   private onDeviceUpdate(updatedDevice: Device) {
-    const device = this.bind.devices.find((d) => d.id === updatedDevice.id);
-    if (device) {
-      const zoneChanged = updatedDevice.zone != null && updatedDevice.zone !== device.zone;
-      device.value = updatedDevice.value;
-      device.manual = updatedDevice.manual;
-      device.name = updatedDevice.name;
-      device.zone = updatedDevice.zone ?? device.zone;
-      device.operationalRanges = updatedDevice.operationalRanges;
-      decorateDevice(device);
-      // A zone/name change reshuffles which section the tile belongs to → rebuild;
-      // otherwise the in-place leaf patch above already repainted the tile, so just
-      // refresh the header counts.
-      if (zoneChanged) this.bind.groups = this.groups();
-      else this.refreshSummaries();
-      if (device.deviceCategory === "camera") this.applyOccupancy();
+    if (!this.mounted) return;
+    const device = this.renderedDevices().find((d) => d.id === updatedDevice.id);
+    if (!device) {
+      this.rebuildFromStore(store.get("devices") || []);
+      return;
     }
+    const zoneChanged = updatedDevice.zone != null && updatedDevice.zone !== device.zone;
+    device.value = plainData(updatedDevice.value);
+    if (device.manual !== updatedDevice.manual) device.manual = updatedDevice.manual;
+    if (device.name !== updatedDevice.name) device.name = updatedDevice.name;
+    device.zone = updatedDevice.zone ?? device.zone;
+    device.operationalRanges = plainData(updatedDevice.operationalRanges);
+    decorateDevice(device);
+    // A zone/name change reshuffles which section the tile belongs to → rebuild;
+    // otherwise the in-place leaf patch above already repainted the tile, so just
+    // refresh the header counts.
+    if (zoneChanged) this.bind.groups = this.groups();
+    else this.refreshSummaries();
+    if (device.deviceCategory === "camera") this.applyOccupancy();
   }
 }
 

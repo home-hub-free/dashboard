@@ -45,6 +45,9 @@ class LoginClass extends Component<LoginState> {
         gate.classList.remove("active");
         gate.innerHTML = "";
       }
+      // One-shot component: release the Bind (and its handlers on the now-cleared
+      // form DOM) instead of retaining it for the app's lifetime.
+      this.unmount();
       this.onSuccess();
     } catch (err: any) {
       this.bind.error = err?.message || "Sign in failed";

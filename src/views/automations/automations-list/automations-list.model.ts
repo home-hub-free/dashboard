@@ -1,7 +1,6 @@
 import { Effect } from "../automations.model"
 
 export type AutomationsListTabState = {
-  effects: Effect[],
   groups: EffectsGroup[],
   /** Row id armed for delete-confirm (null = none). */
   pendingDeleteId: number | null,

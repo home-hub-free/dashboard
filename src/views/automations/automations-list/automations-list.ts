@@ -1,9 +1,10 @@
 import { Component } from "../../../core/component";
+import { plainData } from "../../../core/plain-data";
 import { store } from "../../../store/store";
 import template from './automations-list.html?raw';
 import { DuplicateEffectError, deleteEffect, getEndPointData, saveEffect, setEffectEnabled, updateEffect } from "../../../utils/server-handler";
 import { getGlobalPosition } from "../../../utils/utils.service";
-import { closeOverlay, openOverlay } from "../../../components/overlay-modal/overlay-modal";
+import { closeOverlay, getOverlayData, openOverlay } from "../../../components/overlay-modal/overlay-modal";
 import { TimeRangeTrack, type TimeRangeTrackPointValue } from "../../../components/time-range-track/time-range-track";
 import CreateAutomationOverlay from "../overlay-views/create-automation-overlay.html?raw";
 import EditAutomationOverlay from "../overlay-views/edit-automation-overlay.html?raw";
@@ -25,6 +26,12 @@ import { AutomationsListTabState, EffectsGroup } from "./automations-list.model"
 class AutomationsListClass extends Component<AutomationsListTabState> {
   automationsListTabService: AutomationsListTabServiceClass;
   private unsubscribeEffects?: () => void;
+  /** Plain WORKING COPIES of the store's effects, kept OFF the bind. Binding the
+   * store array directly proxified the store's canonical objects in place and
+   * re-wrapped the previous mount's proxies on every remount (audit D14); the
+   * sentence/editable decoration below now happens on plain objects (zero change
+   * pipelines) and only the derived `groups` tree is ever bound. */
+  private effects: Effect[] = [];
 
   constructor(automationsListTabService: AutomationsListTabServiceClass) {
     super();
@@ -36,7 +43,6 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
       id: 'automations-list',
       template,
       bind: {
-        effects: store.get('effects'),
         groups: [],
         pendingDeleteId: null,
         toggleEffect: this.toggleEffect.bind(this),
@@ -48,19 +54,21 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
     });
 
     this.unsubscribeEffects = store.subscribe('effects', (effects) => {
-      this.bind.effects = effects;
+      this.effects = plainData(effects);
       this.parseEffects();
     });
 
+    this.effects = plainData(store.get('effects'));
     this.parseEffects();
   }
 
   unmount() {
     this.unsubscribeEffects?.();
+    super.unmount();
   }
 
   private parseEffects() {
-    this.bind.effects.map((effect: Effect) => {
+    this.effects.forEach((effect: Effect) => {
       effect.sentence = this.automationsListTabService.parseEffectSentense({
         devices: store.get('devices') || [],
         sensors: store.get('sensors') || [],
@@ -74,7 +82,7 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
 
   private groupEffects() {
     const groups: { [key: string]: EffectsGroup } = {};
-    this.bind.effects.forEach((effect: Effect) => {
+    this.effects.forEach((effect: Effect) => {
       // Group by the rule's primary target — the first arm's set node (a multi-arm rule
       // typically drives the same device with different values by context).
       const targetId = effect.arms[0]?.set.nodeId ?? 'unknown';
@@ -293,7 +301,11 @@ function mountEditTimeTrack(edit: EditEffect): void {
     mode: 'point',
     value: { at: seed },
     onChange: (v) => {
-      edit.time = (v as TimeRangeTrackPointValue).at;
+      // Write through the LIVE overlay data: openOverlay binds a plain CLONE of
+      // `edit`, so a write on the captured object would never reach the view
+      // (and saveEdit reads the bound copy).
+      const live = getOverlayData();
+      if (live && live.id === edit.id) live.time = (v as TimeRangeTrackPointValue).at;
     },
   });
 }

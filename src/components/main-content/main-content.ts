@@ -40,6 +40,7 @@ class MainContentClass extends Component<MainContentState> {
   unmount() {
     this.unsubscribeMenuChange?.();
     this.unsubscribeWs?.();
+    super.unmount();
   }
 }
 

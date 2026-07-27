@@ -317,6 +317,12 @@ export class DevicesServiceClass {
     updateOverlayData({ ...data, zoneOptions: zoneOptions("", zones) });
   }
 
+  /** Debounce timers per `${id}:${prop}` — the rename field calls saveProp on
+   * EVERY keystroke (`:oninput`), which used to fire one POST + one toast per
+   * character (audit D21). The reactive echo lands immediately; the network
+   * commit + confirmation settle once typing pauses. */
+  private savePropTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
   saveProp(data: any, prop: string, value?: any) {
     if (value == null) {
       let element: HTMLInputElement | null = document.getElementById(
@@ -329,14 +335,22 @@ export class DevicesServiceClass {
     }
     if (value !== undefined) {
       data[prop] = value;
-      updateOverlayData({ ...data });
-      submitDataChange(data.id, "devices", prop, value).then(() => {
-        showToaster({
-          from: "bottom",
-          message: `Saved device ${prop}`,
-          timer: 2000,
-        });
-      });
+      const key = `${data.id}:${prop}`;
+      const pending = this.savePropTimers.get(key);
+      if (pending) clearTimeout(pending);
+      this.savePropTimers.set(
+        key,
+        setTimeout(() => {
+          this.savePropTimers.delete(key);
+          submitDataChange(data.id, "devices", prop, value).then(() => {
+            showToaster({
+              from: "bottom",
+              message: `Saved device ${prop}`,
+              timer: 2000,
+            });
+          });
+        }, 450),
+      );
     }
   }
 

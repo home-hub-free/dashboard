@@ -12,10 +12,24 @@ class TabContentClass {
 
   bind!: MenuContentState;
   private activeView?: typeof HomeContent | typeof AutomationsContent | typeof VAssistantContent | typeof SettingsContent;
+  private initQueued = false;
 
   constructor() {}
 
+  /** Coalesce the synchronous burst of init requests one navigation produces
+   * (menu:change → tabs assignment → activeTabId assignment each used to build a
+   * fresh Bind and remount the view — up to 3× per menu switch, audit D12) into
+   * ONE re-init per microtask. */
   initView() {
+    if (this.initQueued) return;
+    this.initQueued = true;
+    queueMicrotask(() => {
+      this.initQueued = false;
+      this.doInitView();
+    });
+  }
+
+  private doInitView() {
     const { bind } = new Bind<MenuContentState>({
       id: "tab-content",
       template,

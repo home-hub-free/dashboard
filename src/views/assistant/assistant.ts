@@ -90,7 +90,12 @@ class VAssistantContentClass extends Component<AssistantMenuState> {
   }
 
   unmount() {
-    this.chatsService.stopAutoRefresh();
+    // Detach (not just stop the poll): the services are module singletons — a
+    // retained bind ref would keep the whole detached assistant DOM alive, and an
+    // in-flight voice turn (or a held talk button's live mic) would keep running
+    // against the dead view (audit D7/D8).
+    this.chatsService.detach();
+    this.voiceAskService.detach();
     super.unmount();
   }
 }

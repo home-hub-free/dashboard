@@ -218,6 +218,7 @@ class SettingsContentClass extends Component<SettingsState> {
   // kept answering arrow keys with real promote/reject POSTs.
   unmount() {
     this.householdService.detach();
+    super.unmount();
   }
 }
 

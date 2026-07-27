@@ -25,6 +25,7 @@
 
             <div class="chat-rows">
                 <div :foreach="row in this.chatRows"
+                     :key="row.id"
                      class="chat-row"
                      :class:active="row.active"
                      :onmouseup="this.chatSelect(row.id)">
@@ -73,6 +74,7 @@
                 </div>
 
                 <div :foreach="turn in this.activeTurns"
+                     :key="turn.role + turn.time + turn.content"
                      class="chat-bubble"
                      :class:you="turn.role === 'user'"
                      :class:aura="turn.role === 'assistant'">

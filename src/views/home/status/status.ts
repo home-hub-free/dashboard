@@ -79,6 +79,7 @@ class HomeStatusClass extends Component<HomeStatusState> {
     if (this.dayTimer) window.clearInterval(this.dayTimer);
     if (this.weatherTimer) window.clearInterval(this.weatherTimer);
     this.unsubscribeDevices?.();
+    super.unmount();
   }
 
   private baseState(): Omit<HomeStatusState, "onAllLightsOff"> {

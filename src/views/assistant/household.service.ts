@@ -1,4 +1,5 @@
 import { showToaster } from "../../components/popup-message/popup-message";
+import { plainData } from "../../core/plain-data";
 import {
   SessionUser,
   changePassword,
@@ -79,8 +80,12 @@ const FACE_STEADY_MS = 500;
  */
 export class HouseholdServiceClass {
   private state!: SettingsState;
+  /** Bumped on attach/detach — long async flows (the calendar-link poll) compare
+   *  their captured epoch and stop instead of running against a dead view. */
+  private epoch = 0;
 
   attach(state: SettingsState) {
+    this.epoch++;
     this.state = state;
     this.state.meId = currentUser()?.id || "";
     this.refresh();
@@ -98,6 +103,7 @@ export class HouseholdServiceClass {
    * class and any live mic/camera enrollment session are the same class of
    * escapee. No network refreshes here — the next attach() refetches anyway. */
   detach() {
+    this.epoch++;
     this.reviewGesturesOff?.();
     this.reviewGesturesOff = null;
     this.lastAssign = null;
@@ -274,14 +280,17 @@ export class HouseholdServiceClass {
     // Real Google: consent happens in a new tab; calendar-service stores the token on the
     // redirect. We can't see that tab, so poll /status until the link shows up.
     window.open(authUrl, "_blank", "noopener");
+    const ep = this.epoch; // stop polling if Settings unmounts mid-link (audit D10)
     this.state.calendarBusy = true;
     this.state.calendarMsg = "Finish the Google sign-in in the new tab…";
     let ok = false;
-    for (let i = 0; i < 16 && !ok; i++) {
+    for (let i = 0; i < 16 && !ok && this.epoch === ep; i++) {
       await new Promise((r) => setTimeout(r, 2500));
+      if (this.epoch !== ep) return;
       await this.refreshCalendar();
       ok = linked();
     }
+    if (this.epoch !== ep) return;
     this.state.calendarBusy = false;
     this.state.calendarMsg = ok ? "" : "Not linked yet — finish the Google sign-in, then reopen Settings.";
     if (ok) showToaster({ from: "bottom", message: "Calendar connected", timer: 1800 });
@@ -380,9 +389,12 @@ export class HouseholdServiceClass {
   async detachClusterAction(guestId: string) {
     try {
       await detachCluster(guestId);
-      this.state.memberClusters = this.state.memberClusters.filter(
-        (c) => c.guest_id !== guestId
-      );
+      // plainData: filtering a bound array yields the surviving item PROXIES —
+      // reassigning them verbatim makes bindrjs wrap each survivor in another
+      // proxy layer per action (audit D9).
+      this.state.memberClusters = this.state.memberClusters
+        .filter((c) => c.guest_id !== guestId)
+        .map(plainData);
       this.state.peopleMsg = "Removed — that face goes back to review";
       await this.refreshReview();
     } catch (err: any) {
@@ -415,7 +427,10 @@ export class HouseholdServiceClass {
   async deleteCaptureAction(id: number) {
     try {
       await deleteFaceCapture(id);
-      this.state.memberCaptures = this.state.memberCaptures.filter((c) => c.id !== id);
+      // plainData: same survivor-reproxy hazard as detachClusterAction (audit D9).
+      this.state.memberCaptures = this.state.memberCaptures
+        .filter((c) => c.id !== id)
+        .map(plainData);
       this.state.capturesTotal = Math.max(0, this.state.capturesTotal - 1);
       this.state.rebuildArmed = false; // the set changed — re-confirm deliberately
     } catch (err: any) {
@@ -1235,8 +1250,10 @@ export class HouseholdServiceClass {
       const session = this.face;
       if (!session || this.state.facePhase === "saving" || this.faceBusy) return;
       const a = await session.assess();
-      this.state.faceReady = a.faceOk;
-      this.state.faceHint = a.hint;
+      // Write-if-changed: this ticks 5×/s and bindrjs runs the full change
+      // pipeline even for identical values (audit D10).
+      if (this.state.faceReady !== a.faceOk) this.state.faceReady = a.faceOk;
+      if (this.state.faceHint !== a.hint) this.state.faceHint = a.hint;
       if (!session.hasDetector) return; // manual capture mode — no auto countdown
       if (a.faceOk) {
         if (!this.faceSteadySince) this.faceSteadySince = performance.now();

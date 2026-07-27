@@ -1,4 +1,5 @@
 import { Component } from "../../../core/component";
+import { plainData } from "../../../core/plain-data";
 import template from "./discovery-review.html?raw";
 import {
   acceptCandidate,
@@ -23,6 +24,12 @@ import { Candidate, CandidateRow, DiscoveryReviewState } from "./discovery-revie
  */
 class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
   private unsubs: Array<() => void> = [];
+  /** Raw candidates as fetched, kept OFF the bind. Rows are rebuilt as fresh
+   * plain objects from these on every redecorate — carrying the bound rows'
+   * `candidate` proxies into each reassignment grew one proxy layer per ambient
+   * WS store event while this panel sat open (audit D15). */
+  private candidates: Candidate[] = [];
+  private busyIds = new Set<Candidate["id"]>();
 
   mount() {
     this.createBind({
@@ -51,13 +58,25 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
   unmount() {
     this.unsubs.forEach((u) => u());
     this.unsubs = [];
+    super.unmount();
+  }
+
+  /** Rows rebuilt from the raw candidates (fresh plain objects every time — the
+   * :key'd foreach skips unchanged DOM), preserving any in-flight busy state. */
+  private buildRows(): CandidateRow[] {
+    return this.candidates.map((c) => ({
+      ...this.toRow(c),
+      busy: this.busyIds.has(c.id),
+    }));
   }
 
   /** Recompute the display fields of the rows already on screen (identity
-   *  resolution only — no refetch), preserving any in-flight busy state. */
+   *  resolution only — no refetch). Skips the reassignment when nothing changed —
+   *  this runs on every devices/sensors store tick while the panel is open. */
   private redecorate() {
-    if (!this.mounted || !this.bind.rows.length) return;
-    this.bind.rows = this.bind.rows.map((r) => ({ ...this.toRow(r.candidate), busy: r.busy }));
+    if (!this.mounted || !this.candidates.length) return;
+    const rows = this.buildRows();
+    if (JSON.stringify(rows) !== JSON.stringify(this.bind.rows)) this.bind.rows = rows;
   }
 
   private refresh() {
@@ -66,11 +85,17 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
     this.bind.error = "";
     getCandidates()
       .then((res) => {
-        this.bind.rows = (res.candidates || []).map((c) => this.toRow(c));
+        if (!this.mounted) return;
+        this.candidates = res.candidates || [];
+        this.busyIds.clear();
+        this.bind.rows = this.buildRows();
         this.bind.loading = false;
       })
       .catch((e) => {
         // A down memory-service must not break the automations view — show a soft note instead.
+        if (!this.mounted) return;
+        this.candidates = [];
+        this.busyIds.clear();
         this.bind.error = "Pattern discovery is unavailable right now.";
         this.bind.rows = [];
         this.bind.loading = false;
@@ -81,7 +106,7 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
   private toRow(candidate: Candidate): CandidateRow {
     const ev = candidate.evidence;
     return {
-      candidate,
+      candidate: plainData(candidate),
       line: candidate.line ? this.humanizeLine(candidate.line) : this.fallbackLine(candidate),
       actionDevice: this.deviceIdentity(candidate.arms[0]?.set?.nodeId),
       triggerDevice: this.deviceIdentity(candidate.trigger?.nodeId),
@@ -137,16 +162,27 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
       : "A recurring pattern was noticed.";
   }
 
+  /** Busy-state flips rebuild the rows from the raw candidates — spreading the
+   * BOUND rows back in (`[...this.bind.rows]`) re-wrapped every row proxy per
+   * flip (audit D15/L1). */
+  private setBusy(id: Candidate["id"], busy: boolean) {
+    if (busy) this.busyIds.add(id);
+    else this.busyIds.delete(id);
+    if (this.mounted) this.bind.rows = this.buildRows();
+  }
+
   private accept(row: CandidateRow) {
     if (row.busy) return;
-    row.busy = true;
-    this.bind.rows = [...this.bind.rows]; // reassign → re-render disabled state
+    const id = row.candidate.id;
+    const candidate = this.candidates.find((c) => c.id === id);
+    if (!candidate) return;
+    this.setBusy(id, true);
     // Record the acceptance on memory-service FIRST, then create the durable hub effect.
     // memory-service is the flakier of the two; gating on it means a hiccup aborts cleanly
     // (no effect created, candidate stays pending → retryable) instead of leaving the effect
     // on the hub while the candidate keeps resurfacing and re-creates a duplicate on retry.
-    acceptCandidate(row.candidate.id)
-      .then(() => saveEffect(this.toEffect(row.candidate)))
+    acceptCandidate(id)
+      .then(() => saveEffect(this.toEffect(candidate)))
       .then(() => getEndPointData("get-effects-dynamic"))
       .then((effects: Effect[]) => {
         EffectActions.load(effects || []);
@@ -154,8 +190,7 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
         this.refresh();
       })
       .catch((e) => {
-        row.busy = false;
-        this.bind.rows = [...this.bind.rows];
+        this.setBusy(id, false);
         showToaster({ from: "bottom", message: "Couldn't create the automation", timer: 2500 });
         console.warn("discovery-review: accept failed", e);
       });
@@ -163,16 +198,15 @@ class DiscoveryReviewClass extends Component<DiscoveryReviewState> {
 
   private dismiss(row: CandidateRow) {
     if (row.busy) return;
-    row.busy = true;
-    this.bind.rows = [...this.bind.rows];
-    declineCandidate(row.candidate.id)
+    const id = row.candidate.id;
+    this.setBusy(id, true);
+    declineCandidate(id)
       .then(() => {
         showToaster({ from: "bottom", message: "Dismissed", timer: 1500 });
         this.refresh();
       })
       .catch((e) => {
-        row.busy = false;
-        this.bind.rows = [...this.bind.rows];
+        this.setBusy(id, false);
         showToaster({ from: "bottom", message: "Couldn't dismiss", timer: 2500 });
         console.warn("discovery-review: decline failed", e);
       });

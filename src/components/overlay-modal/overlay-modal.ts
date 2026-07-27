@@ -1,5 +1,6 @@
 import { Component } from "../../core/component";
 import { bus } from "../../core/bus";
+import { plainData } from "../../core/plain-data";
 import type { ModalContext, ModalRectangle, OverlayModalState } from "./overlay-modal.model";
 import template from "./overlay-modal.html?raw";
 
@@ -22,16 +23,20 @@ class OverlayModalClass extends Component<OverlayModalState> {
       },
     });
 
+    // Live-update the open device sheet from WS traffic. Every write is
+    // change-guarded (bindrjs re-renders on identical writes), and object values
+    // come in as plain clones — `device` is the STORE's object and must never be
+    // shared into this bind (audit D4/D13/D16).
     this.unsubscribeDeviceUpdate = bus.on('device:update', (device) => {
-      if (this.bind.visible && this.bind.data?.id === device.id) {
-        this.bind.data.value = device.value;
-        this.bind.data.manual = device.manual;
-        this.bind.data.name = device.name;
-        this.bind.data.operationalRanges = device.operationalRanges;
-        if (this.bind.data.parsedRanges !== undefined) {
-          // Re-parse ranges if the component that opened this overlay provides a parser
-          // For now, just update the raw data
-        }
+      if (!this.bind.visible || this.bind.data?.id !== device.id) return;
+      const data = this.bind.data;
+      if (JSON.stringify(data.value) !== JSON.stringify(device.value)) {
+        data.value = plainData(device.value);
+      }
+      if (data.manual !== device.manual) data.manual = device.manual;
+      if (data.name !== device.name) data.name = device.name;
+      if (JSON.stringify(data.operationalRanges) !== JSON.stringify(device.operationalRanges)) {
+        data.operationalRanges = plainData(device.operationalRanges);
       }
     });
   }
@@ -49,6 +54,9 @@ let onCloseHook: (() => void) | null = null;
  * can cancel a stale one — otherwise it fires ~300ms later and wipes the freshly-opened
  * overlay's data/visibility right out from under it (EFFECT_CREATION_REPAIR 1.4). */
 let teardownTimer: ReturnType<typeof setTimeout> | null = null;
+/** The 300ms `opening` un-flag timer. Tracked so a close→reopen inside that window
+ * can't strip the NEXT overlay's opening class mid-animation (audit D21). */
+let openingTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Honor prefers-reduced-motion: the sheet appears/disappears IN PLACE — no
  * grow-from-rect choreography. Besides a11y, this removes the load-sensitive
@@ -75,7 +83,13 @@ export function openOverlay(context: ModalContext) {
 
     onCloseHook = context.onClose || null;
     OverlayModal.bind.template = context.template;
-    OverlayModal.bind.data = context.data;
+    // plainData: callers routinely hand over store-owned or other-bind objects
+    // (device rows, sensor rows, edit state embedding store devices). Binding a
+    // fresh plain copy keeps bindrjs from proxifying the caller's objects in
+    // place / re-wrapping foreign proxies (audit D11/D16). Callbacks that need
+    // to patch the LIVE overlay data must go through getOverlayData(), not a
+    // captured reference to what they passed in.
+    OverlayModal.bind.data = plainData(context.data);
     OverlayModal.bind.actions = context.actions || {};
     OverlayModal.bind.visible = true;
     const finalRect = () => {
@@ -95,7 +109,11 @@ export function openOverlay(context: ModalContext) {
     OverlayModal.bind.opening = true;
     setRectStyles(context.startRect);
     setTimeout(finalRect);
-    setTimeout(() => (OverlayModal.bind.opening = false), 300);
+    if (openingTimer) clearTimeout(openingTimer);
+    openingTimer = setTimeout(() => {
+      OverlayModal.bind.opening = false;
+      openingTimer = null;
+    }, 300);
   };
 
   if (OverlayModal.bind.visible) {
@@ -134,6 +152,16 @@ export function closeOverlay(afterTeardown?: () => void) {
     // re-evaluate the outgoing template's bindings (e.g. a multi-arm rule's nested
     // `this.data.newEffect.arms.length`) against the now-cleared `data`/`actions` below.
     OverlayModal.bind.visible = false;
+    if (openingTimer) {
+      clearTimeout(openingTimer);
+      openingTimer = null;
+      OverlayModal.bind.opening = false;
+    }
+    // DELETE before the reset: assignment alone never removes reactive paths, so
+    // every overlay shape ever opened (a recordings day = thousands of segment
+    // paths) permanently bloated this singleton's flatData and slowed every later
+    // overlay write. The delete trap is the library's only purge path (audit D17).
+    delete (OverlayModal.bind as any).data;
     OverlayModal.bind.data = {};
     OverlayModal.bind.actions = {};
     OverlayModal.bind.closing = false;
@@ -151,7 +179,11 @@ export function closeOverlay(afterTeardown?: () => void) {
 
 export function updateOverlayData(data: any) {
   if (OverlayModal.mounted) {
-    OverlayModal.bind.data = data;
+    // plainData: the idiomatic caller pattern is `updateOverlayData({ ...data,
+    // patch })` where `data` IS this bind's proxy — the spread copies nested
+    // values as live proxies, and re-binding them verbatim stacked one more
+    // proxy layer per interaction (per keystroke / per played clip, audit D11).
+    OverlayModal.bind.data = plainData(data);
   }
 }
 

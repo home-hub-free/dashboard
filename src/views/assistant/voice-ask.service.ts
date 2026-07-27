@@ -40,7 +40,7 @@ const SILENT_WAV =
   "data:audio/wav;base64,UklGRjQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YRAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
 export class VoiceAskServiceClass {
-  private state!: AssistantMenuState;
+  private state?: AssistantMenuState;
   private recorder?: MediaRecorder;
   private stream?: MediaStream;
   private chunks: Blob[] = [];
@@ -52,10 +52,36 @@ export class VoiceAskServiceClass {
   private turnId = "";
   private tRecStart = 0;
   private tRecStop = 0;
+  /** Bumped on detach — in-flight turns compare their captured epoch after every
+   *  await and bail instead of writing into a dead bind (audit D8). */
+  private epoch = 0;
 
   /** Wire the service to the assistant bind so UI updates are reactive. */
   attach(state: AssistantMenuState) {
+    this.epoch++;
     this.state = state;
+  }
+
+  /** View unmounted mid-anything: abandon the in-flight turn, stop a live
+   *  recording (the pointerup handler died with the DOM — without this the mic
+   *  stays hot until reload), silence playback, drop the bind ref. */
+  detach() {
+    this.epoch++;
+    this.stop();
+    this.recorder = undefined;
+    this.chunks = [];
+    try {
+      this.audio.pause();
+    } catch {
+      /* best effort */
+    }
+    this.onTurnComplete = undefined;
+    this.state = undefined;
+  }
+
+  /** True when the turn that captured `epoch` no longer owns the view. */
+  private dead(epoch: number): boolean {
+    return epoch !== this.epoch || !this.state;
   }
 
   /**
@@ -87,7 +113,9 @@ export class VoiceAskServiceClass {
 
   /** pointer-down on the talk button. */
   async start() {
-    if (!this.state || this.state.voiceState !== "idle") return;
+    const s = this.state;
+    const ep = this.epoch;
+    if (!s || s.voiceState !== "idle") return;
     if (!navigator.mediaDevices?.getUserMedia) {
       return this.fail("Microphone needs a secure (https) connection");
     }
@@ -96,6 +124,12 @@ export class VoiceAskServiceClass {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
       return this.fail("Microphone access denied");
+    }
+    if (this.dead(ep)) {
+      // View unmounted while the permission prompt was up — release the mic.
+      this.stream?.getTracks().forEach((t) => t.stop());
+      this.stream = undefined;
+      return;
     }
     this.chunks = [];
     this.turnId = newTurnId();
@@ -106,10 +140,10 @@ export class VoiceAskServiceClass {
     this.recorder.onstop = () => this.process();
     this.recorder.start();
     this.tRecStart = now();
-    this.state.voiceTranscript = "";
-    this.state.voiceReply = "";
-    this.state.voiceAction = "";
-    this.state.voiceState = "recording";
+    s.voiceTranscript = "";
+    s.voiceReply = "";
+    s.voiceAction = "";
+    s.voiceState = "recording";
   }
 
   /** pointer-up / leave on the talk button. */
@@ -131,8 +165,10 @@ export class VoiceAskServiceClass {
    */
   async ask(text: string) {
     const msg = (text || "").trim();
-    if (!this.state || !msg) return;
-    if (this.state.voiceState !== "idle") return; // a turn is already in flight
+    const s = this.state;
+    const ep = this.epoch;
+    if (!s || !msg) return;
+    if (s.voiceState !== "idle") return; // a turn is already in flight
     this.primeAudio(); // still inside the submit gesture — before any await
 
     const turnId = newTurnId();
@@ -144,33 +180,36 @@ export class VoiceAskServiceClass {
     let tool: string | undefined;
 
     // Echo the typed request into the shared conversation surface.
-    this.state.voiceTranscript = msg;
-    this.state.voiceReply = "";
-    this.state.voiceAction = "";
+    s.voiceTranscript = msg;
+    s.voiceReply = "";
+    s.voiceAction = "";
     scrollTranscriptToBottom();
 
     try {
-      this.state.voiceState = "thinking";
+      s.voiceState = "thinking";
       let t = now();
       const r = await askAgent(msg);
       stages.agent = Math.round(now() - t);
+      if (this.dead(ep)) return; // view unmounted mid-turn — stop touching the dead bind
       reply = r.speech;
       tool = r.action && "tool" in r.action ? r.action.tool : undefined;
-      this.state.voiceReply = r.speech;
-      this.state.voiceAction = actionLabel(r.action);
+      s.voiceReply = r.speech;
+      s.voiceAction = actionLabel(r.action);
       scrollTranscriptToBottom();
 
       if (r.speech) {
-        this.state.voiceState = "speaking";
+        s.voiceState = "speaking";
         t = now();
         const audioBlob = await synthesizeSpeech(r.speech);
         stages.tts = Math.round(now() - t);
+        if (this.dead(ep)) return;
         t = now();
         await this.play(audioBlob);
         stages.playback = Math.round(now() - t);
+        if (this.dead(ep)) return;
       }
       ok = true;
-      this.state.voiceState = "idle";
+      s.voiceState = "idle";
       void this.syncChats();
     } catch (err: any) {
       const m: string = err?.message || "Request failed";
@@ -193,10 +232,13 @@ export class VoiceAskServiceClass {
 
   /** Full round-trip once recording stops. */
   private async process() {
+    const s = this.state;
+    const ep = this.epoch;
+    if (!s) return; // recorder.onstop fired after detach — nothing to render into
     const type = this.recorder?.mimeType || "audio/webm";
     const blob = new Blob(this.chunks, { type });
     if (!blob.size) {
-      this.state.voiceState = "idle";
+      s.voiceState = "idle";
       return;
     }
 
@@ -215,42 +257,47 @@ export class VoiceAskServiceClass {
     let tool: string | undefined;
 
     try {
-      this.state.voiceState = "transcribing";
+      s.voiceState = "transcribing";
       // Worker reads via libsndfile (no webm) — re-encode to 16 kHz mono WAV first.
       const wav = await blobToWav16k(blob);
+      if (this.dead(ep)) return;
       let t = now();
       const stt = await transcribeAudio(wav);
       stages.stt = Math.round(now() - t);
+      if (this.dead(ep)) return;
       if (stt.inferSec != null) stages.sttCompute = Math.round(stt.inferSec * 1000);
       if (!stt.text) {
         errMsg = "empty transcript";
         return this.fail("Didn't catch that — try again");
       }
       transcript = stt.text;
-      this.state.voiceTranscript = stt.text;
+      s.voiceTranscript = stt.text;
       scrollTranscriptToBottom();
 
-      this.state.voiceState = "thinking";
+      s.voiceState = "thinking";
       t = now();
       const r = await askAgent(stt.text);
       stages.agent = Math.round(now() - t);
+      if (this.dead(ep)) return;
       reply = r.speech;
       tool = r.action && "tool" in r.action ? r.action.tool : undefined;
-      this.state.voiceReply = r.speech;
-      this.state.voiceAction = actionLabel(r.action);
+      s.voiceReply = r.speech;
+      s.voiceAction = actionLabel(r.action);
       scrollTranscriptToBottom();
 
       if (r.speech) {
-        this.state.voiceState = "speaking";
+        s.voiceState = "speaking";
         t = now();
         const audioBlob = await synthesizeSpeech(r.speech);
         stages.tts = Math.round(now() - t);
+        if (this.dead(ep)) return;
         t = now();
         await this.play(audioBlob);
         stages.playback = Math.round(now() - t);
+        if (this.dead(ep)) return;
       }
       ok = true;
-      this.state.voiceState = "idle";
+      s.voiceState = "idle";
       void this.syncChats();
     } catch (err: any) {
       const msg: string = err?.message || "Voice request failed";
@@ -275,16 +322,19 @@ export class VoiceAskServiceClass {
    *  this turn. If the store hasn't caught up (a persist/fetch race, a gateway hiccup), clearing
    *  would make the user's words visibly vanish; the pending bubbles are the safe fallback view. */
   private async syncChats() {
-    const sent = this.state.voiceTranscript;
+    const s = this.state;
+    if (!s) return;
+    const sent = s.voiceTranscript;
     try {
       await this.onTurnComplete?.();
-      const stored = (this.state.activeTurns ?? []).some(
+      if (this.state !== s) return; // detached while the panel refreshed
+      const stored = (s.activeTurns ?? []).some(
         (t) => t.role === "user" && t.content === sent,
       );
       if (stored) {
-        this.state.voiceTranscript = "";
-        this.state.voiceReply = "";
-        this.state.voiceAction = "";
+        s.voiceTranscript = "";
+        s.voiceReply = "";
+        s.voiceAction = "";
       }
     } catch {
       /* keep the pending bubbles as the fallback view */

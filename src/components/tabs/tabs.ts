@@ -31,10 +31,12 @@ class TabsClass extends Component<TabsState> {
       ready: () => this.ready(),
     });
 
-    this.unsubscribeMenuChange = bus.on('menu:change', ({ tabs, menuId }) => {
+    this.unsubscribeMenuChange = bus.on('menu:change', ({ tabs }) => {
       this.tabs = tabs;
+      // The assignment's own onChange('tabs') handler runs setActiveTabForActiveMenu
+      // (store.activeMenuId is already set by NavActions before this event) —
+      // calling it here too double-fired the whole init chain (audit D12).
       this.bind.tabs = tabs;
-      this.setActiveTabForActiveMenu(menuId);
     });
 
     // Emit initial menu:change if NavBar is already mounted
@@ -50,6 +52,7 @@ class TabsClass extends Component<TabsState> {
 
   unmount() {
     this.unsubscribeMenuChange?.();
+    super.unmount();
   }
 
   ready() {
@@ -73,7 +76,10 @@ class TabsClass extends Component<TabsState> {
   private setActiveTabForActiveMenu(activeMenuId: string) {
     const activeMenuTabs = storageGet('activeMenuTabs') || {};
     const tabId = activeMenuTabs[activeMenuId];
-    if (tabId) {
+    // Equality-guarded: bindrjs re-fires onChange (→ another TabContent.initView)
+    // even for an identical assignment, and downstream tab:change listeners
+    // remount their views (audit D12).
+    if (tabId && this.bind.activeTabId !== tabId) {
       this.bind.activeTabId = tabId;
       bus.emit('tab:change', { tabId });
     }
@@ -84,6 +90,7 @@ class TabsClass extends Component<TabsState> {
   }
 
   selectTab(tab: Tab, event?: Event) {
+    if (this.bind.activeTabId === tab.id) return; // already there — no remount
     this.bind.activeTabId = tab.id;
     const activeMenuId = store.get('activeMenuId');
     const activeMenuTabs: any = storageGet('activeMenuTabs') || {};

@@ -47,6 +47,7 @@ class SensorsTabClass extends Component<SensorsTabState> {
   unmount() {
     this.unsubscribeSensors?.();
     stopRadarDebug();
+    super.unmount();
   }
 
   sensorTouchEnd(event: any, sensor: Sensor) {
@@ -60,7 +61,7 @@ class SensorsTabClass extends Component<SensorsTabState> {
         zoneOptions: zoneOptions(sensor.zone, store.get("zones")),
       },
       actions: {
-        saveProp: this.sensorsService.saveProp,
+        saveProp: this.sensorsService.saveProp.bind(this.sensorsService),
         armCalibration: this.armCalibration.bind(this),
         cancelCalibration: this.cancelCalibration.bind(this),
         startCalibration: this.startCalibration.bind(this),
@@ -126,9 +127,13 @@ class SensorsTabClass extends Component<SensorsTabState> {
     });
 
     const tick = () => {
+      // Closing the overlay during the grace window ABORTS the calibration —
+      // the countdown exists so the user can step away/back out; firing a real
+      // calibration after they dismissed the sheet was the audit-D21 surprise.
+      if (!this.overlayShows(id)) return;
       remaining -= 1;
       if (remaining > 0) {
-        if (this.overlayShows(id)) this.patchOverlay({ calibrationCountdown: remaining });
+        this.patchOverlay({ calibrationCountdown: remaining });
         setTimeout(tick, 1000);
       } else {
         this.fireCalibration(id);

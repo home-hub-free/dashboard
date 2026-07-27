@@ -249,18 +249,21 @@ export type VisionCameraStatus = {
   privacy?: boolean;
 };
 
-/** One pull of the vision world-model: zone occupancy + per-camera worker health. */
+/** One pull of the vision world-model: zone occupancy + per-camera worker health.
+ * Returns null on a transient failure — an empty result here used to read as "no
+ * cameras", tearing down every vision-only tile for one blip and rebuilding them
+ * on the next poll (audit D19); the poller keeps its last state instead. */
 export async function fetchVisionState(): Promise<{
   zones: Record<string, ZoneOccupant[]>;
   cameras: VisionCameraStatus[];
-}> {
+} | null> {
   try {
     const res = await fetch(visionServer + "occupancy");
-    if (!res.ok) return { zones: {}, cameras: [] };
+    if (!res.ok) return null;
     const data = await res.json();
     return { zones: data?.zones || {}, cameras: data?.cameras || [] };
   } catch {
-    return { zones: {}, cameras: [] };
+    return null;
   }
 }
 

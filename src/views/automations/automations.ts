@@ -30,6 +30,9 @@ class AutomationsContentClass extends Component<AutomationsMenuState> {
     });
 
     this.unsubscribeTabChange = bus.on('tab:change', ({ tabId }) => {
+      // Skip the redundant remount when the tab didn't actually change (the nav
+      // burst re-announces the current tab — audit D12 amplifier).
+      if (this.bind.activeTabId === tabId && this.activeView?.mounted) return;
       this.bind.activeTabId = tabId;
       this.initTabView(tabId);
     });
@@ -39,6 +42,7 @@ class AutomationsContentClass extends Component<AutomationsMenuState> {
     this.unsubscribeTabChange?.();
     this.activeView?.unmount();
     if (DiscoveryReview.mounted) DiscoveryReview.unmount();
+    super.unmount();
   }
 
   private initTabView(tabId: string) {

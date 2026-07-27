@@ -22,11 +22,19 @@ import { fetchVisionState } from "./server-handler";
 const POLL_MS = 15000;
 let timer: number | undefined;
 let started = false;
+/** Last emitted payload — identical polls are swallowed so an unchanged world
+ * doesn't re-run every camera tile's enrichment each 15s (audit D19). Reset on
+ * start so a freshly-mounted view always gets its first snapshot. */
+let lastPayload = "";
 
 async function tick() {
-  const { zones, cameras } = await fetchVisionState();
-  bus.emit("vision:occupancy", zones);
-  bus.emit("vision:cameras", cameras);
+  const state = await fetchVisionState();
+  if (!state) return; // transient failure — keep showing the last-known world
+  const payload = JSON.stringify(state);
+  if (payload === lastPayload) return;
+  lastPayload = payload;
+  bus.emit("vision:occupancy", state.zones);
+  bus.emit("vision:cameras", state.cameras);
 }
 
 function schedule() {
@@ -51,6 +59,7 @@ function onVisibility() {
 export function startVisionOccupancy() {
   if (started) return;
   started = true;
+  lastPayload = ""; // a fresh consumer needs the first snapshot even if unchanged
   document.addEventListener("visibilitychange", onVisibility);
   schedule();
 }
