@@ -62,6 +62,7 @@ class SensorsTabClass extends Component<SensorsTabState> {
       },
       actions: {
         saveProp: this.sensorsService.saveProp.bind(this.sensorsService),
+        toggleLedOnActive: this.toggleLedOnActive.bind(this),
         armCalibration: this.armCalibration.bind(this),
         cancelCalibration: this.cancelCalibration.bind(this),
         startCalibration: this.startCalibration.bind(this),
@@ -101,6 +102,21 @@ class SensorsTabClass extends Component<SensorsTabState> {
     const zones = await svcRemoveZone(data.zone);
     serverHandler.submitDataChange(data.id, 'sensors', 'zone', '');
     this.patchOverlay({ zone: '', zoneOptions: zoneOptions('', zones) });
+  }
+
+  /** Flip the presence sensor's onboard activity LED. Hub-owned config — the
+   * device adopts it on its next declare heartbeat (~10s), so no device call
+   * here; absent means ON (the fleet default). */
+  private toggleLedOnActive(data: any) {
+    const next = data.ledOnActive === false;
+    serverHandler.submitDataChange(data.id, 'sensors', 'ledOnActive', next).then(() => {
+      showToaster({
+        from: 'bottom',
+        message: next ? 'Activity LED on' : 'Activity LED off',
+        timer: 2000,
+      });
+    });
+    this.patchOverlay({ ledOnActive: next });
   }
 
   // --- Calibration (detail overlay, 2-step) --------------------------------

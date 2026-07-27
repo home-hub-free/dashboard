@@ -41,6 +41,15 @@
         </div>
     </div>
 
+    <!-- Onboard activity LED: instant walk-test feedback while positioning the
+         sensor; switch off once placement and detection range feel right. -->
+    <div :if="this.data.sensorType === 'presence'" class="form-group pin-row">
+        <label>LED on when active</label>
+        <button class="switch" :class:on="this.data.ledOnActive !== false" :onclick="this.actions.toggleLedOnActive(this.data)" title="Light the sensor's onboard LED while it detects someone — applies within ~10s">
+            <span class="knob"></span>
+        </button>
+    </div>
+
     <div :if="this.data.sensorType === 'presence'" class="form-group calibrate-setting">
         <label>Calibration</label>
 

@@ -10,6 +10,10 @@ export type Sensor = {
    * the edit overlay. Drives per-zone routing on the memory/LLM side (the sensor's
    * ingestion topic is homehub/<zone>/<id>/<channel>). */
   zone?: string;
+  /** Presence-only: light the sensor's onboard LED while it detects someone
+   * (walk-test feedback). Hub-owned config — the device adopts it on its next
+   * declare heartbeat (~10s). Absent/true = LED on (the default). */
+  ledOnActive?: boolean;
   calibrating?: boolean;
   calPct?: number;
   operationalRanges: string[],
