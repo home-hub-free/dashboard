@@ -2,7 +2,9 @@ import { test, expect } from "@playwright/test";
 import { seedSession, stubBackend } from "./stub";
 
 // TEMPORARY diagnostic (bindrjs perf audit 2026-07-26): stage 12 arms in the unified
-// builder and time each stage. Managed by docs/plans/BINDRJS_REPROXY_PERF_HANDOFF.md —
+// builder and time each stage. Managed by docs/plans/archive/BINDRJS_REPROXY_PERF_HANDOFF.md
+// (EXECUTED: bindrjs 1.5.1; this probe ran un-skipped 2026-07-26 and measured a flat
+// [38..41]ms profile over 12 arms — §10 of that doc) —
 // §7 "Repro harness" names this file as the consumer E2E probe (kept test.skip-gated,
 // re-run once un-skipped after the library fix lands to confirm a flat profile, then
 // re-skipped — wall-clock asserts stay out of the default suite); §8 "Acceptance
