@@ -8,11 +8,12 @@ import {
   BlindsConfigureActions,
   authedFetch,
   server,
+  setSatelliteNoiseMix,
   setServerChannel,
   submitDataChange,
   toggleServerDevice,
 } from "../../../utils/server-handler";
-import { channelSchema } from "./channels";
+import { channelSchema, NOISE_LAYER_LABELS } from "./channels";
 import { getGlobalPosition } from "../../../utils/utils.service";
 import {
   addZone as svcAddZone,
@@ -35,6 +36,45 @@ const SCROLL_THRESHOLD = 5;
  * server's Node.initialValue default). Not a display fallback — the template shows
  * the real value; this only seeds the first ± press. */
 const DEFAULT_TARGET = 26;
+
+/** Sleep-sound layer, the wire/blob shape (docs/plans/SATELLITE_SLEEP_SOUNDS.md
+ * Data model & wire contract) — always the complete 6-entry roster, in order. */
+type NoiseLayer = { id: string; on: boolean; level: number };
+
+/** Title-case a raw id ("some-thing" -> "Some Thing") — the fallback label for a
+ * layer NOISE_LAYER_LABELS doesn't recognize (a future v2 pack id), so an unknown
+ * layer still shows a real word instead of disappearing from the sheet. */
+function titleCase(id: string): string {
+  return id
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+/** Decorate the mix array with display labels for the sheet's layer rows — kept
+ * BESIDE data.value (never inside it, M4): overlay-modal.ts wholesale-replaces
+ * data.value from the store's blob on every WS echo, which would wipe a label
+ * decorated into the value object the instant the device next reports. */
+function buildNoiseRows(device: any): (NoiseLayer & { label: string })[] {
+  const layers: NoiseLayer[] = device?.value?.noiseLayers ?? [];
+  return layers.map((l) => ({
+    ...l,
+    label: NOISE_LAYER_LABELS[l.id] ?? titleCase(l.id),
+  }));
+}
+
+// Sleep timer <select> options, minutes (0 = off).
+const NOISE_TIMER_MINUTES = [0, 15, 30, 45, 60, 90, 120];
+
+/** Options for the "Sleep timer" <select>, current-value-first — bindrjs can't
+ * reliably drive :selected (§14 gotcha 2), so we lean on the browser
+ * auto-selecting the first option instead (same trick as zoneOptions). An
+ * off-roster current value (shouldn't happen; defensive) sorts to "Off". */
+function noiseTimerOptions(current: number): number[] {
+  const cur = NOISE_TIMER_MINUTES.includes(current) ? current : NOISE_TIMER_MINUTES[0];
+  return [cur, ...NOISE_TIMER_MINUTES.filter((m) => m !== cur)];
+}
 
 export class DevicesServiceClass {
   originalValue = 0;
@@ -86,6 +126,10 @@ export class DevicesServiceClass {
           // Options for the zone <select>, current value ordered first (see
           // zoneOptions). Picks from the shared registry instead of free-typing.
           zoneOptions: zoneOptions(device.zone, store.get("zones")),
+          // Sleep sounds (SATELLITE_SLEEP_SOUNDS 6.4): decorated layer rows +
+          // current-value-first timer options, kept beside value (M4).
+          noiseRows: buildNoiseRows(device),
+          noiseTimerOptions: noiseTimerOptions(Number((device.value ?? {}).noiseTimerMin) || 0),
         },
         actions: {
           saveProp: this.saveProp.bind(this),
@@ -94,6 +138,10 @@ export class DevicesServiceClass {
           updateEvapCoolerTarget: this.updateEvapCoolerTarget.bind(this),
           setCoolerChannel: this.setCoolerChannel.bind(this),
           setSatChannel: this.setSatChannel.bind(this),
+          setNoiseLevel: this.setNoiseLevel.bind(this),
+          toggleNoiseLayer: this.toggleNoiseLayer.bind(this),
+          setNoiseLayerLevel: this.setNoiseLayerLevel.bind(this),
+          setNoiseTimer: this.setNoiseTimer.bind(this),
           saveOperationalRanges: this.saveOperationalRanges.bind(this),
           removeOperationalRange: this.removeOperationalRange.bind(this),
           saveZone: this.saveZone.bind(this),
@@ -191,6 +239,10 @@ export class DevicesServiceClass {
         // Options for the zone <select>, current value ordered first (see
         // zoneOptions). Picks from the shared registry instead of free-typing.
         zoneOptions: zoneOptions(device.zone, store.get("zones")),
+        // Sleep sounds (SATELLITE_SLEEP_SOUNDS 6.4): decorated layer rows +
+        // current-value-first timer options, kept beside value (M4).
+        noiseRows: buildNoiseRows(device),
+        noiseTimerOptions: noiseTimerOptions(Number((device.value ?? {}).noiseTimerMin) || 0),
       },
       actions: {
         saveProp: this.saveProp.bind(this),
@@ -199,6 +251,10 @@ export class DevicesServiceClass {
         updateEvapCoolerTarget: this.updateEvapCoolerTarget.bind(this),
         setCoolerChannel: this.setCoolerChannel.bind(this),
         setSatChannel: this.setSatChannel.bind(this),
+        setNoiseLevel: this.setNoiseLevel.bind(this),
+        toggleNoiseLayer: this.toggleNoiseLayer.bind(this),
+        setNoiseLayerLevel: this.setNoiseLayerLevel.bind(this),
+        setNoiseTimer: this.setNoiseTimer.bind(this),
         saveOperationalRanges: this.saveOperationalRanges.bind(this),
         removeOperationalRange: this.removeOperationalRange.bind(this),
         saveZone: this.saveZone.bind(this),
@@ -262,6 +318,86 @@ export class DevicesServiceClass {
   setSatChannel(device: any, channel: string, value: boolean | string) {
     const next = typeof value === "string" ? Number(value) : value;
     return this.writeOverlayChannel(device, channel, next);
+  }
+
+  /** Sleep sounds — master loudness (0-100, a digital gain applied before the
+   * mixer's saturation stage — NOT the codec `volume`, locked decision 5 / R7).
+   * The range input hands us a string; coerce before sending. */
+  setNoiseLevel(device: any, value: string | number) {
+    return this.writeOverlayNoise(device, { level: Math.round(Number(value)) });
+  }
+
+  /** Sleep sounds — one layer's on/off switch. Negates the CURRENT on state
+   * INSIDE this action, not in the template (m11): the template passes the
+   * primitive `l.on` (bindrjs only substitutes a loop var before `.`/`)` — §14
+   * gotcha 1 — so `!l.on` inline in the handler call is exactly the substitution
+   * failure this signature avoids). Rebuilds the complete 6-entry roster with
+   * just that one entry changed, since /device-noise-mix replaces `noiseLayers`
+   * wholesale (R4 / 5.5) — a partial array would silently drop the rest. */
+  toggleNoiseLayer(device: any, id: string, currentOn: boolean, level: number) {
+    return this.writeOverlayNoise(device, { layers: this.nextLayers(device, id, !currentOn, level) });
+  }
+
+  /** Sleep sounds — one layer's level slider. Committing a level also forces
+   * that layer ON (dragging a muted layer's slider should audibly wake it). */
+  setNoiseLayerLevel(device: any, id: string, value: string | number) {
+    const level = Math.round(Number(value));
+    return this.writeOverlayNoise(device, { layers: this.nextLayers(device, id, true, level) });
+  }
+
+  /** Sleep sounds — the timer <select> (minutes; 0 = off). */
+  setNoiseTimer(device: any, value: string | number) {
+    return this.writeOverlayNoise(device, { timerMin: Math.round(Number(value)) });
+  }
+
+  /** The complete, roster-ordered layer array with exactly one entry changed —
+   * noiseLayers is authoritative-and-complete end to end (R4, 5.5's "replaces
+   * wholesale"), so every layer write must carry all six, never just the one
+   * that changed. */
+  private nextLayers(device: any, id: string, on: boolean, level: number) {
+    const current: { id: string; on: boolean; level: number }[] = device.value?.noiseLayers ?? [];
+    return current.map((l) => (l.id === id ? { id, on, level } : { ...l }));
+  }
+
+  /** Sleep-sound mix write from the detail overlay (SATELLITE_SLEEP_SOUNDS 6.4):
+   * mirrors writeOverlayChannel's optimistic-fold/POST/revert shape, but rides
+   * the dedicated /device-noise-mix curation route (R3) instead of the channel
+   * bus — the layer mix is dashboard-curated only, never automation/voice-facing.
+   * Optimistic value is a NEWLY BUILT object with a NEW noiseLayers array (never
+   * mutate — the bindrjs clone rule / §14 gotcha 3), and noiseRows/
+   * noiseTimerOptions are rebuilt alongside it so the rows/select stay in sync. */
+  private writeOverlayNoise(
+    device: any,
+    patch: { layers?: NoiseLayer[]; level?: number; timerMin?: number },
+  ) {
+    const previous = device.value;
+    const paint = (value: any) =>
+      updateOverlayData({
+        ...device,
+        value,
+        noiseRows: buildNoiseRows({ value }),
+        noiseTimerOptions: noiseTimerOptions(Number(value?.noiseTimerMin) || 0),
+      });
+
+    const nextValue: any = { ...(previous ?? {}) };
+    if (patch.level !== undefined) nextValue.noiseLevel = patch.level;
+    if (patch.timerMin !== undefined) nextValue.noiseTimerMin = patch.timerMin;
+    if (patch.layers) nextValue.noiseLayers = patch.layers.map((l) => ({ ...l }));
+    paint(nextValue);
+
+    return setSatelliteNoiseMix(device.id, patch)
+      .then((res) => {
+        if (!res.success) {
+          paint(previous);
+          showToaster({ message: "Something went wrong", from: "bottom", timer: 2000 });
+        }
+        return res;
+      })
+      .catch(() => {
+        paint(previous);
+        showToaster({ message: "Couldn't connect to device", from: "bottom", timer: 2000 });
+        return { success: false };
+      });
   }
 
   /** Channel-addressed write from the detail overlay. Optimistically folds the one

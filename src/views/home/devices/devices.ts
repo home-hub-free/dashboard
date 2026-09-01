@@ -154,6 +154,8 @@ function decorateDevice(device: Device): Device {
     if (c.key === "flip") return (device.value ?? {}).flip !== undefined;
     // Eco appears once the firmware reports the key (pre-eco satellites don't).
     if (c.key === "eco") return (device.value ?? {}).eco !== undefined;
+    // Sleep sounds: pre-noise firmware never reports the key (SATELLITE_SLEEP_SOUNDS 6.2).
+    if (c.key === "noise") return (device.value ?? {}).noise !== undefined;
     return true;
   });
   put("wide", device.deviceCategory === "evap-cooler" || hasCamView(device));
@@ -205,7 +207,8 @@ function computeStatus(device: Device, actuators: Channel[]): string {
       const vol = device.channels?.find((c) => c.key === "volume")?.value as number;
       const battery = Number((device.value ?? {}).battery ?? -1);
       const low = battery >= 0 && battery <= 25 ? " · Low battery" : "";
-      return `Vol ${Math.round(vol ?? 0)}%${low}`;
+      const sleeping = (device.value ?? {}).noise === true ? " · Sleep sounds" : "";
+      return `Vol ${Math.round(vol ?? 0)}%${sleeping}${low}`;
     }
     case "evap-cooler": {
       const fan = actuators.find((c) => c.key === "fan")?.value === true;

@@ -194,11 +194,17 @@ const CATEGORY_LABEL: Record<string, string> = {
   door: "door",
   "evap-cooler": "cooler",
   "presence-relay": "relay",
+  "voice-satellite": "speaker",
 };
 const categoryLabel = (cat: string): string => CATEGORY_LABEL[cat] || cat;
 
 export function buildTargetOptions(devices: Device[]): CATargetOption[] {
-  const eligible = devices.filter((d) => d.deviceCategory !== "camera" && d.deviceCategory !== "voice-satellite");
+  const eligible = devices.filter((d) =>
+    d.deviceCategory !== "camera"
+    // A voice satellite is only a target once its firmware reports the sleep-sounds
+    // capability (value.noise !== undefined) — SATELLITE_SLEEP_SOUNDS 6.9. A
+    // pre-noise satellite has nothing automatable and stays excluded, same as today.
+    && (d.deviceCategory !== "voice-satellite" || d.value?.noise !== undefined));
   const nameCounts = new Map<string, number>();
   eligible.forEach((d) => nameCounts.set(d.name, (nameCounts.get(d.name) || 0) + 1));
   return eligible.map((device) => {
@@ -355,6 +361,12 @@ function isSetToValid(state: Pick<CreateAutomationState, "device" | "valueToSet"
   if (!device) return false;
   if (device.type === "boolean") return setTo === true || setTo === false;
   if (device.deviceCategory === "evap-cooler") return !!valueToSet && (setTo === true || setTo === false);
+  // A satellite's `type` is "value" (its channels are number-shaped: volume 0-100,
+  // etc.), but the ONLY automatable channel is the boolean master toggle (locked
+  // decision 4) — without this branch the numeric fallthrough below would accept a
+  // free number here, and the firmware's "1"/"true" string parse would read
+  // anything else as OFF (SATELLITE_SLEEP_SOUNDS 6.9, M5).
+  if (device.deviceCategory === "voice-satellite") return setTo === true || setTo === false;
   return setTo !== null && setTo !== undefined && setTo !== "" && !isNaN(Number(setTo));
 }
 
@@ -638,6 +650,8 @@ function primaryChannel(category: string | undefined): string {
       return "position";
     case "evap-cooler":
       return "fan"; // multi-channel; real cooler arms carry valueToSet
+    case "voice-satellite":
+      return "noise"; // the only automatable channel — the master sleep-sounds toggle
     default:
       return "value";
   }

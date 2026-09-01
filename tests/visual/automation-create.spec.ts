@@ -483,4 +483,37 @@ test.describe("automation creation — feedback & failure paths", () => {
     await expect(page.locator("#create-automation")).toBeVisible(); // rejected save — modal stays open
     expect(posts.length).toBe(1); // this time the request DID reach the (stubbed) server
   });
+
+  // ── Sleep sounds (SATELLITE_SLEEP_SOUNDS 6.9) ───────────────────────────────────────────
+  // A satellite's `type` is "value" (its channels are number-shaped), but the only
+  // automatable channel is the boolean master toggle — the numeric "Set to" input must
+  // never appear for it, and the staged arm must carry a real boolean `true`, never the
+  // number a naive numeric fallthrough would have staged (which the firmware's
+  // "1"/"true" string parse reads as OFF).
+  test("a noise-capable satellite is a boolean automation target; a pre-noise satellite stays excluded", async ({ page }) => {
+    const posts: any[] = [];
+    page.on("request", (r) => {
+      if (r.method() === "POST" && r.url().includes("/api/set-effect")) posts.push(r.postDataJSON());
+    });
+
+    const ov = await openCreateOverlay(page);
+    await ov.locator(".toggle-button", { hasText: "Sensor" }).first().click();
+    await ov.locator("select").first().selectOption("sen-motion");
+    await ov.locator(".toggle-button", { hasText: /^Active$/ }).click();
+
+    const options = await ov.locator("#ca-device-select option").allTextContents();
+    expect(options.some((t) => t.includes("Oficina"))).toBe(true); // dev-sat: noise-capable
+    expect(options.some((t) => t.includes("Sala Sat"))).toBe(false); // dev-sat2: pre-noise firmware, excluded
+
+    await ov.locator("#ca-device-select").selectOption("dev-sat");
+    await expect(ov.locator("#ca-setto-input")).toHaveCount(0); // never the numeric input for a satellite
+    await ov.locator(".toggle-button", { hasText: "Turn on" }).click();
+
+    await ov.locator("button.btn-primary", { hasText: "Save automation" }).click();
+    await expect(page.locator(".overlay-modal-content")).toBeHidden({ timeout: 5000 });
+    expect(posts.length).toBe(1);
+    // The regression this test exists to catch: a numeric fallthrough would have staged
+    // {channel:"noise", value:40}-shaped junk (or worse, coerced something OFF-reading).
+    expect(posts[0]?.effect?.arms[0].set).toEqual({ nodeId: "dev-sat", channel: "noise", value: true });
+  });
 });

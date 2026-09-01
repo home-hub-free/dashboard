@@ -88,6 +88,18 @@
                 </div>
             </div>
 
+            <!-- Voice satellite: type is "value" (its channels are number-shaped),
+                 but the only automatable channel is the boolean master sleep-sounds
+                 toggle (locked decision 4) — its own gate, never the numeric branch
+                 below (SATELLITE_SLEEP_SOUNDS 6.9, M5). -->
+            <div class="form-group" :if="this.data.device.deviceCategory === 'voice-satellite'">
+                <label>Do</label>
+                <div class="toggle-group">
+                    <button class="toggle-button" :class:active="this.data.setTo === true" :onclick="this.actions.setBool(true, this.data)">Turn on</button>
+                    <button class="toggle-button" :class:active="this.data.setTo === false" :onclick="this.actions.setBool(false, this.data)">Turn off</button>
+                </div>
+            </div>
+
             <div :if="this.data.device.type === 'value' && this.data.device.deviceCategory === 'evap-cooler'">
                 <div class="form-group">
                     <label>Channel</label>
@@ -105,7 +117,7 @@
                 </div>
             </div>
 
-            <div class="form-group" :if="this.data.device.type === 'value' && this.data.device.deviceCategory !== 'evap-cooler'">
+            <div class="form-group" :if="this.data.device.type === 'value' && this.data.device.deviceCategory !== 'evap-cooler' && this.data.device.deviceCategory !== 'voice-satellite'">
                 <label>Set to</label>
                 <div class="ca-num-row">
                     <input id="ca-setto-input" type="number" min="0" max="100" placeholder="value" :value="this.data.setTo" :oninput="this.data.setTo = event.target.value" />

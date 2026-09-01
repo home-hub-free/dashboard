@@ -57,7 +57,17 @@ export const devices = [
   // The first also carries a DVP camera (`stream` block → hasCamView): its live view
   // aborts in the harness, so this doubles as the dead-stream render check (the
   // broken-image glyph must never blow the tile layout).
-  { id: "dev-sat", deviceCategory: "voice-satellite", name: "Oficina", zone: "Bedroom", value: { volume: 40, mic: true, battery: 72, flip: true }, type: "value", manual: false, operationalRanges: [], stream: { proto: "mjpeg", port: 81, path: "/stream" } },
+  // dev-sat also carries the sleep-sounds blob (noise/noiseLevel/noiseTimerMin/
+  // noiseLayers, complete 6-entry roster, pink on at 45) — dev-sat2 deliberately
+  // stays WITHOUT them as the pre-noise-firmware control case (SATELLITE_SLEEP_SOUNDS 6.7).
+  { id: "dev-sat", deviceCategory: "voice-satellite", name: "Oficina", zone: "Bedroom", value: { volume: 40, mic: true, battery: 72, flip: true, noise: false, noiseLevel: 60, noiseTimerMin: 0, noiseLayers: [
+    { id: "white", on: false, level: 50 },
+    { id: "pink", on: true, level: 45 },
+    { id: "brown", on: false, level: 45 },
+    { id: "rain", on: false, level: 35 },
+    { id: "fan", on: false, level: 40 },
+    { id: "ocean", on: false, level: 40 },
+  ] }, type: "value", manual: false, operationalRanges: [], stream: { proto: "mjpeg", port: 81, path: "/stream" } },
   { id: "dev-sat2", deviceCategory: "voice-satellite", name: "Sala Sat", zone: "Kitchen", value: { volume: 55, mic: false, battery: -1 }, type: "value", manual: false, operationalRanges: [] },
 ];
 

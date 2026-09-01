@@ -1121,6 +1121,22 @@ export function setServerChannel(
     .then((result) => ({ data: result, success: !!result }));
 }
 
+/** Sleep-sound layer-mix write (SATELLITE_SLEEP_SOUNDS R3): device *curation*, the
+ * same family as /device-blinds-configure — deliberately off the channel bus, so
+ * it never latches the `manual` lock. `layers`, when present, must be the
+ * COMPLETE 6-entry roster (the hub replaces `noiseLayers` wholesale). */
+export function setSatelliteNoiseMix(
+  id: string,
+  patch: { layers?: { id: string; on: boolean; level: number }[]; level?: number; timerMin?: number },
+): Promise<ServerResponse> {
+  return authedFetch(server + "device-noise-mix", {
+    method: "POST",
+    body: JSON.stringify({ id, ...patch }),
+  })
+    .then((res) => res.json())
+    .then((result) => ({ data: result, success: !!result }));
+}
+
 export function submitDataChange(
   id: string,
   type: "devices" | "sensors",

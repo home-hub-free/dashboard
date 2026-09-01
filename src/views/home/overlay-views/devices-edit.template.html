@@ -206,6 +206,65 @@
         </div>
     </div>
 
+    <!-- Sleep sounds — on-device white-noise / sleep-sound mixer
+         (docs/plans/SATELLITE_SLEEP_SOUNDS.md). Gated on noiseLayers so pre-noise
+         firmware shows nothing (the key is absent until the firmware reports it).
+         Master toggle + level ride the ordinary `noise` setting channel
+         (setSatChannel, same path as Mic/Eco); the layer mix is dashboard-curated
+         only and rides its own curation route (R3) — see devices.service.ts's
+         writeOverlayNoise / setSatelliteNoiseMix. Rows render from
+         this.data.noiseRows (decorated BESIDE value, never inside it — M4: the
+         overlay wholesale-replaces data.value from the store's blob on every WS
+         echo, which would wipe a label decorated into the value object itself). -->
+    <div class="device-setting" :if="this.data.value && this.data.value.noiseLayers">
+        <p class="section-title">Sleep sounds</p>
+
+        <div class="form-group">
+            <label>Master</label>
+            <div class="toggle-group">
+                <button class="toggle-button" :class:active="this.data.value.noise" :onclick="this.actions.setSatChannel(this.data, 'noise', true)">On</button>
+                <button class="toggle-button" :class:active="!this.data.value.noise" :onclick="this.actions.setSatChannel(this.data, 'noise', false)">Off</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Sound level</label>
+            <input
+                type="range"
+                min="0"
+                max="100"
+                :value="this.data.value.noiseLevel + ''"
+                :onchange="this.actions.setNoiseLevel(this.data, event.target.value)"
+            />
+            <div class="range-value">${this.data.value.noiseLevel}%</div>
+        </div>
+
+        <div class="noise-list">
+            <div class="noise-row" :foreach="l in this.data.noiseRows" :key="l.id">
+                <span class="noise-name">${l.label}</span>
+                <button class="switch" :class:on="l.on" :onclick="this.actions.toggleNoiseLayer(this.data, l.id, l.on, l.level)">
+                    <span class="knob"></span>
+                </button>
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    :value="l.level + ''"
+                    :onchange="this.actions.setNoiseLayerLevel(this.data, l.id, event.target.value)"
+                />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Sleep timer</label>
+            <select class="dropdown" :onchange="this.actions.setNoiseTimer(this.data, event.target.value)">
+                <option :foreach="m in this.data.noiseTimerOptions" :key="m" :value="m + ''">${m === 0 ? 'Off' : m + ' min'}</option>
+            </select>
+        </div>
+
+        <p class="setting-hint">The mic and wake word pause while sleep sounds play.</p>
+    </div>
+
     <!-- Satellite: what the device's LED ring colors mean (matches the firmware
          states). Reference material — lives here, not on the Home tile. -->
     <div class="device-setting" :if="this.data.deviceCategory === 'voice-satellite'">

@@ -83,6 +83,14 @@ export function channelSchema(category: string | undefined): ChannelSpec[] | nul
         // (hub-side grace-debounced), the satellite sheds camera/mic/WiFi/CPU draw.
         // This is the enable switch; the hub pushes live occupancy separately.
         { key: "eco", role: "setting", kind: "boolean", writable: true, precision: true },
+        // Master sleep-sound toggle (docs/plans/SATELLITE_SLEEP_SOUNDS.md). `setting`,
+        // not `actuator`, on purpose (R2): an actuator-role dashboard write latches the
+        // `manual` lock (device-write-policy.ts on the hub), which would freeze the
+        // node's OWN noise automations — an effect arming this toggle would immediately
+        // disable itself. The layer mix (which layers are on, at what level) is
+        // deliberately NOT a channel (R3) — it rides its own curation route,
+        // POST /device-noise-mix, the same family as /device-blinds-configure.
+        { key: "noise", role: "setting", kind: "boolean", writable: true, precision: true },
         // Battery % self-reported by the board (VBAT divider). No range: -1 means
         // "no battery plugged" — decorateDevice drops the readout entirely then.
         { key: "battery", role: "sensor", kind: "number", unit: "%", writable: false },
@@ -105,8 +113,22 @@ const LABELS: { [key: string]: string } = {
   mic: "Mic",
   flip: "Flip",
   eco: "Eco",
+  noise: "Sleep sounds",
   battery: "Battery",
   value: "Value",
+};
+
+/** Display labels for the firmware's fixed v1 layer roster (devices/voice-satellite/
+ * src/noise.cpp — keep the two in lockstep). An id the dashboard doesn't recognize
+ * (a future v2 pack layer) falls back to a title-cased raw id in buildNoiseRows
+ * rather than disappearing from the sheet. */
+export const NOISE_LAYER_LABELS: Record<string, string> = {
+  white: "White",
+  pink: "Pink",
+  brown: "Brown",
+  rain: "Rain",
+  fan: "Fan",
+  ocean: "Ocean",
 };
 
 const ICONS: { [key: string]: string } = {
