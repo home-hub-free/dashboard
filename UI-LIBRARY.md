@@ -3,7 +3,7 @@ title: Home Hub UI Library
 summary: The dashboard component catalog — every reusable class with markup snippets, plus the recipe for adding a new screen. Principles live in DESIGN.md; live gallery at /ui-kit.html.
 status: LIVE
 owner: dashboard
-updated: 2026-07-26
+updated: 2026-09-01
 tags: [dashboard, ui, components]
 ---
 
@@ -313,7 +313,9 @@ Also in the overlay vocabulary: `.toggle-group`/`.toggle-button` rows,
 `.status-group > .status-item > .status-value` readouts, the 24-hour
 `.time-bar.day-bar` + `.time-range` + `.hour-ticks.day-ticks` schedule,
 `.operational-range` rows, the `.zone-manage > .zone-add-row + .zone-remove`
-zone editor, and the `.calibrate-setting` two-step flow. Keep content inside the
+zone editor, the `.calibrate-setting` two-step flow, and the
+`.noise-list > .noise-row` (name · switch · slider) pair used by the
+voice-satellite "Sleep sounds" section. Keep content inside the
 sheet (`maxHeight` + internal scroll) — never let it overflow.
 
 **Fullscreen variant — the camera lightbox.** `openCameraLive` drives the same
