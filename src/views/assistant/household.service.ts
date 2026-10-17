@@ -22,6 +22,7 @@ import {
   nameGuest,
   promoteGuest,
   listFaceReview,
+  triageFaceReview,
   rejectFaceSuggestion,
   forgetGuest,
   mergeGuest,
@@ -516,6 +517,73 @@ export class HouseholdServiceClass {
     this.state.reviewOthers = cards.filter((c) => rank(c) === 3).length;
     this.state.reviewHealed = healed;
     if (healed > 0) this.refreshPeople(); // auto-merges changed the roster
+  }
+
+  // ── "Clean up" — discard the cards nobody could identify ────────────────────
+  // A queue ignored for months is mostly crops with no clear face (measured
+  // 2026-10-17: ~2/3 of 797). The service re-judges every thumbnail against the
+  // same gate it holds live faces to, a time-budgeted slice per call; we loop
+  // until it reports complete, show the count, and apply ONLY on an explicit
+  // second tap. Recurring people are never listed (service-side rule).
+  private cleanupRun = 0; // bumps on cancel/close so a stale loop stops itself
+
+  async reviewCleanup() {
+    if (this.state.cleanPhase === "scanning" || this.state.cleanPhase === "applying") return;
+    const run = ++this.cleanupRun;
+    this.state.cleanPhase = "scanning";
+    this.state.cleanMsg = "";
+    this.state.cleanScanned = 0;
+    this.state.cleanTotal = this.state.reviewCount;
+    this.state.cleanDiscard = 0;
+    try {
+      for (;;) {
+        const r = await triageFaceReview(false);
+        if (run !== this.cleanupRun) return; // cancelled meanwhile
+        this.state.cleanTotal = r.total;
+        this.state.cleanScanned = r.scanned;
+        this.state.cleanDiscard = r.discard.length;
+        this.state.cleanKept = r.kept + r.kept_recurring;
+        if (r.complete) break;
+        if (r.pending === 0) {
+          // Nothing left to judge but some cards couldn't be (face engine down).
+          this.state.cleanPhase = "";
+          this.state.cleanMsg = `${r.unjudged} photo(s) couldn't be checked right now — try again later`;
+          return;
+        }
+      }
+      this.state.cleanPhase = this.state.cleanDiscard > 0 ? "ready" : "";
+      if (this.state.cleanDiscard === 0)
+        this.state.cleanMsg = "Every photo in the queue has a clear face — nothing to clean up";
+    } catch (err: any) {
+      if (run !== this.cleanupRun) return;
+      this.state.cleanPhase = "";
+      this.state.cleanMsg = err?.message || "Could not check photo quality";
+    }
+  }
+
+  async reviewCleanupApply() {
+    if (this.state.cleanPhase !== "ready") return;
+    const run = ++this.cleanupRun;
+    this.state.cleanPhase = "applying";
+    try {
+      const r = await triageFaceReview(true);
+      if (run !== this.cleanupRun) return;
+      this.state.cleanPhase = "";
+      this.state.cleanMsg = r.complete
+        ? `Discarded ${r.applied} unclear photo(s) — ${r.kept + r.kept_recurring} left to review`
+        : "The queue changed while checking — run Clean up again";
+      await this.refreshReview();
+    } catch (err: any) {
+      if (run !== this.cleanupRun) return;
+      this.state.cleanPhase = "";
+      this.state.cleanMsg = err?.message || "Could not discard";
+    }
+  }
+
+  reviewCleanupCancel() {
+    this.cleanupRun++;
+    this.state.cleanPhase = "";
+    this.state.cleanMsg = "";
   }
 
   openReview() {

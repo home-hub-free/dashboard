@@ -8,6 +8,7 @@
          purpose (no bind state; the ids live on the sections below). -->
     <nav class="settings-rail">
         <button class="rail-chip" onclick="document.getElementById('set-account').scrollIntoView({behavior:'smooth',block:'start'})">Account</button>
+        <button class="rail-chip" onclick="document.getElementById('set-rooms').scrollIntoView({behavior:'smooth',block:'start'})">Rooms</button>
         <button class="rail-chip" onclick="document.getElementById('set-calendar')?.scrollIntoView({behavior:'smooth',block:'start'})">Calendar</button>
         <button class="rail-chip" onclick="document.getElementById('set-people')?.scrollIntoView({behavior:'smooth',block:'start'})">Cameras</button>
         <button class="rail-chip" onclick="document.getElementById('set-household').scrollIntoView({behavior:'smooth',block:'start'})">Household</button>
@@ -320,7 +321,34 @@
             <button class="btn-primary btn-inline" :onclick="this.openReview()">
                 <i class="iconoir-eye-alt"></i> Review
             </button>
+            <!-- Clean up: a queue ignored for months is mostly photos with no clear
+                 face. Dry-run judges every card against the pipeline's own identity
+                 gate; discarding needs a second, explicit tap. Nothing is deleted
+                 that the household could have identified. -->
+            <button class="btn-outline btn-inline" :if="!this.cleanPhase" :onclick="this.reviewCleanup()" title="Find photos too blurry or unclear to identify">
+                <i class="iconoir-refresh-double"></i> Clean up
+            </button>
         </div>
+        <div class="review-cleanup" :if="this.cleanPhase">
+            <span class="review-cleanup-text" :if="this.cleanPhase === 'scanning'">
+                Checking photo quality… ${this.cleanScanned} / ${this.cleanTotal}
+            </span>
+            <span class="review-cleanup-text" :if="this.cleanPhase === 'ready'">
+                <strong>${this.cleanDiscard}</strong> of ${this.cleanTotal} photos have no clear face
+                (too blurry, too small, or turned away) — nobody could identify them.
+                ${this.cleanKept} identifiable face(s) stay in the queue.
+            </span>
+            <span class="review-cleanup-text" :if="this.cleanPhase === 'applying'">Discarding…</span>
+            <span class="review-cleanup-actions">
+                <button class="btn-primary btn-inline" :if="this.cleanPhase === 'ready'" :onclick="this.reviewCleanupApply()">
+                    <i class="iconoir-trash"></i> Discard ${this.cleanDiscard}
+                </button>
+                <button class="btn-quiet btn-inline" :if="this.cleanPhase !== 'applying'" :onclick="this.reviewCleanupCancel()">
+                    ${this.cleanPhase === 'ready' ? 'Keep them' : 'Cancel'}
+                </button>
+            </span>
+        </div>
+        <p class="voice-id-hint" :if="this.cleanMsg && !this.cleanPhase">${this.cleanMsg}</p>
         <p class="voice-id-hint" :if="this.reviewCount === 0 && this.reviewHealed > 0">
             ${this.reviewHealed} unrecognised face(s) were matched to household members automatically.
         </p>
@@ -454,6 +482,36 @@
                 </div>
             </div>
         </details>
+    </section>
+
+    <!-- ROOMS — the shared zone registry. Order here is the order of the room
+         cards on Home (and the room rail). Devices/sensors are assigned to a room
+         from their own detail sheet; this card owns the list itself. -->
+    <section class="assistant-section" id="set-rooms">
+        <p class="section-title">Rooms</p>
+        <p class="voice-id-hint">The order here is the order on Home. Assign a device to a room from its ⋯ sheet.</p>
+        <div class="rooms-list">
+            <div class="room-row" :foreach="room in this.rooms" :key="room.name">
+                <div class="room-name">
+                    <i class="iconoir-home-simple-door"></i>
+                    <span class="room-label">${room.name}</span>
+                    <span class="room-summary">${room.summary}</span>
+                </div>
+                <button class="room-move" :class:hidden="room.first" :onmouseup="this.moveRoom(room.name, -1)" title="Move up" aria-label="Move up">
+                    <i class="iconoir-nav-arrow-up"></i>
+                </button>
+                <button class="room-move" :class:hidden="room.last" :onmouseup="this.moveRoom(room.name, 1)" title="Move down" aria-label="Move down">
+                    <i class="iconoir-nav-arrow-down"></i>
+                </button>
+                <button class="remove-btn" :onmouseup="this.removeRoom(room.name)" title="Remove this room from the list" aria-label="Remove room">
+                    <i class="iconoir-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="household-add rooms-add">
+            <input id="set-room-new" type="text" placeholder="New room name" :oninput="this.newRoomName = event.target.value" />
+            <button class="btn-primary btn-inline" :onmouseup="this.addRoom()"><i class="iconoir-plus"></i> Add room</button>
+        </div>
     </section>
 
     <section class="assistant-section" id="set-household">

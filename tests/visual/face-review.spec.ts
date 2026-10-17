@@ -237,6 +237,71 @@ for (const vp of [
       ]);
     });
 
+    test(`clean up discards unidentifiable photos only on a second tap (${vp.tag})`, async ({ context, page }) => {
+      const posted: string[] = [];
+      await seedSession(context, true);
+      await stubBackend(page);
+      await stubVision(page, posted);
+      // Triage: the first dry-run call is a PARTIAL slice (time budget hit), the
+      // second completes; the dashboard must loop and only then offer "Discard N".
+      const triage: string[] = [];
+      let queueCleared = false;
+      await page.route("**/vision/people/review/triage", (r) => {
+        const body = JSON.parse(r.request().postData() || "{}");
+        triage.push(JSON.stringify(body));
+        const partial = triage.length === 1;
+        const discard = partial
+          ? [{ guest_id: "guest:8", sightings: 1, reason: "no_photo" }]
+          : [
+              { guest_id: "guest:8", sightings: 1, reason: "no_photo" },
+              { guest_id: "guest:7", sightings: 1, reason: "no_face" },
+              { guest_id: "guest:6", sightings: 1, reason: "low_confidence" },
+            ];
+        if (body.apply) queueCleared = true;
+        return r.fulfill({
+          status: 200, contentType: "application/json",
+          body: JSON.stringify({
+            total: 5, scanned: partial ? 2 : 5, pending: partial ? 3 : 0, unjudged: 0,
+            complete: !partial, kept: 1, kept_recurring: 1, discard,
+            reasons: partial ? { no_photo: 1 } : { no_photo: 1, no_face: 1, low_confidence: 1 },
+            applied: body.apply ? 3 : 0,
+          }),
+        });
+      });
+      // After applying, the queue re-fetch comes back smaller.
+      await page.route("**/vision/people/review", (r) =>
+        r.fulfill({ status: 200, contentType: "application/json",
+          body: JSON.stringify(queueCleared ? { queue: reviewQueue.queue.slice(0, 2), healed: [] } : reviewQueue) }));
+      await gotoSettings(page);
+
+      const banner = page.locator(".review-banner");
+      await expect(banner).toContainText("5 face(s) to review");
+      await banner.getByRole("button", { name: /Clean up/ }).click();
+
+      // The dry run never deletes; the verdict panel asks before anything goes.
+      const panel = page.locator(".review-cleanup");
+      await expect(panel).toContainText("3 of 5 photos have no clear face");
+      await expect(panel).toContainText("2 identifiable face(s) stay in the queue");
+      expect(triage).toEqual(['{"apply":false,"budget_s":15}', '{"apply":false,"budget_s":15}']);
+      expect(posted).toEqual([]); // no per-card DELETEs — the service applies in one go
+      await panel.scrollIntoViewIfNeeded();
+      await page.screenshot({ path: path.join(OUT, `cleanup-ready-${vp.tag}.png`) });
+
+      // "Keep them" backs out without applying; Clean up is offered again.
+      await panel.getByRole("button", { name: "Keep them" }).click();
+      await expect(panel).toBeHidden();
+      await expect(banner.getByRole("button", { name: /Clean up/ })).toBeVisible();
+      expect(triage).toHaveLength(2);
+
+      // Run it again and discard this time: one apply call, the banner shrinks.
+      await banner.getByRole("button", { name: /Clean up/ }).click();
+      await panel.getByRole("button", { name: "Discard 3" }).click();
+      expect(triage[triage.length - 1]).toBe('{"apply":true,"budget_s":15}');
+      await expect(page.locator("#set-people")).toContainText("Discarded 3 unclear photo(s) — 2 left to review");
+      await expect(banner).toContainText("2 face(s) to review");
+      await page.screenshot({ path: path.join(OUT, `cleanup-done-${vp.tag}.png`) });
+    });
+
     test(`swipe answers the card (${vp.tag})`, async ({ context, page }) => {
       const posted: string[] = [];
       await seedSession(context, true);

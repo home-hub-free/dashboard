@@ -4,6 +4,27 @@ import { SettingsState } from "./settings.model";
 import { HouseholdService, HouseholdServiceClass } from "../assistant/household.service";
 import { currentUser } from "../../utils/auth";
 import type { Person } from "../../utils/server-handler";
+import { store } from "../../store/store";
+import { addZone, removeZone } from "../../utils/zones.service";
+import { setZones } from "../../utils/server-handler";
+import { showToaster } from "../../components/popup-message/popup-message";
+import type { RoomRow } from "./settings.model";
+
+/** Build the Rooms card rows from the registry + what's assigned to each zone.
+ * Registry order is the Home board's room order, so the arrows here reorder Home. */
+function buildRooms(): RoomRow[] {
+  const zones: string[] = store.get("zones") || [];
+  const devices = store.get("devices") || [];
+  const sensors = store.get("sensors") || [];
+  return zones.map((name, i) => {
+    const d = devices.filter((x: any) => (x.zone || "").trim() === name).length;
+    const s = sensors.filter((x: any) => (x.zone || "").trim() === name).length;
+    const parts: string[] = [];
+    if (d) parts.push(`${d} device${d === 1 ? "" : "s"}`);
+    if (s) parts.push(`${s} sensor${s === 1 ? "" : "s"}`);
+    return { name, summary: parts.join(" · ") || "empty", first: i === 0, last: i === zones.length - 1 };
+  });
+}
 
 /**
  * Settings — household + account administration, relocated out of the Assistant
@@ -12,6 +33,7 @@ import type { Person } from "../../utils/server-handler";
  */
 class SettingsContentClass extends Component<SettingsState> {
   householdService: HouseholdServiceClass;
+  private unsubscribeRooms: (() => void)[] = [];
 
   constructor(householdService: HouseholdServiceClass) {
     super();
@@ -23,6 +45,12 @@ class SettingsContentClass extends Component<SettingsState> {
       id: "settings",
       template,
       bind: {
+        rooms: buildRooms(),
+        newRoomName: "",
+        addRoom: () => this.addRoom(),
+        removeRoom: (name: string) => this.removeRoom(name),
+        moveRoom: (name: string, dir: number) => this.moveRoom(name, dir),
+
         signedInName: currentUser()?.displayName || "",
         meId: "",
         households: [],
@@ -157,6 +185,15 @@ class SettingsContentClass extends Component<SettingsState> {
         reviewUndo: () => this.householdService.reviewUndo(),
         reviewBusy: false,
         reviewMsg: "",
+        cleanPhase: "",
+        cleanScanned: 0,
+        cleanTotal: 0,
+        cleanDiscard: 0,
+        cleanKept: 0,
+        cleanMsg: "",
+        reviewCleanup: () => this.householdService.reviewCleanup(),
+        reviewCleanupApply: () => this.householdService.reviewCleanupApply(),
+        reviewCleanupCancel: () => this.householdService.reviewCleanupCancel(),
         openReview: () => this.householdService.openReview(),
         closeReview: () => this.householdService.closeReview(),
         reviewMe: () => this.householdService.reviewMe(),
@@ -209,6 +246,54 @@ class SettingsContentClass extends Component<SettingsState> {
     });
 
     this.householdService.attach(this.bind);
+
+    const refresh = () => {
+      if (this.mounted) this.bind.rooms = buildRooms();
+    };
+    this.unsubscribeRooms = [
+      store.subscribe("zones", refresh),
+      store.subscribe("devices", refresh),
+      store.subscribe("sensors", refresh),
+    ];
+  }
+
+  // ── Rooms (zone registry) ────────────────────────────────────────────────────
+
+  private async addRoom() {
+    const name = (this.bind.newRoomName || "").trim();
+    if (!name) return;
+    try {
+      await addZone(name);
+      this.bind.newRoomName = "";
+      const input = document.getElementById("set-room-new") as HTMLInputElement | null;
+      if (input) input.value = "";
+    } catch {
+      showToaster({ from: "bottom", message: "Couldn't add the room", timer: 2500 });
+    }
+  }
+
+  /** Removes the room from the registry. Devices/sensors keep their stored zone
+   * string (they show under that name until re-assigned) — nothing is deleted. */
+  private async removeRoom(name: string) {
+    try {
+      await removeZone(name);
+    } catch {
+      showToaster({ from: "bottom", message: "Couldn't remove the room", timer: 2500 });
+    }
+  }
+
+  private async moveRoom(name: string, dir: number) {
+    const zones: string[] = [...(store.get("zones") || [])];
+    const i = zones.indexOf(name);
+    const j = i + dir;
+    if (i === -1 || j < 0 || j >= zones.length) return;
+    [zones[i], zones[j]] = [zones[j], zones[i]];
+    try {
+      const next = await setZones(zones);
+      store.set("zones", next);
+    } catch {
+      showToaster({ from: "bottom", message: "Couldn't reorder the rooms", timer: 2500 });
+    }
   }
 
   // Tab switches swap the container's id out from under us without any close
@@ -217,6 +302,8 @@ class SettingsContentClass extends Component<SettingsState> {
   // be released here or it outlives the view — the leaked keydown handler even
   // kept answering arrow keys with real promote/reject POSTs.
   unmount() {
+    this.unsubscribeRooms.forEach((u) => u());
+    this.unsubscribeRooms = [];
     this.householdService.detach();
     super.unmount();
   }

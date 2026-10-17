@@ -6,7 +6,23 @@ import type { Person, MemberCluster, FaceCapture, FaceThreshold } from "../../ut
  * tab (which is for *talking to* the house, not administering it). The shape is
  * exactly what HouseholdService.attach() drives, so the service is unchanged.
  */
+/** One row of the Rooms card: the zone registry entry + what lives in it. */
+export type RoomRow = {
+  name: string
+  /** "3 devices · 2 sensors" */
+  summary: string
+  first: boolean
+  last: boolean
+}
+
 export type SettingsState = {
+  // Rooms (the shared zone registry: order here = order on the Home board).
+  rooms: RoomRow[]
+  newRoomName: string
+  addRoom: () => void
+  removeRoom: (name: string) => void
+  moveRoom: (name: string, dir: number) => void
+
   // Signed-in member + roster, driven by HouseholdService.
   signedInName: string
   meId: string
@@ -186,6 +202,19 @@ export type SettingsState = {
   reviewUndo: () => void
   reviewBusy: boolean
   reviewMsg: string
+  // "Clean up" — triage of the review queue (vision /people/review/triage): judge
+  // every queued photo against the pipeline's own identity gate, then offer to
+  // discard the ones no human could identify either. Two explicit taps: scan
+  // (dry run, resumable in time-budgeted slices) → "Discard N".
+  cleanPhase: "" | "scanning" | "ready" | "applying"
+  cleanScanned: number // photos judged so far (progress while scanning)
+  cleanTotal: number
+  cleanDiscard: number // unidentifiable photos the service would discard
+  cleanKept: number // identifiable + recurring — what stays for review
+  cleanMsg: string
+  reviewCleanup: () => void
+  reviewCleanupApply: () => void
+  reviewCleanupCancel: () => void
   openReview: () => void
   closeReview: () => void
   reviewMe: () => void // "It's me" → merge the cluster into my face profile

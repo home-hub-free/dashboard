@@ -925,6 +925,33 @@ export async function mergeGuest(guestId: string, intoGuestId: string): Promise<
   if (!res.ok) throw new Error(`Could not merge (${res.status})`);
 }
 
+/** Result of the review-queue triage (vision `POST /people/review/triage`). A
+ * dry run judges each queued thumbnail against the pipeline's own identity gate
+ * (no detectable face / too small / blurry / turned away / low confidence) for a
+ * time budget per call and lists what it would discard; `complete` flips once
+ * every card is judged, and only then does `apply` delete them server-side. */
+export type ReviewTriage = {
+  total: number;
+  scanned: number;
+  pending: number;
+  unjudged: number;
+  complete: boolean;
+  kept: number;
+  kept_recurring: number;
+  discard: { guest_id: string; sightings: number; reason: string }[];
+  reasons: Record<string, number>;
+  applied: number;
+};
+export async function triageFaceReview(apply: boolean, budgetS = 15): Promise<ReviewTriage> {
+  const res = await fetch(visionServer + "people/review/triage", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ apply, budget_s: budgetS }),
+  });
+  if (!res.ok) throw new Error(`Could not check photo quality (${res.status})`);
+  return res.json();
+}
+
 /** Discard a guest cluster entirely (a stranger / not-a-face crop). */
 export async function forgetGuest(guestId: string): Promise<void> {
   const res = await fetch(visionServer + `guests/${encodeURIComponent(guestId)}`, {

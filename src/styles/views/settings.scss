@@ -23,6 +23,7 @@
 // gap to beat — --space-2 keeps all four sections on a phone screen.
 .settings-rail {
   display: flex;
+  flex-wrap: wrap; // five sections now (Rooms joined) — wrap on a phone rather than bleed
   align-items: center;
   gap: var(--space-2);
   // A flex-column child won't shrink below its content (min-width: auto) —
@@ -135,6 +136,74 @@
     font-family: inherit;
     outline: none;
     box-sizing: border-box;
+  }
+}
+
+// ---- Rooms (zone registry) -----------------------------------------------------
+.rooms-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.room-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px 34px 34px;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+
+  .room-name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+
+    i {
+      color: var(--color-text-tertiary);
+    }
+
+    .room-label {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .room-summary {
+      flex: none;
+      font-size: 0.78rem;
+      color: var(--color-text-tertiary);
+      white-space: nowrap;
+    }
+  }
+
+  .room-move {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 1rem;
+
+    &.hidden {
+      visibility: hidden;
+    }
+  }
+}
+
+.rooms-add {
+  align-items: center;
+
+  .btn-inline {
+    flex: none;
   }
 }
 
@@ -872,6 +941,34 @@
   .review-banner-sub {
     font-size: 0.8rem;
     color: var(--color-text-secondary);
+  }
+}
+
+.review-cleanup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin: calc(-1 * var(--space-2)) 0 var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-secondary);
+
+  .review-cleanup-text {
+    flex: 1 1 14rem;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+
+    strong {
+      color: var(--color-text-primary);
+    }
+  }
+
+  .review-cleanup-actions {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
   }
 }
 
