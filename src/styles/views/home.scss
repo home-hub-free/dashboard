@@ -176,11 +176,43 @@
   padding: var(--space-2) var(--space-4);
   overflow-x: auto;
   scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  scroll-padding-left: var(--space-4);
   background: var(--color-background);
   border-bottom: 1px solid var(--color-border);
+  // Overflow affordance: the trailing edge fades, so a 14-room rail reads as
+  // "more to the right" even with the scrollbar hidden.
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent);
+  padding-right: calc(var(--space-4) + 20px);
 
   &::-webkit-scrollbar {
     display: none;
+  }
+
+  > .rail-chip {
+    scroll-snap-align: start;
+  }
+
+  .rail-sep {
+    flex: none;
+    width: 1px;
+    height: 22px;
+    background: var(--color-border);
+  }
+
+  // Board tools (search / on-only / fold) — compact plates, lit when active.
+  .rail-tool {
+    padding: var(--space-1) var(--space-2);
+
+    i {
+      font-size: 16px;
+    }
+
+    &.active {
+      border-color: var(--color-primary);
+      color: var(--color-primary-light);
+    }
   }
 
   // Chip base (plate look, 44px touch expansion) is the shared .rail-chip in
@@ -212,20 +244,15 @@
       white-space: nowrap;
     }
 
-    &.rail-search {
-      margin-left: auto;
-      padding: var(--space-1) var(--space-2);
-
-      i {
-        font-size: 16px;
-      }
-
-      &.active {
-        border-color: var(--color-primary);
-        color: var(--color-primary-light);
-      }
-    }
   }
+}
+
+// Rooms flow as a plain column by default; wide boards switch to CSS columns.
+.zone-flow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
 }
 
 // ---- Device board: collapsible room sections ------------------------------------------
@@ -533,29 +560,24 @@
 // states span the full board; Pinned and Cameras keep full width (shortcuts
 // read as a strip, cameras need the room).
 @include wide-up {
-  #main-content #tab-content #devices.device-board {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    // Cards sit side by side here: the between-card gap steps UP so the room
-    // boundary stays the strongest line on the board.
-    gap: var(--space-4);
-    align-items: start;
-  }
-
-  #main-content #tab-content #devices.device-board > .room-rail,
-  #main-content #tab-content #devices.device-board > .device-filter,
-  #main-content #tab-content #devices.device-board > .device-grid,
-  #main-content #tab-content #devices.device-board > .empty-state {
-    grid-column: 1 / -1;
+  // Rooms become a two-column flow of bounded cards. CSS multi-column (not a
+  // grid) so cards pack by height: a folded room beside a tall one no longer
+  // leaves a row-sized void — the 14-room board stays dense. Pinned and
+  // Cameras span both columns (shortcuts read as a strip, cameras need room).
+  .zone-flow {
+    display: block;
+    columns: 2;
+    column-gap: var(--space-4);
   }
 
   .zone-section {
-    margin: 0; // the board grid owns the gaps
+    break-inside: avoid;
+    margin: 0 0 var(--space-4); // the flow owns the gaps
   }
 
   .zone-section.zsec-pinned,
   .zone-section.zsec-cameras {
-    grid-column: 1 / -1;
+    column-span: all;
   }
 
   // Inside a HALF-width card the grid drops to two tracks: compact plates 2-up,
@@ -627,6 +649,14 @@
     gap: var(--space-5);
     // Taller one-row plates: same geometry, more presence at distance.
     --tile-min-height-compact: 68px;
+  }
+
+  .zone-flow {
+    column-gap: var(--space-5);
+  }
+
+  .zone-section {
+    margin-bottom: var(--space-5);
   }
 
   #main-content #tab-content #devices .zone-head {

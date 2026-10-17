@@ -16,7 +16,7 @@ import {
   CreateAutomationState, buildCreateEffect, cancelArmEdit, canStageArm, computeHint, computePreview,
   destroyCreateAutomationTracks, editArm, emptyCreateAutomationState, removeArm, setBool, setChannel,
   setComparison, setDevice, setDow, setGuardType, setSensor, setSensorBool, setTimeOp, setTriggerMode,
-  setValueToCheck, stageArm,
+  setValueToCheck, stageArm, filterTargets,
 } from "./create-automation";
 import { AutomationsListTabService, AutomationsListTabServiceClass } from "./automations-list.service";
 import { Device } from "../../home/devices/devices.model";
@@ -32,6 +32,8 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
    * sentence/editable decoration below now happens on plain objects (zero change
    * pipelines) and only the derived `groups` tree is ever bound. */
   private effects: Effect[] = [];
+  /** Rule-list search (matches the sentence text, the target device, or its room). */
+  private filterText = "";
 
   constructor(automationsListTabService: AutomationsListTabServiceClass) {
     super();
@@ -45,6 +47,11 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
       bind: {
         groups: [],
         pendingDeleteId: null,
+        total: 0,
+        onFilter: (event: Event) => {
+          this.filterText = (event.target as HTMLInputElement).value || "";
+          this.groupEffects();
+        },
         toggleEffect: this.toggleEffect.bind(this),
         editEffect: this.editEffect.bind(this),
         requestDelete: this.requestDelete.bind(this),
@@ -81,18 +88,30 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
   }
 
   private groupEffects() {
+    // Group by the primary target's ROOM (the first arm's set node). Per-device
+    // cards stopped scaling — a 90-device fleet meant 90 cards; rooms match the Home
+    // board's mental model and each row's sentence already names the device.
+    const devices: Device[] = store.get('devices') || [];
+    const zoneOrder: string[] = store.get('zones') || [];
+    const f = this.filterText.trim().toLowerCase();
     const groups: { [key: string]: EffectsGroup } = {};
     this.effects.forEach((effect: Effect) => {
-      // Group by the rule's primary target — the first arm's set node (a multi-arm rule
-      // typically drives the same device with different values by context).
       const targetId = effect.arms[0]?.set.nodeId ?? 'unknown';
-      if (!groups[targetId]) {
-        const device = store.get('devices').find((d: Device) => d.id === targetId);
-        groups[targetId] = { effects: [], name: device?.name || 'N/A', icon: deviceIcon(device) };
+      const device = devices.find((d: Device) => d.id === targetId);
+      const zone = (device?.zone || '').trim() || 'Unassigned';
+      if (f) {
+        const plain = (effect.sentence || '').replace(/<[^>]+>/g, '').toLowerCase();
+        if (!plain.includes(f) && !zone.toLowerCase().includes(f) && !(device?.name || '').toLowerCase().includes(f)) return;
       }
-      groups[targetId].effects.push(effect);
+      if (!groups[zone]) groups[zone] = { effects: [], name: zone, icon: 'iconoir-home-simple-door' };
+      groups[zone].effects.push(effect);
     });
-    this.bind.groups = Object.values(groups);
+    const order = (z: string) => {
+      const i = zoneOrder.indexOf(z);
+      return z === 'Unassigned' ? 1e9 : i === -1 ? 1e6 : i;
+    };
+    this.bind.total = this.effects.length;
+    this.bind.groups = Object.keys(groups).sort((a, b) => order(a) - order(b) || a.localeCompare(b)).map((z) => groups[z]);
   }
 
   // ── Manage existing rules (EFFECTS_DYNAMIC: /set-effect-enabled, /delete-effect) ─────
@@ -227,7 +246,7 @@ class AutomationsListClass extends Component<AutomationsListTabState> {
       data: state,
       actions: {
         setTriggerMode, setSensor, setSensorBool, setValueToCheck, setComparison,
-        setDevice, setBool, setChannel, setGuardType, setTimeOp, setDow,
+        setDevice, setBool, setChannel, setGuardType, setTimeOp, setDow, filterTargets,
         stageArm, editArm, removeArm, cancelArmEdit, canStageArm, computeHint, computePreview,
         save: (s: CreateAutomationState) => this.saveCreateEffect(s),
       },
@@ -314,23 +333,6 @@ function mountEditTimeTrack(edit: EditEffect): void {
 function destroyEditTimeTrack(): void {
   editTimeTrack?.destroy();
   editTimeTrack = null;
-}
-
-/** Tile-style iconoir glyph for a rule's target device (mirrors the home tiles). */
-function deviceIcon(device: Device | undefined): string {
-  switch (device?.deviceCategory) {
-    case 'light':
-    case 'dimmable-light':
-      return 'iconoir-light-bulb';
-    case 'blinds':
-      return 'iconoir-windows';
-    case 'evap-cooler':
-      return 'iconoir-snow-flake';
-    case 'camera':
-      return 'iconoir-video-camera';
-    default:
-      return 'iconoir-flash';
-  }
 }
 
 /** Coerce a form value (often a string) to the typed boolean | number. Still needed here for

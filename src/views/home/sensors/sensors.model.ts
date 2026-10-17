@@ -17,7 +17,17 @@ export type Sensor = {
   calibrating?: boolean;
   calPct?: number;
   operationalRanges: string[],
-  sensorType: 'motion' | 'presence' | 'temp/humidity' ;
+  /** Known kinds have a tuned chip; any other string is a custom-built sensor the
+   * hub forwards as-is (rendered from `channels`/`unit`/the raw value). */
+  sensorType: 'motion' | 'presence' | 'temp/humidity' | (string & {});
+  unit?: string;
+  /** Hub-forwarded self-declared channels (custom sensors). */
+  channels?: { key: string; kind?: string; unit?: string; label?: string; role?: string }[];
+  // Display-time decoration (devices.ts decorateSensor) — never persisted.
+  icon?: string;
+  /** "boolean" (lamp + Detected/Clear), "th" (temp + humidity metrics), "generic" (one reading). */
+  chipKind?: 'boolean' | 'th' | 'generic';
+  reading?: string;
 }
 
 export type SensorUpdateEvent = {

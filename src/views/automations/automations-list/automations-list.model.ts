@@ -2,6 +2,9 @@ import { Effect } from "../automations.model"
 
 export type AutomationsListTabState = {
   groups: EffectsGroup[],
+  /** Rules in total (gates the search box — shown once the list is long). */
+  total: number,
+  onFilter: (event: Event) => void,
   /** Row id armed for delete-confirm (null = none). */
   pendingDeleteId: number | null,
   toggleEffect: (effect: Effect) => void,

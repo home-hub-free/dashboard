@@ -2,13 +2,9 @@
     <!-- Title -->
     <div class="overlay-header">
         <span class="oh-icon">
-            <i :if="this.data.deviceCategory === 'light'" class="iconoir-light-bulb-on"></i>
-            <i :if="this.data.deviceCategory === 'dimmable-light'" class="iconoir-light-bulb-on"></i>
-            <i :if="this.data.deviceCategory === 'blinds'" class="iconoir-windows"></i>
-            <i :if="this.data.deviceCategory === 'evap-cooler'" class="iconoir-wind"></i>
-            <i :if="this.data.deviceCategory === 'camera'" class="iconoir-video-camera"></i>
-            <i :if="this.data.deviceCategory === 'presence-relay'" class="iconoir-walking"></i>
-            <i :if="this.data.deviceCategory === 'voice-satellite'" class="iconoir-sound-high"></i>
+            <!-- The tile's own icon (decorateDevice) — one binding for every
+                 category, including custom ones the dashboard has never seen. -->
+            <i :class="this.data.icon"></i>
         </span>
         <span class="oh-title">${this.data.name}</span>
     </div>

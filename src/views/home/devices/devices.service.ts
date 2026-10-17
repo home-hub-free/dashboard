@@ -233,6 +233,7 @@ export class DevicesServiceClass {
       template: DeviceEditView,
       data: {
         ...device,
+        icon: device.icon || "iconoir-electronics-chip",
         inputType,
         parsedRanges,
         pinned: isPinned(device.id),

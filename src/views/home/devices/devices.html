@@ -2,6 +2,34 @@
      One tap jumps to (and expands) that room's section: the findability path on
      a wall panel or phone — no typing. The trailing key reveals the text filter. -->
 <nav class="room-rail" :if="this.hasDevices">
+    <!-- Board controls lead the rail so they're reachable without scrolling a
+         long room list on a phone: search, "On only", fold/unfold every room. -->
+    <button
+        class="rail-chip rail-tool rail-search"
+        :class:active="this.searchOpen"
+        :onclick="this.toggleSearch()"
+        title="Search devices by name"
+    >
+        <i class="iconoir-search"></i>
+    </button>
+    <button
+        class="rail-chip rail-tool rail-onlyon"
+        :class:active="this.onlyOn"
+        :onclick="this.toggleOnlyOn()"
+        title="Show only what's on"
+    >
+        <i class="iconoir-light-bulb-on"></i><span class="rail-name">On</span>
+    </button>
+    <button
+        class="rail-chip rail-tool rail-fold"
+        :class:active="this.allFolded"
+        :onclick="this.toggleFoldAll()"
+        title="Fold or unfold every room"
+    >
+        <i class="iconoir-compress-lines" :if="!this.allFolded"></i>
+        <i class="iconoir-expand-lines" :if="this.allFolded"></i>
+    </button>
+    <span class="rail-sep"></span>
     <button
         class="rail-chip"
         :foreach="group in this.groups"
@@ -12,14 +40,6 @@
         <i class="rail-pin iconoir-video-camera" :if="group.kind === 'cameras'"></i>
         <span class="rail-lamp" :if="group.kind === 'zone'" :class:lit="group.lightsOn > 0"></span>
         <span class="rail-name">${group.label}</span>
-    </button>
-    <button
-        class="rail-chip rail-search"
-        :class:active="this.searchOpen"
-        :onclick="this.toggleSearch()"
-        title="Search devices by name"
-    >
-        <i class="iconoir-search"></i>
     </button>
 </nav>
 
@@ -40,6 +60,9 @@
 <!-- One collapsible section per room (pinned strip first, cameras last). A room
      header fuses the zone's sensor glance: temp/humidity readout + motion lamp.
      Collapsing removes tiles from the DOM via :if — which also stops camera streams. -->
+<!-- The rooms flow in CSS columns on wide boards (home.scss .zone-flow) so a
+     short/folded room never leaves a void beside a tall one. -->
+<div class="zone-flow">
 <div
     class="zone-section"
     :foreach="group in this.groups"
@@ -262,21 +285,25 @@
             oncontextmenu="return false;"
         >
             <div class="chip-head">
-                <i :if="sensor.sensorType === 'motion'" class="iconoir-walking"></i>
-                <i :if="sensor.sensorType === 'presence'" class="iconoir-running"></i>
-                <i :if="sensor.sensorType === 'temp/humidity'" class="iconoir-home-temperature-in"></i>
+                <i :class="sensor.icon"></i>
                 <span class="chip-name">${sensor.name}</span>
             </div>
-            <div :if="sensor.type === 'boolean'" class="chip-reading">
+            <div :if="sensor.chipKind === 'boolean'" class="chip-reading">
                 <span class="dot" :class:on="sensor.value"></span>
                 ${sensor.value ? 'Detected' : 'Clear'}
             </div>
-            <div :if="sensor.type === 'value'" class="chip-reading th">
+            <!-- A custom sensor (soil moisture, tank level…): one reading with the
+                 unit the hub forwarded — never the temp/humidity markup. -->
+            <div :if="sensor.chipKind === 'generic'" class="chip-reading">
+                <span class="metric">${sensor.reading}</span>
+            </div>
+            <div :if="sensor.chipKind === 'th'" class="chip-reading th">
                 <span class="metric"><i class="iconoir-temperature-high"></i> ${sensor.value.temperature}</span>
                 <span class="metric"><i class="iconoir-droplet"></i> ${sensor.value.humidity}</span>
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <div class="empty-state" :if="!this.loading && !this.hasDevices">

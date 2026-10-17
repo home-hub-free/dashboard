@@ -20,6 +20,9 @@ export interface ChannelSpec {
   writable: boolean;
   /** Device owns this value (blinds position) — controlled via the detail overlay. */
   precision?: boolean;
+  /** Declared display label / iconoir class (a self-describing device may ship them). */
+  label?: string;
+  icon?: string;
 }
 
 /** A channel spec with its live value and pre-computed display fields the template
@@ -60,6 +63,13 @@ export function channelSchema(category: string | undefined): ChannelSpec[] | nul
       return [{ key: "position", role: "actuator", kind: "number", unit: "%", range: PCT, writable: true, precision: true }];
     case "camera":
       return [];
+    // PIR + relay combo board (server channels.ts has had this since Stage 4; the
+    // dashboard never did, so the tile rendered dead — scale scan 2026-10-17).
+    case "presence-relay":
+      return [
+        { key: "presence", role: "sensor", kind: "boolean", writable: false },
+        { key: "relay", role: "actuator", kind: "boolean", writable: true },
+      ];
     case "evap-cooler":
       return [
         { key: "fan", role: "actuator", kind: "boolean", writable: true },
@@ -115,6 +125,8 @@ const LABELS: { [key: string]: string } = {
   eco: "Eco",
   noise: "Sleep sounds",
   battery: "Battery",
+  presence: "Presence",
+  relay: "Relay",
   value: "Value",
 };
 
@@ -145,6 +157,8 @@ const ICONS: { [key: string]: string } = {
   flip: "iconoir-flip",
   eco: "iconoir-leaf",
   battery: "iconoir-battery-50", // level-accurate icon assigned in decorateDevice
+  presence: "iconoir-running",
+  relay: "iconoir-switch-on",
   value: "iconoir-circle",
 };
 
@@ -156,10 +170,108 @@ function toNumber(v: any): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+/** A plain `{...}` value blob (not null, not an array). */
+export function isPlainObject(v: any): v is Record<string, any> {
+  return v !== null && typeof v === "object" && !Array.isArray(v);
+}
+
+/** The value blob is keyed per channel: a known blob category OR any device whose
+ * live value is an object (a custom-built multi-channel device). Mirrors the hub's
+ * `isObjectBlobValue` so optimistic writes fold exactly like the server does. */
+export function isObjectBlob(category: string | undefined, value: any): boolean {
+  return (
+    category === "evap-cooler" || category === "voice-satellite" || category === "presence-relay" || isPlainObject(value)
+  );
+}
+
+/** "soil-moisture" → "Soil Moisture" — the label for a channel key no table knows. */
+export function titleCaseKey(key: string): string {
+  return key
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+/** Normalize a hub-declared channel spec (a custom device's own `channels[]`,
+ * forwarded verbatim by the hub) into the shape the tile renders from. Tolerates a
+ * minimal declaration: `{key}` alone becomes a boolean/number actuator by the
+ * live value's type; `writable:false` or `role:"sensor"` makes it a readout. */
+function normalizeSpec(raw: any, value: any): ChannelSpec | null {
+  if (!raw || typeof raw.key !== "string" || !raw.key) return null;
+  const live = isPlainObject(value) ? value[raw.key] : value;
+  const kind: ChannelKind =
+    raw.kind === "boolean" || raw.kind === "number" || raw.kind === "enum"
+      ? raw.kind
+      : typeof live === "boolean"
+        ? "boolean"
+        : "number";
+  const writable = raw.writable !== undefined ? !!raw.writable : raw.role !== "sensor";
+  const role: ChannelRole =
+    raw.role === "actuator" || raw.role === "sensor" || raw.role === "setting" ? raw.role : writable ? "actuator" : "sensor";
+  return {
+    key: raw.key,
+    role,
+    kind,
+    writable,
+    ...(raw.unit ? { unit: String(raw.unit) } : {}),
+    ...(raw.range && Number.isFinite(Number(raw.range.min)) && Number.isFinite(Number(raw.range.max))
+      ? { range: { min: Number(raw.range.min), max: Number(raw.range.max), step: Number(raw.range.step) || 1 } }
+      : {}),
+    ...(raw.options ? { options: raw.options } : {}),
+    ...(raw.precision ? { precision: true } : {}),
+    ...(raw.label ? { label: String(raw.label) } : {}),
+    ...(raw.icon ? { icon: String(raw.icon) } : {}),
+  };
+}
+
+/** Last resort for a device with no schema anywhere: read the channels off the
+ * value's shape. A scalar is one switch/level; a blob is one channel per scalar
+ * key — booleans as switches, numbers as readouts (we can't know a number is a
+ * setpoint without the device saying so). */
+function inferSpecs(value: any): ChannelSpec[] {
+  if (isPlainObject(value)) {
+    return Object.entries(value)
+      .filter(([, v]) => v !== null && v !== undefined && typeof v !== "object")
+      .map(([key, v]) =>
+        typeof v === "boolean"
+          ? { key, role: "actuator" as const, kind: "boolean" as const, writable: true }
+          : { key, role: "sensor" as const, kind: "number" as const, writable: false },
+      );
+  }
+  if (typeof value === "boolean") return [{ key: "value", role: "actuator", kind: "boolean", writable: true }];
+  return [{ key: "value", role: "actuator", kind: "number", range: PCT, writable: true }];
+}
+
+/**
+ * The effective channel specs for a device, in priority order:
+ *  1. the device's OWN declared schema (hub `channelAware` + `channels[]`) — a
+ *     custom build describes itself once in firmware and the tile just works;
+ *  2. the dashboard's hard-coded schema for a known category (keeps every tuned
+ *     behaviour for the existing fleet);
+ *  3. the hub-synthesized `channels[]` it forwards for the category, if any;
+ *  4. channels inferred from the value's shape.
+ * Never returns null — camera stays [] by schema.
+ */
+export function specsFor(device: Device): ChannelSpec[] {
+  const declared = Array.isArray(device.channels) ? device.channels : [];
+  const normalizedDeclared = declared.map((c) => normalizeSpec(c, device.value)).filter((c): c is ChannelSpec => !!c);
+  if (device.channelAware && normalizedDeclared.length) return normalizedDeclared;
+  const known = channelSchema(device.deviceCategory);
+  if (known) return known;
+  if (normalizedDeclared.length) return normalizedDeclared;
+  return inferSpecs(device.value);
+}
+
+/** Whether the dashboard has a tuned, hard-coded layout for this category. */
+export function isKnownCategory(category: string | undefined): boolean {
+  return channelSchema(category) !== null;
+}
+
 /** Read one channel's live value out of a device's legacy value blob. */
 function readChannelValue(category: string | undefined, spec: ChannelSpec, value: any): boolean | number {
   let raw: any;
-  if (category === "evap-cooler" || category === "voice-satellite") {
+  if (isObjectBlob(category, value)) {
     raw = (value ?? {})[spec.key];
   } else {
     raw = value;
@@ -173,23 +285,23 @@ function formatValue(spec: ChannelSpec, value: boolean | number): string {
   const n = value as number;
   if (spec.unit === "C") return `${n.toFixed(1)}°`;
   if (spec.unit === "%") return `${Math.round(n)}%`;
-  return String(n);
+  const rounded = Number.isInteger(n) ? String(n) : n.toFixed(1);
+  return spec.unit ? `${rounded} ${spec.unit}` : rounded;
 }
 
 /** Project a device into its live, display-ready channels. Camera (and any
  * unknown category) yields []. */
 export function deviceChannels(device: Device): Channel[] {
-  const specs = channelSchema(device.deviceCategory);
-  if (!specs) return [];
+  const specs = specsFor(device);
   return specs.map((spec) => {
     const value = readChannelValue(device.deviceCategory, spec, device.value);
     return {
       ...spec,
       deviceId: device.id,
       value,
-      label: LABELS[spec.key] ?? spec.key,
+      label: spec.label ?? LABELS[spec.key] ?? titleCaseKey(spec.key),
       display: formatValue(spec, value),
-      icon: ICONS[spec.key] ?? "iconoir-circle",
+      icon: spec.icon ?? ICONS[spec.key] ?? (spec.role === "sensor" ? "iconoir-dashboard-speed" : "iconoir-switch-on"),
       min: spec.range?.min ?? 0,
       max: spec.range?.max ?? 100,
       step: spec.range?.step ?? 1,
@@ -209,7 +321,7 @@ export function withChannelValue(
   // Object-blob categories merge into the blob (mirrors the server's
   // isObjectBlobCategory) — replacing the whole value with the scalar briefly
   // wiped the satellite's sibling channels (mic/battery) until the WS echo.
-  if (category === "evap-cooler" || category === "voice-satellite") {
+  if (isObjectBlob(category, value)) {
     return { ...(value ?? {}), [key]: next };
   }
   return next;

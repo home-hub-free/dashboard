@@ -143,17 +143,21 @@ top (name · temp/humidity mono readout · motion lamp · "N on" · "Lights off"
 while lit), device plates inside, and **the room's own sensor chips along the
 card's foot** (tap = the sensor detail sheet). The room is the ONE place to find
 everything about the room; zones with only sensors still render as cards. On
-≥1000px the cards flow **two-up** (Pinned and Cameras span full width — a 4-up
-shortcut strip and side-by-side live views); phones stack them. On the wall panel
+≥1000px the cards flow in **two CSS columns** (`.zone-flow { columns: 2 }`, cards
+`break-inside: avoid`, Pinned and Cameras `column-span: all` — a 4-up shortcut
+strip and side-by-side live views) so a folded room beside a tall one never
+leaves a row-sized void; phones stack them. On the wall panel
 (≥1400px) the board doesn't just widen: the **glance tier** steps up — room and
 tile names, live readouts and the cooler hero grow a size, one-row plates get
 taller (`--tile-min-height-compact` 68px) and the between-card gap steps to
 `--space-5` (see the `wall-up` block in `views/home.scss`).
 
-Above the board sits the sticky **room rail** — switch-plate room tabs (Pinned →
-rooms in registry order → Cameras), each with a lamp dot that lights gold when
-the room has lights on. Tap = expand + scroll to that card; the text filter
-hides behind the rail's search key. The same jump-rail idiom heads Settings
+Above the board sits the sticky **room rail** — three board tools first (search,
+**On** = only what's running, **fold/unfold every room**), then switch-plate room
+tabs (Pinned → rooms in registry order → Cameras), each with a lamp dot that
+lights gold when the room has lights on. Tap = expand + scroll to that card. The
+rail's trailing edge fades (mask) as the overflow affordance for a long room
+list; room order itself is edited in **Settings → Rooms**. The same jump-rail idiom heads Settings
 (`.settings-rail`); both rails compose the shared `.rail-chip` plate
 (`ui/nav.scss` — geometry, plate look, 44px touch expansion), while type voice
 stays per-view (Home's chips carry room names → display voice; Settings chips
@@ -220,7 +224,8 @@ watching is the tile's primary action, matching every other tile where tap = act
 ### Sensor chip (`ui/tiles.scss`, room-card foot in `views/home/devices/`)
 Sensor chips live **inside their room's card** (`.zone-sensors` — slim horizontal
 instruments under a hairline). Boolean sensors show a state dot (`.on` → success);
-temp/humidity show two metrics. Tap = the sensor detail sheet (rename, zone,
+temp/humidity show two metrics; any other sensor kind (a custom probe) shows one
+reading with the unit the hub forwarded (`decorateSensor` in `devices.ts`). Tap = the sensor detail sheet (rename, zone,
 calibration, radar debug) — the sensors component (`views/home/sensors/`) stays
 mounted **headless** to own that sheet and mirror live calibration progress into
 it; the chips render from the store via the devices template. (The old bottom
@@ -300,6 +305,17 @@ a bare `<button>` is now **neutral** and every visible button opts into a
 
 The dashboard renders via `bindrjs` (external npm dep; templates are `.html?raw`
 strings with `{{ }}`/`${ }` interpolation and `:`-prefixed directives). Watch for:
+
+- **A keyed `:foreach` that SHRINKS can throw mid-rebind** (bindrjs 1.5.1). When a
+  nested list loses most of its items (the Home name filter, "On only"), the
+  rebind pass recomputes a handler for an already-detached element, bindrjs's own
+  error wrapper then dies on `undefined.trim()`, and the exception aborts the rest
+  of the pass — so the first groups update and the rest keep stale tiles — AND it
+  escapes the event handler, so nothing after the assignment runs. Reproduced at
+  94 tiles at any delay after load; an identical second assign ~40ms later paints
+  correctly. Pattern: `devices.ts` `setGroups()` — assign inside try/catch, then
+  verify the rendered count against the expected one on a short timer and assign
+  once more if they disagree.
 
 - **Loop variables substitute only when followed by `.` or `)`.** When passing a
   loop item to a handler, pass primitive property accesses (`channel.deviceId`,

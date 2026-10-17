@@ -2,17 +2,26 @@ import { Channel } from "./channels";
 import { CameraPreset } from "../../../utils/server-handler";
 import { Sensor } from "../sensors/sensors.model";
 
+/** The categories the dashboard has a tuned layout for. Any other string is a
+ * custom-built device the hub forwards as-is — it renders through the generic,
+ * channel-driven tile (see channels.ts specsFor). */
+export type KnownDeviceCategory =
+  | "light"
+  | "door"
+  | "evap-cooler"
+  | "dimmable-light"
+  | "blinds"
+  | "camera"
+  | "presence-relay"
+  | "voice-satellite";
+
 export type Device = {
   id: string;
-  deviceCategory:
-    | "light"
-    | "door"
-    | "evap-cooler"
-    | "dimmable-light"
-    | "blinds"
-    | "camera"
-    | "presence-relay"
-    | "voice-satellite";
+  deviceCategory: KnownDeviceCategory | (string & {});
+  /** Hub flag: the device self-declared its `channels[]` (its schema wins). */
+  channelAware?: boolean;
+  /** Hub-set unit for a single-value device ("%", "C", "L"…). */
+  unit?: string;
   manual: boolean;
   name: string;
   value: any;
@@ -134,6 +143,12 @@ export type DevicesTabState = {
   loading: boolean;
   /** The search field is revealed (the room rail is the primary finder). */
   searchOpen: boolean;
+  /** "On only" board view — just the devices that are currently on. */
+  onlyOn: boolean;
+  /** Every room is folded (drives the fold chip's icon/label). */
+  allFolded: boolean;
+  toggleOnlyOn: () => void;
+  toggleFoldAll: () => void;
   /** Room-rail tap: expand the group and scroll its section into view. */
   jumpTo: (key: string) => void;
   /** Reveal/hide the name filter input. */

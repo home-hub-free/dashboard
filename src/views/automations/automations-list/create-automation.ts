@@ -40,6 +40,7 @@ import {
   type TimeRangeTrackRangeValue,
 } from "../../../components/time-range-track/time-range-track";
 import { Arm, ArmCondition, Effect, EffectOp, SetAction, Trigger } from "../automations.model";
+import { Channel, deviceChannels } from "../../home/devices/channels";
 
 export type CATriggerMode = "sensor" | "time";
 export type CAGuardType = "none" | "time" | "dow";
@@ -48,11 +49,16 @@ export type CADow = "weekday" | "weekend";
 
 export type CATargetOption = { device: Device; label: string };
 export type CASensorOption = { sensor: Sensor; label: string };
+/** One automatable channel of the picked device — the "Do" step is driven by these
+ * (channel-driven, so a custom device with its own declared channels needs no code). */
+export type CAChannelOption = { key: string; label: string; kind: "boolean" | "number"; unit: string; min: number; max: number };
 
 /** A committed action + its optional guard — one row in the "first match wins" arms list. */
 export type CAStagedArm = {
   device: Device;
-  valueToSet?: string; // evap-cooler sub-channel (fan/water)
+  valueToSet?: string; // the channel key being set
+  channelKind?: "boolean" | "number";
+  channelLabel?: string;
   setTo: any;
   guardType: CAGuardType;
   timeOp?: CATimeOp;
@@ -65,7 +71,9 @@ export type CAStagedArm = {
 
 export type CreateAutomationState = {
   // Context — fixed for the whole session (computed once at open time).
-  targets: CATargetOption[]; // actuatable devices only (D4), pre-labeled
+  allTargets: CATargetOption[]; // every actuatable device (D4), pre-labeled
+  targets: CATargetOption[]; // allTargets narrowed by targetFilter (what the <select> shows)
+  targetFilter: string; // type-to-narrow for a large fleet (hidden below SHOW_TARGET_FILTER_AT)
   sensorOptions: CASensorOption[]; // every sensor, pre-labeled
 
   // WHEN (trigger)
@@ -77,9 +85,16 @@ export type CreateAutomationState = {
   comparison: "higher-than" | "lower-than"; // D9: mandatory, defaults "higher-than"
   threshold: string; // value-sensor predicate threshold (text, coerced at build time)
 
-  // DO (the arm currently being edited/staged)
+  // DO (the arm currently being edited/staged) — channel-driven: pick a device, then
+  // (when it has several) a channel; the control is chosen by the channel's kind.
   device: Device | null;
-  valueToSet?: string; // evap-cooler sub-channel
+  channelOptions: CAChannelOption[]; // the device's automatable channels
+  valueToSet?: string; // the chosen channel key (auto-picked when there's only one)
+  channelKind: "boolean" | "number" | null;
+  channelLabel: string;
+  channelUnit: string;
+  channelMin: number;
+  channelMax: number;
   setTo: any;
 
   // ONLY WHEN (the current arm's optional guard)
@@ -198,13 +213,31 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 const categoryLabel = (cat: string): string => CATEGORY_LABEL[cat] || cat;
 
+/** The channels an automation may set on a device: every writable non-sensor
+ * channel — EXCEPT the voice satellite, whose only automatable channel is the
+ * master sleep-sounds toggle (locked decision 4; volume/mic/eco are user settings,
+ * and a pre-noise satellite has nothing automatable — SATELLITE_SLEEP_SOUNDS 6.9). */
+export function automatableChannels(device: Device): CAChannelOption[] {
+  if (device.deviceCategory === "camera") return [];
+  let channels: Channel[] = deviceChannels(device).filter((c) => c.writable && c.role !== "sensor" && c.kind !== "enum");
+  if (device.deviceCategory === "voice-satellite") {
+    channels = device.value?.noise !== undefined ? channels.filter((c) => c.key === "noise") : [];
+  }
+  return channels.map((c) => ({
+    key: c.key,
+    label: c.label,
+    kind: c.kind as "boolean" | "number",
+    unit: c.unit === "C" ? "°C" : c.unit ?? "",
+    min: c.min,
+    max: c.max,
+  }));
+}
+
+/** Below this many targets the plain <select> is fine; above it, a type-to-narrow box. */
+export const SHOW_TARGET_FILTER_AT = 12;
+
 export function buildTargetOptions(devices: Device[]): CATargetOption[] {
-  const eligible = devices.filter((d) =>
-    d.deviceCategory !== "camera"
-    // A voice satellite is only a target once its firmware reports the sleep-sounds
-    // capability (value.noise !== undefined) — SATELLITE_SLEEP_SOUNDS 6.9. A
-    // pre-noise satellite has nothing automatable and stays excluded, same as today.
-    && (d.deviceCategory !== "voice-satellite" || d.value?.noise !== undefined));
+  const eligible = devices.filter((d) => automatableChannels(d).length > 0);
   const nameCounts = new Map<string, number>();
   eligible.forEach((d) => nameCounts.set(d.name, (nameCounts.get(d.name) || 0) + 1));
   return eligible.map((device) => {
@@ -226,8 +259,11 @@ export function buildSensorOptions(sensors: Sensor[]): CASensorOption[] {
 // ---------------------------------------------------------------------------
 
 export function emptyCreateAutomationState(devices: Device[], sensors: Sensor[]): CreateAutomationState {
+  const allTargets = buildTargetOptions(devices);
   return {
-    targets: buildTargetOptions(devices),
+    allTargets,
+    targets: allTargets,
+    targetFilter: "",
     sensorOptions: buildSensorOptions(sensors),
 
     triggerMode: null,
@@ -239,7 +275,13 @@ export function emptyCreateAutomationState(devices: Device[], sensors: Sensor[])
     threshold: "",
 
     device: null,
+    channelOptions: [],
     valueToSet: undefined,
+    channelKind: null,
+    channelLabel: "",
+    channelUnit: "",
+    channelMin: 0,
+    channelMax: 100,
     setTo: null,
 
     guardType: "none",
@@ -293,10 +335,21 @@ export function setComparison(v: "higher-than" | "lower-than", state: CreateAuto
 // DO handlers
 // ---------------------------------------------------------------------------
 
+/** Type-to-narrow the device <select> (a 90-device fleet is unusable as a flat list). */
+export function filterTargets(text: string, state: CreateAutomationState): void {
+  const f = (text || "").trim().toLowerCase();
+  state.targetFilter = text || "";
+  state.targets = f ? state.allTargets.filter((o) => o.label.toLowerCase().includes(f)) : state.allTargets;
+  syncNativeControls(state);
+}
+
 export function setDevice(id: string, state: CreateAutomationState): void {
-  const opt = state.targets.find((o) => o.device.id === id);
+  const opt = state.allTargets.find((o) => o.device.id === id);
   state.device = opt ? opt.device : null;
-  state.valueToSet = undefined;
+  state.channelOptions = opt ? automatableChannels(opt.device) : [];
+  // One automatable channel → it IS the action (a light's power, a dimmable's
+  // brightness); several → the user picks (cooler fan/water/target).
+  applyChannel(state, state.channelOptions.length === 1 ? state.channelOptions[0].key : undefined);
   state.setTo = null;
   syncNativeControls(state); // the "set to" input may still be mounted (same device shape)
 }
@@ -305,9 +358,21 @@ export function setBool(v: boolean, state: CreateAutomationState): void {
   state.setTo = v;
 }
 
-export function setChannel(v: "fan" | "water", state: CreateAutomationState): void {
-  state.valueToSet = v;
+/** Pick which of the device's channels this action sets. */
+export function setChannel(key: string, state: CreateAutomationState): void {
+  applyChannel(state, key);
   state.setTo = null;
+  syncNativeControls(state);
+}
+
+function applyChannel(state: CreateAutomationState, key: string | undefined): void {
+  const ch = key ? state.channelOptions.find((c) => c.key === key) : undefined;
+  state.valueToSet = ch?.key;
+  state.channelKind = ch?.kind ?? null;
+  state.channelLabel = ch?.label ?? "";
+  state.channelUnit = ch?.unit ?? "";
+  state.channelMin = ch?.min ?? 0;
+  state.channelMax = ch?.max ?? 100;
 }
 
 // ---------------------------------------------------------------------------
@@ -354,19 +419,17 @@ export function setDow(v: CADow, state: CreateAutomationState): void {
 // function could ever need into a local BEFORE any branching, so the Proxy `get` (and thus
 // the tracked dependency) always happens unconditionally, on every single call.
 
-function isSetToValid(state: Pick<CreateAutomationState, "device" | "valueToSet" | "setTo">): boolean {
+function isSetToValid(state: Pick<CreateAutomationState, "device" | "valueToSet" | "setTo" | "channelKind">): boolean {
   const device = state.device;
   const valueToSet = state.valueToSet;
   const setTo = state.setTo;
-  if (!device) return false;
-  if (device.type === "boolean") return setTo === true || setTo === false;
-  if (device.deviceCategory === "evap-cooler") return !!valueToSet && (setTo === true || setTo === false);
-  // A satellite's `type` is "value" (its channels are number-shaped: volume 0-100,
-  // etc.), but the ONLY automatable channel is the boolean master toggle (locked
-  // decision 4) — without this branch the numeric fallthrough below would accept a
-  // free number here, and the firmware's "1"/"true" string parse would read
-  // anything else as OFF (SATELLITE_SLEEP_SOUNDS 6.9, M5).
-  if (device.deviceCategory === "voice-satellite") return setTo === true || setTo === false;
+  const channelKind = state.channelKind;
+  if (!device || !valueToSet || !channelKind) return false;
+  // Channel-driven: a boolean channel wants on/off (the satellite's master
+  // sleep-sounds toggle included — a free number would be read as OFF by the
+  // firmware's "1"/"true" parse, SATELLITE_SLEEP_SOUNDS 6.9 M5); a number channel
+  // wants a numeric level/setpoint.
+  if (channelKind === "boolean") return setTo === true || setTo === false;
   return setTo !== null && setTo !== undefined && setTo !== "" && !isNaN(Number(setTo));
 }
 
@@ -468,6 +531,7 @@ export function computePreview(state: CreateAutomationState): string {
   const armsLength = state.arms.length;
   const device = state.device;
   const valueToSet = state.valueToSet;
+  const channelLabel = state.channelLabel;
   const setTo = state.setTo;
   const setToOk = isSetToValid(state);
   const editingIndex = state.editingIndex;
@@ -478,7 +542,7 @@ export function computePreview(state: CreateAutomationState): string {
   const bits: string[] = [];
   if (armsLength) bits.push(`${armsLength} action${armsLength > 1 ? "s" : ""} staged`);
   if (device && setToOk) {
-    const phrase = `${device.name} ${valuePhrase(valueToSet, setTo)}`;
+    const phrase = `${device.name} ${valuePhrase(valueToSet, setTo, channelLabel)}`;
     bits.push(editingIndex !== null ? `editing: ${phrase}` : phrase);
   }
   if (!bits.length) return "";
@@ -492,13 +556,15 @@ export function computePreview(state: CreateAutomationState): string {
 
 type ArmFields = Pick<
   CAStagedArm,
-  "device" | "valueToSet" | "setTo" | "guardType" | "timeOp" | "timeFrom" | "timeTo" | "dow"
+  "device" | "valueToSet" | "channelKind" | "channelLabel" | "setTo" | "guardType" | "timeOp" | "timeFrom" | "timeTo" | "dow"
 >;
 
 function currentArmFields(state: CreateAutomationState): ArmFields {
   return {
     device: state.device!,
     valueToSet: state.valueToSet,
+    channelKind: state.channelKind ?? undefined,
+    channelLabel: state.channelLabel,
     setTo: state.setTo,
     guardType: state.guardType,
     timeOp: state.timeOp ?? undefined,
@@ -524,11 +590,14 @@ function armsMatch(a: ArmFields, b: CAStagedArm): boolean {
   return true; // 'none' — device/value/guardType already matched
 }
 
-function valuePhrase(valueToSet: string | undefined, setTo: any): string {
-  if (valueToSet) return `${valueToSet === "fan" ? "fan" : "water pump"} ${setTo === true || setTo === "true" ? "on" : "off"}`;
-  if (setTo === true || setTo === "true") return "turns on";
-  if (setTo === false || setTo === "false") return "turns off";
-  return `sets to ${setTo}`;
+/** Human phrase for an action. The primary switch ("power") reads as the device
+ * itself turning on/off; any other channel is named ("fan on", "sets brightness to 40"). */
+function valuePhrase(valueToSet: string | undefined, setTo: any, channelLabel?: string): string {
+  const on = setTo === true || setTo === "true";
+  const off = setTo === false || setTo === "false";
+  const named = valueToSet && valueToSet !== "power" && valueToSet !== "value" ? (channelLabel || valueToSet).toLowerCase() : "";
+  if (on || off) return named ? `${named} ${on ? "on" : "off"}` : on ? "turns on" : "turns off";
+  return named ? `sets ${named} to ${setTo}` : `sets to ${setTo}`;
 }
 
 function guardPhrase(a: Pick<CAStagedArm, "guardType" | "timeOp" | "timeFrom" | "timeTo" | "dow">): string {
@@ -541,12 +610,13 @@ function guardPhrase(a: Pick<CAStagedArm, "guardType" | "timeOp" | "timeFrom" | 
 
 function armLabel(a: ArmFields): string {
   const guard = guardPhrase(a);
-  return `<strong>${a.device.name}</strong> ${valuePhrase(a.valueToSet, a.setTo)} — ${guard || "always"}`;
+  return `<strong>${a.device.name}</strong> ${valuePhrase(a.valueToSet, a.setTo, a.channelLabel)} — ${guard || "always"}`;
 }
 
 function resetEditor(state: CreateAutomationState): void {
   state.device = null;
-  state.valueToSet = undefined;
+  state.channelOptions = [];
+  applyChannel(state, undefined);
   state.setTo = null;
   state.guardType = "none";
   state.timeOp = null;
@@ -585,7 +655,8 @@ export function editArm(index: number, state: CreateAutomationState): void {
   const arm = state.arms[index];
   if (!arm) return;
   state.device = arm.device;
-  state.valueToSet = arm.valueToSet;
+  state.channelOptions = automatableChannels(arm.device);
+  applyChannel(state, arm.valueToSet);
   state.setTo = arm.setTo;
   state.guardType = arm.guardType;
   state.timeOp = arm.timeOp ?? null;

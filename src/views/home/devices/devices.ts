@@ -19,7 +19,7 @@ import { Device, DeviceGroup, DevicesTabState } from "./devices.model";
 import { Sensor } from "../sensors/sensors.model";
 import { SensorsTab } from "../sensors/sensors";
 import { getPins } from "./pins.service";
-import { Channel, deviceChannels, withChannelValue } from "./channels";
+import { Channel, deviceChannels, isKnownCategory, isPlainObject, titleCaseKey, withChannelValue } from "./channels";
 import { DevicesService, DevicesServiceClass } from "./devices.service";
 import { CAM_NUDGE_MS, CAM_NUDGE_SPEED, openCameraControls, openCameraLive } from "./camera-ctl.service";
 import { startVisionOccupancy, stopVisionOccupancy } from "../../../utils/vision-handler";
@@ -116,7 +116,11 @@ function decorateDevice(device: Device): Device {
 
   channels.forEach((c) => {
     if (c.role === "sensor") c.control = "readout";
-    else if (c.role === "setting") c.control = "stepper";
+    else if (c.kind === "enum") c.control = "readout";
+    // A boolean setting is a switch, not a stepper (the stepper only makes sense
+    // for a number — it was the cooler's target; a custom device may declare
+    // boolean settings like "auto mode").
+    else if (c.role === "setting") c.control = c.kind === "boolean" ? "chip" : "stepper";
     else if (c.kind === "boolean") c.control = soleActuator ? "none" : "chip";
     // Number actuator (dimmable brightness): the slider is on the tile only
     // while the light is ON — it's the live "how bright" control. Off, the tile
@@ -158,10 +162,20 @@ function decorateDevice(device: Device): Device {
     if (c.key === "noise") return (device.value ?? {}).noise !== undefined;
     return true;
   });
-  put("wide", device.deviceCategory === "evap-cooler" || hasCamView(device));
+  // Size is earned by content. Known categories keep their tuned tier; a custom
+  // device is sized from its channel shape — one switch/level = a compact plate,
+  // three or more live controls/readouts = a wide band like the cooler.
+  const known = isKnownCategory(device.deviceCategory);
+  const live = device.channels.filter((c) => c.control !== "none");
+  const generic = !known && !hasCamView(device);
+  put("wide", device.deviceCategory === "evap-cooler" || hasCamView(device) || (generic && live.length >= 3));
   // One-row plate for tap-is-the-whole-story devices (a camera-equipped
   // satellite is media, never compact).
-  put("compact", COMPACT_CATEGORIES.has(device.deviceCategory) && !hasCamView(device));
+  put(
+    "compact",
+    (COMPACT_CATEGORIES.has(device.deviceCategory) && !hasCamView(device)) ||
+      (generic && actuators.length <= 1 && live.length === 0),
+  );
   // Camera live view comes from the vision-service (annotated MJPEG), never the cam
   // directly nor a relayed blob (§3.2/§6). `who` is filled by the occupancy poller.
   // A camera-equipped satellite gets the identical view (same vision-service worker,
@@ -182,7 +196,7 @@ function decorateDevice(device: Device): Device {
   ));
   put("icon", (device.isOn ? TILE_ICON_ON : TILE_ICON_OFF)[device.deviceCategory]
     ?? TILE_ICON_OFF[device.deviceCategory]
-    ?? "iconoir-circle");
+    ?? genericIcon(device, actuators));
   put("status", computeStatus(device, actuators));
   return device;
 }
@@ -219,8 +233,81 @@ function computeStatus(device: Device, actuators: Channel[]): string {
       return "Idle";
     }
     default:
-      return "";
+      return genericStatus(device, actuators);
   }
+}
+
+/** Tile chrome icon for a category no table knows: a switch for a pure actuator,
+ * a gauge when it also reports readings, a chip when it has nothing live. */
+function genericIcon(device: Device, actuators: Channel[]): string {
+  const hasReadings = (device.channels || []).some((c) => c.role === "sensor");
+  if (hasReadings) return "iconoir-dashboard-speed";
+  if (actuators.length) return device.isOn ? "iconoir-switch-on" : "iconoir-switch-off";
+  return "iconoir-electronics-chip";
+}
+
+/** Status line for a custom device, from its channels: a lone switch says On/Off,
+ * a lone level says "On · 60%", several actuators list the ones that are on, and
+ * with nothing writable the first reading leads ("72%"). */
+function genericStatus(device: Device, actuators: Channel[]): string {
+  const channels = device.channels || [];
+  if (actuators.length === 1) {
+    const a = actuators[0];
+    if (a.kind === "boolean") return a.value ? "On" : "Off";
+    return (a.value as number) > 0 ? `On · ${a.display}` : "Off";
+  }
+  if (actuators.length > 1) {
+    const on = actuators.filter((a) => (a.kind === "boolean" ? a.value === true : (a.value as number) > 0));
+    return on.length ? on.map((a) => a.label).join(" · ") : "Idle";
+  }
+  const reading = channels.find((c) => c.role === "sensor" && c.control === "none");
+  return reading ? `${reading.label} ${reading.display}` : "";
+}
+
+/**
+ * Decorate a sensor CLONE for its room-card chip: an icon, which chip layout to
+ * draw, and (for the generic layout) one formatted reading. Known kinds keep
+ * their tuned chips; anything else — a custom-built probe — renders its value
+ * with the unit the hub forwarded (declared channel unit, or the node's own).
+ */
+export function decorateSensor(sensor: Sensor): Sensor {
+  const put = <K extends keyof Sensor>(key: K, val: Sensor[K]) => {
+    if (sensor[key] !== val) sensor[key] = val;
+  };
+  const v: any = sensor.value;
+  const isTH =
+    sensor.sensorType === "temp/humidity" ||
+    (isPlainObject(v) && "temperature" in v && "humidity" in v);
+  const isBool = sensor.type === "boolean" || typeof v === "boolean";
+  put("icon", SENSOR_ICONS[sensor.sensorType] ?? (isBool ? "iconoir-running" : "iconoir-dashboard-speed"));
+  put("chipKind", isBool ? "boolean" : isTH ? "th" : "generic");
+  put("reading", isBool || isTH ? "" : sensorReading(sensor));
+  return sensor;
+}
+
+const SENSOR_ICONS: { [kind: string]: string } = {
+  motion: "iconoir-walking",
+  presence: "iconoir-running",
+  "temp/humidity": "iconoir-home-temperature-in",
+};
+
+function sensorReading(sensor: Sensor): string {
+  const v: any = sensor.value;
+  const unitFor = (key?: string) =>
+    sensor.channels?.find((c) => c.key === key)?.unit ?? (key ? undefined : sensor.unit) ?? sensor.unit ?? "";
+  const fmt = (n: any, unit: string) => {
+    const num = Number(n);
+    const text = Number.isFinite(num) ? (Number.isInteger(num) ? String(num) : num.toFixed(1)) : String(n ?? "—");
+    return unit === "%" || unit === "°" ? `${text}${unit}` : unit ? `${text} ${unit}` : text;
+  };
+  if (isPlainObject(v)) {
+    const parts = Object.entries(v)
+      .filter(([, x]) => x !== null && x !== undefined && typeof x !== "object")
+      .map(([k, x]) => `${titleCaseKey(k)} ${typeof x === "boolean" ? (x ? "on" : "off") : fmt(x, unitFor(k))}`);
+    return parts.join(" · ") || "—";
+  }
+  if (v === null || v === undefined || v === "") return "—";
+  return fmt(v, unitFor());
 }
 
 /** The camera tile's "who is here" headline (§6) — the high-value surface. Names the
@@ -371,10 +458,15 @@ function buildGroups(
   filter: string,
   sensors: Sensor[],
   pins: string[],
+  onlyOn = false,
 ): DeviceGroup[] {
   const f = filter.trim().toLowerCase();
   const match = (d: Device) =>
-    !f || d.name.toLowerCase().includes(f) || (d.zone || "").toLowerCase().includes(f);
+    (!f || d.name.toLowerCase().includes(f) || (d.zone || "").toLowerCase().includes(f)) &&
+    (!onlyOn || d.isOn === true);
+  // "On only" is a device view — the room's instruments step aside so the board
+  // is just what's running right now.
+  if (onlyOn) sensors = [];
 
   const cams: Device[] = [];
   const byZone = new Map<string, Device[]>();
@@ -421,12 +513,13 @@ function buildGroups(
       devices: pinned,
       sensors: [],
       summary: groupSummary("pinned", pinned),
-      collapsed: !f && collapsed.has(PINNED),
+      collapsed: !f && !onlyOn && collapsed.has(PINNED),
       lightsOn: countLightsOn(pinned),
     });
   }
 
   for (const zone of ordered) {
+    if (onlyOn && !(byZone.get(zone) ?? []).length) continue;
     // Same scan order in every room (lights → blinds → doors → climate →
     // speakers → cameras) — findability comes from the pattern repeating.
     const list = sortTiles(byZone.get(zone) ?? []);
@@ -438,7 +531,7 @@ function buildGroups(
       devices: list,
       sensors: sensorsByZone.get(zone) ?? [],
       summary: list.length ? groupSummary("zone", list) : "",
-      collapsed: !f && collapsed.has(zone),
+      collapsed: !f && !onlyOn && collapsed.has(zone),
       envReading: env.reading,
       envMotion: env.motion,
       lightsOn: countLightsOn(list),
@@ -453,7 +546,7 @@ function buildGroups(
       devices: sortTiles(cams),
       sensors: [],
       summary: groupSummary("cameras", cams),
-      collapsed: !f && collapsed.has(CAMERAS),
+      collapsed: !f && !onlyOn && collapsed.has(CAMERAS),
       lightsOn: 0,
     });
   }
@@ -473,6 +566,8 @@ class DevicesTabClass extends Component<DevicesTabState> {
   private camStatus: Record<string, VisionCameraStatus> = {};
   private collapsed = loadCollapse();
   private filterText = "";
+  // "On only" board view (session-only, not persisted).
+  private onlyOn = false;
   // Latest per-camera worker statuses (vision poll) — kept so vision-only tiles can
   // be re-synthesized after a store sync replaces bind.devices.
   private lastCameras: VisionCameraStatus[] = [];
@@ -496,7 +591,7 @@ class DevicesTabClass extends Component<DevicesTabState> {
   /** Plain clones of the store's sensors — everything bound (or embedded in the
    * bound groups) must be a fresh copy, never the store's own objects (audit D1). */
   private sensorsSnapshot(): Sensor[] {
-    return (store.get("sensors") || []).map(plainData);
+    return (store.get("sensors") || []).map((s) => decorateSensor(plainData(s)));
   }
 
   /** Rebuild the room-grouped view from the flat `devices` array. Cheap + derived, so
@@ -511,7 +606,42 @@ class DevicesTabClass extends Component<DevicesTabState> {
       this.filterText,
       this.sensorsSnapshot(),
       getPins(),
+      this.onlyOn,
     );
+  }
+
+  /**
+   * Structural reassign with a verified retry. bindrjs 1.5.1 can THROW mid-pass
+   * when a keyed :foreach shrinks (filter / "On only"): it recomputes a handler
+   * for a tile it has already detached, its own error wrapper then dies on
+   * `undefined.trim()`, and the exception aborts the rest of the rebind — so the
+   * first two rooms update and the other twelve keep their old tiles (reproduced
+   * at 94 tiles, any delay after load). The exception also escaped the event
+   * handler, so nothing after the assignment ever ran. A second identical assign
+   * ~40ms later paints correctly every time, so: assign (swallowing that throw),
+   * then verify the rendered tile count against the expected one and assign
+   * once more if they disagree. No flicker in the common case; self-heals in
+   * the buggy one.
+   */
+  private setGroups() {
+    this.assignGroups();
+    setTimeout(() => {
+      if (!this.mounted) return;
+      const expected = (this.bind.groups || []).reduce(
+        (n, g) => n + (g.collapsed ? 0 : (g.devices || []).length),
+        0,
+      );
+      const rendered = document.querySelectorAll("#devices .device-tile:not(.skeleton)").length;
+      if (rendered !== expected) this.assignGroups();
+    }, 40);
+  }
+
+  private assignGroups() {
+    try {
+      this.bind.groups = this.groups();
+    } catch (err) {
+      console.warn("devices: groups rebind threw (bindrjs keyed-list shrink) — retrying", err);
+    }
   }
 
   mount() {
@@ -538,6 +668,28 @@ class DevicesTabClass extends Component<DevicesTabState> {
         // fresh boot has an empty store and we must not flash "no devices".
         loading: initial.length === 0,
         searchOpen: false,
+        onlyOn: false,
+        allFolded: false,
+
+        // Rail: "On only" — the board shows just what's running (sensors step
+        // aside, empty rooms drop out, every surviving room is open).
+        toggleOnlyOn: () => {
+          this.onlyOn = !this.onlyOn;
+          this.bind.onlyOn = this.onlyOn;
+          this.setGroups();
+        },
+
+        // Rail: fold every room (or unfold all when everything is folded) — the
+        // 14-room board collapses to a list of headers with their glance data.
+        toggleFoldAll: () => {
+          const zones = (this.bind.groups || []).filter((g) => g.kind !== "pinned").map((g) => g.key);
+          const allFolded = zones.length > 0 && zones.every((k) => this.collapsed.has(k));
+          if (allFolded) zones.forEach((k) => this.collapsed.delete(k));
+          else zones.forEach((k) => this.collapsed.add(k));
+          saveCollapse(this.collapsed);
+          this.bind.allFolded = !allFolded;
+          this.setGroups();
+        },
 
         // Room-rail tap: make sure the section is expanded, then bring it up.
         jumpTo: (key: string) => {
@@ -557,7 +709,7 @@ class DevicesTabClass extends Component<DevicesTabState> {
           this.bind.searchOpen = open;
           if (!open && this.filterText) {
             this.filterText = "";
-            this.bind.groups = this.groups();
+            this.setGroups();
           }
           if (open) {
             requestAnimationFrame(() =>
@@ -592,7 +744,7 @@ class DevicesTabClass extends Component<DevicesTabState> {
         // caret to a re-render; just read it and rebuild the groups.
         onFilter: (event: Event) => {
           this.filterText = (event.target as HTMLInputElement).value || "";
-          this.bind.groups = this.groups();
+          this.setGroups();
         },
 
         // The whole tile is the switch for single-actuator devices.
@@ -805,6 +957,7 @@ class DevicesTabClass extends Component<DevicesTabState> {
         if (!src) return;
         if (JSON.stringify(chip.value) !== JSON.stringify(src.value)) {
           chip.value = plainData(src.value);
+          decorateSensor(chip);
         }
       });
       if (g.kind !== "zone" || g.key === UNASSIGNED) return;

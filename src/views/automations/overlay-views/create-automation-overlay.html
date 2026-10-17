@@ -73,14 +73,40 @@
 
         <div class="form-group">
             <label>Device</label>
+            <!-- A large custom fleet: narrow the list by typing (name / room / kind). -->
+            <input
+                :if="this.data.allTargets.length > 12"
+                class="ca-target-filter"
+                type="text"
+                placeholder="Filter devices by name or room…"
+                :oninput="this.actions.filterTargets(event.target.value, this.data)"
+            />
             <select id="ca-device-select" class="dropdown" :oninput="this.actions.setDevice(event.target.value, this.data)">
                 <option value="null">Select device…</option>
                 <option :foreach="opt in this.data.targets" :key="opt.device.id" :value="opt.device.id">${opt.label}</option>
             </select>
         </div>
 
+        <!-- CHANNEL-DRIVEN "Do": the device's automatable channels come from its
+             channel projection (channels.ts), so a custom-built device that declares
+             its own channels gets a working action form with zero code here. One
+             channel is auto-picked; several (cooler fan / water / target) show a
+             picker; the control follows the channel's kind. -->
         <div :if="this.data.device">
-            <div class="form-group" :if="this.data.device.type === 'boolean'">
+            <div class="form-group" :if="this.data.channelOptions.length > 1">
+                <label>Channel</label>
+                <div class="toggle-group ca-channels">
+                    <button
+                        class="toggle-button"
+                        :foreach="opt in this.data.channelOptions"
+                        :key="opt.key"
+                        :class:active="this.data.valueToSet === opt.key"
+                        :onclick="this.actions.setChannel(opt.key, this.data)"
+                    >${opt.label}</button>
+                </div>
+            </div>
+
+            <div class="form-group" :if="this.data.channelKind === 'boolean'">
                 <label>Do</label>
                 <div class="toggle-group">
                     <button class="toggle-button" :class:active="this.data.setTo === true" :onclick="this.actions.setBool(true, this.data)">Turn on</button>
@@ -88,40 +114,11 @@
                 </div>
             </div>
 
-            <!-- Voice satellite: type is "value" (its channels are number-shaped),
-                 but the only automatable channel is the boolean master sleep-sounds
-                 toggle (locked decision 4) — its own gate, never the numeric branch
-                 below (SATELLITE_SLEEP_SOUNDS 6.9, M5). -->
-            <div class="form-group" :if="this.data.device.deviceCategory === 'voice-satellite'">
-                <label>Do</label>
-                <div class="toggle-group">
-                    <button class="toggle-button" :class:active="this.data.setTo === true" :onclick="this.actions.setBool(true, this.data)">Turn on</button>
-                    <button class="toggle-button" :class:active="this.data.setTo === false" :onclick="this.actions.setBool(false, this.data)">Turn off</button>
-                </div>
-            </div>
-
-            <div :if="this.data.device.type === 'value' && this.data.device.deviceCategory === 'evap-cooler'">
-                <div class="form-group">
-                    <label>Channel</label>
-                    <div class="toggle-group">
-                        <button class="toggle-button" :class:active="this.data.valueToSet === 'fan'" :onclick="this.actions.setChannel('fan', this.data)">Fan</button>
-                        <button class="toggle-button" :class:active="this.data.valueToSet === 'water'" :onclick="this.actions.setChannel('water', this.data)">Water pump</button>
-                    </div>
-                </div>
-                <div class="form-group" :if="this.data.valueToSet">
-                    <label>Do</label>
-                    <div class="toggle-group">
-                        <button class="toggle-button" :class:active="this.data.setTo === true" :onclick="this.actions.setBool(true, this.data)">On</button>
-                        <button class="toggle-button" :class:active="this.data.setTo === false" :onclick="this.actions.setBool(false, this.data)">Off</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group" :if="this.data.device.type === 'value' && this.data.device.deviceCategory !== 'evap-cooler' && this.data.device.deviceCategory !== 'voice-satellite'">
-                <label>Set to</label>
+            <div class="form-group" :if="this.data.channelKind === 'number'">
+                <label>Set ${this.data.channelLabel.toLowerCase()} to</label>
                 <div class="ca-num-row">
-                    <input id="ca-setto-input" type="number" min="0" max="100" placeholder="value" :value="this.data.setTo" :oninput="this.data.setTo = event.target.value" />
-                    <span class="ca-unit">${this.data.device.deviceCategory === 'blinds' ? '% open' : '%'}</span>
+                    <input id="ca-setto-input" type="number" :min="this.data.channelMin + ''" :max="this.data.channelMax + ''" placeholder="value" :value="this.data.setTo" :oninput="this.data.setTo = event.target.value" />
+                    <span class="ca-unit">${this.data.device.deviceCategory === 'blinds' ? '% open' : this.data.channelUnit}</span>
                 </div>
             </div>
         </div>

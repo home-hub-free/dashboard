@@ -1,4 +1,9 @@
 <div class="effects-list">
+    <!-- Search over rules (sentence, device, room) — appears once the list is long. -->
+    <div class="effects-filter" :if="this.total > 5">
+        <i class="iconoir-search"></i>
+        <input class="effects-filter-input" type="text" placeholder="Search rules by device or room…" :oninput="this.onFilter(event)" />
+    </div>
     <div :foreach="group in this.groups" :key="group.name" class="effect-container">
         <div class="effect-group-head">
             <span class="eg-icon"><i :class="group.icon"></i></span>
@@ -36,8 +41,12 @@
         </div>
     </div>
 
-    <div class="effects-empty" :if="this.groups && !this.groups.length">
+    <div class="effects-empty" :if="this.groups && !this.groups.length && !this.total">
         <i class="iconoir-timer"></i>
         <span>No automations yet</span>
+    </div>
+    <div class="effects-empty" :if="this.groups && !this.groups.length && this.total > 0">
+        <i class="iconoir-search"></i>
+        <span>No rules match that search</span>
     </div>
 </div>
