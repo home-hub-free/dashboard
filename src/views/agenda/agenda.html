@@ -1,0 +1,113 @@
+<div class="page-col agenda-view">
+  <header class="page-head">
+    <div class="ph-kicker">Agenda</div>
+    <h1 class="ph-title">What's <em>coming up.</em></h1>
+    <p class="ph-lede">Events and reminders live on the hub and are spoken in the room you're in.</p>
+  </header>
+
+  <div class="agenda-actions">
+    <button class="btn-primary btn-inline" :onclick="this.newItem(event, 'event')">
+      <i class="iconoir-calendar-plus"></i> New event
+    </button>
+    <button class="btn-outline btn-inline" :onclick="this.newItem(event, 'reminder')">
+      <i class="iconoir-bell"></i> New reminder
+    </button>
+  </div>
+
+  <div class="agenda-layout">
+    <section class="panel agenda-month">
+      <div class="month-nav">
+        <button class="month-btn" aria-label="Previous month" :onclick="this.prevMonth()"><i class="iconoir-nav-arrow-left"></i></button>
+        <span class="month-title">${this.monthLabel}</span>
+        <button class="month-btn" aria-label="Next month" :onclick="this.nextMonth()"><i class="iconoir-nav-arrow-right"></i></button>
+        <button class="month-today" :onclick="this.goToday()">Today</button>
+      </div>
+      <div class="dow-row">
+        <span :foreach="d in this.dows">${d}</span>
+      </div>
+      <div class="month-grid">
+        <button
+          :foreach="cell in this.cells"
+          :key="cell.key"
+          class="day-cell"
+          :class:out="!cell.inMonth"
+          :class:today="cell.today"
+          :class:selected="cell.selected"
+          :class:has="cell.count > 0"
+          :onclick="this.selectDay(cell.key)"
+        >
+          <span class="day-num">${cell.day}</span>
+          <span class="day-marks">
+            <i class="mark ev" :if="cell.events > 0"></i>
+            <i class="mark rem" :if="cell.reminders > 0"></i>
+          </span>
+        </button>
+      </div>
+      <div class="month-legend">
+        <span><i class="mark ev"></i> Event</span>
+        <span><i class="mark rem"></i> Reminder</span>
+      </div>
+    </section>
+
+    <section class="panel agenda-day">
+      <p class="section-title">${this.selectedLabel}</p>
+
+      <div class="sk-rows" :if="!this.loaded">
+        <div class="sk-row"><span class="sk-line w35"></span><span class="sk-line w75"></span></div>
+        <div class="sk-row"><span class="sk-line w35"></span><span class="sk-line w60"></span></div>
+      </div>
+
+      <p class="agenda-error" :if="this.loaded && this.error">${this.error}</p>
+
+      <div class="empty-state agenda-empty" :if="this.loaded && !this.error && !this.selectedItems.length">
+        <i class="iconoir-calendar"></i>
+        <span>Nothing on this day</span>
+      </div>
+
+      <div
+        :foreach="item in this.selectedItems"
+        :key="item.key"
+        class="agenda-row"
+        :class:past="item.past"
+        :class:reminder="item.kind === 'reminder'"
+      >
+        <span class="row-time">
+          <span class="t">${item.timeLabel}</span>
+          <span class="t2" :if="item.endLabel">${item.endLabel}</span>
+        </span>
+        <div class="row-body">
+          <div class="row-title">${item.title}</div>
+          <div class="row-meta">
+            <span class="pill pill-outline" :if="item.kind === 'reminder'"><i class="iconoir-bell"></i> Reminder</span>
+            <span class="pill"><i class="iconoir-user"></i> ${item.whoLabel}</span>
+            <span class="pill" :if="item.recurrence_label"><i class="iconoir-repeat"></i> ${item.recurrence_label}</span>
+            <span class="pill" :if="item.remindLabel"><i class="iconoir-alarm"></i> ${item.remindLabel}</span>
+            <span class="pill" :if="item.zone"><i class="iconoir-home-simple-door"></i> ${item.zone}</span>
+          </div>
+          <div class="row-notes" :if="item.notes">${item.notes}</div>
+        </div>
+        <div class="row-actions" :if="item.id !== this.pendingDeleteId">
+          <button class="row-edit" aria-label="Edit" :onclick="this.editItem(event, item.id, item.start)"><i class="iconoir-edit-pencil"></i></button>
+          <button class="row-del" aria-label="Delete" :onclick="this.requestDelete(item.id)"><i class="iconoir-trash"></i></button>
+        </div>
+        <div class="row-confirm" :if="item.id === this.pendingDeleteId">
+          <span class="row-confirm-q">${item.recurrence ? 'Delete every occurrence?' : 'Delete?'}</span>
+          <button class="row-confirm-yes" :onclick="this.confirmDelete(item.id)">Delete</button>
+          <button class="row-confirm-no" :onclick="this.cancelDelete()">Cancel</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel agenda-upcoming" :if="this.loaded && this.upcoming.length">
+    <p class="section-title">Next 7 days</p>
+    <div :foreach="group in this.upcoming" :key="group.key" class="upcoming-group">
+      <button class="upcoming-day" :onclick="this.selectDay(group.key)">${group.label}</button>
+      <div :foreach="item in group.items" :key="item.key" class="upcoming-row" :class:reminder="item.kind === 'reminder'">
+        <span class="row-time"><span class="t">${item.timeLabel}</span></span>
+        <span class="upcoming-title">${item.title}</span>
+        <span class="pill" :if="item.for_person"><i class="iconoir-user"></i> ${item.whoLabel}</span>
+      </div>
+    </div>
+  </section>
+</div>

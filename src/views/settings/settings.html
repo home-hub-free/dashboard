@@ -9,7 +9,6 @@
     <nav class="settings-rail">
         <button class="rail-chip" onclick="document.getElementById('set-account').scrollIntoView({behavior:'smooth',block:'start'})">Account</button>
         <button class="rail-chip" onclick="document.getElementById('set-rooms').scrollIntoView({behavior:'smooth',block:'start'})">Rooms</button>
-        <button class="rail-chip" onclick="document.getElementById('set-calendar')?.scrollIntoView({behavior:'smooth',block:'start'})">Calendar</button>
         <button class="rail-chip" onclick="document.getElementById('set-people')?.scrollIntoView({behavior:'smooth',block:'start'})">Cameras</button>
         <button class="rail-chip" onclick="document.getElementById('set-household').scrollIntoView({behavior:'smooth',block:'start'})">Household</button>
         <button class="rail-chip" onclick="document.getElementById('set-guests').scrollIntoView({behavior:'smooth',block:'start'})">Guests</button>
@@ -180,122 +179,6 @@
             <p class="voice-id-msg" :if="this.faceMsg">${this.faceMsg}</p>
         </div>
 
-        <div class="voice-id" id="set-calendar" :if="this.calendarEnabled">
-            <div class="voice-id-head">
-                <span class="voice-id-title"><i class="iconoir-calendar"></i> Google Calendar</span>
-                <span class="voice-id-count" :if="!this.calendarChecking && this.calendarMineLinked">connected</span>
-                <span class="voice-id-count" :if="!this.calendarChecking && !this.calendarMineLinked">not connected</span>
-                <span class="voice-id-count loading-dots" :if="this.calendarChecking"><i></i><i></i><i></i></span>
-            </div>
-
-            <!-- Service-account mode: share calendars with the SA email, then pick them here (no ids) -->
-            <div :if="this.calendarAuth === 'service_account'">
-                <p class="voice-id-hint">
-                    Share a calendar with <strong>${this.calendarSaEmail}</strong> in Google
-                    Calendar (“Make changes to events”, or read-only), then add it here by its
-                    address — for your own calendar that’s just your Gmail. Added calendars appear
-                    below to pick the family one and tick which are yours.
-                </p>
-
-                <!-- Input on its own line; the actions row under it (one primary +
-                     one outline companion — never two stacked full-width bars). -->
-                <div class="cal-add">
-                    <input
-                        type="text"
-                        placeholder="you@gmail.com"
-                        :value="this.calAddId"
-                        :oninput="this.calAddId = event.target.value"
-                    />
-                    <div class="cal-add-actions">
-                        <button class="btn-primary btn-inline" :if="!this.calendarBusy" :onmouseup="this.addCalendarById()">
-                            <i class="iconoir-plus"></i> <span>Add calendar</span>
-                        </button>
-                        <button class="btn-outline btn-inline" :if="!this.calendarBusy && this.calDiscovered.length" :onmouseup="this.recheckCalendars()">
-                            <i class="iconoir-refresh-double"></i> <span>Recheck</span>
-                        </button>
-                        <button class="btn-primary btn-inline busy" :if="this.calendarBusy"><span>Working…</span></button>
-                    </div>
-                </div>
-
-                <p class="voice-id-hint" :if="this.calendarChecking">
-                    <span class="loading-dots"><i></i><i></i><i></i></span> Checking your calendars with Google…
-                </p>
-                <p class="voice-id-hint" :if="!this.calendarChecking && !this.calDiscovered.length">
-                    Add your account emails above — you can add them first and share each with the
-                    service account in Google whenever; then hit Recheck and they’ll connect.
-                </p>
-
-                <div class="voice-id-actions" :if="this.calDiscovered.length">
-                    <span class="cal-row-label"><i class="iconoir-home"></i> Family calendar</span>
-                    <select class="person-promote" :onchange="this.setFamilyCal(event.target.value)">
-                        <option value="">— pick —</option>
-                        <option :foreach="c in this.calDiscovered" :key="c.id" :value="c.id" :selected="c.id === this.calendarFamilyId">${c.summary}</option>
-                    </select>
-                </div>
-
-                <p class="voice-id-hint" :if="this.calDiscovered.length"><i class="iconoir-user"></i> Calendars</p>
-                <div class="cal-list" :if="this.calDiscovered.length">
-                    <!-- One recessed row per calendar: name+status on the first line
-                         (the address ellipsizes, title carries the full string),
-                         compact actions on the second. Long emails must never
-                         scatter the buttons. -->
-                    <div class="cal-row" :foreach="c in this.calDiscovered" :key="c.id">
-                        <div class="cal-row-main">
-                            <span class="cal-row-label" :title="c.id">${c.summary}</span>
-                            <span class="voice-id-count pending" :if="!c.reachable" :title="'Share it with ' + this.calendarSaEmail + ' in Google Calendar, then Recheck'">not shared yet</span>
-                            <span class="voice-id-count" :if="c.reachable && !c.writable">read-only</span>
-                            <span class="voice-id-count" :if="c.reachable && c.mine"><i class="iconoir-check"></i> mine</span>
-                        </div>
-                        <div class="cal-row-actions">
-                            <button class="btn-outline btn-inline" :if="c.reachable && !c.mine" :onmouseup="this.toggleMine(c.id)">
-                                <i class="iconoir-plus"></i> <span>Add to mine</span>
-                            </button>
-                            <button class="btn-quiet btn-inline" :if="c.reachable && c.mine" :onmouseup="this.toggleMine(c.id)">
-                                <i class="iconoir-minus"></i> Unassign
-                            </button>
-                            <button class="btn-quiet btn-inline" :onmouseup="this.removeCalendar(c.id)" title="Forget this calendar">
-                                <i class="iconoir-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- OAuth mode: per-account consent (Connect opens Google in a new tab) -->
-            <div :if="this.calendarAuth === 'oauth'">
-                <p class="voice-id-hint">
-                    Let Aura read and manage appointments. Most land on the shared family
-                    calendar; connect your own Google to keep personal events ("ponlo en
-                    mi calendario") on your calendar. You link your account once with Google.
-                </p>
-
-                <div class="voice-id-actions">
-                    <span class="cal-row-label"><i class="iconoir-home"></i> Family calendar</span>
-                    <span class="voice-id-count" :if="this.calendarHouseLinked"><i class="iconoir-check"></i> connected</span>
-                    <button class="add-range-btn" :if="!this.calendarHouseLinked" :onmouseup="this.connectHouseCalendar()">
-                        <i class="iconoir-link"></i> <span>Connect family calendar</span>
-                    </button>
-                    <button class="remove-btn" :if="this.calendarHouseLinked" :onmouseup="this.disconnectHouseCalendar()">
-                        <i class="iconoir-trash"></i> Disconnect
-                    </button>
-                </div>
-
-                <div class="voice-id-actions">
-                    <span class="cal-row-label"><i class="iconoir-user"></i> My calendar</span>
-                    <span class="voice-id-count" :if="this.calendarMineLinked"><i class="iconoir-check"></i> connected</span>
-                    <button class="add-range-btn" :if="!this.calendarMineLinked" :onmouseup="this.connectMyCalendar()">
-                        <i class="iconoir-link"></i> <span>Connect my calendar</span>
-                    </button>
-                    <button class="remove-btn" :if="this.calendarMineLinked" :onmouseup="this.disconnectMyCalendar()">
-                        <i class="iconoir-trash"></i> Disconnect
-                    </button>
-                </div>
-
-                <p class="enroll-hint" :if="this.calendarBusy">Waiting for the Google sign-in to finish in the new tab…</p>
-            </div>
-
-            <p class="voice-id-msg" :if="this.calendarMsg">${this.calendarMsg}</p>
-        </div>
     </section>
 
     <section class="assistant-section" id="set-people" :if="this.peopleEnabled">

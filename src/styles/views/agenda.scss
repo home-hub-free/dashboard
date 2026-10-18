@@ -1,0 +1,564 @@
+// ============================================================================
+// VIEW · AGENDA (LOCAL_AGENDA)
+// The household calendar: page CTAs, a month grid (Monday-first, 6 rows) with
+// per-day lamps for events (dusk steel) and reminders (gold), the selected day's
+// list, the next-7-days digest, and the create/edit overlay (#agenda-item, rendered
+// inside the detail overlay sheet). Built from ui/ primitives: .panel, .pill,
+// .toggle-group, .switch, .disclosure, .empty-state, .sk-rows, .btn-*.
+// ============================================================================
+
+@import "../ui/tokens";
+
+// Undo the legacy shell centering so the column fills the page (same as #automations).
+#main-content #tab-content > #agenda {
+  display: block;
+  height: auto;
+  width: 100%;
+  align-items: stretch;
+}
+
+#agenda {
+  text-align: left;
+
+  .agenda-view {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding-bottom: var(--space-12);
+  }
+
+  // ---- Page CTAs -----------------------------------------------------------------
+  .agenda-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+  }
+
+  // ---- Two columns on wide screens: grid left, the day's list right -------------
+  .agenda-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  @include wide-up {
+    .agenda-layout {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: var(--space-5);
+    }
+  }
+
+  // ---- Month panel ---------------------------------------------------------------
+  .agenda-month {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .month-title {
+    flex: 1;
+    text-align: center;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    font-stretch: var(--font-stretch-display);
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+  }
+
+  .month-btn,
+  .month-today {
+    min-height: var(--tap-target-min);
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-border-light);
+    background: var(--color-surface-tertiary);
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: color var(--duration-fast), border-color var(--duration-fast);
+
+    &:hover {
+      color: var(--color-text-primary);
+      border-color: var(--color-text-tertiary);
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+  }
+
+  .month-btn {
+    width: var(--tap-target-min);
+    display: grid;
+    place-items: center;
+    padding: 0;
+    font-size: 1.1rem;
+  }
+
+  .month-today {
+    width: auto;
+    padding: 0 var(--space-4);
+    font-size: 0.85rem;
+  }
+
+  .dow-row,
+  .month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: var(--space-1);
+  }
+
+  .dow-row span {
+    text-align: center;
+    font-family: var(--font-family-data);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-tertiary);
+    padding-bottom: var(--space-1);
+  }
+
+  .day-cell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    aspect-ratio: 1 / 1;
+    min-height: var(--tap-target-min);
+    min-width: 0;
+    padding: 0;
+    border-radius: var(--radius-chip);
+    border: 1px solid transparent;
+    background: var(--color-surface-tertiary);
+    color: var(--color-text-primary);
+    font-family: var(--font-family-data);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition: border-color var(--duration-fast), background var(--duration-fast);
+
+    .day-num {
+      font-size: 0.95rem;
+      line-height: 1;
+    }
+
+    &.out {
+      background: transparent;
+      color: var(--color-text-disabled);
+    }
+
+    &.today .day-num {
+      color: var(--color-primary-light);
+      font-weight: var(--font-weight-bold);
+    }
+
+    &.today {
+      border-color: var(--color-primary-rgba-40);
+    }
+
+    &:hover {
+      border-color: var(--color-text-tertiary);
+    }
+
+    // Selected = the hand of the user → iris, as every other "you" accent.
+    &.selected {
+      background: var(--color-primary);
+      border-color: transparent;
+      color: var(--color-text-inverse);
+
+      .day-num {
+        color: var(--color-text-inverse);
+      }
+
+      .mark {
+        background: var(--color-text-inverse);
+        opacity: 0.9;
+      }
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+  }
+
+  .day-marks {
+    display: flex;
+    gap: 3px;
+    height: 6px;
+  }
+
+  // Lamps: event = another device active (dusk steel), reminder = the spoken nudge (gold).
+  .mark {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-active-cool);
+
+    &.rem {
+      background: var(--color-active-warm);
+    }
+  }
+
+  .month-legend {
+    display: flex;
+    gap: var(--space-4);
+    font-size: 0.78rem;
+    color: var(--color-text-tertiary);
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+
+  // ---- Day list ------------------------------------------------------------------
+  .agenda-day {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .agenda-error {
+    margin: 0;
+    color: var(--color-warning);
+    font-size: 0.9rem;
+  }
+
+  .agenda-empty {
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .agenda-row,
+  .upcoming-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-control);
+    background: var(--color-surface-tertiary);
+    border-left: 3px solid var(--color-active-cool);
+
+    &.reminder {
+      border-left-color: var(--color-active-warm);
+    }
+
+    &.past {
+      opacity: 0.55;
+    }
+  }
+
+  .row-time {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 3.4rem;
+    padding-top: 2px;
+    font-family: var(--font-family-data);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.95rem;
+    color: var(--color-text-primary);
+
+    .t2 {
+      font-size: 0.74rem;
+      color: var(--color-text-tertiary);
+    }
+  }
+
+  .row-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .row-title {
+    font-size: 1rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.3;
+    color: var(--color-text-primary);
+    overflow-wrap: anywhere;
+  }
+
+  .row-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+
+    .pill i {
+      font-size: 0.9em;
+      margin-right: 3px;
+    }
+  }
+
+  .row-notes {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    white-space: pre-line;
+  }
+
+  .row-actions,
+  .row-confirm {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .row-edit,
+  .row-del {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    position: relative;
+    transition: color var(--duration-fast), background var(--duration-fast);
+
+    // 44px hit area without growing the glyph (DESIGN.md §5).
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -4px;
+    }
+
+    i {
+      font-size: 1.05rem;
+    }
+  }
+
+  .row-edit:hover {
+    color: var(--color-primary-light);
+    background: var(--color-primary-rgba-10);
+  }
+
+  .row-del:hover {
+    color: var(--color-error);
+    background: var(--color-error-rgba-10);
+  }
+
+  .row-confirm {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+  }
+
+  .row-confirm-q {
+    font-size: 0.82rem;
+    color: var(--color-text-secondary);
+  }
+
+  .row-confirm-yes,
+  .row-confirm-no {
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+    padding: 6px 12px;
+    border-radius: var(--radius-control);
+    font-size: 0.82rem;
+    font-weight: var(--font-weight-bold);
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+
+  .row-confirm-yes {
+    background: var(--color-error);
+    color: var(--color-white);
+  }
+
+  .row-confirm-no {
+    background: transparent;
+    color: var(--color-text-tertiary);
+    border-color: var(--color-border-light);
+  }
+
+  // ---- Next 7 days ---------------------------------------------------------------
+  .agenda-upcoming {
+    margin-top: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .upcoming-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .upcoming-day {
+    align-self: flex-start;
+    min-height: 0;
+    padding: 4px 0;
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-primary-light);
+    }
+  }
+
+  .upcoming-row {
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .upcoming-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95rem;
+    color: var(--color-text-primary);
+    overflow-wrap: anywhere;
+  }
+}
+
+// Phones: the CTAs stack full-width (touch-first) and the day list clears the fixed bottom nav
+// through the column's own bottom padding (.agenda-view).
+@include mobile-only {
+  #agenda .agenda-actions {
+    flex-direction: column;
+
+    .btn-primary,
+    .btn-outline {
+      width: 100%;
+    }
+  }
+
+  #agenda .row-time {
+    min-width: 3rem;
+    font-size: 0.88rem;
+  }
+
+  // "September 2026" must stay on one line between the two arrows + Today.
+  #agenda .month-title {
+    font-size: var(--font-size-base);
+  }
+
+  #agenda .month-today {
+    padding: 0 var(--space-3);
+  }
+}
+
+// ---- Create / edit overlay (#agenda-item, inside the detail sheet) ------------------
+#agenda-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  text-align: left;
+
+  .ag-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .ag-when {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+
+    .form-group {
+      flex: 1 1 9rem;
+      min-width: 0;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+  }
+
+  .ag-optional {
+    font-weight: var(--font-weight-normal);
+    color: var(--color-text-tertiary);
+  }
+
+  .ag-switch-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--color-text-secondary);
+    font-size: 0.95rem;
+  }
+
+  .toggle-group.ag-wrap {
+    flex-wrap: wrap;
+  }
+
+  .ag-days {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .ag-day {
+    width: var(--tap-target-min);
+    height: var(--tap-target-min);
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--color-border-light);
+    background: var(--color-surface-tertiary);
+    color: var(--color-text-secondary);
+    font-family: var(--font-family-data);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: background var(--duration-fast), color var(--duration-fast);
+
+    &.active {
+      background: var(--color-primary);
+      border-color: transparent;
+      color: var(--color-text-inverse);
+    }
+  }
+
+  .ag-save {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .ag-hint {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--color-warning);
+  }
+
+  .ag-error {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--color-error);
+  }
+
+  textarea {
+    resize: vertical;
+    font: inherit;
+  }
+}

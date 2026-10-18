@@ -1,0 +1,122 @@
+<div id="agenda-item" class="edit-container">
+  <div class="overlay-header">
+    <span class="oh-icon"><i :class="this.data.kind === 'reminder' ? 'iconoir-bell' : 'iconoir-calendar'"></i></span>
+    <span class="oh-title">${this.data.id ? 'Edit' : 'New'} ${this.data.kind}</span>
+  </div>
+
+  <div class="ag-section">
+    <div class="form-group">
+      <label>Type</label>
+      <div class="toggle-group">
+        <button class="toggle-button" :class:active="this.data.kind === 'event'" :onclick="this.actions.setKind('event', this.data)">Event</button>
+        <button class="toggle-button" :class:active="this.data.kind === 'reminder'" :onclick="this.actions.setKind('reminder', this.data)">Reminder</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="ag_title">${this.data.kind === 'reminder' ? 'What should the house say?' : 'Title'}</label>
+      <input
+        id="ag_title"
+        class="full-width"
+        type="text"
+        :value="this.data.title"
+        :oninput="this.data.title = event.target.value"
+        placeholder="Dentist at 9, take out the trash…"
+      />
+    </div>
+
+    <div class="ag-when">
+      <div class="form-group">
+        <label for="ag_date">Date</label>
+        <input id="ag_date" type="date" :value="this.data.date" :onchange="this.data.date = event.target.value" />
+      </div>
+      <div class="form-group" :if="!this.data.allDay">
+        <label for="ag_time">${this.data.kind === 'event' ? 'Starts' : 'At'}</label>
+        <input id="ag_time" type="time" :value="this.data.time" :onchange="this.data.time = event.target.value" />
+      </div>
+      <div class="form-group" :if="this.data.kind === 'event' && !this.data.allDay">
+        <label for="ag_end">Ends <span class="ag-optional">(optional)</span></label>
+        <input id="ag_end" type="time" :value="this.data.endTime" :onchange="this.data.endTime = event.target.value" />
+      </div>
+    </div>
+
+    <div class="ag-switch-row" :if="this.data.kind === 'event'">
+      <button class="switch" :class:on="this.data.allDay" aria-label="All day" :onclick="this.actions.toggleAllDay(this.data)"><span class="knob"></span></button>
+      <span>All day</span>
+    </div>
+  </div>
+
+  <div class="ag-section">
+    <p class="section-title">Repeat</p>
+    <div class="toggle-group ag-wrap">
+      <button class="toggle-button" :class:active="this.data.repeat === 'none'" :onclick="this.actions.setRepeat('none', this.data)">Never</button>
+      <button class="toggle-button" :class:active="this.data.repeat === 'daily'" :onclick="this.actions.setRepeat('daily', this.data)">Daily</button>
+      <button class="toggle-button" :class:active="this.data.repeat === 'weekdays'" :onclick="this.actions.setRepeat('weekdays', this.data)">Weekdays</button>
+      <button class="toggle-button" :class:active="this.data.repeat === 'weekly'" :onclick="this.actions.setRepeat('weekly', this.data)">Weekly</button>
+      <button class="toggle-button" :class:active="this.data.repeat === 'monthly'" :onclick="this.actions.setRepeat('monthly', this.data)">Monthly</button>
+      <button class="toggle-button" :class:active="this.data.repeat === 'yearly'" :onclick="this.actions.setRepeat('yearly', this.data)">Yearly</button>
+    </div>
+    <div class="ag-days" :if="this.data.repeat === 'weekly'">
+      <button class="ag-day" :class:active="this.data.weeklyDays.includes(1)" :onclick="this.actions.toggleDay(1, this.data)">M</button>
+      <button class="ag-day" :class:active="this.data.weeklyDays.includes(2)" :onclick="this.actions.toggleDay(2, this.data)">T</button>
+      <button class="ag-day" :class:active="this.data.weeklyDays.includes(3)" :onclick="this.actions.toggleDay(3, this.data)">W</button>
+      <button class="ag-day" :class:active="this.data.weeklyDays.includes(4)" :onclick="this.actions.toggleDay(4, this.data)">T</button>
+      <button class="ag-day" :class:active="this.data.weeklyDays.includes(5)" :onclick="this.actions.toggleDay(5, this.data)">F</button>
+      <button class="ag-day" :class:active="this.data.weeklyDays.includes(6)" :onclick="this.actions.toggleDay(6, this.data)">S</button>
+      <button class="ag-day" :class:active="this.data.weeklyDays.includes(0)" :onclick="this.actions.toggleDay(0, this.data)">S</button>
+    </div>
+  </div>
+
+  <div class="ag-section" :if="this.data.kind === 'event'">
+    <p class="section-title">Remind</p>
+    <div class="toggle-group ag-wrap">
+      <button class="toggle-button" :class:active="this.data.remind === 'none'" :onclick="this.actions.setRemind('none', this.data)">Silent</button>
+      <button class="toggle-button" :class:active="this.data.remind === '0'" :onclick="this.actions.setRemind('0', this.data)">At start</button>
+      <button class="toggle-button" :class:active="this.data.remind === '15'" :onclick="this.actions.setRemind('15', this.data)">15 min</button>
+      <button class="toggle-button" :class:active="this.data.remind === '30'" :onclick="this.actions.setRemind('30', this.data)">30 min</button>
+      <button class="toggle-button" :class:active="this.data.remind === '60'" :onclick="this.actions.setRemind('60', this.data)">1 h</button>
+      <button class="toggle-button" :class:active="this.data.remind === '1440'" :onclick="this.actions.setRemind('1440', this.data)">1 day</button>
+    </div>
+    <p class="section-hint" :if="this.data.allDay && this.data.remind !== 'none'">All-day events are announced at 8:00.</p>
+  </div>
+
+  <div class="ag-section">
+    <p class="section-title">Who</p>
+    <div class="toggle-group ag-wrap">
+      <button class="toggle-button" :class:active="this.data.forPerson === ''" :onclick="this.actions.setPerson('', this.data)">Everyone</button>
+      <button
+        :foreach="p in this.data.people"
+        :key="p.id"
+        class="toggle-button"
+        :class:active="this.data.forPerson === p.id"
+        :onclick="this.actions.setPerson(p.id, this.data)"
+      >${p.name}</button>
+    </div>
+    <p class="section-hint">A personal reminder is spoken in the room that person is in; a house-wide one goes to the room below.</p>
+  </div>
+
+  <details class="disclosure">
+    <summary><i class="iconoir-settings"></i><span>More</span><i class="iconoir-nav-arrow-down adv-chevron"></i></summary>
+    <div class="disclosure-body">
+      <div class="form-group">
+        <label for="ag_zone">Room</label>
+        <select id="ag_zone" :onchange="this.data.zone = event.target.value">
+          <option :foreach="o in this.data.zoneOptions" :key="o.value" :value="o.value">${o.label}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="ag_notes">Notes</label>
+        <textarea id="ag_notes" class="full-width" rows="3" :oninput="this.data.notes = event.target.value">${this.data.notes}</textarea>
+      </div>
+    </div>
+  </details>
+
+  <div class="ag-save">
+    <p class="ag-hint" :if="this.actions.hint(this.data)">${this.actions.hint(this.data)}</p>
+    <p class="ag-error" :if="this.data.error">${this.data.error}</p>
+    <button class="btn-primary" :class:busy="this.data.saving || !!this.actions.hint(this.data)" :onclick="this.actions.save(this.data)">
+      ${this.data.id ? 'Save changes' : 'Save'}
+    </button>
+    <button class="btn-outline" :onclick="this.actions.cancel()">Cancel</button>
+  </div>
+</div>
