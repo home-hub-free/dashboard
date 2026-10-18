@@ -1,5 +1,6 @@
 import type { SessionUser } from "../assistant/household.service";
 import type { Person, MemberCluster, FaceCapture, FaceThreshold } from "../../utils/server-handler";
+import type { HouseGuest, Treatment } from "../../utils/guests";
 
 /**
  * Settings owns everything account/household — relocated out of the Assistant
@@ -35,6 +36,27 @@ export type SettingsState = {
   addHousehold: () => void
   removeHousehold: (id: string) => void
   signOut: () => void
+
+  // Guests: people who are not members, with a relationship per member and a tú/usted
+  // treatment, so the house can address them properly. Driven by GuestsService; the
+  // same facts are sayable to the house by voice ("Lupita es mi mamá").
+  guests: HouseGuest[]
+  guestsLoading: boolean
+  guestsError: string
+  guestNewName: string
+  guestNewMember: string // member id the first relationship is to ("" = none yet)
+  guestNewRelation: string
+  guestNewTreatment: Treatment
+  guestEditId: string // guest whose "add relationship" row is open ("" = none)
+  guestRelMember: string
+  guestRelOptions: SessionUser[] // households with guestRelMember first (bindrjs can't drive :selected)
+  guestRelText: string
+  addGuest: () => void
+  removeGuest: (id: string) => void
+  setGuestTreatment: (id: string, t: Treatment) => void
+  toggleGuestEdit: (id: string) => void
+  saveGuestRelation: (id: string) => void
+  dropGuestRelation: (id: string, memberId: string) => void
 
   // Self-service password change (signed-in member).
   pwCurrent: string

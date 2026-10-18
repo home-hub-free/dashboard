@@ -12,6 +12,7 @@
         <button class="rail-chip" onclick="document.getElementById('set-calendar')?.scrollIntoView({behavior:'smooth',block:'start'})">Calendar</button>
         <button class="rail-chip" onclick="document.getElementById('set-people')?.scrollIntoView({behavior:'smooth',block:'start'})">Cameras</button>
         <button class="rail-chip" onclick="document.getElementById('set-household').scrollIntoView({behavior:'smooth',block:'start'})">Household</button>
+        <button class="rail-chip" onclick="document.getElementById('set-guests').scrollIntoView({behavior:'smooth',block:'start'})">Guests</button>
     </nav>
 
     <section class="assistant-section" id="set-account">
@@ -570,6 +571,87 @@
                 </div>
                 <button class="btn-primary" :onmouseup="this.addHousehold()">
                     <i class="iconoir-add-user"></i> Add member
+                </button>
+            </div>
+        </details>
+    </section>
+
+    <!-- GUESTS — people who are not members but whom the house may address: a parent
+         visiting, a neighbour, a friend. Each guest carries a relationship per member
+         ("mamá of David", "vecina of Ana") and a tú/usted treatment. Mirrors what the
+         house learns by voice ("Lupita es mi mamá") — both write the same hub rows. -->
+    <section class="assistant-section" id="set-guests">
+        <p class="section-title">Guests</p>
+        <p class="voice-id-hint">
+            People who don't live here but whom the house should know how to address.
+            Say what they are to each member and whether to speak to them as <em>tú</em> or
+            <em>usted</em>. You can also just tell the house: “Lupita es mi mamá”,
+            “a Lupita háblale de usted”, “¿quién es Lupita?”, “olvida a Lupita”.
+        </p>
+        <p class="household-error" :if="this.guestsError">${this.guestsError}</p>
+
+        <div class="sk-rows" :if="this.guestsLoading">
+            <div class="sk-row"><span class="sk-line w35"></span><span class="sk-line w75"></span></div>
+        </div>
+        <p class="person-empty" :if="!this.guestsLoading && !this.guests.length">No guests yet.</p>
+
+        <div class="guest-list">
+            <div class="guest-item" :foreach="guest in this.guests" :key="guest.id">
+                <div class="guest-row">
+                    <div class="guest-name">
+                        <span class="household-display">${guest.name}</span>
+                        <span class="guest-aliases" :if="guest.aliases.length">${guest.aliases.join(", ")}</span>
+                    </div>
+                    <div class="guest-treatment" role="group" aria-label="How to address ${guest.name}">
+                        <button class="seg-btn" :class:active="guest.treatment === 'tu'" :onmouseup="this.setGuestTreatment(guest.id, guest.treatment === 'tu' ? '' : 'tu')" title="Speak informally (tú)">tú</button>
+                        <button class="seg-btn" :class:active="guest.treatment === 'usted'" :onmouseup="this.setGuestTreatment(guest.id, guest.treatment === 'usted' ? '' : 'usted')" title="Speak formally (usted)">usted</button>
+                    </div>
+                    <button class="remove-btn" :onmouseup="this.removeGuest(guest.id)" title="Forget this guest" aria-label="Forget guest">
+                        <i class="iconoir-trash"></i>
+                    </button>
+                </div>
+                <div class="guest-relations">
+                    <span class="guest-rel" :foreach="rel in guest.relations" :key="rel.memberId">
+                        <span class="guest-rel-text">${rel.relation} <span class="guest-rel-of">of</span> ${rel.memberName}</span>
+                        <button class="guest-rel-x" :onmouseup="this.dropGuestRelation(guest.id, rel.memberId)" title="Remove this relationship" aria-label="Remove relationship"><i class="iconoir-cancel"></i></button>
+                    </span>
+                    <button class="btn-quiet btn-inline" :onmouseup="this.toggleGuestEdit(guest.id)">
+                        <i class="iconoir-plus"></i> ${this.guestEditId === guest.id ? "Cancel" : "Relationship"}
+                    </button>
+                </div>
+                <div class="household-add guest-rel-add" :if="this.guestEditId === guest.id">
+                    <select :onchange="this.guestRelMember = event.target.value">
+                        <!-- bindrjs can't drive :selected (DESIGN.md gotcha): the chosen member is ordered first. -->
+                        <option :foreach="u in this.guestRelOptions" :key="u.id" :value="u.id">${u.displayName}</option>
+                    </select>
+                    <input type="text" placeholder="what ${guest.name} is to them (mamá, vecino, amiga…)" :value="this.guestRelText" :oninput="this.guestRelText = event.target.value" />
+                    <button class="btn-primary btn-inline" :onmouseup="this.saveGuestRelation(guest.id)"><i class="iconoir-check"></i> Save</button>
+                </div>
+            </div>
+        </div>
+
+        <details class="disclosure">
+            <summary>
+                <i class="iconoir-add-user"></i><span>Add a guest</span>
+                <i class="iconoir-nav-arrow-down adv-chevron"></i>
+            </summary>
+            <div class="disclosure-body">
+                <div class="household-add">
+                    <input type="text" placeholder="name (how the house should call them)" :value="this.guestNewName" :oninput="this.guestNewName = event.target.value" />
+                    <select :onchange="this.guestNewMember = event.target.value">
+                        <option :foreach="u in this.households" :key="u.id" :value="u.id">${u.displayName}</option>
+                    </select>
+                    <input type="text" placeholder="relationship to them (mamá, vecino, amiga…)" :value="this.guestNewRelation" :oninput="this.guestNewRelation = event.target.value" />
+                </div>
+                <div class="guest-new-treatment">
+                    <span class="voice-id-hint">Address as</span>
+                    <div class="guest-treatment" role="group" aria-label="How to address the new guest">
+                        <button class="seg-btn" :class:active="this.guestNewTreatment === 'tu'" :onmouseup="this.guestNewTreatment = this.guestNewTreatment === 'tu' ? '' : 'tu'">tú</button>
+                        <button class="seg-btn" :class:active="this.guestNewTreatment === 'usted'" :onmouseup="this.guestNewTreatment = this.guestNewTreatment === 'usted' ? '' : 'usted'">usted</button>
+                    </div>
+                </div>
+                <button class="btn-primary" :onmouseup="this.addGuest()">
+                    <i class="iconoir-add-user"></i> Add guest
                 </button>
             </div>
         </details>

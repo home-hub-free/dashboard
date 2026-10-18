@@ -207,6 +207,137 @@
   }
 }
 
+// ---- Guests (non-member people + relationship per member) ---------------------
+.guest-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.guest-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-card, var(--radius-control));
+  background: var(--color-surface);
+}
+
+// name | tú/usted | trash — same reserved trash column as .household-row.
+.guest-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 34px;
+  align-items: center;
+  gap: var(--space-2);
+
+  .guest-name {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    .guest-aliases {
+      font-size: 0.78rem;
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+// Two-way segmented toggle; both off = "unspecified" (the house picks its default).
+.guest-treatment {
+  display: inline-flex;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+
+  .seg-btn {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: 0.82rem;
+    padding: 4px var(--space-3);
+    cursor: pointer;
+    min-height: 32px;
+
+    & + .seg-btn {
+      border-left: 1px solid var(--color-border-light);
+    }
+
+    &.active {
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+  }
+}
+
+.guest-relations {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+
+  .guest-rel {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 2px var(--space-2) 2px var(--space-3);
+    border-radius: var(--radius-full);
+    background: var(--color-background);
+    border: 1px solid var(--color-border-light);
+    font-size: 0.85rem;
+
+    .guest-rel-of {
+      color: var(--color-text-secondary);
+    }
+
+    .guest-rel-x {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: var(--color-text-secondary);
+      padding: 2px;
+      line-height: 0;
+      cursor: pointer;
+      font-size: 0.95rem;
+
+      &:hover {
+        color: var(--color-error);
+      }
+    }
+  }
+}
+
+.guest-rel-add,
+.household-add {
+  select {
+    flex: 1;
+    min-width: 120px;
+    padding: var(--space-2);
+    font-size: 0.95rem;
+    font-family: inherit;
+    border: 1px solid var(--color-primary-light);
+    border-radius: var(--radius-control);
+    background: var(--color-background);
+    color: var(--color-text-primary);
+  }
+}
+
+.guest-new-treatment {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-2) 0;
+
+  .voice-id-hint {
+    margin: 0;
+  }
+}
+
 .household-error {
   margin: 0;
   font-size: 0.85rem;

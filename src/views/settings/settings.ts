@@ -2,6 +2,8 @@ import { Component } from "../../core/component";
 import template from "./settings.html?raw";
 import { SettingsState } from "./settings.model";
 import { HouseholdService, HouseholdServiceClass } from "../assistant/household.service";
+import { GuestsService } from "./guests.service";
+import type { Treatment } from "../../utils/guests";
 import { currentUser } from "../../utils/auth";
 import type { Person } from "../../utils/server-handler";
 import { store } from "../../store/store";
@@ -62,6 +64,24 @@ class SettingsContentClass extends Component<SettingsState> {
         addHousehold: () => this.householdService.add(),
         removeHousehold: (id: string) => this.householdService.remove(id),
         signOut: () => this.householdService.signOut(),
+
+        guests: [],
+        guestsLoading: true,
+        guestsError: "",
+        guestNewName: "",
+        guestNewMember: "", // "" = the first member in the select (the browser's default)
+        guestNewRelation: "",
+        guestNewTreatment: "" as Treatment,
+        guestEditId: "",
+        guestRelMember: "",
+        guestRelOptions: [],
+        guestRelText: "",
+        addGuest: () => GuestsService.add(),
+        removeGuest: (id: string) => GuestsService.remove(id),
+        setGuestTreatment: (id: string, t: Treatment) => GuestsService.setTreatment(id, t),
+        toggleGuestEdit: (id: string) => GuestsService.toggleEdit(id),
+        saveGuestRelation: (id: string) => GuestsService.saveRelation(id),
+        dropGuestRelation: (id: string, memberId: string) => GuestsService.dropRelation(id, memberId),
 
         pwCurrent: "",
         pwNew: "",
@@ -246,6 +266,7 @@ class SettingsContentClass extends Component<SettingsState> {
     });
 
     this.householdService.attach(this.bind);
+    GuestsService.attach(this.bind);
 
     const refresh = () => {
       if (this.mounted) this.bind.rooms = buildRooms();

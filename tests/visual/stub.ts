@@ -48,6 +48,36 @@ export async function stubBackend(page: Page) {
   // specific GETs (high priority — registered last)
   await page.route("**/api/auth/me", (r) => r.fulfill(json({ user: fx.user })));
   await page.route("**/api/auth/users", (r) => r.fulfill(json({ users: fx.households })));
+  // Guest registry (Settings → Guests): an in-memory store so add / relation / treatment round-trip.
+  const guests: any[] = [
+    { id: "lupita", name: "Lupita", aliases: ["Doña Lupe"], treatment: "usted", notes: "", relations: [{ memberId: "u1", memberName: "David", relation: "mamá" }], createdAt: "", updatedAt: "" },
+  ];
+  await page.route("**/api/guests**", (r) => {
+    const req = r.request();
+    const url = new URL(req.url());
+    const parts = url.pathname.split("/").filter(Boolean); // api, guests, :id?, relations?, :memberId?
+    const id = parts[2] ? decodeURIComponent(parts[2]) : undefined;
+    const body = req.method() === "GET" || req.method() === "DELETE" ? {} : (req.postDataJSON() ?? {});
+    const find = (gid: string) => guests.find((g) => g.id === gid);
+    const member = (mid: string) => fx.households.find((u) => u.id === mid);
+    if (req.method() === "GET") return r.fulfill(json({ ok: true, guests }));
+    if (req.method() === "POST" && !id) {
+      const g = { id: String(body.name).toLowerCase(), name: body.name, aliases: body.aliases ?? [], treatment: body.treatment ?? "", notes: "", createdAt: "", updatedAt: "",
+        relations: (body.relations ?? []).map((x: any) => ({ memberId: x.memberId, memberName: member(x.memberId)?.displayName ?? x.memberId, relation: x.relation })) };
+      guests.push(g);
+      return r.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, guest: g }) });
+    }
+    const g = find(id);
+    if (!g) return r.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ ok: false, error: "not found" }) });
+    if (req.method() === "PATCH") { Object.assign(g, { treatment: body.treatment ?? g.treatment, name: body.name ?? g.name }); return r.fulfill(json({ ok: true, guest: g })); }
+    if (req.method() === "DELETE" && parts[3] === "relations") { g.relations = g.relations.filter((x: any) => x.memberId !== parts[4]); return r.fulfill(json({ ok: true, guest: g })); }
+    if (req.method() === "DELETE") { guests.splice(guests.indexOf(g), 1); return r.fulfill(json({ ok: true })); }
+    if (req.method() === "PUT" && parts[3] === "relations") {
+      g.relations = [...g.relations.filter((x: any) => x.memberId !== parts[4]), { memberId: parts[4], memberName: member(parts[4])?.displayName ?? parts[4], relation: body.relation }];
+      return r.fulfill(json({ ok: true, guest: g }));
+    }
+    return r.fulfill(json({ ok: true }));
+  });
   await page.route("**/api/get-devices", (r) => r.fulfill(json(fx.devices)));
   await page.route("**/api/get-sensors", (r) => r.fulfill(json(fx.sensors)));
   await page.route("**/api/get-effects-dynamic", (r) => r.fulfill(json(fx.effects)));
