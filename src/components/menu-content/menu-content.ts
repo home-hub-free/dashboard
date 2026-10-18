@@ -5,13 +5,14 @@ import { NavBar } from "../nav-bar/nav-bar";
 import { AutomationsContent } from "../../views/automations/automations";
 import { HomeContent } from "../../views/home/home";
 import { SettingsContent } from "../../views/settings/settings";
+import { AgendaContent } from "../../views/agenda/agenda";
 import { MenuContentState } from "./menu-content.model";
 
 
 class TabContentClass {
 
   bind!: MenuContentState;
-  private activeView?: typeof HomeContent | typeof AutomationsContent | typeof VAssistantContent | typeof SettingsContent;
+  private activeView?: typeof HomeContent | typeof AutomationsContent | typeof VAssistantContent | typeof SettingsContent | typeof AgendaContent;
   private initQueued = false;
 
   constructor() {}
@@ -65,6 +66,8 @@ class TabContentClass {
         return HomeContent;
       case 'automations':
         return AutomationsContent;
+      case 'agenda':
+        return AgendaContent;
       case 'assistant':
         return VAssistantContent;
       case 'settings':

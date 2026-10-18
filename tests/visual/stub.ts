@@ -83,6 +83,11 @@ export async function stubBackend(page: Page) {
   await page.route("**/api/get-effects-dynamic", (r) => r.fulfill(json(fx.effects)));
   await page.route("**/api/get-effects", (r) => r.fulfill(json(fx.effects)));
   await page.route("**/api/get-zones", (r) => r.fulfill(json(fx.zones)));
+  // Hub agenda (LOCAL_AGENDA): reads answer the fixture; writes echo ok (asserted by agenda.spec).
+  await page.route("**/api/agenda**", (r) =>
+    r.request().method() === "GET"
+      ? r.fulfill(json({ ok: true, items: fx.agendaItems }))
+      : r.fulfill(json({ ok: true, item: { id: "new", kind: "event" } })));
   await page.route("**/speaker/health", (r) => r.fulfill(json({ ok: true })));
   await page.route("**/speaker/profiles", (r) => r.fulfill(json(fx.profiles)));
   await page.route("**/memory/candidates", (r) => r.fulfill(json(fx.candidates)));

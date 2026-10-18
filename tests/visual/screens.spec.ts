@@ -77,6 +77,24 @@ for (const vp of VIEWPORTS) {
       await shot(page, "assistant-history", vp.tag);
     });
 
+    test("agenda", async ({ page }) => {
+      await gotoHome(page);
+      await clickMenu(page, "Agenda");
+      await page.waitForSelector("#agenda .agenda-row, #agenda .agenda-empty", { timeout: 20_000 }).catch(() => {});
+      await page.waitForTimeout(600);
+      await shot(page, "agenda", vp.tag);
+    });
+
+    test("agenda-overlay", async ({ page }) => {
+      await gotoHome(page);
+      await clickMenu(page, "Agenda");
+      await page.waitForSelector("#agenda .agenda-row, #agenda .agenda-empty", { timeout: 20_000 }).catch(() => {});
+      await page.locator("#agenda .agenda-actions .btn-primary").click().catch(() => {});
+      await page.waitForSelector("#agenda-item", { timeout: 20_000 }).catch(() => {});
+      await page.waitForTimeout(800);
+      await shot(page, "agenda-overlay", vp.tag, false);
+    });
+
     test("settings", async ({ page }) => {
       await gotoHome(page);
       await clickMenu(page, "Settings");

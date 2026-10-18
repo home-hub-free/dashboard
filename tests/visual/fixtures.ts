@@ -172,3 +172,26 @@ export const cameraControls: Record<string, any> = {
     imaging: { brightness: 50, saturation: 50, contrast: 50, sharpness: 50 },
   },
 };
+
+// ── Agenda (LOCAL_AGENDA) — hub GET /agenda occurrences, built RELATIVE to today so the month
+// grid the view opens on always has something to show. Mixed kinds, a recurring reminder, an
+// all-day event, a past item and a personal one.
+function agendaDay(offset: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+const agendaItem = (o: Partial<any>) => ({
+  id: "x", kind: "event", title: "", all_day: false, calendar: "casa", for_person: null, zone: null, recurrence: null,
+  recurrence_label: "", remind_min: 15, message: null, notes: null, status: "pending", day: "", past: false, ...o,
+});
+export const agendaItems = [
+  agendaItem({ id: "a1", title: "Dentista", start: `${agendaDay(0)}T09:30`, end: `${agendaDay(0)}T10:00`, for_person: "u1", day: "hoy", past: true }),
+  agendaItem({ id: "a2", kind: "reminder", title: "Sacar la basura", message: "Sacar la basura", start: `${agendaDay(0)}T20:00`, recurrence: "weekly:2", recurrence_label: "cada martes", remind_min: 0, day: "hoy" }),
+  agendaItem({ id: "a3", title: "Junta con el equipo", start: `${agendaDay(1)}T11:00`, end: `${agendaDay(1)}T12:00`, zone: "Office", day: "mañana", notes: "Traer el reporte" }),
+  agendaItem({ id: "a4", title: "Cumple de Ana", start: agendaDay(3), all_day: true, remind_min: 1440 }),
+  agendaItem({ id: "a5", kind: "reminder", title: "Vitaminas", message: "Vitaminas", start: `${agendaDay(1)}T08:00`, recurrence: "daily", recurrence_label: "cada día", remind_min: 0, for_person: "u3" }),
+  agendaItem({ id: "a5", kind: "reminder", title: "Vitaminas", message: "Vitaminas", start: `${agendaDay(2)}T08:00`, recurrence: "daily", recurrence_label: "cada día", remind_min: 0, for_person: "u3" }),
+  agendaItem({ id: "a6", title: "Pago de la luz", start: `${agendaDay(-3)}T18:00`, past: true }),
+  agendaItem({ id: "a7", title: "Vacaciones en la playa", start: `${agendaDay(12)}T06:00`, remind_min: null }),
+];

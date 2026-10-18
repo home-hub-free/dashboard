@@ -22,6 +22,9 @@ export type BusEvents = {
   'sync:done': { ok: boolean };
   // The signed-in member's pinned-device list changed (see pins.service).
   'pins:changed': string[];
+  // The hub's agenda changed (an entry was created/edited/removed, or the scheduler fired one) —
+  // the socket mirror of `agenda-update`; the Agenda view refetches (LOCAL_AGENDA).
+  'agenda:changed': { reason?: string; id?: string };
 };
 
 type Handler<K extends keyof BusEvents> = (data: BusEvents[K]) => void;

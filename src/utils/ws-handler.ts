@@ -129,6 +129,12 @@ export function initWebSockets() {
     }
   });
 
+  // LOCAL_AGENDA: the hub mirrors every agenda mutation/fire so an open calendar refreshes
+  // (a reminder set by voice appears without a reload).
+  socket.on('agenda-update', (change: { reason?: string; id?: string }) => {
+    bus.emit('agenda:changed', change || {});
+  });
+
   socket.on('sensor-declare', (sensor) => {
     const isNew = !store.get('sensors').some((s) => s.id === sensor.id);
     SensorActions.declare(sensor);

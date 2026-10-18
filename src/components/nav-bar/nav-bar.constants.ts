@@ -40,6 +40,15 @@ export const NavBarItems: IMenuItem[] = [
     tabs: [],
   },
   {
+    // The household calendar (LOCAL_AGENDA): events + reminders on the hub, spoken by satellites.
+    id: "agenda",
+    icon: "calendar",
+    name: "Agenda",
+    expanded: false,
+    activeTabIndex: -1,
+    tabs: [],
+  },
+  {
     id: "assistant",
     icon: "sound-high",
     name: "Assistant",
