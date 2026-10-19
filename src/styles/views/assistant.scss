@@ -565,3 +565,16 @@
     }
   }
 }
+
+/* REFLEX_V6: the engine selector in the composer (test surface for the three architectures). */
+.chat-composer .engine-pick {
+  flex: 0 0 auto;
+  max-width: 11rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--text-2, inherit);
+  background: var(--surface-2, transparent);
+  border: 1px solid var(--border, rgba(127, 127, 127, 0.35));
+  border-radius: 0.6rem;
+  padding: 0.35rem 0.5rem;
+}

@@ -135,6 +135,16 @@
                     :onkeydown="this.promptKey(event)"
                     :oninput="this.promptText = event.target.value; this.promptGrow(event.target)"
                 >${this.promptText}</textarea>
+                <select
+                    class="engine-pick"
+                    title="Interpretation engine (REFLEX_V6 test)"
+                    :onchange="this.engineSet(event.target.value)"
+                >
+                    <option value="v4" ${this.engine === 'v4' ? 'selected' : ''}>v4 · actual</option>
+                    <option value="nets" ${this.engine === 'nets' ? 'selected' : ''}>nets · redes</option>
+                    <option value="cascade" ${this.engine === 'cascade' ? 'selected' : ''}>cascade · redes→1.7B→14B</option>
+                    <option value="llm" ${this.engine === 'llm' ? 'selected' : ''}>llm · 14B</option>
+                </select>
                 <button
                     class="chat-send"
                     :class:busy="this.voiceState !== 'idle'"

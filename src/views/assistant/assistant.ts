@@ -1,3 +1,5 @@
+import { currentEngine, setEngine } from "../../utils/server-handler";
+import type { AssistantEngine } from "../../utils/server-handler";
 import { Component } from "../../core/component";
 import template from './assistant.html?raw';
 import { AssistantMenuState } from "./assistant.model";
@@ -38,6 +40,8 @@ class VAssistantContentClass extends Component<AssistantMenuState> {
 
         // ── Composer: typed requests (same agent path as voice) ─────────
         promptText: '',
+        engine: currentEngine(),
+        engineSet: (e: string) => { setEngine(e as AssistantEngine); this.bind.engine = e; },
         promptSend: () => {
           if (this.bind.voiceState !== 'idle') return; // a turn is already in flight
           const text = (this.bind.promptText || '').trim();

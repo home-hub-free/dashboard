@@ -49,6 +49,9 @@ export type AssistantMenuState = {
 
   // ── Composer: typed requests (same agent path as voice) ────────────────
   promptText: string;
+  /** REFLEX_V6: the interpretation engine this page sends to (`v4` | `nets` | `cascade` | `llm`). */
+  engine: string;
+  engineSet: (e: string) => void;
   promptSend: () => void;
   promptKey: (event: KeyboardEvent) => void;
   promptGrow: (el: HTMLTextAreaElement) => void;

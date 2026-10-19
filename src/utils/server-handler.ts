@@ -1024,7 +1024,17 @@ export async function deleteAssistantChat(id: string): Promise<void> {
   if (!res.ok) throw new Error(`delete failed (${res.status})`);
 }
 
-export async function askAgent(text: string, zone?: string): Promise<AgentReply> {
+/** REFLEX_V6: which interpretation engine the assistant page talks to (`v4` = the deployed pipeline; `nets` / `cascade` /
+ *  `llm` = the three architectures under test). Per browser, remembered across reloads. */
+export const ASSISTANT_ENGINES = ["v4", "nets", "cascade", "llm"] as const;
+export type AssistantEngine = (typeof ASSISTANT_ENGINES)[number];
+export function currentEngine(): AssistantEngine {
+  try { const e = localStorage.getItem("assistant.engine"); if (e && (ASSISTANT_ENGINES as readonly string[]).includes(e)) return e as AssistantEngine; } catch { /* storage unavailable */ }
+  return "v4";
+}
+export function setEngine(e: AssistantEngine): void { try { localStorage.setItem("assistant.engine", e); } catch { /* ignore */ } }
+
+export async function askAgent(text: string, zone?: string, engine: AssistantEngine = currentEngine()): Promise<AgentReply> {
   // Carry the signed-in member's identity so the agent knows *who* is asking
   // and can personalise (greet by name). The llm-gateway consumes `data.user`
   // (separate repo); absent when no one is logged in. A dashboard session is
@@ -1033,6 +1043,7 @@ export async function askAgent(text: string, zone?: string): Promise<AgentReply>
   const user = currentUser();
   const payload: Record<string, any> = {};
   if (zone) payload.zone = zone;
+  if (engine && engine !== "v4") payload.engine = engine;
   if (user) {
     const userCtx: AgentUserContext = {
       id: user.id,
